@@ -1,0 +1,75 @@
+---
+title: "How to run your own Odoo SaaS platform"
+description: "Step-by-step guide to building a multi-tenant Odoo SaaS for your own customers. Architecture, hosting, automation, pricing."
+date: 2026-04-01
+tags: ["saas", "odoo", "architecture"]
+---
+
+## Why would you sell Odoo as SaaS?
+
+Because your clients don't want to manage a server. They want to click "Sign Up" and have their ERP running in 10 minutes. And you want **recurring revenue**, not one-off implementation fees.
+
+## The architecture (high level)
+
+You need three things:
+
+1. **A control plane** — where you manage tenants, servers, backups, billing
+2. **Tenant servers** — actual Odoo containers running per-customer databases
+3. **DNS + SSL automation** — so `acme.yourplatform.com` just works
+
+## The hard parts (we've solved them)
+
+### 1. Tenant isolation
+
+You can't put 100 clients in one Odoo database. Solution: one Postgres database per tenant, shared Odoo Python code, isolated data. Use `dbfilter = ^%h$` so each subdomain maps to its own DB.
+
+### 2. Automated provisioning
+
+Click "new tenant" → Odoo database created, filestore initialized, NPM/Nginx proxy route added, Cloudflare DNS record created, SSL issued, admin email sent. Total time: under 60 seconds.
+
+### 3. Backups that actually work
+
+Per-tenant daily backups to S3/Backblaze. Retention policies. Tested restore process. Disaster recovery plan. Most partners forget this until the first outage.
+
+### 4. Upgrades
+
+Odoo ships a new version every year. Your tenants expect to upgrade. You need a one-click upgrade path per tenant that's safely tested.
+
+### 5. Billing
+
+Stripe/HyperPay/PayTabs + usage tracking. Plan limits (max users, max DB size). Dunning when a card fails.
+
+## Our shortcut: WT SaaS Odoo Kit
+
+We built all of the above as a reusable module: [WT SaaS Odoo Kit](/products/wt-saas-odoo-kit/).
+
+It includes:
+
+- Control plane Odoo module (manage servers, stacks, tenants)
+- SSH-based server provisioning
+- Nginx Proxy Manager integration (DNS + SSL)
+- Cloudflare DNS automation
+- Backup & restore wizard
+- Health checks and monitoring
+- Tenant drop wizard with type-to-confirm
+- "Connect As Admin" for one-click impersonation
+
+We use it in production to run our own SaaS platform. It handles 50+ tenants across 5 servers without breaking a sweat.
+
+## Economics
+
+If you charge $50/month per tenant and have 100 tenants:
+- Monthly revenue: $5,000
+- Server costs (5 VPS × $40): $200
+- Your net: ~$4,800/month with near-zero incremental effort per customer
+
+Compare to doing 100 one-off Odoo implementations: you'd need an army of consultants.
+
+## Ready to start your SaaS?
+
+Two options:
+
+1. **Buy the kit, run it yourself.** We install it on your server, train you, you're off.
+2. **Let us operate it for you.** We provide the infrastructure and first-line support, you focus on selling.
+
+[Contact us](/contact/) to discuss.

@@ -1,0 +1,88 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, PRODUCTS } from '~/data/site';
+
+export function getStaticPaths() {
+  return PRODUCTS.map(p => ({ params: { slug: p.slug }, props: { product: p } }));
+}
+
+const { product } = Astro.props;
+const related = PRODUCTS.filter(p => p.slug !== product.slug && p.category === product.category).slice(0, 3);
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: product.title,
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Odoo ERP',
+  description: product.short,
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
+};
+---
+<Base
+  title={`${product.title} — Odoo Module`}
+  description={product.short}
+  structuredData={schema}
+>
+  <section class="bg-gradient-to-br from-brand-950 to-brand-800 text-white">
+    <div class="container-site py-16 sm:py-24">
+      <a href="/products/" class="inline-flex items-center gap-1 text-sm text-brand-200 hover:text-white">← All products</a>
+      <div class="mt-4 max-w-3xl">
+        <div class="text-xs font-semibold uppercase tracking-wider text-brand-300">{product.category}</div>
+        <h1 class="h1 mt-3">{product.title}</h1>
+        <p class="lede mt-6 text-ink-100">{product.tagline}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <p class="text-lg text-ink-700">{product.short}</p>
+
+          <h2 class="h3 mt-12">Key features</h2>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            {['Clean community-first code', 'Odoo 17 / 18 / 19 ready', 'Full source code delivered', 'Installation + training included', '90-day bug support', 'Ongoing maintenance available'].map((f) => (
+              <div class="flex gap-3 items-start">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="text-ink-700 text-sm">{f}</span>
+              </div>
+            ))}
+          </div>
+
+          <h2 class="h3 mt-14">What you get</h2>
+          <ul class="mt-6 space-y-3">
+            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">Full module source code (Python + OWL + XML + CSS)</span></li>
+            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">Installation script for your Odoo instance</span></li>
+            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">Written documentation and user guide</span></li>
+            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">1-hour walkthrough session with your team</span></li>
+            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">90 days of bug-fix support</span></li>
+          </ul>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h3 class="text-lg font-semibold">Interested?</h3>
+              <p class="mt-2 text-sm text-ink-600">Get a demo, pricing, and see if this fits your business.</p>
+              <a href={`/contact/?product=${product.slug}`} class="btn-primary w-full mt-5">Request demo</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3">WhatsApp</a>
+            </div>
+
+            {related.length > 0 && (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h3 class="text-sm font-semibold">More in {product.category}</h3>
+                <ul class="mt-4 space-y-3">
+                  {related.map((r: typeof product) => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/products/${r.slug}/`}>→ {r.title}</a></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

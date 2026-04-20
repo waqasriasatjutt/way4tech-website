@@ -1,24 +1,194 @@
 ---
-import { SITE } from '~/data/site';
+import { SITE, SERVICES, MODULES, SOLUTIONS, COUNTRIES } from '~/data/site';
+
+const svcCore = SERVICES.filter(s => s.category === 'Core' || s.category === 'Cloud');
+const svcOther = SERVICES.filter(s => !['Core','Cloud'].includes(s.category));
+
+const modByCat: Record<string, typeof MODULES> = {};
+MODULES.forEach(m => { (modByCat[m.category] ||= []).push(m); });
+
+const solTop = SOLUTIONS.slice(0, 12);
+const countryGroups = [
+  { label: 'Gulf & Middle East', items: COUNTRIES.filter(c => ['saudi-arabia','uae','qatar','kuwait','oman','bahrain','egypt','jordan','turkey'].includes(c.slug)) },
+  { label: 'Asia', items: COUNTRIES.filter(c => ['pakistan','india','bangladesh'].includes(c.slug)) },
+  { label: 'Europe', items: COUNTRIES.filter(c => ['united-kingdom','germany','france'].includes(c.slug)) },
+  { label: 'Americas & Oceania', items: COUNTRIES.filter(c => ['united-states','canada','australia'].includes(c.slug)) },
+];
 ---
-<header class="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur-md">
-  <div class="container-site flex h-16 items-center justify-between">
-    <a href="/" class="flex items-center gap-2 font-bold text-ink-900">
-      <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white text-sm">W4</span>
-      <span class="text-lg">{SITE.name}</span>
+<header class="sticky top-0 z-50 border-b border-ink-100 bg-white/90 backdrop-blur-md">
+  <div class="container-site flex h-16 items-center justify-between gap-6">
+    <a href="/" class="flex items-center gap-2.5 font-bold text-ink-900 shrink-0" aria-label="Way4Tech Home">
+      <img src="/logo.svg" alt="Way4Tech" width="160" height="38" class="h-9 w-auto" />
     </a>
 
-    <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-ink-700">
-      <a href="/services/" class="hover:text-ink-950">Services</a>
-      <a href="/products/" class="hover:text-ink-950">Products</a>
-      <a href="/industries/" class="hover:text-ink-950">Industries</a>
-      <a href="/about/" class="hover:text-ink-950">About</a>
-      <a href="/blog/" class="hover:text-ink-950">Blog</a>
+    <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-ink-700" aria-label="Primary">
+      <!-- SERVICES MEGA -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+          Services
+          <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+        </button>
+        <div class="mega top-full w-[720px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid grid-cols-2 gap-6 p-6">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-3">Core Services</div>
+              <ul class="space-y-1">
+                {svcCore.map(s => (
+                  <li>
+                    <a href={`/services/${s.slug}/`} class="flex gap-3 rounded-lg p-2 hover:bg-ink-50">
+                      <span class="text-xl shrink-0">{s.icon}</span>
+                      <span>
+                        <span class="block font-semibold text-ink-900">{s.title}</span>
+                        <span class="block text-xs text-ink-500">{s.tagline}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-3">Specialized</div>
+              <ul class="space-y-1">
+                {svcOther.map(s => (
+                  <li>
+                    <a href={`/services/${s.slug}/`} class="flex gap-3 rounded-lg p-2 hover:bg-ink-50">
+                      <span class="text-xl shrink-0">{s.icon}</span>
+                      <span>
+                        <span class="block font-semibold text-ink-900">{s.title}</span>
+                        <span class="block text-xs text-ink-500">{s.tagline}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
+            <span class="text-ink-600">15 Odoo services, one team.</span>
+            <a href="/services/" class="font-semibold text-brand-700 hover:text-brand-800">All services →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODULES MEGA -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+          Odoo Modules
+          <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+        </button>
+        <div class="mega top-full w-[860px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid grid-cols-4 gap-5 p-6">
+            {Object.entries(modByCat).map(([cat, list]) => (
+              <div>
+                <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">{cat}</div>
+                <ul class="space-y-1">
+                  {list.map(m => (
+                    <li>
+                      <a href={`/modules/${m.slug}/`} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-ink-50 text-ink-700 hover:text-brand-700">
+                        <span class="text-base">{m.icon}</span>
+                        <span>{m.title}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
+            <span class="text-ink-600">All 25 Odoo ERP modules — one per page.</span>
+            <a href="/modules/" class="font-semibold text-brand-700 hover:text-brand-800">Browse all modules →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOLUTIONS MEGA -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+          Solutions
+          <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+        </button>
+        <div class="mega top-full w-[720px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid grid-cols-3 gap-4 p-6">
+            {solTop.map(s => (
+              <a href={`/solutions/${s.slug}/`} class="flex gap-2.5 rounded-lg p-2 hover:bg-ink-50">
+                <span class="text-xl shrink-0">{s.icon}</span>
+                <span>
+                  <span class="block font-semibold text-ink-900 text-sm">{s.title}</span>
+                  <span class="block text-xs text-ink-500 leading-tight mt-0.5">{s.tagline}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
+            <span class="text-ink-600">20 industry-ready Odoo solutions.</span>
+            <a href="/solutions/" class="font-semibold text-brand-700 hover:text-brand-800">All solutions →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- COUNTRIES MEGA -->
+      <div class="group relative">
+        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+          Countries
+          <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+        </button>
+        <div class="mega top-full w-[720px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid grid-cols-2 gap-x-8 gap-y-4 p-6">
+            {countryGroups.map(g => (
+              <div>
+                <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">{g.label}</div>
+                <ul class="space-y-0.5">
+                  {g.items.map(c => (
+                    <li>
+                      <a href={`/countries/${c.slug}/`} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-ink-50 text-ink-700 hover:text-brand-700">
+                        <span>{c.flag}</span>
+                        <span>{c.title}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
+            <span class="text-ink-600">18 countries. Localized Odoo.</span>
+            <a href="/countries/" class="font-semibold text-brand-700 hover:text-brand-800">All countries →</a>
+          </div>
+        </div>
+      </div>
+
+      <a href="/products/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Products</a>
+      <a href="/pricing/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Pricing</a>
+      <a href="/case-studies/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Case Studies</a>
+      <a href="/blog/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Blog</a>
     </nav>
 
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 shrink-0">
       <a href={SITE.whatsapp} target="_blank" rel="noopener" class="hidden sm:inline-flex btn-ghost text-sm">WhatsApp</a>
       <a href="/contact/" class="btn-primary text-sm">Get a Quote</a>
+      <button id="mobile-toggle" class="lg:hidden btn-ghost !px-2" aria-label="Open menu">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
     </div>
   </div>
+
+  <!-- MOBILE NAV -->
+  <nav id="mobile-nav" class="hidden lg:hidden border-t border-ink-100 bg-white">
+    <div class="container-site py-4 space-y-2 text-sm">
+      <a href="/services/" class="block py-2 font-semibold">Services</a>
+      <a href="/modules/" class="block py-2 font-semibold">Odoo Modules</a>
+      <a href="/solutions/" class="block py-2 font-semibold">Solutions</a>
+      <a href="/countries/" class="block py-2 font-semibold">Countries</a>
+      <a href="/products/" class="block py-2 font-semibold">Products</a>
+      <a href="/pricing/" class="block py-2 font-semibold">Pricing</a>
+      <a href="/case-studies/" class="block py-2 font-semibold">Case Studies</a>
+      <a href="/blog/" class="block py-2 font-semibold">Blog</a>
+      <a href="/contact/" class="block py-2 font-semibold text-brand-700">Contact</a>
+    </div>
+  </nav>
 </header>
+<script>
+  const t = document.getElementById('mobile-toggle');
+  const n = document.getElementById('mobile-nav');
+  t?.addEventListener('click', () => n?.classList.toggle('hidden'));
+</script>

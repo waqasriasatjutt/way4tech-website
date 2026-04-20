@@ -1,0 +1,79 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, CASE_STUDIES } from '~/data/site';
+
+export function getStaticPaths() {
+  return CASE_STUDIES.map(c => ({ params: { slug: c.slug }, props: { cs: c } }));
+}
+
+const { cs } = Astro.props;
+const related = CASE_STUDIES.filter(c => c.slug !== cs.slug).slice(0, 3);
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: cs.title,
+  description: cs.tagline,
+  author: { '@type': 'Organization', name: SITE.name },
+  publisher: { '@type': 'Organization', name: SITE.name, logo: { '@type': 'ImageObject', url: `${SITE.url}/logo.svg` } },
+};
+---
+<Base title={cs.title} description={cs.tagline} structuredData={schema}>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/case-studies/" class="hover:text-white">Case Studies</a></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex flex-wrap gap-2">
+          <span class="chip !bg-white/10 !text-white">{cs.industry}</span>
+          <span class="chip !bg-white/10 !text-white">{cs.country}</span>
+        </div>
+        <h1 class="h1 mt-6">{cs.title}</h1>
+        <p class="lede mt-6 text-brand-100">{cs.tagline}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-10 lg:grid-cols-4">
+        {cs.metrics.map(m => (
+          <div class="card text-center">
+            <div class="text-4xl font-bold text-brand-700">{m.v}</div>
+            <div class="text-sm text-ink-600 mt-2">{m.k}</div>
+          </div>
+        ))}
+        <div class="card text-center">
+          <div class="text-4xl font-bold text-brand-700">✓</div>
+          <div class="text-sm text-ink-600 mt-2">On-time go-live</div>
+        </div>
+      </div>
+
+      <div class="mt-14 grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2 prose prose-ink max-w-none">
+          <h2>The challenge</h2>
+          <p>A fast-growing {cs.industry.toLowerCase()} group in {cs.country} needed to consolidate operations on a single modern ERP. Legacy systems, spreadsheets, and custom tools had fragmented their data and slowed reporting.</p>
+          <h2>The approach</h2>
+          <p>Way4Tech delivered a phased Odoo rollout — discovery, module configuration, data migration, user training, and go-live. We layered in localization (tax, e-invoicing, payroll) and built custom modules where needed. Senior engineers led the work end-to-end.</p>
+          <h2>The outcome</h2>
+          <p>Live and running. Unified reporting. Compliance handled. Users trained. And a partner — Way4Tech — staying on for ongoing support, upgrades, and new modules as the business grows.</p>
+          <blockquote>Way4Tech was the first Odoo team that didn't just configure modules. They engineered the whole thing like it mattered.</blockquote>
+        </div>
+        <aside>
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h3 class="text-lg font-semibold">Your turn?</h3>
+              <p class="mt-2 text-sm text-brand-100">Free scoping call to see how we'd approach your deployment.</p>
+              <a href="/contact/" class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Book a call</a>
+            </div>
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h3 class="text-sm font-semibold">More case studies</h3>
+              <ul class="mt-4 space-y-2 text-sm">
+                {related.map(r => (<li><a class="text-ink-700 hover:text-brand-600" href={`/case-studies/${r.slug}/`}>→ {r.title}</a></li>))}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,122 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, COUNTRIES, SERVICES, SOLUTIONS } from '~/data/site';
+
+export function getStaticPaths() {
+  return COUNTRIES.map(c => ({ params: { slug: c.slug }, props: { country: c } }));
+}
+
+const { country } = Astro.props;
+const others = COUNTRIES.filter(c => c.slug !== country.slug).slice(0, 8);
+const topServices = SERVICES.slice(0, 8);
+const topSolutions = SOLUTIONS.slice(0, 6);
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: `${SITE.name} — Odoo Partner in ${country.title}`,
+    description: country.tagline,
+    url: `${SITE.url}/countries/${country.slug}/`,
+    areaServed: country.title,
+    telephone: SITE.phone,
+    email: SITE.email,
+    priceRange: '$$$',
+    address: country.cities.map(c => ({ '@type': 'PostalAddress', addressLocality: c, addressCountry: country.title })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Countries', item: `${SITE.url}/countries/` },
+      { '@type': 'ListItem', position: 3, name: country.title, item: `${SITE.url}/countries/${country.slug}/` },
+    ],
+  },
+];
+---
+<Base
+  title={`Odoo Partner in ${country.title}`}
+  description={`${country.tagline} Odoo Gold Partner with full localization — tax, e-invoicing, payroll.`}
+  structuredData={schema}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 15% 10%, rgba(135,90,123,0.55) 0%, transparent 45%), radial-gradient(circle at 85% 90%, rgba(0,160,157,0.3) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-16 sm:py-24">
+      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/countries/" class="hover:text-white">Countries</a> / <span class="text-white">{country.title}</span></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="text-6xl">{country.flag}</div>
+        <h1 class="h1 mt-6">Odoo Partner in {country.title}</h1>
+        <p class="lede mt-6 text-ink-200">{country.tagline}</p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          {country.cities.map(c => <span class="chip !bg-white/10 !text-white">{c}</span>)}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <h2 class="h3">Odoo localization in {country.title}</h2>
+          <p class="mt-4 text-lg text-ink-700">Full Odoo localization for {country.title} — tax, e-invoicing, payroll, and labor law baked in from day one.</p>
+          <ul class="mt-6 space-y-3">
+            {country.highlights.map(h => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="text-ink-700">{h}</span>
+              </li>
+            ))}
+          </ul>
+
+          <h2 class="h3 mt-14">Our Odoo services in {country.title}</h2>
+          <div class="mt-6 grid gap-3 sm:grid-cols-2">
+            {topServices.map(s => (
+              <a href={`/services/${s.slug}/`} class="card group !p-4">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="text-xl">{s.icon}</span>
+                  <span class="font-semibold">{s.title}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          <h2 class="h3 mt-14">Industry solutions for {country.title}</h2>
+          <div class="mt-6 grid gap-3 sm:grid-cols-2">
+            {topSolutions.map(s => (
+              <a href={`/solutions/${s.slug}/`} class="card group !p-4">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="text-xl">{s.icon}</span>
+                  <span class="font-semibold">{s.title}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          <h2 class="h3 mt-14">Cities we serve in {country.title}</h2>
+          <p class="mt-3 text-ink-700">We deliver Odoo projects remotely and on-site across {country.cities.join(', ')} — with timezone overlap for every team.</p>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h3 class="text-lg font-semibold">Odoo in {country.title}?</h3>
+              <p class="mt-2 text-sm text-brand-100">Free scoping call with a senior consultant who knows {country.title}.</p>
+              <a href={`/contact/?country=${encodeURIComponent(country.title)}&source=countries/${country.slug}`} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Book a call</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h3 class="text-sm font-semibold">Other countries</h3>
+              <ul class="mt-4 space-y-2">
+                {others.map(o => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/countries/${o.slug}/`}>{o.flag} {o.title}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

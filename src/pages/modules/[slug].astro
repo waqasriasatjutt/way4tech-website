@@ -1,0 +1,125 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, MODULES } from '~/data/site';
+
+export function getStaticPaths() {
+  return MODULES.map(m => ({ params: { slug: m.slug }, props: { mod: m } }));
+}
+
+const { mod } = Astro.props;
+const related = MODULES.filter(m => m.slug !== mod.slug && m.category === mod.category).slice(0, 4);
+const allOthers = MODULES.filter(m => m.slug !== mod.slug).slice(0, 6);
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: mod.title,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Linux, Windows, macOS (Docker)',
+    description: mod.short,
+    offers: { '@type': 'Offer', priceCurrency: 'USD', price: '0', availability: 'https://schema.org/InStock' },
+    provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Odoo Modules', item: `${SITE.url}/modules/` },
+      { '@type': 'ListItem', position: 3, name: mod.title, item: `${SITE.url}/modules/${mod.slug}/` },
+    ],
+  },
+];
+---
+<Base
+  title={`${mod.title} — Odoo ${mod.title} Implementation`}
+  description={`${mod.short} Deployed across 18 countries by Way4Tech — Odoo Gold Partner.`}
+  structuredData={schema}
+>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/modules/" class="hover:text-white">Odoo Modules</a> / <span class="text-white">{mod.title}</span></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3">
+          <span class="text-5xl">{mod.icon}</span>
+          <span class="chip !bg-white/10 !text-white">{mod.category}</span>
+        </div>
+        <h1 class="h1 mt-6">{mod.title}</h1>
+        <p class="lede mt-6 text-brand-100">{mod.tagline}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <p class="text-lg text-ink-700">{mod.short}</p>
+
+          <h2 class="h3 mt-12">Key features</h2>
+          <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+            {mod.features.map(f => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="text-ink-700">{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <h2 class="h3 mt-14">How we deploy {mod.title}</h2>
+          <ol class="mt-6 space-y-6">
+            {[
+              {n:1, t:'Discovery', d:`30-minute call to map your ${mod.title.toLowerCase()} requirements.`},
+              {n:2, t:'Configuration', d:'Module setup, field customization, workflow mapping.'},
+              {n:3, t:'Data migration', d:'Clean migration from spreadsheets or legacy systems.'},
+              {n:4, t:'User training', d:'Role-based training with recorded sessions.'},
+              {n:5, t:'Go-live & hypercare', d:'Live rollout with 30 days of priority support.'},
+            ].map(x => (
+              <li class="flex gap-4">
+                <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-600 text-white text-sm font-bold">{x.n}</span>
+                <div>
+                  <div class="font-semibold">{x.t}</div>
+                  <p class="text-ink-600 mt-1">{x.d}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          {related.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Related {mod.category.toLowerCase()} modules</h2>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                {related.map(r => (
+                  <a href={`/modules/${r.slug}/`} class="card group !p-5">
+                    <div class="flex items-center gap-2"><span class="text-xl">{r.icon}</span><h3 class="font-semibold">{r.title}</h3></div>
+                    <p class="mt-2 text-sm text-ink-600">{r.tagline}</p>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h3 class="text-lg font-semibold">Deploy {mod.title}</h3>
+              <p class="mt-2 text-sm text-brand-100">Free 30-min scoping call. Fixed-price or T&M — your choice.</p>
+              <a href={`/contact/?service=${encodeURIComponent('Deploy ' + mod.title)}&source=modules/${mod.slug}`} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Get a quote</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h3 class="text-sm font-semibold">More modules</h3>
+              <ul class="mt-4 space-y-2">
+                {allOthers.map(r => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/modules/${r.slug}/`}>{r.icon} {r.title}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

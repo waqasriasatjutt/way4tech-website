@@ -3,12 +3,12 @@ import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
 ---
 <Base title="Contact" description="Get in touch with Way4Tech. Free 30-minute consultation for new projects. Email, WhatsApp, or book a call.">
-  <section class="bg-gradient-to-br from-brand-950 to-brand-800 text-white">
+  <section class="bg-ink-900 text-white">
     <div class="container-site py-16 sm:py-24">
       <div class="max-w-3xl">
-        <div class="eyebrow text-brand-200">Contact</div>
+        <div class="eyebrow text-brand-300">Contact</div>
         <h1 class="h1 mt-4">Let's talk about your project.</h1>
-        <p class="lede mt-6 text-ink-100">Free 30-minute consultation. No obligation, no sales pitch — just an honest conversation about what you're trying to build.</p>
+        <p class="lede mt-6 text-ink-300">Free 30-minute consultation. No obligation, no sales pitch — just an honest conversation about what you're trying to build.</p>
       </div>
     </div>
   </section>
@@ -21,6 +21,8 @@ import { SITE } from '~/data/site';
           <p class="mt-3 text-ink-600">We respond within 4 business hours.</p>
 
           <form id="contactForm" class="mt-8 space-y-5">
+            <!-- honeypot -->
+            <input type="text" name="_hp" tabindex="-1" autocomplete="off" class="absolute left-[-9999px] w-0 h-0 opacity-0" aria-hidden="true" />
             <div class="grid gap-5 sm:grid-cols-2">
               <div>
                 <label class="block text-sm font-medium text-ink-800">Your name *</label>
@@ -101,28 +103,47 @@ import { SITE } from '~/data/site';
       const result = document.getElementById('formResult');
       const btn = document.getElementById('submitBtn');
       if (!form) return;
+
+      // Prefill ?product= / ?service= / ?country= from URL
+      const qs = new URLSearchParams(location.search);
+      ['product','service','country','source'].forEach(k => {
+        const v = qs.get(k);
+        if (v) {
+          let input = form.querySelector('input[name="' + k + '"]');
+          if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = k;
+            form.appendChild(input);
+          }
+          input.value = v;
+        }
+      });
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         btn.disabled = true;
         btn.textContent = 'Sending...';
         const fd = new FormData(form);
         const data = Object.fromEntries(fd.entries());
+        data.website = location.href;
         try {
-          const resp = await fetch('https://formspree.io/f/xldnkpjv', {
+          const resp = await fetch('/api/lead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(data),
           });
-          if (resp.ok) {
+          const j = await resp.json().catch(() => ({}));
+          if (resp.ok && j.ok) {
             result.className = 'rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-900';
             result.textContent = 'Thanks! We got your message and will reply within 4 business hours.';
             form.reset();
           } else {
-            throw new Error('Network error');
+            throw new Error(j.error || 'Network error');
           }
         } catch (err) {
           result.className = 'rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-900';
-          result.textContent = 'Something went wrong. Please email info@way4tech.com directly.';
+          result.textContent = 'Could not submit right now. Please email info@way4tech.com or WhatsApp us.';
         }
         result.classList.remove('hidden');
         btn.disabled = false;

@@ -2,35 +2,58 @@
 import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
 import { getCollection } from 'astro:content';
+import { fetchOdooBlogPosts, type OdooBlogPost } from '~/lib/odoo';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.map(post => ({ params: { slug: post.slug }, props: { post } }));
+  const mdxPosts = await getCollection('blog');
+  const odooPosts = await fetchOdooBlogPosts();
+
+  const mdx = mdxPosts.map(p => ({
+    params: { slug: p.slug },
+    props: { kind: 'mdx' as const, post: p, odoo: null as OdooBlogPost | null },
+  }));
+  const odoo = odooPosts.map(p => ({
+    params: { slug: p.slug },
+    props: { kind: 'odoo' as const, post: null, odoo: p },
+  }));
+  return [...mdx, ...odoo];
 }
 
-const { post } = Astro.props;
-const { Content } = await post.render();
+const { kind, post, odoo } = Astro.props;
+
+const title = kind === 'odoo' ? odoo!.title : post!.data.title;
+const description = kind === 'odoo'
+  ? (odoo!.teaser || odoo!.subtitle || odoo!.title)
+  : post!.data.description;
+const author = kind === 'odoo' ? odoo!.author : post!.data.author;
+const date = kind === 'odoo' ? odoo!.postDate : post!.data.date;
+const tags = kind === 'odoo' ? odoo!.tags : post!.data.tags;
+
+const Content = kind === 'mdx' ? (await post!.render()).Content : null;
 
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'Article',
-  headline: post.data.title,
-  description: post.data.description,
-  author: { '@type': 'Person', name: post.data.author },
-  datePublished: post.data.date.toISOString(),
-  publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  headline: title,
+  description,
+  author: { '@type': 'Person', name: author },
+  datePublished: date.toISOString(),
+  dateModified: (kind === 'odoo' ? odoo!.writeDate : date).toISOString(),
+  publisher: { '@type': 'Organization', name: SITE.name, logo: { '@type': 'ImageObject', url: `${SITE.url}/logo.svg` } },
 };
 ---
-<Base title={post.data.title} description={post.data.description} structuredData={schema}>
-  <section class="bg-gradient-to-br from-brand-950 to-brand-800 text-white">
+<Base title={title} description={description} structuredData={schema}>
+  <section class="bg-odoo-gradient text-white">
     <div class="container-site py-14">
-      <a href="/blog/" class="inline-flex items-center gap-1 text-sm text-brand-200 hover:text-white">← All posts</a>
+      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/blog/" class="hover:text-white">Blog</a></nav>
       <div class="mt-6 max-w-3xl">
         <div class="flex gap-2 flex-wrap">
-          {post.data.tags.map(t => <span class="text-xs font-medium text-brand-100 bg-white/10 rounded-full px-2.5 py-0.5">{t}</span>)}
+          {tags.map(t => <span class="text-xs font-medium text-brand-100 bg-white/10 rounded-full px-2.5 py-0.5">{t}</span>)}
+          {kind === 'odoo' && <span class="text-[10px] font-semibold uppercase tracking-wider text-accent-300 bg-white/5 rounded-full px-2.5 py-0.5">Live from Odoo</span>}
         </div>
-        <h1 class="mt-5 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">{post.data.title}</h1>
-        <p class="mt-4 text-brand-100">{post.data.author} · {post.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <h1 class="mt-5 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">{title}</h1>
+        {kind === 'odoo' && odoo!.subtitle && (<p class="mt-3 text-lg text-brand-100">{odoo!.subtitle}</p>)}
+        <p class="mt-4 text-brand-100">{author} · {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
       </div>
     </div>
   </section>
@@ -43,14 +66,16 @@ const schema = {
                   prose-strong:text-ink-900
                   prose-code:text-brand-700 prose-code:bg-brand-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
                   prose-code:before:content-none prose-code:after:content-none
-                  prose-pre:bg-ink-950 prose-pre:text-ink-100">
-        <Content />
+                  prose-pre:bg-ink-950 prose-pre:text-ink-100
+                  prose-img:rounded-xl">
+        {kind === 'mdx' && Content && <Content />}
+        {kind === 'odoo' && <Fragment set:html={odoo!.contentHtml} />}
       </div>
 
       <div class="mt-16 rounded-2xl bg-ink-50 p-8 text-center">
-        <h3 class="text-xl font-semibold">Have a project on Odoo?</h3>
-        <p class="mt-2 text-ink-600">We'd love to help. Free 30-minute consultation, no obligation.</p>
-        <a href="/contact/" class="btn-primary mt-6">Talk to us</a>
+        <h3 class="text-xl font-semibold">Have an Odoo project?</h3>
+        <p class="mt-2 text-ink-600">Free 30-minute consultation, no obligation.</p>
+        <a href={`/contact/?source=blog/${Astro.params.slug}`} class="btn-primary mt-6">Talk to us</a>
       </div>
     </div>
   </article>

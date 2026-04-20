@@ -9,27 +9,38 @@ export function getStaticPaths() {
 const { service } = Astro.props;
 const related = SERVICES.filter(s => s.slug !== service.slug).slice(0, 3);
 
-const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'Service',
-  serviceType: service.title,
-  provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-  description: service.short,
-  areaServed: ['Pakistan', 'United Arab Emirates', 'Saudi Arabia'],
-};
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    serviceType: service.title,
+    provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+    description: service.short,
+    areaServed: SITE.locations,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Services', item: `${SITE.url}/services/` },
+      { '@type': 'ListItem', position: 3, name: service.title, item: `${SITE.url}/services/${service.slug}/` },
+    ],
+  },
+];
 ---
 <Base
   title={`${service.title} — Odoo ${service.title}`}
   description={service.short}
   structuredData={schema}
 >
-  <section class="bg-gradient-to-br from-brand-950 to-brand-800 text-white">
+  <section class="bg-odoo-gradient text-white">
     <div class="container-site py-16 sm:py-24">
-      <a href="/services/" class="inline-flex items-center gap-1 text-sm text-brand-200 hover:text-white">← All services</a>
-      <div class="mt-4 max-w-3xl">
-        <div class="text-5xl">{service.icon}</div>
+      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/services/" class="hover:text-white">Services</a> / <span class="text-white">{service.title}</span></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3"><span class="text-5xl">{service.icon}</span><span class="chip !bg-white/10 !text-white">{service.category}</span></div>
         <h1 class="h1 mt-6">{service.title}</h1>
-        <p class="lede mt-6 text-ink-100">{service.tagline}</p>
+        <p class="lede mt-6 text-brand-100">{service.tagline}</p>
       </div>
     </div>
   </section>
@@ -75,7 +86,7 @@ const schema = {
             <div class="rounded-2xl border border-ink-200 bg-white p-6">
               <h3 class="text-lg font-semibold">Ready to start?</h3>
               <p class="mt-2 text-sm text-ink-600">Tell us about your project — free consultation, no obligation.</p>
-              <a href="/contact/" class="btn-primary w-full mt-5">Get a quote</a>
+              <a href={`/contact/?service=${encodeURIComponent(service.title)}&source=services/${service.slug}`} class="btn-primary w-full mt-5">Get a quote</a>
               <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3">WhatsApp</a>
             </div>
 

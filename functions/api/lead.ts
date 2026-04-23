@@ -124,13 +124,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       email_from: email,
       phone: body.phone || '',
       description: descLines.join('\n'),
-      type: 'lead',
+      type: 'opportunity',
       tag_ids: [],
     };
     if (env.LEAD_SALESPERSON_ID) vals.user_id = Number(env.LEAD_SALESPERSON_ID);
     if (env.LEAD_TEAM_ID) vals.team_id = Number(env.LEAD_TEAM_ID);
 
-    const { data: leadId } = await odooCall(
+    const { data: leadId, cookie: c2 } = await odooCall(
       env,
       '/web/dataset/call_kw',
       {
@@ -141,6 +141,38 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       },
       cookie,
     );
+
+    const chatter =
+      `Website form submission\n` +
+      `\n` +
+      `Name: ${name}\n` +
+      (body.company ? `Company: ${body.company}\n` : '') +
+      `Email: ${email}\n` +
+      (body.phone ? `Phone: ${body.phone}\n` : '') +
+      (body.service ? `Service: ${body.service}\n` : '') +
+      (body.product ? `Product: ${body.product}\n` : '') +
+      (body.country ? `Country: ${body.country}\n` : '') +
+      (body.source ? `Source page: ${body.source}\n` : '') +
+      (body.website ? `Submitted from: ${body.website}\n` : '') +
+      `\n` +
+      `Message:\n` +
+      message;
+
+    await odooCall(
+      env,
+      '/web/dataset/call_kw',
+      {
+        model: 'crm.lead',
+        method: 'message_post',
+        args: [[leadId]],
+        kwargs: {
+          body: chatter,
+          message_type: 'comment',
+          subtype_xmlid: 'mail.mt_comment',
+        },
+      },
+      c2,
+    ).catch(() => {});
 
     return json({ ok: true, id: leadId });
   } catch (e: any) {

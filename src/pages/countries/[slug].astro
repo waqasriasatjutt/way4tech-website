@@ -303,9 +303,16 @@ faqs.push({
    derived from the ISO region subtag in the country's lang code. We
    do not claim an Arabic, Turkish, German or French version exists. */
 const regionSubtag = String(country.lang || '').split('-')[1] || '';
-const hreflangAlternates = regionSubtag
-  ? [{ lang: `en-${regionSubtag.toUpperCase()}`, href: pageUrl }]
-  : [];
+/* The eight Arabic-market pages are real alternates of these pages, so the pair
+   is declared in both directions. Only these eight: claiming an Arabic version
+   that does not exist would be worse than claiming none. */
+const AR_MARKETS = ['saudi-arabia', 'uae', 'qatar', 'kuwait', 'oman', 'bahrain', 'egypt', 'jordan'];
+const hreflangAlternates = [
+  ...(regionSubtag ? [{ lang: `en-${regionSubtag.toUpperCase()}`, href: pageUrl }] : []),
+  ...(AR_MARKETS.includes(country.slug)
+    ? [{ lang: 'ar', href: `${SITE.url}/ar/${country.slug}/` }, { lang: 'en', href: pageUrl }]
+    : []),
+];
 
 const metaDescription = `${country.tagline} Odoo Gold Partner for implementation, localization and support in ${plainName}.`;
 

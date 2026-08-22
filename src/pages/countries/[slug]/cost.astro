@@ -64,8 +64,11 @@ const openQuestions = typeof detail?.openQuestions === 'number' ? detail.openQue
    any line that pairs a currency amount with a product word is dropped
    whole rather than edited. Thresholds and penalties in tax text are not
    product prices and are unaffected: they carry no product word. */
-const PRICE_AMOUNT = /(usd|eur|gbp|us\$|\$|€|£)\s?[0-9][0-9,.]*/i;
-const PRODUCT_WORD = /(module|modules|connector|connectors|apps store|licen[cs]|subscription|price anchor|lists at|per user)/i;
+/* Both orders matter. Currency-first catches "USD 239", number-first catches
+   "239 USD" and "450 US dollars", which the original pattern missed and which
+   put three third-party licence prices live. */
+const PRICE_AMOUNT = /(?:(?:usd|eur|gbp|us\$|\$|€|£)\s?[0-9][0-9,.]*)|(?:[0-9][0-9,.]*\s*(?:usd|eur|gbp|us\s*dollars?|dollars?|euros?|pounds?))/i;
+const PRODUCT_WORD = /(module|modules|connector|connectors|bridge|plugin|add-?on|apps?[ -]store|licen[cs]|subscription|price anchor|lists at|per user|l10n_)/i;
 
 function safeLine(s: string): boolean {
   const t = String(s || '').trim();

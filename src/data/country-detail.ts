@@ -714,7 +714,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
    ],
    "custom": [
     "E-invoicing. There is no UAE e-invoicing module in the official Odoo localization and no UAE page in Odoo's e-invoicing documentation. Odoo's own Peppol support sends BIS Billing 3.0, XRechnung CIUS and NLCIUS. PINT AE is not among them.",
-    "The connection to an Accredited Service Provider is a third-party module or a build. As a price anchor, a paid Odoo 19 module that generates PINT AE UBL 2.1 and submits to one provider's Peppol access point lists at around USD 1,855, before your own mapping and testing work.",
     "VAT filing stays manual. The FTA report exports to Excel and PDF; there is no EmaraTax submission in the localization.",
     "Payments. Stripe, Amazon Payment Services and Paymob are the providers shipped with Odoo 19 that cover the UAE.",
     "Couriers. Only DHL Express, FedEx and UPS are native for this market. Aramex and the UAE last-mile operators need paid connectors or a build."
@@ -1337,7 +1336,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
     "Almost all of it. l10n_kw is a chart of accounts and nothing more. There is no Kuwait tax engine to configure because there is no VAT and no excise.",
     "The 5% contract retention and tax clearance certificate cycle. Holding 5% of each payment, tracking it per contract and releasing it against a certificate is an AP and AR process build with its own reporting.",
     "The four-instalment tax payment schedule on the 15th of the fourth, sixth, ninth and twelfth months after year end, plus the three-months-and-15-days return deadline.",
-    "Payroll. Kuwait is not in Odoo's payroll localization list. PIFSS contributions with their two separate ceilings, the wage protection salary file with Civil ID and Kuwaiti IBAN validation, and end of service indemnity accrual all need paid apps store modules or a custom build. Paid Odoo 19 modules for PIFSS and the wage file exist at roughly USD 117 and USD 127.",
     "Three-decimal discipline beyond the currency record: product prices, unit prices, tax computation and rounding, and any import or price list mapping.",
     "DMTT reporting for in-scope multinational groups. Nothing in Odoo produces GloBE-ready data."
    ]
@@ -2274,7 +2272,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
     "PKR currency and standard Odoo accounting on top"
    ],
    "custom": [
-    "FBR digital invoicing. Nothing in core Odoo talks to the FBR or PRAL API. Pakistan is listed among Odoo's countries but has no fiscal localization documentation page, unlike India, Saudi Arabia and the UAE. In practice you buy one of the apps-store FBR modules, from a free one by Zalino Tech to paid ones between roughly 25 and 450 US dollars, or you build the integration.",
     "Unique FBR invoice number, the 7x7 mm QR code, the digital signature, the software registration number on the invoice layout, and the 72-hour edit window with Commissioner approval after that.",
     "Provincial sales tax on services. Separate registration, rate set and return per provincial authority, and the input tax split between the federal and provincial regimes.",
     "Section 153 withholding driven by vendor ATL status, with the ATL and non-ATL rate pair per payment type, plus the quarterly withholding statement.",
@@ -4181,7 +4178,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
    ],
    "custom": [
     "UK payroll. Odoo ships no official UK payroll localization: the payroll localizations documented for v19 are Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, UAE and the US. The documented UK route is the Employment Hero Payroll integration. RTI submissions, auto-enrolment assessment and statutory payments are not in the standard product.",
-    "Making Tax Digital for Income Tax. No official module. A paid third-party bridge exists (l10n_uk_mtd_itsa, Pokutsoft, 244.80 USD).",
     "iXBRL statutory accounts. Odoo does not tag accounts for HMRC or Companies House. That stays with the accountant's software, which matters more now that HMRC's free filing service closed on 31 March 2026 and Companies House goes software-only in April 2028.",
     "Multi-company HMRC submissions. Only one company and one user can be connected to HMRC at a time, so group filings have to be run in sequence.",
     "The 2029 e-invoicing build cannot be scoped yet. Peppol is confirmed as the network but the format, phasing and legacy EDI treatment come with the Budget 2026 roadmap."
@@ -4229,10 +4225,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
    },
    {
     "claim": "2026 contribution ceilings (Sozialversicherungsrechengroessen-Verordnung 2026): general pension insurance 8,450 euro a month or 101,400 euro a year; miners' pension insurance 10,400 euro a month or 124,800 euro a year; health insurance earnings limits of 77,400 euro a year and 69,750 euro a year (5,812.50 a month); Bezugsgroesse 3,955 euro a month or 47,460 euro a year.",
-    "verified": true
-   },
-   {
-    "claim": "Odoo has no official German payroll localization. The payroll localizations documented for v19 are Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, the UAE and the US. Third-party paid modules exist, for example Pokutsoft's Germany Payroll Lohn at 239 USD.",
     "verified": true
    }
   ],
@@ -4505,7 +4497,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
     "XRechnung CIUS and Peppol BIS Billing 3.0 among the standard e-invoicing formats, with Odoo acting as its own Peppol access point and SMP and Germany on the eligible list"
    ],
    "custom": [
-    "German payroll. No official localization exists. Lohnsteuer-Anmeldung, DEUEV notifications and health fund reporting are not in the standard product. A paid third-party module (Germany Payroll Lohn, 239 USD) is the only shipped option found.",
     "ELSTER filing. Odoo produces the Umsatzsteuervoranmeldung report but does not transmit it to ELSTER. Third-party export modules exist.",
     "Leitweg-ID for federal B2G invoices. Handled by a third-party module rather than the standard localization.",
     "E-Bilanz under section 5b EStG. Not in Odoo. It stays with the tax adviser's software.",
@@ -5202,7 +5193,6 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
     "Nexus monitoring. Nothing in Odoo tells you that you crossed a state's threshold, and thresholds keep moving as states drop the 200-transaction test. That is a reporting build or a subscription to a nexus service.",
     "Sales tax return filing. Odoo prepares data; the return goes through Avalara or a filing service.",
     "Payroll tax filing and deposits. Odoo produces payslips and journal entries. Forms 941, 940, W-2 and W-3, EFTPS deposits, state withholding registrations and SUTA are not in the box. Most US Odoo clients keep ADP, Gusto or Paychex and use l10n_us_hr_payroll_account for the postings.",
-    "1099 e-filing transmission. l10n_us_1099 prepares data for a third-party filer, it does not transmit to the IRS. The new 2,000 dollar 1099-NEC threshold for 2026 also means the vendor flagging logic needs revisiting.",
     "Federal government invoicing. There is no IPP connector and no DBNAlliance connector in Odoo, and Odoo's Peppol support does not list the United States as an eligible country. Federal vendors submit into IPP separately."
    ]
   },

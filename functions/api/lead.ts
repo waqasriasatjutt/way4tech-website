@@ -32,13 +32,38 @@ interface LeadInput {
   product?: string;
   website?: string;
   country?: string;
+  country_code?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  referrer?: string;
+  landing_page?: string;
   _hp?: string; // honeypot
+}
+
+/** Mutable session holder so every lookup reuses (and refreshes) one Odoo cookie. */
+interface Session {
+  cookie?: string;
 }
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const;
+type UtmKey = (typeof UTM_KEYS)[number];
+
+/** Site country titles that res.country spells differently. Tried only after the plain name misses. */
+const COUNTRY_ALIASES: Record<string, string[]> = {
+  turkey: ['Türkiye', 'Turkiye'],
+  uae: ['United Arab Emirates'],
+  ksa: ['Saudi Arabia'],
+  usa: ['United States'],
+  uk: ['United Kingdom'],
 };
 
 const json = (body: unknown, status = 200) =>
@@ -62,9 +87,158 @@ async function odooCall(
     body: JSON.stringify({ jsonrpc: '2.0', method: 'call', params }),
   });
   const data = await resp.json<any>();
-  if (data.error) throw new Error(`Odoo error: ${data.error.data?.message || data.error.message}`);
+  if (data.error) {
+    const err = new Error(`Odoo error: ${data.error.data?.message || data.error.message}`);
+    // Odoo answered and rolled the transaction back, so a retry cannot duplicate a record.
+    (err as any).odooError = true;
+    throw err;
+  }
   const setCookie = resp.headers.get('set-cookie');
   return { data: data.result, cookie: setCookie || cookie };
+}
+
+/** search_read through the same call_kw helper, keeping the session cookie fresh. */
+async function searchRead(
+  env: Env,
+  session: Session,
+  model: string,
+  domain: unknown[],
+  fields: string[],
+  limit: number,
+): Promise<any[]> {
+  const { data, cookie } = await odooCall(
+    env,
+    '/web/dataset/call_kw',
+    { model, method: 'search_read', args: [domain, fields], kwargs: { limit } },
+    session.cookie,
+  );
+  session.cookie = cookie;
+  return Array.isArray(data) ? data : [];
+}
+
+/** Trim, drop newlines and cap a free-text value before it becomes a record name. */
+function tidy(value: unknown, max = 120): string {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+/**
+ * Site country titles are marketing labels ("Saudi Arabia (KSA)") while res.country holds
+ * plain names. Drop any parenthetical suffix and collapse the whitespace, then match on
+ * name, then on a known alias, then on the 2-letter code. No match leaves country_id unset.
+ */
+function normaliseCountry(raw: unknown): string {
+  return tidy(raw, 80).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+async function resolveCountryId(
+  env: Env,
+  session: Session,
+  rawCountry: unknown,
+  rawCode: unknown,
+): Promise<number | null> {
+  const clean = normaliseCountry(rawCountry);
+  const explicitCode = tidy(rawCode, 8).toUpperCase();
+  const code = /^[A-Z]{2}$/.test(explicitCode)
+    ? explicitCode
+    : /^[A-Za-z]{2}$/.test(clean)
+    ? clean.toUpperCase()
+    : '';
+
+  const domains: unknown[][] = [];
+  if (clean) domains.push([['name', '=ilike', clean]]);
+  for (const alias of COUNTRY_ALIASES[clean.toLowerCase()] || []) {
+    domains.push([['name', '=ilike', alias]]);
+  }
+  if (code) domains.push([['code', '=', code]]);
+
+  for (const domain of domains) {
+    try {
+      const rows = await searchRead(env, session, 'res.country', domain, ['id'], 1);
+      if (rows.length && rows[0].id) return rows[0].id;
+    } catch {
+      // try the next domain; a country miss must never cost us the lead
+    }
+  }
+
+  // Loose match only when it is unambiguous, so we never file a lead under the wrong market.
+  if (clean.length >= 5) {
+    try {
+      const rows = await searchRead(env, session, 'res.country', [['name', 'ilike', clean]], ['id'], 2);
+      if (rows.length === 1 && rows[0].id) return rows[0].id;
+    } catch {
+      // fall through
+    }
+  }
+  return null;
+}
+
+/** Look a record up by name and create it only if missing. Returns null if both fail. */
+async function findOrCreateByName(
+  env: Env,
+  session: Session,
+  model: string,
+  rawName: string,
+): Promise<number | null> {
+  const name = tidy(rawName, 100);
+  if (!name) return null;
+  const domain = [['name', '=ilike', name]];
+
+  try {
+    const rows = await searchRead(env, session, model, domain, ['id'], 1);
+    if (rows.length && rows[0].id) return rows[0].id;
+  } catch {
+    // fall through to create
+  }
+
+  try {
+    const { data, cookie } = await odooCall(
+      env,
+      '/web/dataset/call_kw',
+      { model, method: 'create', args: [{ name }], kwargs: {} },
+      session.cookie,
+    );
+    session.cookie = cookie;
+    if (typeof data === 'number') return data;
+    if (Array.isArray(data) && typeof data[0] === 'number') return data[0];
+  } catch {
+    // A unique-name constraint means it now exists, so read it back once.
+    try {
+      const rows = await searchRead(env, session, model, domain, ['id'], 1);
+      if (rows.length && rows[0].id) return rows[0].id;
+    } catch {
+      // give up on the tag, keep the lead
+    }
+  }
+  return null;
+}
+
+/** "countries/saudi-arabia" or "/services/erp/" both reduce to the section slug. */
+function sourceSection(raw: unknown): string {
+  const first = tidy(raw, 120).replace(/^\/+/, '').split(/[/?#]/)[0] || '';
+  return first.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40);
+}
+
+/** UTM values off the body, falling back to the query string of the submitted page URL. */
+function collectUtm(body: LeadInput): Partial<Record<UtmKey, string>> {
+  const out: Partial<Record<UtmKey, string>> = {};
+  for (const key of UTM_KEYS) {
+    const v = tidy(body[key]);
+    if (v) out[key] = v;
+  }
+  if (body.website) {
+    try {
+      const qs = new URL(body.website).searchParams;
+      for (const key of UTM_KEYS) {
+        if (out[key]) continue;
+        const v = tidy(qs.get(key));
+        if (v) out[key] = v;
+      }
+    } catch {
+      // not a parseable URL, ignore
+    }
+  }
+  return out;
 }
 
 export const onRequestOptions: PagesFunction<Env> = () =>
@@ -100,6 +274,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       login: env.ODOO_USER,
       password: env.ODOO_PASSWORD,
     });
+    const session: Session = { cookie };
+
+    const utm = collectUtm(body);
+    const utmLines = UTM_KEYS.filter((k) => utm[k]).map((k) => `${k}: ${utm[k]}`);
 
     const descLines = [
       body.service ? `Need: ${body.service}` : '',
@@ -107,6 +285,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       body.country ? `Country: ${body.country}` : '',
       body.source ? `Source: ${body.source}` : '',
       body.website ? `Website: ${body.website}` : '',
+      body.landing_page ? `Landing page: ${body.landing_page}` : '',
+      body.referrer ? `Referrer: ${body.referrer}` : '',
+      ...utmLines,
       '',
       message,
     ].filter(Boolean);
@@ -130,17 +311,64 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     if (env.LEAD_SALESPERSON_ID) vals.user_id = Number(env.LEAD_SALESPERSON_ID);
     if (env.LEAD_TEAM_ID) vals.team_id = Number(env.LEAD_TEAM_ID);
 
-    const { data: leadId, cookie: c2 } = await odooCall(
-      env,
-      '/web/dataset/call_kw',
-      {
-        model: 'crm.lead',
-        method: 'create',
-        args: [vals],
-        kwargs: {},
-      },
-      cookie,
-    );
+    // Everything below is reporting metadata. It is resolved before the create so a bad
+    // lookup drops the field instead of the lead, and it is dropped wholesale on retry.
+    const extra: Record<string, unknown> = {};
+    let countryId: number | null = null;
+    try {
+      if (body.country || body.country_code) {
+        countryId = await resolveCountryId(env, session, body.country, body.country_code);
+        if (countryId) extra.country_id = countryId;
+      }
+
+      const tagIds: number[] = [];
+      const countryLabel = normaliseCountry(body.country);
+      if (countryLabel) {
+        const id = await findOrCreateByName(env, session, 'crm.tag', `country:${countryLabel}`);
+        if (id) tagIds.push(id);
+      }
+      const section = sourceSection(body.source);
+      if (section) {
+        const id = await findOrCreateByName(env, session, 'crm.tag', `web:${section}`);
+        if (id) tagIds.push(id);
+      }
+      if (tagIds.length) extra.tag_ids = [[6, 0, tagIds]];
+
+      // crm.lead inherits utm.mixin, so source_id / medium_id / campaign_id are native.
+      // utm_term and utm_content have no native field and stay in the description only.
+      if (utm.utm_source) {
+        const id = await findOrCreateByName(env, session, 'utm.source', utm.utm_source);
+        if (id) extra.source_id = id;
+      }
+      if (utm.utm_medium) {
+        const id = await findOrCreateByName(env, session, 'utm.medium', utm.utm_medium);
+        if (id) extra.medium_id = id;
+      }
+      if (utm.utm_campaign) {
+        const id = await findOrCreateByName(env, session, 'utm.campaign', utm.utm_campaign);
+        if (id) extra.campaign_id = id;
+      }
+    } catch {
+      // keep whatever resolved, carry on with the create
+    }
+
+    const createLead = (payload: Record<string, unknown>) =>
+      odooCall(
+        env,
+        '/web/dataset/call_kw',
+        { model: 'crm.lead', method: 'create', args: [payload], kwargs: {} },
+        session.cookie,
+      );
+
+    let leadId: any;
+    let c2: string | undefined;
+    try {
+      ({ data: leadId, cookie: c2 } = await createLead({ ...vals, ...extra }));
+    } catch (e: any) {
+      // Last resort: if the metadata is what Odoo rejected, still file the lead without it.
+      if (!e?.odooError || !Object.keys(extra).length) throw e;
+      ({ data: leadId, cookie: c2 } = await createLead(vals));
+    }
 
     const chatter =
       `Website form submission\n` +
@@ -152,8 +380,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       (body.service ? `Service: ${body.service}\n` : '') +
       (body.product ? `Product: ${body.product}\n` : '') +
       (body.country ? `Country: ${body.country}\n` : '') +
+      (body.country && !countryId ? `Country not matched in Odoo\n` : '') +
       (body.source ? `Source page: ${body.source}\n` : '') +
       (body.website ? `Submitted from: ${body.website}\n` : '') +
+      (utmLines.length ? utmLines.join('\n') + '\n' : '') +
       `\n` +
       `Message:\n` +
       message;
@@ -171,7 +401,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           subtype_xmlid: 'mail.mt_comment',
         },
       },
-      c2,
+      c2 || session.cookie,
     ).catch(() => {});
 
     return json({ ok: true, id: leadId });

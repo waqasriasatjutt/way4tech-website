@@ -4,12 +4,19 @@ import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
 import '~/styles/global.css';
 
+export interface HreflangAlternate {
+  lang: string;
+  href: string;
+}
+
 export interface Props {
   title?: string;
   description?: string;
   image?: string;
   canonical?: string;
   structuredData?: object | object[];
+  noindex?: boolean;
+  hreflang?: HreflangAlternate[];
 }
 
 const {
@@ -18,11 +25,23 @@ const {
   image = '/og.png',
   canonical,
   structuredData,
+  noindex = false,
+  hreflang,
 } = Astro.props;
 
-const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} — ${SITE.tagline}`;
+const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} - ${SITE.tagline}`;
 const canonicalURL = canonical || new URL(Astro.url.pathname, SITE.url).toString();
 const imageURL = new URL(image, SITE.url).toString();
+const imageAlt = title ? `${title} - ${SITE.name}` : `${SITE.name} - Odoo Gold Partner`;
+const robots = noindex ? 'noindex,follow' : 'index,follow';
+const alternates = Array.isArray(hreflang) ? hreflang : [];
+
+// twitter:site is only emitted if a handle actually exists in SITE.social.
+const social = SITE.social as Record<string, string | undefined>;
+const twitterHandleRaw = social.twitter || social.x || '';
+const twitterHandle = twitterHandleRaw ? (twitterHandleRaw.startsWith('@') ? twitterHandleRaw : `@${twitterHandleRaw}`) : '';
+
+const fontHref = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
 
 const orgSchema = {
   '@context': 'https://schema.org',
@@ -33,7 +52,7 @@ const orgSchema = {
   logo: new URL('/logo.svg', SITE.url).toString(),
   description: SITE.description,
   foundingDate: '2016',
-  slogan: 'Odoo Gold Partner — implementation, customization, SaaS, support.',
+  slogan: 'Odoo Gold Partner - implementation, customization, SaaS, support.',
   areaServed: SITE.locations,
   contactPoint: [{
     '@type': 'ContactPoint',
@@ -42,12 +61,6 @@ const orgSchema = {
     contactType: 'sales',
     availableLanguage: ['English', 'Arabic', 'Urdu'],
   }],
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.9',
-    reviewCount: '127',
-    bestRating: '5',
-  },
   sameAs: [SITE.social.linkedin, SITE.social.github],
 };
 
@@ -63,27 +76,43 @@ const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData :
     <meta name="theme-color" content="#714B67" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalURL} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <meta name="robots" content="index,follow" />
-    <meta name="keywords" content="Odoo, Odoo partner, Odoo Gold Partner, Odoo implementation, Odoo customization, Odoo ERP, Odoo Saudi Arabia, Odoo UAE, Odoo Qatar, Odoo Kuwait, Odoo Oman, Odoo Bahrain, Odoo Pakistan, Odoo India, Odoo Turkey, Odoo Egypt, Odoo Jordan, Odoo UK, Odoo Germany, Odoo France, Odoo USA, Odoo Canada, Odoo Australia, Odoo developer, Odoo SaaS, Odoo HRMS, Odoo Payroll, Odoo POS, Odoo MRP, Odoo manufacturing, Odoo hospital management, Odoo clinic, Odoo pharmacy, Odoo restaurant, Odoo retail, Odoo construction, Odoo real estate, Odoo school, Odoo logistics, ZATCA Phase 2, FBR POS, GST e-invoicing, ERP Riyadh, ERP Jeddah, ERP Dubai, ERP Abu Dhabi, ERP Doha, ERP Kuwait City, ERP Karachi, ERP Lahore, ERP Mumbai, ERP London, ERP Berlin, hire Odoo developer" />
+    <meta name="robots" content={robots} />
+
+    {alternates.length > 0 && (
+      <>
+        {alternates.map((alt) => (
+          <link rel="alternate" hreflang={alt.lang} href={alt.href} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={canonicalURL} />
+      </>
+    )}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={imageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
 
     <meta name="twitter:card" content="summary_large_image" />
+    {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageURL} />
+    <meta name="twitter:image:alt" content={imageAlt} />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href={fontHref} onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href={fontHref} /></noscript>
 
     {sdArray.map((sd) => (
       <script type="application/ld+json" set:html={JSON.stringify(sd)} />

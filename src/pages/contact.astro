@@ -1,14 +1,55 @@
 ---
 import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
+
+const pageUrl = `${SITE.url}/contact/`;
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: `Contact ${SITE.name}`,
+    url: pageUrl,
+    description: 'Talk to Way4Tech about an Odoo project. Free 30-minute consultation, reply within 4 business hours.',
+    inLanguage: 'en',
+    isPartOf: { '@type': 'WebSite', name: SITE.name, url: SITE.url },
+    mainEntity: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      email: SITE.email,
+      telephone: SITE.phone,
+      areaServed: SITE.locations,
+      contactPoint: [{
+        '@type': 'ContactPoint',
+        contactType: 'sales',
+        email: SITE.email,
+        telephone: SITE.phone,
+        availableLanguage: ['English', 'Arabic', 'Urdu'],
+      }],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Contact', item: pageUrl },
+    ],
+  },
+];
 ---
-<Base title="Contact" description="Get in touch with Way4Tech. Free 30-minute consultation for new projects. Email, WhatsApp, or book a call.">
+<Base
+  title="Contact"
+  description="Get in touch with Way4Tech. Free 30-minute consultation for new projects. Email, WhatsApp, or book a call."
+  structuredData={schema}
+>
   <section class="bg-ink-900 text-white">
     <div class="container-site py-16 sm:py-24">
       <div class="max-w-3xl">
         <div class="eyebrow text-brand-300">Contact</div>
         <h1 class="h1 mt-4">Let's talk about your project.</h1>
-        <p class="lede mt-6 text-ink-300">Free 30-minute consultation. No obligation, no sales pitch — just an honest conversation about what you're trying to build.</p>
+        <p class="lede mt-6 text-ink-300">Free 30-minute consultation. No obligation, no sales pitch: just an honest conversation about what you're trying to build.</p>
       </div>
     </div>
   </section>
@@ -68,6 +109,15 @@ import { SITE } from '~/data/site';
             <button type="submit" class="btn-primary" id="submitBtn">Send message</button>
             <p class="text-xs text-ink-500">We'll never share your info. Reply within 4 business hours.</p>
 
+            <noscript>
+              <p class="rounded-lg border border-ink-200 bg-ink-50 p-4 text-sm text-ink-700">
+                This form needs JavaScript to send. With it switched off, email
+                <a class="font-medium text-brand-700 hover:text-brand-800" href={`mailto:${SITE.email}`}>{SITE.email}</a>
+                or message us on <a class="font-medium text-brand-700 hover:text-brand-800" href={SITE.whatsapp} rel="noopener">WhatsApp</a>
+                and we reply within 4 business hours.
+              </p>
+            </noscript>
+
             <div id="formResult" class="hidden"></div>
           </form>
         </div>
@@ -104,21 +154,78 @@ import { SITE } from '~/data/site';
       const btn = document.getElementById('submitBtn');
       if (!form) return;
 
-      // Prefill ?product= / ?service= / ?country= from URL
+      const STORE_KEY = 'w4t_attribution';
+      const UTM_KEYS = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
+      // Fields worth remembering across a session. 'service' is deliberately absent: it would
+      // silently override the visitor's own dropdown choice on a later visit.
+      const TOUCH_KEYS = UTM_KEYS.concat(['source','country','product']);
+
       const qs = new URLSearchParams(location.search);
-      ['product','service','country','source'].forEach(k => {
+      const param = (k) => {
         const v = qs.get(k);
-        if (v) {
-          let input = form.querySelector('input[name="' + k + '"]');
-          if (!input) {
-            input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = k;
-            form.appendChild(input);
-          }
-          input.value = v;
-        }
+        return v ? String(v).trim().slice(0, 300) : '';
+      };
+
+      const isExternal = (url) => {
+        if (!url) return false;
+        try { return new URL(url, location.href).origin !== location.origin; } catch (e) { return false; }
+      };
+
+      // sessionStorage throws outright in some privacy modes, so every touch is guarded.
+      const readTouch = () => {
+        try {
+          const raw = sessionStorage.getItem(STORE_KEY);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (e) { return null; }
+      };
+      const writeTouch = (obj) => {
+        try { sessionStorage.setItem(STORE_KEY, JSON.stringify(obj)); } catch (e) { /* storage unavailable */ }
+      };
+
+      // First-touch attribution. Written once per session, then only gap-filled, so the
+      // original campaign and entry page survive the walk from landing page to this form.
+      let touch = readTouch();
+      let dirty = !touch;
+      if (!touch) {
+        touch = {
+          landing_page: location.pathname + location.search,
+          referrer: isExternal(document.referrer) ? document.referrer : '',
+        };
+      }
+      TOUCH_KEYS.forEach(k => {
+        const v = param(k);
+        if (v && !touch[k]) { touch[k] = v; dirty = true; }
       });
+      if (!touch.referrer && isExternal(document.referrer)) {
+        touch.referrer = document.referrer;
+        dirty = true;
+      }
+      if (dirty) writeTouch(touch);
+
+      const setHidden = (name, value) => {
+        if (!value) return;
+        let input = form.querySelector('input[name="' + name + '"]');
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = name;
+          form.appendChild(input);
+        }
+        input.value = value;
+        input.setAttribute('value', value); // survives form.reset()
+      };
+
+      // Prefill ?product= / ?service= / ?country= / ?source= from URL, falling back to the
+      // stored first touch. An explicit parameter on this URL always wins.
+      ['product','service','country','source'].forEach(k => {
+        setHidden(k, param(k) || (k === 'service' ? '' : (touch[k] || '')));
+      });
+      UTM_KEYS.forEach(k => setHidden(k, param(k) || touch[k] || ''));
+
+      setHidden('referrer', touch.referrer || (isExternal(document.referrer) ? document.referrer : ''));
+      setHidden('landing_page', touch.landing_page || (location.pathname + location.search));
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -126,6 +233,13 @@ import { SITE } from '~/data/site';
         btn.textContent = 'Sending...';
         const fd = new FormData(form);
         const data = Object.fromEntries(fd.entries());
+        // Read the stored first touch again at submit time and fill only what is missing,
+        // so anything explicit on this URL keeps priority.
+        const stored = readTouch() || {};
+        TOUCH_KEYS.concat(['referrer','landing_page']).forEach(k => {
+          if (!data[k] && stored[k]) data[k] = stored[k];
+        });
+        if (!data.landing_page) data.landing_page = location.pathname + location.search;
         data.website = location.href;
         try {
           const resp = await fetch('/api/lead', {

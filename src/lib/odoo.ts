@@ -6,11 +6,11 @@
  * Env vars (set locally in .env and in CI):
  *   ODOO_URL       e.g. https://portal.way4tech.com
  *   ODOO_DB        e.g. portal.way4tech.com
- *   ODOO_USER      read-only user (website_api is fine — has Sales access + portal)
+ *   ODOO_USER      read-only user (website_api is fine - has Sales access + portal)
  *   ODOO_PASSWORD  password
  *
  * If env vars are missing or Odoo is unreachable, returns [] so the build
- * does not crash — MDX posts will still show.
+ * does not crash - MDX posts will still show.
  */
 
 export interface OdooBlogPost {
@@ -54,7 +54,7 @@ export async function fetchOdooBlogPosts(): Promise<OdooBlogPost[]> {
   const user = process.env.ODOO_USER;
   const pass = process.env.ODOO_PASSWORD;
   if (!url || !db || !user || !pass) {
-    console.warn('[odoo] env vars missing — skipping Odoo blog fetch');
+    console.warn('[odoo] env vars missing - skipping Odoo blog fetch');
     return [];
   }
   try {
@@ -111,7 +111,7 @@ export async function fetchOdooBlogPosts(): Promise<OdooBlogPost[]> {
       };
     });
   } catch (err: any) {
-    console.warn('[odoo] blog fetch failed — falling back to MDX only:', err.message);
+    console.warn('[odoo] blog fetch failed - falling back to MDX only:', err.message);
     return [];
   }
 }

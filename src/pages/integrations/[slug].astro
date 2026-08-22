@@ -1,0 +1,194 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, SERVICES, INTEGRATIONS } from '~/data/site';
+import { INTEGRATION_DETAIL } from '~/data/integrations-detail';
+
+export function getStaticPaths() {
+  return INTEGRATIONS.map(i => ({ params: { slug: i.slug }, props: { integration: i } }));
+}
+
+const { integration } = Astro.props;
+const detail = INTEGRATION_DETAIL[integration.slug];
+
+const sameCat = INTEGRATIONS.filter(i => i.slug !== integration.slug && i.category === integration.category);
+const otherCat = INTEGRATIONS.filter(i => i.slug !== integration.slug && i.category !== integration.category).slice(0, 8);
+const relatedServices = SERVICES.filter(s => (detail?.services || []).includes(s.slug));
+
+const heading = `${integration.title} Odoo Integration`;
+const initials = integration.title.replace(/[^A-Za-z0-9]/g, '').substring(0, 2).toUpperCase();
+const pageUrl = `${SITE.url}/integrations/${integration.slug}/`;
+const contactHref = `/contact/?service=${encodeURIComponent(heading)}&source=integrations/${integration.slug}`;
+
+const schema: object[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Odoo Integrations', item: `${SITE.url}/integrations/` },
+      { '@type': 'ListItem', position: 3, name: heading, item: pageUrl },
+    ],
+  },
+];
+
+if (detail && detail.faqs.length > 0) {
+  schema.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: detail.faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+}
+---
+<Base
+  title={heading}
+  description={detail?.meta || `${integration.tagline} ${integration.title} connected to Odoo by Way4Tech, an Odoo Gold Partner working across 18 countries.`}
+  structuredData={schema}
+>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/integrations/" class="hover:text-white">Odoo Integrations</a> / <span class="text-white">{integration.title}</span></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-lg font-bold text-white">{initials}</span>
+          <span class="chip !bg-white/10 !text-white">{integration.category}</span>
+        </div>
+        <h1 class="h1 mt-6">{heading}</h1>
+        <p class="lede mt-6 text-brand-100">{integration.tagline}</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Scope this integration</a>
+          <a href="/integrations/" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">All 20 integrations</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          {detail ? (
+            <p class="text-lg text-ink-700">{detail.intro}</p>
+          ) : (
+            <p class="text-lg text-ink-700">{integration.tagline} Talk to us about how {integration.title} should connect to your Odoo database.</p>
+          )}
+
+          {detail && (
+            <>
+              <h2 class="h3 mt-12">What syncs between {integration.title} and Odoo</h2>
+              <ul class="mt-6 space-y-3">
+                {detail.syncs.map(s => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                    <span class="text-ink-700">{s}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <h2 class="h3 mt-14">How we implement it</h2>
+              <ol class="mt-6 space-y-6">
+                {detail.steps.map((step, idx) => (
+                  <li class="flex gap-4">
+                    <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-600 text-white text-sm font-bold">{idx + 1}</span>
+                    <div>
+                      <div class="font-semibold">{step.title}</div>
+                      <p class="text-ink-600 mt-1">{step.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+
+          {relatedServices.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Services that cover this work</h2>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                {relatedServices.map(s => (
+                  <a href={`/services/${s.slug}/`} class="card group !p-5">
+                    <div class="flex items-center gap-2"><span class="text-xl">{s.icon}</span><h3 class="font-semibold">{s.title}</h3></div>
+                    <p class="mt-2 text-sm text-ink-600">{s.tagline}</p>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+
+          {detail && detail.faqs.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">{integration.title} and Odoo: common questions</h2>
+              <div class="mt-6 divide-y divide-ink-100 border-y border-ink-100">
+                {detail.faqs.map(f => (
+                  <div class="py-5">
+                    <h3 class="font-semibold text-ink-900">{f.q}</h3>
+                    <p class="mt-2 text-ink-700">{f.a}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {sameCat.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Other {integration.category.toLowerCase()} integrations</h2>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                {sameCat.map(r => (
+                  <a href={`/integrations/${r.slug}/`} class="card group !p-5">
+                    <h3 class="font-semibold">{r.title}</h3>
+                    <p class="mt-2 text-sm text-ink-600">{r.tagline}</p>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h3 class="text-lg font-semibold">Connect {integration.title} to Odoo</h3>
+              <p class="mt-2 text-sm text-brand-100">Free 30-min scoping call. We map the data flow before anyone writes code.</p>
+              <a href={contactHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Get a quote</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            {sameCat.length > 0 && (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h3 class="text-sm font-semibold">{integration.category} integrations</h3>
+                <ul class="mt-4 space-y-2">
+                  {sameCat.map(r => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/integrations/${r.slug}/`}>{r.title}</a></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h3 class="text-sm font-semibold">More integrations</h3>
+              <ul class="mt-4 space-y-2">
+                {otherCat.map(r => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/integrations/${r.slug}/`}>{r.title} <span class="text-ink-400">· {r.category}</span></a></li>
+                ))}
+              </ul>
+              <a href="/integrations/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">See all 20 →</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site text-center">
+      <h2 class="h2">Need a connector that is not on the list?</h2>
+      <p class="lede mt-4 max-w-2xl mx-auto">Custom REST, GraphQL, webhook, EDI and flat-file integrations, built with retry, idempotency and audit logging so a failed message is visible instead of lost.</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={`/contact/?source=integrations/${integration.slug}`} class="btn-primary">Scope a custom integration</a>
+        <a href="/services/odoo-integration/" class="btn-secondary">Odoo integration service</a>
+      </div>
+    </div>
+  </section>
+</Base>

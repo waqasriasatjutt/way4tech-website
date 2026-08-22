@@ -1,0 +1,116 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, INTEGRATIONS } from '~/data/site';
+
+const byCat: Record<string, typeof INTEGRATIONS> = {};
+INTEGRATIONS.forEach(i => { (byCat[i.category] ||= []).push(i); });
+const cats = Object.entries(byCat);
+const catId = (cat: string) => cat.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+const initials = (title: string) => title.replace(/[^A-Za-z0-9]/g, '').substring(0, 2).toUpperCase();
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Odoo Integrations', item: `${SITE.url}/integrations/` },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Odoo integrations by Way4Tech',
+    numberOfItems: INTEGRATIONS.length,
+    itemListElement: INTEGRATIONS.map((i, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: `${i.title} Odoo Integration`,
+      url: `${SITE.url}/integrations/${i.slug}/`,
+    })),
+  },
+];
+---
+<Base
+  title="Odoo Integrations: 20 pre-built connectors"
+  description="Pre-built Odoo integrations with Stripe, HyperPay, PayTabs, Razorpay, Mada, Aramex, DHL, FedEx, Shopify, WooCommerce, Magento, Amazon, WhatsApp, ZKTeco, SAP, Salesforce, HubSpot, Power BI and more."
+  structuredData={schema}
+>
+  <section class="bg-ink-900 text-white">
+    <div class="container-site py-16 sm:py-24">
+      <div class="max-w-3xl">
+        <div class="eyebrow text-brand-300">Integrations</div>
+        <h1 class="h1 mt-4">Odoo, connected to everything.</h1>
+        <p class="lede mt-6 text-ink-300">20 pre-built connectors across payments, shipping, eCommerce, messaging, biometrics, finance, CRM and BI. If yours is not here, we build it.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/contact/?source=integrations" class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Scope an integration</a>
+          <a href="/services/odoo-integration/" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Integration service</a>
+        </div>
+      </div>
+      <nav class="mt-10 flex flex-wrap gap-2">
+        {cats.map(([cat, list]) => (
+          <a href={`#${catId(cat)}`} class="chip !bg-white/10 !text-white hover:!bg-white/20">{cat} <span class="ml-1 text-white/60">{list.length}</span></a>
+        ))}
+      </nav>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site space-y-14">
+      {cats.map(([cat, list]) => (
+        <div id={catId(cat)} class="scroll-mt-24">
+          <div class="flex items-baseline gap-3">
+            <h2 class="h3">{cat}</h2>
+            <span class="text-sm text-ink-500">{list.length} {list.length === 1 ? 'connector' : 'connectors'}</span>
+          </div>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map(i => (
+              <a href={`/integrations/${i.slug}/`} class="card group">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex h-12 w-12 flex-none items-center justify-center rounded-lg bg-brand-100 text-brand-700 font-bold">{initials(i.title)}</span>
+                  <h3 class="text-lg font-semibold">{i.title}</h3>
+                </div>
+                <p class="mt-3 text-sm text-ink-600">{i.tagline}</p>
+                <span class="mt-4 inline-block text-sm font-semibold text-brand-600 group-hover:text-brand-700">Learn more →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site">
+      <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
+        <div>
+          <h2 class="h2">How we build an integration</h2>
+          <p class="lede mt-4">Every connector on this page follows the same discipline, whether it is a one-way feed or a two-way sync between two ERPs.</p>
+          <ul class="mt-8 space-y-4">
+            {[
+              'Agree which system owns each record before any code is written.',
+              'Map every field with a direction, so a blank never overwrites a value.',
+              'Queue and retry, so an outage delays a message instead of losing it.',
+              'Idempotent writes, so a replayed webhook cannot post twice.',
+              'A visible error queue with a named owner, not a silent log file.',
+              'Reconciliation jobs that catch whatever the live path missed.',
+            ].map(x => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="text-ink-700">{x}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="h3">Don't see yours?</h3>
+          <p class="mt-4 text-ink-700">Custom REST, GraphQL, webhook, EDI and flat-file integrations, built with retry, idempotency and audit logging. Bring us the API docs and we will tell you what is realistic.</p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a href="/contact/?source=integrations" class="btn-primary">Scope a custom integration</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary">WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

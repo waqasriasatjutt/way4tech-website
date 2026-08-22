@@ -1,0 +1,248 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, INDUSTRIES, SOLUTIONS, MODULES, SERVICES, PRODUCTS, CASE_STUDIES } from '~/data/site';
+import { INDUSTRY_DETAIL } from '~/data/industries-detail';
+
+export function getStaticPaths() {
+  // Only industries with written detail get a page. An industry added to
+  // site.ts without a matching entry in industries-detail.ts is skipped
+  // rather than published as a thin page.
+  return INDUSTRIES
+    .filter(i => Boolean(INDUSTRY_DETAIL[i.slug]))
+    .map(i => ({ params: { slug: i.slug }, props: { ind: i, detail: INDUSTRY_DETAIL[i.slug]! } }));
+}
+
+const { ind, detail } = Astro.props;
+
+/* Resolve every cross-link against site.ts so a bad slug drops out of the
+   page instead of shipping a 404 link. */
+const moduleRows = detail.modules.flatMap((m) => {
+  const mod = MODULES.find(x => x.slug === m.slug);
+  return mod ? [{ slug: m.slug, why: m.why, title: mod.title, icon: mod.icon }] : [];
+});
+
+const serviceRows = detail.services.flatMap((slug) => {
+  const svc = SERVICES.find(x => x.slug === slug);
+  return svc ? [{ slug, title: svc.title, icon: svc.icon }] : [];
+});
+
+const productRows = (detail.products ?? []).flatMap((slug) => {
+  const p = PRODUCTS.find(x => x.slug === slug);
+  return p ? [{ slug, title: p.title }] : [];
+});
+
+const caseRows = (detail.caseStudies ?? []).flatMap((slug) => {
+  const c = CASE_STUDIES.find(x => x.slug === slug);
+  return c ? [{ slug, title: c.title, tagline: c.tagline, country: c.country }] : [];
+});
+
+const alsoSeeRows = (detail.alsoSee ?? []).flatMap((slug) => {
+  const s = SOLUTIONS.find(x => x.slug === slug);
+  return s ? [{ slug, title: s.title, icon: s.icon }] : [];
+});
+
+const solution = SOLUTIONS.find(s => s.slug === detail.solutionSlug);
+const otherIndustries = INDUSTRIES.filter(i => i.slug !== ind.slug && INDUSTRY_DETAIL[i.slug]);
+
+const contactHref = `/contact/?source=industries/${ind.slug}`;
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Industries', item: `${SITE.url}/industries/` },
+      { '@type': 'ListItem', position: 3, name: ind.title, item: `${SITE.url}/industries/${ind.slug}/` },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: detail.faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+---
+<Base
+  title={detail.metaTitle}
+  description={detail.metaDescription}
+  structuredData={schema}
+>
+  <section class="bg-ink-900 text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-ink-300"><a href="/" class="hover:text-white">Home</a> / <a href="/industries/" class="hover:text-white">Industries</a> / <span class="text-white">{ind.title}</span></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3">
+          <span class="text-5xl">{ind.icon}</span>
+          <span class="chip !bg-white/10 !text-white">{ind.title}</span>
+        </div>
+        <h1 class="h1 mt-6">{detail.h1}</h1>
+        <p class="lede mt-6 text-ink-300">{detail.summary}</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Scope your rollout</a>
+          {solution && (
+            <a href={`/solutions/${solution.slug}/`} class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">See the {solution.title} features</a>
+          )}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <p class="text-lg text-ink-700">{detail.intro}</p>
+
+          <h2 class="h3 mt-14">Where it hurts today</h2>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            {detail.pains.map((p) => (
+              <div class="card">
+                <h3 class="font-semibold">{p.title}</h3>
+                <p class="mt-2 text-sm text-ink-600">{p.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <h2 class="h3 mt-14">The modules that carry the load</h2>
+          <p class="mt-3 text-ink-600">Each one is here for a reason specific to {detail.noun}, not because it appears on a standard module list.</p>
+          <ul class="mt-6 space-y-3">
+            {moduleRows.map((m) => (
+              <li class="rounded-2xl border border-ink-200 bg-white p-5 transition hover:border-brand-300">
+                <a href={`/modules/${m.slug}/`} class="flex items-center gap-3 font-semibold text-ink-900 hover:text-brand-600">
+                  <span class="text-2xl">{m.icon}</span>
+                  <span>{m.title}</span>
+                </a>
+                <p class="mt-2 text-sm text-ink-600">{m.why}</p>
+              </li>
+            ))}
+          </ul>
+
+          <h2 class="h3 mt-14">How the rollout runs</h2>
+          <ol class="mt-6 space-y-6">
+            {detail.rollout.map((r, i) => (
+              <li class="flex gap-4">
+                <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-600 text-white text-sm font-bold">{i + 1}</span>
+                <div>
+                  <div class="font-semibold">{r.phase}</div>
+                  <p class="text-ink-600 mt-1">{r.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <h2 class="h3 mt-14">What to have ready before kickoff</h2>
+          <p class="mt-3 text-ink-600">Projects that slip usually slip here, not in the build. Bring these to the first workshop.</p>
+          <ul class="mt-6 space-y-3">
+            {detail.prepare.map((p) => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="text-ink-700">{p}</span>
+              </li>
+            ))}
+          </ul>
+
+          <h2 class="h3 mt-14">Where it connects</h2>
+          <p class="mt-3 text-ink-600">Systems we most often connect on {detail.noun} projects. The full list is on the <a class="font-semibold text-brand-600 hover:text-brand-700" href="/integrations/">integrations page</a>.</p>
+          <div class="mt-5 flex flex-wrap gap-2">
+            {detail.integrations.map((name) => (
+              <span class="chip">{name}</span>
+            ))}
+          </div>
+
+          {solution && (
+            <div class="mt-14 rounded-2xl bg-ink-50 p-6 sm:p-8">
+              <div class="eyebrow">Feature detail</div>
+              <h2 class="h3 mt-3">{solution.title}</h2>
+              <p class="mt-3 text-ink-700">{detail.solutionNote}</p>
+              <a href={`/solutions/${solution.slug}/`} class="btn-primary mt-6">Open the {solution.title} solution</a>
+              {alsoSeeRows.length > 0 && (
+                <div class="mt-6 border-t border-ink-200 pt-5">
+                  <div class="text-sm font-semibold">Adjacent solutions</div>
+                  <ul class="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                    {alsoSeeRows.map((s) => (
+                      <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/solutions/${s.slug}/`}>{s.icon} {s.title}</a></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {caseRows.length > 0 && (
+            <div class="mt-14">
+              <h2 class="h3">Related work</h2>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                {caseRows.map((c) => (
+                  <a href={`/case-studies/${c.slug}/`} class="card group">
+                    <div class="badge">{c.country}</div>
+                    <h3 class="mt-3 font-semibold">{c.title}</h3>
+                    <p class="mt-2 text-sm text-ink-600">{c.tagline}</p>
+                    <span class="mt-4 inline-block text-sm font-semibold text-brand-600 group-hover:text-brand-700">Read the case study →</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <h2 class="h3 mt-14">Questions we get asked</h2>
+          <div class="mt-6 space-y-3">
+            {detail.faqs.map((f) => (
+              <details class="group rounded-xl border border-ink-200 bg-white open:bg-brand-50/30 open:border-brand-200">
+                <summary class="flex cursor-pointer items-center justify-between p-5 font-semibold">
+                  <span>{f.q}</span>
+                  <span class="text-brand-600 transition group-open:rotate-45">+</span>
+                </summary>
+                <p class="px-5 pb-5 text-ink-700">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">Scope your {detail.noun} rollout</h2>
+              <p class="mt-2 text-sm text-brand-100">Free 30-minute call. We map your phases and tell you what your data needs before we quote.</p>
+              <a href={contactHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Get a quote</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3">WhatsApp</a>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">Services involved</h2>
+              <ul class="mt-4 space-y-3">
+                {serviceRows.map((s) => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/services/${s.slug}/`}>{s.icon} {s.title}</a></li>
+                ))}
+              </ul>
+            </div>
+
+            {productRows.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 bg-white p-6">
+                <h2 class="text-sm font-semibold">Our modules for this sector</h2>
+                <ul class="mt-4 space-y-3">
+                  {productRows.map((p) => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/products/${p.slug}/`}>→ {p.title}</a></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">Other industries</h2>
+              <ul class="mt-4 space-y-2">
+                {otherIndustries.map((o) => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/industries/${o.slug}/`}>{o.icon} {o.title}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

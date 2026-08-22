@@ -1,6 +1,8 @@
 ---
 import Base from '~/layouts/Base.astro';
 import { SITE, COUNTRIES, SERVICES, SOLUTIONS, PRODUCTS, CASE_STUDIES, PRICING } from '~/data/site';
+import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
 
 export function getStaticPaths() {
   return COUNTRIES.map(c => ({ params: { slug: c.slug }, props: { country: c } }));
@@ -169,6 +171,85 @@ const others = COUNTRIES
   .slice(0, 8)
   .map(x => x.c);
 
+/* ── Localization detail ────────────────────────────────────────────
+   Country facts live in country-detail.ts and are rendered verbatim.
+   The lookup may miss: a country with no entry keeps the generic page,
+   so every block below is guarded rather than assumed. Nothing here
+   reaches the structured data. */
+const detail: CountryDetail | undefined = COUNTRY_DETAIL[country.slug];
+
+/* Colour reads as cost to the buyer: shipped with Odoo, community
+   module, paid connector, build. */
+const SUPPORT_CLASS: Record<OdooSupport, string> = {
+  native: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  oca_or_community: 'bg-ink-100 text-ink-700 ring-ink-300',
+  third_party_paid: 'bg-amber-50 text-amber-800 ring-amber-200',
+  custom_build: 'bg-rose-50 text-rose-700 ring-rose-200',
+};
+const supportClass = (s: OdooSupport) => SUPPORT_CLASS[s] || SUPPORT_CLASS.custom_build;
+const supportLabel = (s: OdooSupport) => SUPPORT_LABEL[s] || '';
+const SUPPORT_LEGEND: OdooSupport[] = ['native', 'oca_or_community', 'third_party_paid', 'custom_build'];
+
+/* Review date, printed as '22 August 2026'. Falls back to the raw
+   string if the constant is ever not an ISO date. */
+const reviewedStamp = new Date(`${COUNTRY_DETAIL_REVIEWED}T00:00:00Z`);
+const reviewedOn = Number.isNaN(reviewedStamp.getTime())
+  ? COUNTRY_DETAIL_REVIEWED
+  : reviewedStamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+/* Module strings are mostly 'l10n_xx' or 'l10n_xx (Label)', but a few
+   markets list a prose line instead. Only the first form gets code
+   styling; the rest render as plain lines so nothing is mangled. */
+const MODULE_RE = /^(OCA\s+)?([a-z][a-z0-9]*(?:_[a-z0-9]+)+)\s*(.*)$/;
+const moduleChips: { oca: boolean; code: string; note: string }[] = [];
+const modulePlain: string[] = [];
+for (const m of detail?.odoo?.modules || []) {
+  const hit = MODULE_RE.exec(String(m).trim());
+  if (!hit) { modulePlain.push(m); continue; }
+  let note = (hit[3] || '').trim();
+  if (note.startsWith('(') && note.endsWith(')')) note = note.slice(1, -1).trim();
+  moduleChips.push({ oca: Boolean(hit[1]), code: hit[2], note });
+}
+
+const factSections: { id: string; title: string; intro: string; facts: CountryFact[] }[] = detail
+  ? [
+      { id: 'tax', title: `Tax in ${plainName}`, intro: `What the tax configuration has to get right before go-live.`, facts: detail.tax || [] },
+      { id: 'payroll', title: `Payroll in ${plainName}`, intro: `What payroll has to calculate, withhold, and file.`, facts: detail.payroll || [] },
+      { id: 'accounting', title: `Accounting in ${plainName}`, intro: `The reporting framework your books sit inside.`, facts: detail.accounting || [] },
+    ].filter(s => s.facts.length > 0)
+  : [];
+
+const providerSections: { id: string; title: string; intro: string; items: CountryProvider[] }[] = detail
+  ? [
+      {
+        id: 'payments',
+        title: `Payment gateways in ${plainName}`,
+        intro: `The providers a ${plainName} checkout actually needs, and how each one reaches Odoo.`,
+        items: detail.payments || [],
+      },
+      {
+        id: 'shipping',
+        title: `Shipping and couriers in ${plainName}`,
+        intro: `The carriers that move volume here, and what it takes to rate, label, and track them from Odoo.`,
+        items: detail.shipping || [],
+      },
+    ].filter(s => s.items.length > 0)
+  : [];
+
+const hasCoverage = Boolean(detail && ((detail.odoo?.native?.length || 0) > 0 || (detail.odoo?.custom?.length || 0) > 0 || moduleChips.length > 0 || modulePlain.length > 0));
+
+const jumpLinks = detail
+  ? [
+      { href: '#e-invoicing', label: 'E-invoicing', show: Boolean(detail.einvoicing) },
+      { href: '#tax', label: 'Tax', show: factSections.some(s => s.id === 'tax') },
+      { href: '#payroll', label: 'Payroll', show: factSections.some(s => s.id === 'payroll') },
+      { href: '#accounting', label: 'Accounting', show: factSections.some(s => s.id === 'accounting') },
+      { href: '#payments', label: 'Payments', show: providerSections.some(s => s.id === 'payments') },
+      { href: '#shipping', label: 'Shipping', show: providerSections.some(s => s.id === 'shipping') },
+      { href: '#odoo-coverage', label: 'What Odoo covers', show: hasCoverage },
+    ].filter(x => x.show)
+  : [];
+
 /* ── FAQ: built from the country's own highlights plus delivery facts
    that hold for every country. No rates, mandates, thresholds or
    deadlines are introduced beyond the highlight strings themselves. */
@@ -221,7 +302,9 @@ const schema = [
     '@type': 'Service',
     name: `Odoo ERP implementation and support in ${country.title}`,
     serviceType: 'Odoo ERP implementation, customization, localization and support',
-    description: country.tagline,
+    // Kept free of tax rates and scheme names on purpose: structured data is the
+    // wrong place to assert a regulatory claim. The detail lives in the page body.
+    description: `Odoo implementation, localization, customization and support for businesses in ${plainName}.`,
     url: pageUrl,
     provider: {
       '@type': 'Organization',
@@ -314,6 +397,17 @@ const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&sour
     </div>
   </section>
 
+  {jumpLinks.length > 0 && (
+    <section class="border-b border-ink-200 bg-white py-4">
+      <div class="container-site flex flex-wrap items-center gap-x-6 gap-y-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">Jump to</span>
+        {jumpLinks.map(l => (
+          <a href={l.href} class="text-sm font-semibold text-brand-600 hover:text-brand-700">{l.label}</a>
+        ))}
+      </div>
+    </section>
+  )}
+
   <section class="section">
     <div class="container-site">
       <div class="grid gap-14 lg:grid-cols-3">
@@ -332,12 +426,190 @@ const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&sour
               </li>
             ))}
           </ul>
+          {detail && (
+            <p class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm">
+              <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Checked</span>
+              <span class="text-ink-700">Localization notes on this page checked on {reviewedOn}.</span>
+            </p>
+          )}
           <p class="mt-6 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">
             Rates, filing formats, thresholds, and submission windows change. We configure against the rules in force at
             build time and confirm every figure with your accountant or tax advisor before sign-off. If a rule moves after
             go-live, it is a support ticket, not a rebuild. Read more on our
             {' '}<a href="/services/odoo-localization/" class="font-semibold text-brand-600 hover:text-brand-700">Odoo localization service</a>.
           </p>
+
+          {detail?.einvoicing && (
+            <section id="e-invoicing" class="mt-14 scroll-mt-24">
+              <h2 class="h3">E-invoicing in {plainName}</h2>
+              <p class="mt-3 text-ink-700">The scheme, who it binds, and what it makes your system do.</p>
+              <div class="mt-6 overflow-hidden rounded-2xl border border-brand-200">
+                <div class="bg-brand-50 p-6 sm:p-8">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="eyebrow">Scheme</span>
+                    {detail.einvoicing.verified === false && (
+                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Unconfirmed</span>
+                    )}
+                  </div>
+                  <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{detail.einvoicing.scheme}</p>
+                  <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Authority:</span> {detail.einvoicing.authority}</p>
+                </div>
+                <div class="space-y-6 bg-white p-6 sm:p-8">
+                  {detail.einvoicing.status && (
+                    <div>
+                      <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">Where it stands</div>
+                      <p class="mt-2 text-ink-700">{detail.einvoicing.status}</p>
+                    </div>
+                  )}
+                  {detail.einvoicing.appliesTo && (
+                    <div>
+                      <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">Who has to comply</div>
+                      <p class="mt-2 text-ink-700">{detail.einvoicing.appliesTo}</p>
+                    </div>
+                  )}
+                  {(detail.einvoicing.requirements?.length || 0) > 0 && (
+                    <div>
+                      <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">What it requires</div>
+                      <ul class="mt-3 space-y-3">
+                        {detail.einvoicing.requirements.map((r: string) => (
+                          <li class="flex gap-3">
+                            <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-500"></span>
+                            <span class="text-ink-700">{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {factSections.map(sec => (
+            <section id={sec.id} class="mt-14 scroll-mt-24">
+              <h2 class="h3">{sec.title}</h2>
+              <p class="mt-3 text-ink-700">{sec.intro}</p>
+              <ul class="mt-6 space-y-3">
+                {sec.facts.map((f: CountryFact) => (
+                  <li class={f.verified === false
+                    ? 'rounded-xl border border-dashed border-ink-300 bg-ink-50 p-4 sm:p-5'
+                    : 'rounded-xl border border-ink-200 bg-white p-4 sm:p-5'}>
+                    <p class="text-ink-700">{f.claim}</p>
+                    {f.verified === false && (
+                      <p class="mt-2 text-[11px] font-semibold uppercase tracking-wider text-ink-500">Unconfirmed</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
+          {providerSections.map(sec => (
+            <section id={sec.id} class="mt-14 scroll-mt-24">
+              <h2 class="h3">{sec.title}</h2>
+              <p class="mt-3 text-ink-700">{sec.intro}</p>
+              {sec.id === 'payments' && (
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">What the badges mean</span>
+                  {SUPPORT_LEGEND.map((s: OdooSupport) => (
+                    <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(s)}`}>{supportLabel(s)}</span>
+                  ))}
+                  <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Unconfirmed</span>
+                </div>
+              )}
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {sec.items.map((p: CountryProvider) => (
+                  <div class={p.verified === false
+                    ? 'rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-5'
+                    : 'rounded-2xl border border-ink-200 bg-white p-5'}>
+                    <div class="flex flex-wrap items-start justify-between gap-2">
+                      <span class="font-semibold text-ink-900">{p.name}</span>
+                      {p.verified === false ? (
+                        <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{supportLabel(p.support)}, unconfirmed</span>
+                      ) : (
+                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(p.support)}`}>{supportLabel(p.support)}</span>
+                      )}
+                    </div>
+                    <p class="mt-2 text-sm text-ink-600">{p.note}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {hasCoverage && detail && (
+            <section id="odoo-coverage" class="mt-14 scroll-mt-24">
+              <h2 class="h3">What Odoo covers out of the box in {plainName}</h2>
+              <p class="mt-3 text-ink-700">
+                The question behind every quote: how much of this is configuration and how much is a build. The first list
+                ships with Odoo. The second is a paid connector, a community module, or work we scope and price up front.
+              </p>
+              <div class="mt-6 rounded-3xl bg-ink-900 p-6 text-white sm:p-8">
+                {(moduleChips.length > 0 || modulePlain.length > 0) && (
+                  <div>
+                    <div class="text-xs font-semibold uppercase tracking-wider text-brand-200">Localization modules</div>
+                    {moduleChips.length > 0 && (
+                      <div class="mt-4 flex flex-wrap gap-2">
+                        {moduleChips.map(m => (
+                          <span class="inline-flex max-w-full items-baseline gap-2 rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/15">
+                            {m.oca && <span class="text-[10px] font-bold uppercase tracking-wider text-brand-200">OCA</span>}
+                            <code class="font-mono text-xs font-semibold text-white">{m.code}</code>
+                            {m.note && <span class="text-xs text-white/60">{m.note}</span>}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {modulePlain.length > 0 && (
+                      <ul class="mt-4 space-y-2">
+                        {modulePlain.map((m: string) => (
+                          <li class="flex gap-3 text-sm text-white/70">
+                            <span class="mt-2 h-1 w-1 flex-none rounded-full bg-white/40"></span>
+                            <span>{m}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+                <div class="mt-8 grid gap-4 md:grid-cols-2">
+                  <div class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5">
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-400/20 text-xs font-bold text-emerald-300">✓</span>
+                      <span class="font-semibold">Covered</span>
+                      <span class="ml-auto text-xs font-semibold text-emerald-300">{detail.odoo?.native?.length || 0}</span>
+                    </div>
+                    <ul class="mt-4 space-y-3">
+                      {(detail.odoo?.native || []).map((n: string) => (
+                        <li class="flex gap-3 text-sm text-white/80">
+                          <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-emerald-400"></span>
+                          <span>{n}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div class="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5">
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400/20 text-xs font-bold text-amber-300">!</span>
+                      <span class="font-semibold">Needs work</span>
+                      <span class="ml-auto text-xs font-semibold text-amber-300">{detail.odoo?.custom?.length || 0}</span>
+                    </div>
+                    <ul class="mt-4 space-y-3">
+                      {(detail.odoo?.custom || []).map((c: string) => (
+                        <li class="flex gap-3 text-sm text-white/80">
+                          <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber-400"></span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-5 text-sm text-ink-700">
+                Everything under "Needs work" is quoted as scope, not discovered mid-project. Bring your own module
+                list to a scoping call and we will mark it up the same way against {plainName}.
+              </p>
+            </section>
+          )}
 
           <h2 class="h3 mt-14">How we deliver in {plainName}</h2>
           <p class="mt-4 text-ink-700">

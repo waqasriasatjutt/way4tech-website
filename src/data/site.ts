@@ -67,7 +67,7 @@ export const SERVICES = [
   { slug: 'odoo-localization', title: 'Odoo Localization', tagline: 'Country-specific compliance out of the box.', icon: '🌍', category: 'Compliance',
     short: 'Tax, invoicing, e-invoicing, payroll, and accounting localization for 18 countries: ZATCA, FBR, GSTIN, VIES, EU VAT, and more.',
     details: ['ZATCA Phase 2 e-invoicing (KSA)','FBR FBR POS integration (Pakistan)','UAE VAT 5% & FTA reporting','India GST + GSTIN + e-Way Bill','EU VAT MOSS / OSS','US Sales Tax / Avalara','Arabic RTL + English bilingual layouts','Country-specific CoA and payroll'] },
-  { slug: 'odoo-e-invoicing', title: 'E-invoicing & ZATCA', tagline: 'ZATCA Phase 2, UBL, PEPPOL certification.', icon: '📋', category: 'Compliance',
+  { slug: 'odoo-e-invoicing', title: 'E-invoicing & Clearance', tagline: 'ZATCA Phase 2, UBL 2.1, PEPPOL, SDI, IRN.', icon: '📋', category: 'Compliance',
     short: 'End-to-end e-invoicing enablement for ZATCA Phase 2 (KSA), UBL 2.1, PEPPOL, Italy SDI, and India IRN, with QR codes, XML generation, and clearance workflows.',
     details: ['ZATCA Phase 2 (KSA) clearance','UBL 2.1 XML generation','PEPPOL network integration','Italy SDI, India IRN, Egypt ETA','QR code signing (ECDSA)','Clearance & reporting workflows','Archive-ready long-term storage','Audit trail & re-submission'] },
   { slug: 'odoo-payroll-setup', title: 'Payroll Setup', tagline: 'Country-specific payroll configuration.', icon: '💰', category: 'HR',

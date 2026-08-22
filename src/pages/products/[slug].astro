@@ -1,48 +1,293 @@
 ---
 import Base from '~/layouts/Base.astro';
 import { SITE, PRODUCTS } from '~/data/site';
+import { MODULE_CATALOG } from '~/data/modules-catalog';
+
+/*
+ * One page per Way4Tech module. Two sources feed this route:
+ *
+ *   MODULE_CATALOG - generated from the __manifest__.py of every module in the
+ *                    odoostore-19 repo. Authoritative for name, summary, intro,
+ *                    feature sections, category, version, price and store link,
+ *                    so the site cannot drift from the published module.
+ *   PRODUCTS       - the older hand-written list in site.ts. Most of its slugs
+ *                    now have a catalogue entry. The few that do not are live,
+ *                    indexed URLs and keep rendering from site.ts.
+ *
+ * Catalogue keys are the technical name with underscores swapped for hyphens,
+ * so wt_hrms_core is keyed wt-hrms-core, which is also the live slug.
+ *
+ * A store link is printed only where published is true. Modules that are built
+ * but not listed get a contact link, never a store URL we made up.
+ *
+ * getStaticPaths is deliberately self-contained. Astro hoists it out of the
+ * component scope, so it cannot see anything declared below it.
+ */
 
 export function getStaticPaths() {
-  return PRODUCTS.map(p => ({ params: { slug: p.slug }, props: { product: p } }));
+  const APPS_ODOO = 'https://apps.odoo.com/';
+
+  /** Trimmed, non-empty strings only. Anything else drops out. */
+  const strings = (value: unknown): string[] =>
+    Array.isArray(value)
+      ? value
+          .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
+          .map(t => t.trim())
+      : [];
+
+  /** A section survives only if it has a heading and at least one bullet. */
+  const sectionsOf = (value: unknown): { heading: string; bullets: string[] }[] => {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((entry) => {
+        const raw = entry as { heading?: unknown; bullets?: unknown } | null | undefined;
+        return {
+          heading: typeof raw?.heading === 'string' ? raw.heading.trim() : '',
+          bullets: strings(raw?.bullets),
+        };
+      })
+      .filter(s => s.heading.length > 0 && s.bullets.length > 0);
+  };
+
+  /* Manifest categories are two-level: 'Services/Hospital', 'Human Resources/Payroll'.
+     The family is the first level, so the index groups into readable buckets
+     instead of 65 headings holding one card each. */
+  const familyOf = (category: string): string => {
+    const head = (category || '').split('/')[0]?.trim() ?? '';
+    if (!head) return 'Other';
+    return head === 'Themes' ? 'Theme' : head;
+  };
+
+  const legacy = new Map(PRODUCTS.map(p => [p.slug, p] as const));
+  const pages: {
+    slug: string; technical: string; name: string; summary: string;
+    intro: string[]; sections: { heading: string; bullets: string[] }[];
+    category: string; family: string; version: string;
+    price: number | null; currency: string; storeUrl: string; onStore: boolean;
+  }[] = [];
+  const seen = new Set<string>();
+
+  for (const [slug, mod] of Object.entries(MODULE_CATALOG)) {
+    if (!mod || seen.has(slug)) continue;
+    seen.add(slug);
+
+    const older = legacy.get(slug);
+    const summary = (typeof mod.summary === 'string' ? mod.summary.trim() : '') || older?.tagline || '';
+
+    /* Where the manifest carries no long description, the older hand-written
+       line stands in, so the page is not left with a heading and nothing under it. */
+    let intro = strings(mod.intro);
+    if (intro.length === 0) {
+      const fallback = (older?.short || '').trim();
+      if (fallback && fallback !== summary) intro = [fallback];
+    }
+
+    const storeUrl = typeof mod.storeUrl === 'string' ? mod.storeUrl.trim() : '';
+    const onStore = mod.published === true && storeUrl.startsWith(APPS_ODOO);
+    const category = (typeof mod.category === 'string' ? mod.category.trim() : '') || older?.category || 'Odoo modules';
+
+    pages.push({
+      slug,
+      technical: typeof mod.technical === 'string' ? mod.technical.trim() : '',
+      name: (typeof mod.name === 'string' ? mod.name.trim() : '') || older?.title || slug,
+      summary,
+      intro,
+      sections: sectionsOf(mod.sections),
+      category,
+      family: familyOf(category),
+      version: typeof mod.version === 'string' ? mod.version.trim() : '',
+      // 0 is not a price. Those modules render with no price rather than "free".
+      price: typeof mod.price === 'number' && Number.isFinite(mod.price) && mod.price > 0 ? mod.price : null,
+      currency: (typeof mod.currency === 'string' && mod.currency.trim() ? mod.currency.trim() : 'USD').toUpperCase(),
+      storeUrl: onStore ? storeUrl : '',
+      onStore,
+    });
+  }
+
+  /* Slugs the catalogue does not know about. These URLs are live and indexed,
+     so they keep building from site.ts. */
+  for (const p of PRODUCTS) {
+    if (seen.has(p.slug)) continue;
+    seen.add(p.slug);
+    const category = (p.category || '').trim() || 'Odoo modules';
+    pages.push({
+      slug: p.slug,
+      technical: '',
+      name: p.title,
+      summary: (p.tagline || '').trim(),
+      intro: strings([p.short]),
+      sections: [],
+      category,
+      family: familyOf(category),
+      version: '',
+      price: null,
+      currency: 'USD',
+      storeUrl: '',
+      onStore: false,
+    });
+  }
+
+  /* 138 catalogue entries + 4 slugs only site.ts knows = 142 pages today.
+     Both halves are counted from the data on every build, so a dropped or a
+     doubled entry stops the build instead of quietly deleting a live URL. */
+  const catalogueCount = Object.keys(MODULE_CATALOG).length;
+  const siteOnlyCount = PRODUCTS.filter(p => !(p.slug in MODULE_CATALOG)).length;
+  const expected = catalogueCount + siteOnlyCount;
+  if (pages.length !== expected) {
+    throw new Error(`products: built ${pages.length} module pages, expected ${expected} (${catalogueCount} catalogue + ${siteOnlyCount} site-only)`);
+  }
+  if (new Set(pages.map(p => p.slug)).size !== pages.length) {
+    throw new Error('products: duplicate slug in the merged module list');
+  }
+  for (const p of PRODUCTS) {
+    if (!seen.has(p.slug)) {
+      throw new Error(`products: /products/${p.slug}/ is a live URL and must keep building`);
+    }
+  }
+
+  return pages.map((product) => {
+    const sameCategory = pages.filter(o => o.slug !== product.slug && o.category === product.category);
+    const sameFamily = pages.filter(o => o.slug !== product.slug && o.family === product.family && o.category !== product.category);
+    const related = [...sameCategory, ...sameFamily]
+      .slice(0, 6)
+      .map(o => ({ slug: o.slug, name: o.name, summary: o.summary, category: o.category }));
+    return { params: { slug: product.slug }, props: { product, related } };
+  });
 }
 
-const { product } = Astro.props;
-const related = PRODUCTS.filter(p => p.slug !== product.slug && p.category === product.category).slice(0, 3);
+const { product, related } = Astro.props;
 
-const schema = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: product.title,
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Odoo ERP',
-    description: product.short,
-    offers: { '@type': 'Offer', price: 0, priceCurrency: 'USD' },
-  },
-  {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
-      { '@type': 'ListItem', position: 2, name: 'Products', item: `${SITE.url}/products/` },
-      { '@type': 'ListItem', position: 3, name: product.title, item: `${SITE.url}/products/${product.slug}/` },
-    ],
-  },
+type RelatedItem = { slug: string; name: string; summary: string; category: string };
+type Spec = { label: string; value: string };
+type Section = { heading: string; bullets: string[] };
+
+const pageUrl = `${SITE.url}/products/${product.slug}/`;
+const contactHref = `/contact/?product=${encodeURIComponent(product.slug)}&source=products/${product.slug}`;
+
+/** Null when there is nothing to show. Never prints 0 and never says free. */
+function formatPrice(price: number | null, currency: string): string | null {
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return null;
+  const code = (currency || 'USD').toUpperCase();
+  const digits = Number.isInteger(price) ? 0 : 2;
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'code',
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(price);
+  } catch {
+    return `${code} ${price.toFixed(digits)}`;
+  }
+}
+
+const priceText = formatPrice(product.price, product.currency);
+
+/* '19.0.1.0.6' gives an Odoo series of '19.0'. The tail is the module's own
+   release number and is shown separately. */
+const versionParts = (product.version || '').split('.').filter(Boolean);
+const odooSeries = versionParts.length >= 2 ? `${versionParts[0]}.${versionParts[1]}` : (versionParts[0] || '');
+
+const specs: Spec[] = [];
+if (product.category) specs.push({ label: 'Category', value: product.category });
+if (odooSeries) specs.push({ label: 'Odoo version', value: `Odoo ${odooSeries}` });
+if (priceText) specs.push({ label: 'Price', value: priceText });
+specs.push({ label: 'Odoo Apps Store', value: product.onStore ? 'Listed' : 'Not listed' });
+
+const metaSource = product.summary || product.intro[0] || `${product.name}, an Odoo module built and maintained by ${SITE.name}.`;
+const metaDescription = metaSource.length > 158
+  ? `${metaSource.slice(0, 155).replace(/[\s,;:.-]+$/, '')}...`
+  : metaSource;
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+    { '@type': 'ListItem', position: 2, name: 'Products', item: `${SITE.url}/products/` },
+    { '@type': 'ListItem', position: 3, name: product.name, item: pageUrl },
+  ],
+};
+
+/* Product markup carries an Offer only where a real price exists. No
+   aggregateRating and no review: we collect neither. */
+const productSchema: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: product.name,
+  description: product.summary || metaDescription,
+  category: product.category,
+  url: pageUrl,
+  brand: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+};
+if (typeof product.price === 'number' && product.price > 0) {
+  productSchema.offers = {
+    '@type': 'Offer',
+    price: product.price.toFixed(2),
+    priceCurrency: product.currency,
+    availability: 'https://schema.org/InStock',
+    url: product.onStore && product.storeUrl ? product.storeUrl : pageUrl,
+    seller: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+  };
+}
+
+const schema = [breadcrumbSchema, productSchema];
+
+const delivery = [
+  'Full module source code: Python, OWL, XML and CSS',
+  'Installation on your Odoo instance, or a copy you install yourself',
+  'Written documentation and a user guide',
+  'A one-hour walkthrough with your team',
+  '90 days of bug-fix support',
 ];
 ---
 <Base
-  title={`${product.title} - Odoo Module`}
-  description={product.short}
+  title={`${product.name} - Odoo Module`}
+  description={metaDescription}
   structuredData={schema}
 >
   <section class="bg-odoo-gradient text-white">
     <div class="container-site py-16 sm:py-24">
-      <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/products/" class="hover:text-white">Products</a> / <span class="text-white">{product.title}</span></nav>
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/products/" class="hover:text-white">Products</a> / <span class="text-white">{product.name}</span>
+      </nav>
       <div class="mt-6 max-w-3xl">
-        <div class="text-xs font-semibold uppercase tracking-wider text-brand-200">{product.category}</div>
-        <h1 class="h1 mt-3">{product.title}</h1>
-        <p class="lede mt-6 text-brand-100">{product.tagline}</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="chip !bg-white/10 !text-white">{product.category}</span>
+          {odooSeries && <span class="chip !bg-white/10 !text-white">Odoo {odooSeries}</span>}
+          {product.onStore && <span class="chip !bg-white/10 !text-white">On Odoo Apps</span>}
+        </div>
+        <h1 class="h1 mt-6">{product.name}</h1>
+        {product.summary && <p class="lede mt-6 text-brand-100">{product.summary}</p>}
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          {product.onStore && product.storeUrl ? (
+            <>
+              <a href={product.storeUrl} target="_blank" rel="noopener" class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">View on Odoo Apps</a>
+              <a href={contactHref} class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Ask a question</a>
+            </>
+          ) : (
+            <>
+              <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Request this module</a>
+              <a href="/products/" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">All modules</a>
+            </>
+          )}
+          {priceText && <span class="text-sm font-semibold text-brand-100">{priceText}</span>}
+        </div>
       </div>
+    </div>
+  </section>
+
+  <section class="border-b border-ink-100 bg-ink-50">
+    <div class="container-site py-6">
+      <dl class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {specs.map((s: Spec) => (
+          <div>
+            <dt class="text-xs font-semibold uppercase tracking-wider text-ink-500">{s.label}</dt>
+            <dd class="mt-1 text-sm font-medium text-ink-900">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   </section>
 
@@ -50,49 +295,143 @@ const schema = [
     <div class="container-site">
       <div class="grid gap-14 lg:grid-cols-3">
         <div class="lg:col-span-2">
-          <p class="text-lg text-ink-700">{product.short}</p>
+          {product.intro.length > 0 ? (
+            <div class="space-y-4">
+              {product.intro.map((para: string) => (
+                <p class="text-lg text-ink-700">{para}</p>
+              ))}
+            </div>
+          ) : (
+            <p class="text-lg text-ink-700">
+              We build and maintain {product.name}{odooSeries ? ` for Odoo ${odooSeries}` : ''}. Ask us for a demo, a quote, or the source.
+            </p>
+          )}
 
-          <h2 class="h3 mt-12">Key features</h2>
-          <div class="mt-6 grid gap-4 sm:grid-cols-2">
-            {['Clean community-first code', 'Odoo 17 / 18 / 19 ready', 'Full source code delivered', 'Installation + training included', '90-day bug support', 'Ongoing maintenance available'].map((f) => (
-              <div class="flex gap-3 items-start">
-                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
-                <span class="text-ink-700 text-sm">{f}</span>
-              </div>
-            ))}
-          </div>
+          {product.sections.length > 0 && product.sections.map((section: Section) => (
+            <div class="mt-12">
+              <h2 class="h3">{section.heading}</h2>
+              <ul class="mt-6 space-y-3">
+                {section.bullets.map((bullet: string) => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                    <span class="text-ink-700">{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
 
           <h2 class="h3 mt-14">What you get</h2>
           <ul class="mt-6 space-y-3">
-            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">Full module source code (Python + OWL + XML + CSS)</span></li>
-            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">Installation script for your Odoo instance</span></li>
-            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">Written documentation and user guide</span></li>
-            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">1-hour walkthrough session with your team</span></li>
-            <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">90 days of bug-fix support</span></li>
+            {delivery.map((line: string) => (
+              <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">{line}</span></li>
+            ))}
           </ul>
+
+          {product.onStore && product.storeUrl ? (
+            <div class="mt-12 rounded-2xl border border-ink-200 bg-ink-50 p-6">
+              <h2 class="text-lg font-semibold">Buy it on the Odoo Apps Store</h2>
+              <p class="mt-2 text-ink-700">{product.name} is published on apps.odoo.com{priceText ? ` at ${priceText}` : ''}. Buy there and you get every update we publish for that version.</p>
+              <a href={product.storeUrl} target="_blank" rel="noopener" class="btn-primary mt-5">View on Odoo Apps</a>
+            </div>
+          ) : (
+            <div class="mt-12 rounded-2xl border border-ink-200 bg-ink-50 p-6">
+              <h2 class="text-lg font-semibold">Not on the Odoo Apps Store</h2>
+              <p class="mt-2 text-ink-700">{product.name} is built and running, but it is not listed on apps.odoo.com. Tell us about your setup and we will come back with pricing, a demo, and what it takes to install it.</p>
+              <a href={contactHref} class="btn-primary mt-5">Ask about this module</a>
+            </div>
+          )}
+
+          {related.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Related modules</h2>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                {related.map((r: RelatedItem) => (
+                  <a href={`/products/${r.slug}/`} class="card group !p-5">
+                    <h3 class="font-semibold">{r.name}</h3>
+                    {r.summary && <p class="mt-2 text-sm text-ink-600 line-clamp-3">{r.summary}</p>}
+                    <span class="mt-3 block text-xs text-ink-500">{r.category}</span>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <aside class="lg:col-span-1">
           <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">{product.name}</h2>
+              {priceText ? (
+                <p class="mt-2 text-2xl font-bold">{priceText}</p>
+              ) : (
+                <p class="mt-2 text-sm text-brand-100">Pricing on request.</p>
+              )}
+              {product.onStore && product.storeUrl ? (
+                <a href={product.storeUrl} target="_blank" rel="noopener" class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">View on Odoo Apps</a>
+              ) : (
+                <a href={contactHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Request this module</a>
+              )}
+              <a href={contactHref} class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Book a demo</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
             <div class="rounded-2xl border border-ink-200 bg-white p-6">
-              <h3 class="text-lg font-semibold">Interested?</h3>
-              <p class="mt-2 text-sm text-ink-600">Get a demo, pricing, and see if this fits your business.</p>
-              <a href={`/contact/?product=${product.slug}`} class="btn-primary w-full mt-5">Request demo</a>
-              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3">WhatsApp</a>
+              <h2 class="text-sm font-semibold">Module details</h2>
+              <dl class="mt-4 space-y-3 text-sm">
+                <div class="flex justify-between gap-3">
+                  <dt class="text-ink-500">Category</dt>
+                  <dd class="text-right font-medium text-ink-900">{product.category}</dd>
+                </div>
+                {product.technical && (
+                  <div class="flex justify-between gap-3">
+                    <dt class="text-ink-500">Technical name</dt>
+                    <dd class="text-right font-mono text-xs text-ink-900">{product.technical}</dd>
+                  </div>
+                )}
+                {product.version && (
+                  <div class="flex justify-between gap-3">
+                    <dt class="text-ink-500">Version</dt>
+                    <dd class="text-right font-medium text-ink-900">{product.version}</dd>
+                  </div>
+                )}
+                {priceText && (
+                  <div class="flex justify-between gap-3">
+                    <dt class="text-ink-500">Price</dt>
+                    <dd class="text-right font-medium text-ink-900">{priceText}</dd>
+                  </div>
+                )}
+                <div class="flex justify-between gap-3">
+                  <dt class="text-ink-500">Odoo Apps Store</dt>
+                  <dd class="text-right font-medium text-ink-900">{product.onStore ? 'Listed' : 'Not listed'}</dd>
+                </div>
+              </dl>
             </div>
 
             {related.length > 0 && (
               <div class="rounded-2xl bg-ink-50 p-6">
-                <h3 class="text-sm font-semibold">More in {product.category}</h3>
-                <ul class="mt-4 space-y-3">
-                  {related.map((r: typeof product) => (
-                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/products/${r.slug}/`}>→ {r.title}</a></li>
+                <h2 class="text-sm font-semibold">More modules like this</h2>
+                <ul class="mt-4 space-y-2">
+                  {related.map((r: RelatedItem) => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/products/${r.slug}/`}>{r.name}</a></li>
                   ))}
                 </ul>
+                <a href="/products/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">See every module →</a>
               </div>
             )}
           </div>
         </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site text-center">
+      <h2 class="h2">Need it to work a little differently?</h2>
+      <p class="lede mt-4 max-w-2xl mx-auto">Every module here started as a client request. Tell us what is missing and we will quote the change, or build the thing you actually need.</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={contactHref} class="btn-primary">Talk to us about this module</a>
+        <a href="/services/odoo-customization/" class="btn-secondary">Odoo customization</a>
       </div>
     </div>
   </section>

@@ -1,42 +1,225 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { PRODUCTS } from '~/data/site';
+import { SITE, PRODUCTS } from '~/data/site';
+import { MODULE_CATALOG } from '~/data/modules-catalog';
 
-const categories = [...new Set(PRODUCTS.map(p => p.category))];
+/*
+ * The full module list. Same merge as /products/[slug].astro:
+ *
+ *   MODULE_CATALOG - generated from the __manifest__.py of every module in the
+ *                    odoostore-19 repo, and authoritative wherever it has an
+ *                    entry, so the site cannot drift from the published module.
+ *   PRODUCTS       - the older hand-written list in site.ts. Its slugs that the
+ *                    catalogue does not cover are live URLs and stay on the page.
+ *
+ * Every count on this page is read off the merged list. Nothing about the size
+ * of the catalogue is written down here, so it cannot go stale.
+ */
+
+interface Card {
+  slug: string;
+  name: string;
+  summary: string;
+  category: string;
+  family: string;
+  priceText: string | null;
+  onStore: boolean;
+}
+
+const APPS_ODOO = 'https://apps.odoo.com/';
+
+/* Manifest categories are two-level: 'Services/Hospital', 'Human Resources/Payroll'.
+   Cards group by the first level so the page reads as a shop rather than as 65
+   headings holding one card each. The full category stays on the card. */
+function familyOf(category: string): string {
+  const head = (category || '').split('/')[0]?.trim() ?? '';
+  if (!head) return 'Other';
+  return head === 'Themes' ? 'Theme' : head;
+}
+
+/** Null when there is nothing to show. Never prints 0 and never says free. */
+function formatPrice(price: unknown, currency: unknown): string | null {
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return null;
+  const code = (typeof currency === 'string' && currency.trim() ? currency.trim() : 'USD').toUpperCase();
+  const digits = Number.isInteger(price) ? 0 : 2;
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'code',
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(price);
+  } catch {
+    return `${code} ${price.toFixed(digits)}`;
+  }
+}
+
+function anchorOf(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'group';
+}
+
+const legacy = new Map(PRODUCTS.map(p => [p.slug, p] as const));
+const cards: Card[] = [];
+const seen = new Set<string>();
+
+for (const [slug, mod] of Object.entries(MODULE_CATALOG)) {
+  if (!mod || seen.has(slug)) continue;
+  seen.add(slug);
+  const older = legacy.get(slug);
+  const storeUrl = typeof mod.storeUrl === 'string' ? mod.storeUrl.trim() : '';
+  const category = (typeof mod.category === 'string' ? mod.category.trim() : '') || older?.category || 'Odoo modules';
+  cards.push({
+    slug,
+    name: (typeof mod.name === 'string' ? mod.name.trim() : '') || older?.title || slug,
+    summary: (typeof mod.summary === 'string' ? mod.summary.trim() : '') || older?.tagline || '',
+    category,
+    family: familyOf(category),
+    priceText: formatPrice(mod.price, mod.currency),
+    // Listed only when the manifest says so and the URL really is the store.
+    onStore: mod.published === true && storeUrl.startsWith(APPS_ODOO),
+  });
+}
+
+/* Hand-written products the catalogue does not cover. Live, indexed URLs. */
+for (const p of PRODUCTS) {
+  if (seen.has(p.slug)) continue;
+  seen.add(p.slug);
+  const category = (p.category || '').trim() || 'Odoo modules';
+  cards.push({
+    slug: p.slug,
+    name: p.title,
+    summary: (p.tagline || '').trim(),
+    category,
+    family: familyOf(category),
+    priceText: null,
+    onStore: false,
+  });
+}
+
+const total = cards.length;
+const onStoreCount = cards.filter(c => c.onStore).length;
+
+const byFamily = new Map<string, Card[]>();
+for (const c of cards) {
+  const bucket = byFamily.get(c.family);
+  if (bucket) bucket.push(c);
+  else byFamily.set(c.family, [c]);
+}
+
+const groups = [...byFamily.entries()]
+  .map(([name, items]) => ({
+    name,
+    id: anchorOf(name),
+    items: [...items].sort((a, b) => a.name.localeCompare(b.name)),
+  }))
+  .sort((a, b) => b.items.length - a.items.length || a.name.localeCompare(b.name));
+
+const pageUrl = `${SITE.url}/products/`;
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Products', item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `Odoo modules by ${SITE.name}`,
+    numberOfItems: total,
+    itemListOrder: 'https://schema.org/ItemListUnordered',
+    itemListElement: cards.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.name,
+      url: `${SITE.url}/products/${c.slug}/`,
+    })),
+  },
+];
 ---
 <Base
   title="Products - Odoo Modules by Way4Tech"
-  description="20+ production-ready Odoo modules: HRMS suite, SaaS Kit, dashboards, POS customizations, industry solutions. Install what you need."
+  description={`${total} Odoo modules from Way4Tech: HR and payroll, accounting, dashboards, POS, themes and industry apps. ${onStoreCount} of them are published on the Odoo Apps Store.`}
+  structuredData={schema}
 >
   <section class="bg-ink-900 text-white">
     <div class="container-site py-16 sm:py-24">
       <div class="max-w-3xl">
         <div class="eyebrow text-brand-300">Our Odoo modules</div>
-        <h1 class="h1 mt-4">30+ production-ready Odoo add-ons.</h1>
-        <p class="lede mt-6 text-ink-300">Battle-tested WT modules covering HR, payroll, SaaS, POS, dashboards, and industry workflows. Clean code, upgrade-safe, no unnecessary Enterprise dependencies.</p>
+        <h1 class="h1 mt-4">{total} production-ready Odoo modules.</h1>
+        <p class="lede mt-6 text-ink-300">
+          {total} modules across {groups.length} categories, {onStoreCount} of them published on the Odoo Apps Store.
+          Almost every page here is written from the module's own manifest, so the page and the module say the
+          same thing.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/contact/?source=products" class="btn-primary">Ask about a module</a>
+          <a href="/services/odoo-customization/" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Need something custom?</a>
+        </div>
       </div>
     </div>
   </section>
 
+  {groups.length > 0 && (
+    <section class="border-b border-ink-100 bg-ink-50">
+      <div class="container-site py-6">
+        <div class="flex flex-wrap gap-2">
+          {groups.map(g => (
+            <a href={`#${g.id}`} class="chip hover:bg-ink-200">{g.name} <span class="ml-1 text-ink-500">{g.items.length}</span></a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
   <section class="section">
     <div class="container-site">
-      {categories.map(cat => (
-        <div class="mb-16">
+      {groups.map(g => (
+        <div id={g.id} class="mb-16 scroll-mt-24">
           <h2 class="h3 mb-6 flex items-center gap-3">
-            {cat}
-            <span class="text-sm font-normal text-ink-500">({PRODUCTS.filter(p => p.category === cat).length})</span>
+            {g.name}
+            <span class="text-sm font-normal text-ink-500">({g.items.length})</span>
           </h2>
           <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {PRODUCTS.filter(p => p.category === cat).map(p => (
-              <a href={`/products/${p.slug}/`} class="card group flex flex-col">
-                <h3 class="text-lg font-semibold">{p.title}</h3>
-                <p class="mt-2 text-sm text-ink-600 flex-1">{p.tagline}</p>
-                <span class="mt-4 text-sm font-medium text-brand-600 group-hover:text-brand-700">Details →</span>
+            {g.items.map(c => (
+              <a href={`/products/${c.slug}/`} class="card group flex flex-col">
+                <div class="flex items-start justify-between gap-3">
+                  <h3 class="text-lg font-semibold leading-snug">{c.name}</h3>
+                  {c.onStore && <span class="badge flex-none">Odoo Apps</span>}
+                </div>
+                {c.summary && <p class="mt-2 flex-1 text-sm text-ink-600 line-clamp-4">{c.summary}</p>}
+                <div class="mt-4 flex items-end justify-between gap-3">
+                  <div>
+                    {c.priceText
+                      ? <span class="text-sm font-semibold text-ink-900">{c.priceText}</span>
+                      : <span class="text-sm text-ink-500">Pricing on request</span>}
+                    <span class="mt-1 block text-xs text-ink-400">{c.category}</span>
+                  </div>
+                  <span class="text-sm font-medium text-brand-600 group-hover:text-brand-700">Details →</span>
+                </div>
               </a>
             ))}
           </div>
         </div>
       ))}
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site text-center">
+      <h2 class="h2">Not finding the one you need?</h2>
+      <p class="lede mt-4 max-w-2xl mx-auto">
+        {total} modules is what we have published so far, and every one of them started as a client request.
+        Tell us what your team does by hand today and we will quote the module that stops it.
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href="/contact/?source=products" class="btn-primary">Talk to us</a>
+        <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary">WhatsApp</a>
+      </div>
     </div>
   </section>
 </Base>

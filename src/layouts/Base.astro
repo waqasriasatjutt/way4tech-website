@@ -2,6 +2,7 @@
 import { SITE } from '~/data/site';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
+import { portalOverride } from '~/lib/portal';
 import '~/styles/global.css';
 
 export interface HreflangAlternate {
@@ -29,11 +30,18 @@ const {
   hreflang,
 } = Astro.props;
 
-const pageTitle = title ? `${title} | ${SITE.name}` : `${SITE.name} - ${SITE.tagline}`;
-const canonicalURL = canonical || new URL(Astro.url.pathname, SITE.url).toString();
+// Content authored in Odoo for this path wins. Absent or unreachable: static stands.
+const ov = await portalOverride(Astro.url.pathname);
+const effTitle = ov?.metaTitle || ov?.title || title;
+const effDescription = ov?.description || description;
+const effCanonical = ov?.canonical || canonical;
+const effNoindex = ov?.noindex === true ? true : noindex;
+
+const pageTitle = effTitle ? `${effTitle} | ${SITE.name}` : `${SITE.name} - ${SITE.tagline}`;
+const canonicalURL = effCanonical || new URL(Astro.url.pathname, SITE.url).toString();
 const imageURL = new URL(image, SITE.url).toString();
-const imageAlt = title ? `${title} - ${SITE.name}` : `${SITE.name} - Odoo Gold Partner`;
-const robots = noindex ? 'noindex,follow' : 'index,follow';
+const imageAlt = effTitle ? `${effTitle} - ${SITE.name}` : `${SITE.name} - Odoo Gold Partner`;
+const robots = effNoindex ? 'noindex,follow' : 'index,follow';
 const alternates = Array.isArray(hreflang) ? hreflang : [];
 
 // twitter:site is only emitted if a handle actually exists in SITE.social.
@@ -64,7 +72,13 @@ const orgSchema = {
   sameAs: [SITE.social.linkedin, SITE.social.github],
 };
 
-const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : [])];
+const ovSchema = (() => {
+  const raw = ov?.schema;
+  if (!raw) return [];
+  try { const v = typeof raw === 'string' ? JSON.parse(raw) : raw; return Array.isArray(v) ? v : [v]; }
+  catch { return []; }
+})();
+const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : []), ...ovSchema];
 ---
 
 <!doctype html>
@@ -79,7 +93,7 @@ const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData :
     <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
     <title>{pageTitle}</title>
-    <meta name="description" content={description} />
+    <meta name="description" content={effDescription} />
     <meta name="robots" content={robots} />
 
     {alternates.length > 0 && (
@@ -94,8 +108,8 @@ const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData :
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description} />
+    <meta property="og:title" content={ov?.ogTitle || pageTitle} />
+    <meta property="og:description" content={ov?.ogDescription || effDescription} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={imageURL} />
     <meta property="og:image:width" content="1200" />
@@ -105,7 +119,7 @@ const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData :
     <meta name="twitter:card" content="summary_large_image" />
     {twitterHandle && <meta name="twitter:site" content={twitterHandle} />}
     <meta name="twitter:title" content={pageTitle} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:description" content={effDescription} />
     <meta name="twitter:image" content={imageURL} />
     <meta name="twitter:image:alt" content={imageAlt} />
 
@@ -113,6 +127,8 @@ const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData :
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href={fontHref} onload="this.onload=null;this.rel='stylesheet'" />
     <noscript><link rel="stylesheet" href={fontHref} /></noscript>
+
+    {ov?.cssBody && <style set:html={ov.cssBody} />}
 
     {sdArray.map((sd) => (
       <script type="application/ld+json" set:html={JSON.stringify(sd)} />
@@ -122,6 +138,13 @@ const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData :
     <Header />
     <main>
       <slot />
+      {ov?.htmlBody && (
+        <section class="section">
+          <div class="container-site">
+            <div class="prose prose-ink max-w-none" set:html={ov.htmlBody} />
+          </div>
+        </section>
+      )}
     </main>
     <Footer />
   </body>

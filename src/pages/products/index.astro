@@ -59,11 +59,19 @@ function anchorOf(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'group';
 }
 
+/* Same alias as the detail route: these two modules live at an older, indexed
+   slug rather than their technical name. Keep the two files in step. */
+const ALIAS: Record<string, string> = {
+  'wt-whatsapp-otp-odoo': 'wt-whatsapp-otp',
+  'wt-barcode-scanner-offline': 'odoo-barcode-scanner',
+};
+
 const legacy = new Map(PRODUCTS.map(p => [p.slug, p] as const));
 const cards: Card[] = [];
 const seen = new Set<string>();
 
-for (const [slug, mod] of Object.entries(MODULE_CATALOG)) {
+for (const [key, mod] of Object.entries(MODULE_CATALOG)) {
+  const slug = ALIAS[key] || key;
   if (!mod || seen.has(slug)) continue;
   seen.add(slug);
   const older = legacy.get(slug);

@@ -1,0 +1,727 @@
+---
+/*
+ * Per-country, per-topic localization pages.
+ *
+ * /countries/<slug>/<topic>/ for five topics: e-invoicing, accounting-tax,
+ * payroll, payments, shipping. The parent /countries/<slug>/ page keeps its
+ * summary view and its URL. These pages go deeper on one topic: every item in
+ * country-detail.ts is printed in full, with its kind, its Odoo support level
+ * and its verification state. Nothing here is reworded and no fact is invented.
+ *
+ * A topic with no data for a country produces no page rather than an empty one,
+ * so every lookup below is guarded.
+ */
+import Base from '~/layouts/Base.astro';
+import { SITE, COUNTRIES, SERVICES } from '~/data/site';
+import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
+
+type CountryRec = (typeof COUNTRIES)[number];
+type ServiceRec = (typeof SERVICES)[number];
+type TopicKey = 'e-invoicing' | 'accounting-tax' | 'payroll' | 'payments' | 'shipping';
+
+const TOPIC_ORDER: TopicKey[] = ['e-invoicing', 'accounting-tax', 'payroll', 'payments', 'shipping'];
+
+const TOPIC_LABEL: Record<TopicKey, string> = {
+  'e-invoicing': 'E-invoicing',
+  'accounting-tax': 'Accounting and tax',
+  'payroll': 'Payroll',
+  'payments': 'Payments',
+  'shipping': 'Shipping',
+};
+
+/* A topic renders only when the country actually carries data for it. */
+function hasTopicData(d: CountryDetail | undefined, t: TopicKey): boolean {
+  if (!d) return false;
+  if (t === 'e-invoicing') return Boolean(d.einvoicing && String(d.einvoicing.scheme || '').trim());
+  if (t === 'accounting-tax') return (d.tax?.length || 0) + (d.accounting?.length || 0) > 0;
+  if (t === 'payroll') return (d.payroll?.length || 0) > 0;
+  if (t === 'payments') return (d.payments?.length || 0) > 0;
+  if (t === 'shipping') return (d.shipping?.length || 0) > 0;
+  return false;
+}
+
+export function getStaticPaths() {
+  /* Astro hoists this out of component scope, so it cannot see anything declared
+     in the frontmatter below. Everything it needs is declared here. */
+  const TOPICS = ['e-invoicing', 'accounting-tax', 'payroll', 'payments', 'shipping'] as const;
+
+  const has = (d: any, t: string): boolean => {
+    if (!d) return false;
+    if (t === 'e-invoicing') return Boolean(d.einvoicing && (d.einvoicing.scheme || d.einvoicing.status));
+    if (t === 'accounting-tax') return (d.tax?.length || 0) > 0 || (d.accounting?.length || 0) > 0;
+    if (t === 'payroll') return (d.payroll?.length || 0) > 0;
+    if (t === 'payments') return (d.payments?.length || 0) > 0;
+    if (t === 'shipping') return (d.shipping?.length || 0) > 0;
+    return false;
+  };
+
+  const paths: { params: { slug: string; topic: string }; props: { country: CountryRec; topic: TopicKey } }[] = [];
+  for (const c of COUNTRIES) {
+    const d = COUNTRY_DETAIL[c.slug];
+    if (!d) continue;
+    for (const t of TOPICS) {
+      if (!has(d, t)) continue;
+      paths.push({ params: { slug: c.slug, topic: t }, props: { country: c, topic: t as TopicKey } });
+    }
+  }
+  return paths;
+}
+
+const { country, topic } = Astro.props as { country: CountryRec; topic: TopicKey };
+const detail: CountryDetail | undefined = COUNTRY_DETAIL[country.slug];
+
+const plainName = country.title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
+const topicLabel = TOPIC_LABEL[topic] || 'Localization';
+const pageUrl = `${SITE.url}/countries/${country.slug}/${topic}/`;
+const parentUrl = `/countries/${country.slug}/`;
+const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&source=countries/${country.slug}/${topic}`;
+
+/* Region grouping decides link order only. It is never printed as a claim. */
+const REGION_OF: Record<string, string> = {
+  'saudi-arabia': 'gulf', 'uae': 'gulf', 'qatar': 'gulf', 'kuwait': 'gulf', 'oman': 'gulf', 'bahrain': 'gulf',
+  'egypt': 'me', 'jordan': 'me', 'turkey': 'me',
+  'pakistan': 'sasia', 'india': 'sasia', 'bangladesh': 'sasia',
+  'united-kingdom': 'eu', 'germany': 'eu', 'france': 'eu',
+  'united-states': 'na', 'canada': 'na',
+  'australia': 'apac',
+};
+const myRegion = REGION_OF[country.slug] || '';
+const countryIndex = Math.max(0, COUNTRIES.findIndex((c: CountryRec) => c.slug === country.slug));
+
+/* Copy per topic. Delivery process only: no rate, scheme, mandate or threshold
+   is written here. Every regulatory line on the page comes out of
+   country-detail.ts verbatim. */
+interface TopicCopy {
+  h1: string;
+  title: string;
+  lede: string;
+  meta: string;
+  serviceName: string;
+  serviceType: string;
+  serviceDesc: string;
+  build: { t: string; d: string }[];
+  need: string[];
+  services: string[];
+}
+
+const TOPIC_COPY: Record<TopicKey, TopicCopy> = {
+  'e-invoicing': {
+    h1: `Odoo e-invoicing in ${plainName}`,
+    title: `Odoo E-Invoicing in ${country.title}`,
+    lede: `The ${plainName} e-invoicing picture in full: the scheme, the authority behind it, who it binds, and every requirement we map before a build is quoted.`,
+    meta: `Odoo e-invoicing in ${plainName}: the scheme, who has to comply, and every requirement, with what each one changes in an Odoo build.`,
+    serviceName: `Odoo e-invoicing setup in ${country.title}`,
+    serviceType: 'Odoo e-invoicing configuration, integration and support',
+    serviceDesc: `Odoo e-invoicing setup, integration and support for businesses in ${plainName}.`,
+    build: [
+      { t: 'Requirements first, code second.', d: 'Each line above becomes a field, a report, or an API call on a written mapping sheet. Anything with no home in Odoo is quoted as a build before the project starts.' },
+      { t: 'Numbering is settled on day one.', d: 'Invoice sequences are the part that breaks quietly and costs the most to unwind after go-live, so they are signed off before the first test document.' },
+      { t: 'Submission runs from a queue.', d: 'Retries, idempotency keys, stored responses and an audit trail. A failed send becomes a ticket with evidence, not a missing invoice you find at month end.' },
+      { t: 'Your finance team signs it off.', d: 'Real documents, in a test database, checked with your accountant or tax advisor before cutover, with a rollback plan in writing.' },
+    ],
+    need: [
+      'Your tax registration details and the entity each one belongs to.',
+      'A sample of every document type you issue: invoice, credit note, debit note, self-billing if you use it.',
+      'Any registration, certificate or portal credential the authority has already issued you.',
+    ],
+    services: ['odoo-e-invoicing', 'odoo-localization', 'odoo-integration', 'odoo-implementation'],
+  },
+  'accounting-tax': {
+    h1: `Odoo accounting and tax in ${plainName}`,
+    title: `Odoo Accounting and Tax in ${country.title}`,
+    lede: `Every ${plainName} tax and accounting item we configure and test before a go-live, printed in full rather than condensed.`,
+    meta: `Odoo accounting and tax in ${plainName}: every tax rule and reporting item we configure and test before a go-live, printed in full.`,
+    serviceName: `Odoo accounting and tax setup in ${country.title}`,
+    serviceType: 'Odoo accounting configuration, tax setup and reporting',
+    serviceDesc: `Odoo accounting and tax configuration, reporting and support for businesses in ${plainName}.`,
+    build: [
+      { t: 'Chart of accounts from your accountant.', d: 'We configure against the mapping your accountant signs, not a default template someone picked in the install wizard.' },
+      { t: 'Every tax gets a test document.', d: 'An invoice, a credit note and a period report per tax, checked against a figure your accountant produced independently.' },
+      { t: 'Opening balances reconcile.', d: 'Prior-period data is loaded and tied back to your last filed set of accounts before anyone posts a live transaction.' },
+      { t: 'Filing outputs come out of Odoo.', d: 'Reports are produced from the system, checked line by line, then handed over with a written procedure so your team runs them without us.' },
+    ],
+    need: [
+      'Your current chart of accounts and the tax codes in use today.',
+      'The last filed set of accounts and the last filed return.',
+      'The name of the accountant or tax advisor who signs off the configuration.',
+    ],
+    services: ['odoo-localization', 'odoo-implementation', 'odoo-audit', 'odoo-consultancy'],
+  },
+  'payroll': {
+    h1: `Odoo payroll in ${plainName}`,
+    title: `Odoo Payroll in ${country.title}`,
+    lede: `Every ${plainName} payroll item that has to land in a salary rule, a bank file, or a statutory report, printed in full with its verification state.`,
+    meta: `Odoo payroll in ${plainName}: contributions, filings and bank files, and how each one is built as an Odoo salary rule or report.`,
+    serviceName: `Odoo payroll setup in ${country.title}`,
+    serviceType: 'Odoo payroll configuration, salary rules and statutory reporting',
+    serviceDesc: `Odoo payroll setup, configuration and support for businesses in ${plainName}.`,
+    build: [
+      { t: 'Rules, not hard-coded numbers.', d: 'Contributions and deductions are built as Odoo salary rules with dated parameters, so a rate change is a configuration edit rather than a code release.' },
+      { t: 'Employee data gets audited first.', d: 'Bank details, national identifiers, start dates and contract types. Bad master data is why most payroll go-lives slip, and it is cheap to fix early.' },
+      { t: 'One parallel run, minimum.', d: 'We run at least one cycle alongside your current system and reconcile it line by line with your HR and finance leads before switching over.' },
+      { t: 'Bank files tested with the bank.', d: 'Payment files and statutory reports are generated from Odoo and put through your bank as a test batch before the first live run.' },
+    ],
+    need: [
+      'A full payslip for each contract type you run, from your current system.',
+      'Your employee master file, including bank details and identifiers.',
+      'The reports and files you submit today, and who you submit them to.',
+    ],
+    services: ['odoo-payroll-setup', 'odoo-localization', 'odoo-implementation', 'odoo-training'],
+  },
+  'payments': {
+    h1: `Odoo payment gateways in ${plainName}`,
+    title: `Odoo Payment Gateways in ${country.title}`,
+    lede: `Every payment method and gateway that matters in ${plainName}, with what each one takes to reach Odoo: shipped with the product, a community module, a paid connector, or a build.`,
+    meta: `Odoo payment gateways in ${plainName}: every method that matters, and whether it is shipped with Odoo, a connector, or a custom build.`,
+    serviceName: `Odoo payment gateway integration in ${country.title}`,
+    serviceType: 'Odoo payment provider configuration and gateway integration',
+    serviceDesc: `Odoo payment gateway integration and checkout support for businesses in ${plainName}.`,
+    build: [
+      { t: 'Start from what buyers already carry.', d: 'We pick the smallest set of providers that covers the methods your customers use, because every extra gateway is another reconciliation and another support surface.' },
+      { t: 'Shipped providers first.', d: 'Anything Odoo already carries is configured before anyone buys a connector. Paid connectors and custom work are priced up front, not discovered mid-project.' },
+      { t: 'Four tests per provider.', d: 'Authorization, capture, refund and a deliberate failure, run in sandbox, then repeated once in production with a small live amount.' },
+      { t: 'Settlement is mapped to the ledger.', d: 'Payouts, fees and chargebacks post to accounts your accountant agreed, so the bank reconciliation clears instead of leaving a suspense balance.' },
+    ],
+    need: [
+      'Your current gateway contracts and the fee schedule on each.',
+      'A month of settlement reports, so the ledger mapping can be tested against real payouts.',
+      'The currencies you collect in, and the entity that receives each payout.',
+    ],
+    services: ['odoo-integration', 'odoo-ecommerce', 'odoo-implementation', 'odoo-customization'],
+  },
+  'shipping': {
+    h1: `Odoo shipping and courier integration in ${plainName}`,
+    title: `Odoo Shipping Integration in ${country.title}`,
+    lede: `The carriers that move volume in ${plainName}, and what rating, label printing, tracking and cash on delivery each one takes to reach Odoo.`,
+    meta: `Odoo shipping integration in ${plainName}: the carriers that matter, and what rating, labels and tracking take to reach Odoo.`,
+    serviceName: `Odoo shipping and courier integration in ${country.title}`,
+    serviceType: 'Odoo delivery carrier configuration and courier API integration',
+    serviceDesc: `Odoo shipping and courier integration, from rating to labels and tracking, for businesses in ${plainName}.`,
+    build: [
+      { t: 'Four integrations, not one.', d: 'Rating, label printing, tracking and cash on delivery reconciliation are separate pieces of work with separate failure modes, and they are quoted separately.' },
+      { t: 'Carrier accounts confirmed before build.', d: 'Test credentials rarely carry your negotiated rates, so we validate account numbers and rate cards with the carrier before the connector is written.' },
+      { t: 'No connector means we build one.', d: 'Where a carrier has no Odoo integration we build against their API with retry, idempotency and stored responses, and we hand over the code.' },
+      { t: 'Returns go back into stock.', d: 'Failed deliveries and returns are wired to real stock moves, so inventory stays true without someone correcting it by hand every week.' },
+    ],
+    need: [
+      'Your carrier account numbers and the rate card on each.',
+      'Your top ten delivery destinations by volume, with typical weight and dimensions.',
+      'Whether you collect cash on delivery, and who reconciles it today.',
+    ],
+    services: ['odoo-integration', 'odoo-ecommerce', 'odoo-customization', 'odoo-support'],
+  },
+};
+
+const copy: TopicCopy | undefined = TOPIC_COPY[topic];
+
+/* Support badges: colour reads as cost to the buyer. */
+const SUPPORT_CLASS: Record<OdooSupport, string> = {
+  native: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  oca_or_community: 'bg-ink-100 text-ink-700 ring-ink-300',
+  third_party_paid: 'bg-amber-50 text-amber-800 ring-amber-200',
+  custom_build: 'bg-rose-50 text-rose-700 ring-rose-200',
+};
+const supportClass = (s: OdooSupport) => SUPPORT_CLASS[s] || SUPPORT_CLASS.custom_build;
+const supportLabel = (s: OdooSupport) => SUPPORT_LABEL[s] || '';
+const SUPPORT_ORDER: OdooSupport[] = ['native', 'oca_or_community', 'third_party_paid', 'custom_build'];
+
+const GROUP_INTRO: Record<OdooSupport, string> = {
+  native: 'Ships with Odoo. Configuration, not development.',
+  oca_or_community: 'A community module exists. Install, test, and budget for keeping it current across upgrades.',
+  third_party_paid: 'A paid connector covers this. Licence cost sits outside our fee and is quoted separately.',
+  custom_build: 'No connector we would put in production. This is scoped, priced and built.',
+};
+
+/* Fact topics: accounting-tax and payroll. */
+const factGroups: { id: string; title: string; intro: string; facts: CountryFact[] }[] =
+  topic === 'accounting-tax'
+    ? [
+        {
+          id: 'tax',
+          title: `Tax rules that shape a ${plainName} configuration`,
+          intro: 'Each item below is one thing the tax setup has to get right before go-live.',
+          facts: detail?.tax || [],
+        },
+        {
+          id: 'accounting',
+          title: `The reporting framework your ${plainName} books sit inside`,
+          intro: 'What your statements have to comply with, and what that means for the chart of accounts.',
+          facts: detail?.accounting || [],
+        },
+      ].filter(g => g.facts.length > 0)
+    : topic === 'payroll'
+      ? [
+          {
+            id: 'payroll',
+            title: `What ${plainName} payroll has to calculate, withhold and file`,
+            intro: 'Each item below becomes a salary rule, a bank file, or a report we test before the first live run.',
+            facts: detail?.payroll || [],
+          },
+        ].filter(g => g.facts.length > 0)
+      : [];
+
+const factCount = factGroups.reduce((n, g) => n + g.facts.length, 0);
+const factUnconfirmed = factGroups.reduce((n, g) => n + g.facts.filter((f: CountryFact) => f.verified === false).length, 0);
+
+/* Provider topics: payments and shipping. */
+const providers: CountryProvider[] =
+  topic === 'payments' ? (detail?.payments || []) : topic === 'shipping' ? (detail?.shipping || []) : [];
+
+const providerGroups = SUPPORT_ORDER
+  .map((s: OdooSupport) => ({ support: s, items: providers.filter((p: CountryProvider) => p.support === s) }))
+  .filter(g => g.items.length > 0);
+
+/* Anything with an unrecognised support value still has to render. */
+const providerOther = providers.filter((p: CountryProvider) => !SUPPORT_ORDER.includes(p.support));
+const providerUnconfirmed = providers.filter((p: CountryProvider) => p.verified === false).length;
+
+/* E-invoicing topic. */
+const ei = topic === 'e-invoicing' ? detail?.einvoicing : undefined;
+const eiRequirements: string[] = ei?.requirements || [];
+
+/* Sibling topics for this same country. */
+const siblingTopics = TOPIC_ORDER
+  .filter((t: TopicKey) => t !== topic && hasTopicData(detail, t))
+  .map((t: TopicKey) => ({ key: t, label: TOPIC_LABEL[t], href: `/countries/${country.slug}/${t}/` }));
+
+/* Same topic, other countries. Nearby markets first, then a rotation so the
+   tail differs page to page. */
+const rotIdx = (i: number, len: number, step: number) => (i + countryIndex * step) % len;
+const sameTopicElsewhere = COUNTRIES
+  .map((c: CountryRec, i: number) => ({ c, i, near: myRegion && REGION_OF[c.slug] === myRegion ? 0 : 1 }))
+  .filter(x => x.c.slug !== country.slug && hasTopicData(COUNTRY_DETAIL[x.c.slug], topic))
+  .sort((a, b) => a.near - b.near || rotIdx(a.i, COUNTRIES.length, 4) - rotIdx(b.i, COUNTRIES.length, 4))
+  .slice(0, 6)
+  .map(x => x.c);
+
+/* Services worth reading next. Missing slugs drop out rather than 404. */
+const topicServices: ServiceRec[] = (copy?.services || [])
+  .map((slug: string) => SERVICES.find((s: ServiceRec) => s.slug === slug))
+  .filter((s): s is ServiceRec => Boolean(s));
+
+/* Review date, printed as '22 August 2026'. Falls back to the raw string if the
+   constant is ever not an ISO date. */
+const reviewedStamp = new Date(`${COUNTRY_DETAIL_REVIEWED}T00:00:00Z`);
+const reviewedOn = Number.isNaN(reviewedStamp.getTime())
+  ? COUNTRY_DETAIL_REVIEWED
+  : reviewedStamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+/* hreflang: the only honest alternate is this same English page targeted at
+   this country's region, taken from the ISO region subtag. */
+const regionSubtag = String(country.lang || '').split('-')[1] || '';
+const hreflangAlternates = regionSubtag ? [{ lang: `en-${regionSubtag.toUpperCase()}`, href: pageUrl }] : [];
+
+/* Structured data: breadcrumbs plus a Service node. The Service description is
+   deliberately free of rates, scheme names and mandates. Structured data is the
+   wrong place to assert a regulatory claim, so those stay in the page body.
+   No FAQPage on these pages. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Countries', item: `${SITE.url}/countries/` },
+      { '@type': 'ListItem', position: 3, name: country.title, item: `${SITE.url}/countries/${country.slug}/` },
+      { '@type': 'ListItem', position: 4, name: topicLabel, item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: copy?.serviceName || `Odoo services in ${country.title}`,
+    serviceType: copy?.serviceType || 'Odoo implementation and support',
+    description: copy?.serviceDesc || `Odoo implementation and support for businesses in ${plainName}.`,
+    url: pageUrl,
+    provider: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      email: SITE.email,
+      telephone: SITE.phone,
+    },
+    areaServed: [
+      { '@type': 'Country', name: plainName },
+      ...country.cities.map((c: string) => ({ '@type': 'City', name: c })),
+    ],
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: `${SITE.url}/contact/`,
+      availableLanguage: ['English', 'Arabic', 'Urdu'],
+    },
+  },
+];
+---
+<Base
+  title={copy?.title || `Odoo in ${country.title}`}
+  description={copy?.meta}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 12% 12%, rgba(135,90,123,0.5) 0%, transparent 45%), radial-gradient(circle at 88% 88%, rgba(0,160,157,0.28) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-14 sm:py-20">
+      <nav class="text-sm text-brand-200">
+        <a href="/" class="hover:text-white">Home</a>
+        {' / '}<a href="/countries/" class="hover:text-white">Countries</a>
+        {' / '}<a href={parentUrl} class="hover:text-white">{country.title}</a>
+        {' / '}<span class="text-white">{topicLabel}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3">
+          <span class="text-4xl">{country.flag}</span>
+          <span class="eyebrow !text-brand-200">{topicLabel} in {country.title}</span>
+        </div>
+        <h1 class="h1 mt-5">{copy?.h1}</h1>
+        <p class="lede mt-6 text-ink-200">{copy?.lede}</p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Book a scoping call</a>
+          <a href={parentUrl} class="btn-secondary !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Full {plainName} overview</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {siblingTopics.length > 0 && (
+    <section class="border-b border-ink-200 bg-white py-4">
+      <div class="container-site flex flex-wrap items-center gap-x-6 gap-y-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">Also for {plainName}</span>
+        {siblingTopics.map(s => (
+          <a href={s.href} class="text-sm font-semibold text-brand-600 hover:text-brand-700">{s.label}</a>
+        ))}
+        <a href={parentUrl} class="text-sm font-semibold text-ink-600 hover:text-brand-700">Country overview</a>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+
+          {topic === 'e-invoicing' && ei && (
+            <div>
+              <div class="overflow-hidden rounded-2xl border border-brand-200">
+                <div class="bg-brand-50 p-6 sm:p-8">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="eyebrow">Scheme</span>
+                    {ei.verified === false && (
+                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Unconfirmed</span>
+                    )}
+                  </div>
+                  <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{ei.scheme}</p>
+                  <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Authority:</span> {ei.authority}</p>
+                </div>
+                <div class="space-y-6 bg-white p-6 sm:p-8">
+                  {ei.status && (
+                    <div>
+                      <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">Where it stands</div>
+                      <p class="mt-2 text-ink-700">{ei.status}</p>
+                    </div>
+                  )}
+                  {ei.appliesTo && (
+                    <div>
+                      <div class="text-xs font-semibold uppercase tracking-wider text-ink-500">Who has to comply</div>
+                      <p class="mt-2 text-ink-700">{ei.appliesTo}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {eiRequirements.length > 0 && (
+                <div class="mt-12">
+                  <h2 class="h3">Every requirement, in full</h2>
+                  <p class="mt-3 text-ink-700">
+                    {eiRequirements.length} requirements. Each one has to end up as a field, a document layout, a stored
+                    response, or an API call in your Odoo build. This is the list a {plainName} e-invoicing project gets
+                    costed against.
+                  </p>
+                  <ol class="mt-6 space-y-3">
+                    {eiRequirements.map((r: string, i: number) => (
+                      <li class="flex gap-4 rounded-xl border border-ink-200 bg-white p-4 sm:p-5">
+                        <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{i + 1}</span>
+                        <span class="text-ink-700">{r}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+
+          {factGroups.length > 0 && (
+            <div>
+              <p class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-600">
+                <span class="inline-flex items-center rounded-full bg-ink-100 px-2.5 py-1 text-[11px] font-semibold text-ink-700 ring-1 ring-ink-300">{factCount} items</span>
+                {factUnconfirmed > 0 && (
+                  <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{factUnconfirmed} unconfirmed</span>
+                )}
+                <span>Printed as checked, not condensed.</span>
+              </p>
+              {factGroups.map(g => (
+                <section id={g.id} class="mt-10 scroll-mt-24">
+                  <h2 class="h3">{g.title}</h2>
+                  <p class="mt-3 text-ink-700">{g.intro}</p>
+                  <ol class="mt-6 space-y-3">
+                    {g.facts.map((f: CountryFact, i: number) => (
+                      <li class={f.verified === false
+                        ? 'flex gap-4 rounded-xl border border-dashed border-ink-300 bg-ink-50 p-4 sm:p-5'
+                        : 'flex gap-4 rounded-xl border border-ink-200 bg-white p-4 sm:p-5'}>
+                        <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{i + 1}</span>
+                        <div>
+                          <p class="text-ink-700">{f.claim}</p>
+                          {f.verified === false && (
+                            <p class="mt-2 text-[11px] font-semibold uppercase tracking-wider text-ink-500">Unconfirmed. Sources agreed, no primary confirmation found.</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+            </div>
+          )}
+
+          {providers.length > 0 && (
+            <div>
+              <h2 class="h3">
+                {topic === 'payments'
+                  ? `Every payment rail we check for a ${plainName} rollout`
+                  : `Every carrier we check for a ${plainName} rollout`}
+              </h2>
+              <p class="mt-3 text-ink-700">
+                {providers.length} entries, grouped by what each one costs you to reach from Odoo. The badge is the whole
+                commercial question: shipped with the product, a community module, a paid connector, or a build.
+              </p>
+              <div class="mt-5 flex flex-wrap items-center gap-2">
+                {providerGroups.map(g => (
+                  <span class={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(g.support)}`}>
+                    {supportLabel(g.support)}
+                    <span class="font-bold">{g.items.length}</span>
+                  </span>
+                ))}
+                {providerUnconfirmed > 0 && (
+                  <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{providerUnconfirmed} unconfirmed</span>
+                )}
+              </div>
+
+              {providerGroups.map(g => (
+                <section class="mt-10">
+                  <div class="flex flex-wrap items-baseline gap-3">
+                    <h3 class="text-lg font-bold text-ink-900">{supportLabel(g.support)}</h3>
+                    <span class="text-sm text-ink-500">{g.items.length} of {providers.length}</span>
+                  </div>
+                  <p class="mt-2 text-sm text-ink-600">{GROUP_INTRO[g.support]}</p>
+                  <div class="mt-5 space-y-3">
+                    {g.items.map((p: CountryProvider) => (
+                      <div class={p.verified === false
+                        ? 'rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-5'
+                        : 'rounded-2xl border border-ink-200 bg-white p-5'}>
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-ink-900">{p.name}</span>
+                            {p.kind && <span class="chip text-[11px]">{p.kind}</span>}
+                          </div>
+                          <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(p.support)}`}>{supportLabel(p.support)}</span>
+                        </div>
+                        <p class="mt-3 text-sm text-ink-700">{p.note}</p>
+                        {p.verified === false && (
+                          <p class="mt-3 text-[11px] font-semibold uppercase tracking-wider text-ink-500">Unconfirmed. Sources agreed, no primary confirmation found.</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+
+              {providerOther.length > 0 && (
+                <section class="mt-10">
+                  <h3 class="text-lg font-bold text-ink-900">Also on the list</h3>
+                  <div class="mt-5 space-y-3">
+                    {providerOther.map((p: CountryProvider) => (
+                      <div class="rounded-2xl border border-ink-200 bg-white p-5">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="font-semibold text-ink-900">{p.name}</span>
+                          {p.kind && <span class="chip text-[11px]">{p.kind}</span>}
+                        </div>
+                        <p class="mt-3 text-sm text-ink-700">{p.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          <p class="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm">
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Checked</span>
+            <span class="text-ink-700">Localization notes on this page checked on {reviewedOn}.</span>
+          </p>
+          <p class="mt-4 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">
+            Rates, formats, thresholds and submission windows change. We configure against the rules in force at build
+            time and confirm every figure with your accountant or tax advisor before sign-off. If a rule moves after
+            go-live, it is a support ticket, not a rebuild. Read more on our
+            {' '}<a href="/services/odoo-localization/" class="font-semibold text-brand-600 hover:text-brand-700">Odoo localization service</a>.
+          </p>
+
+          <h2 class="h3 mt-14">How we build {topicLabel.toLowerCase()} for {plainName}</h2>
+          <p class="mt-3 text-ink-700">
+            The delivery method behind the list above. The same four steps on a 10-user rollout and on a multi-company
+            programme, with the depth scaled to the scope.
+          </p>
+          <ol class="mt-6 space-y-4">
+            {(copy?.build || []).map((b: { t: string; d: string }, i: number) => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">{i + 1}</span>
+                <span class="text-ink-700"><strong class="text-ink-900">{b.t}</strong> {b.d}</span>
+              </li>
+            ))}
+          </ol>
+
+          <h2 class="h3 mt-14">What we need from you to quote it</h2>
+          <p class="mt-3 text-ink-700">
+            Bring these to the first call and you get a scoped, priced {topicLabel.toLowerCase()} plan for {plainName}
+            instead of a range.
+          </p>
+          <ul class="mt-6 space-y-3">
+            {(copy?.need || []).map((n: string) => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">✓</span>
+                <span class="text-ink-700">{n}</span>
+              </li>
+            ))}
+          </ul>
+
+          {topicServices.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Services behind this work</h2>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {topicServices.map((s: ServiceRec) => (
+                  <a href={`/services/${s.slug}/`} class="card group !p-4">
+                    <div class="flex items-center gap-2 text-sm">
+                      <span class="text-xl">{s.icon}</span>
+                      <span class="font-semibold">{s.title}</span>
+                    </div>
+                    <p class="mt-2 text-xs text-ink-600">{s.tagline}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {siblingTopics.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">The rest of the {plainName} localization detail</h2>
+              <p class="mt-3 text-ink-700">
+                Each topic has its own page with the full item list, the same way this one does.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {siblingTopics.map(s => (
+                  <a href={s.href} class="card group !p-4">
+                    <span class="text-sm font-semibold">{s.label} in {plainName}</span>
+                    <p class="mt-2 text-xs text-ink-600">Full detail, printed as checked.</p>
+                  </a>
+                ))}
+                <a href={parentUrl} class="card group !p-4">
+                  <span class="text-sm font-semibold">{plainName} country overview</span>
+                  <p class="mt-2 text-xs text-ink-600">Services, modules, client work and delivery for {plainName}.</p>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {sameTopicElsewhere.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">{topicLabel} in other markets we cover</h2>
+              <p class="mt-3 text-ink-700">
+                Running the same rollout across borders? These pages carry the same depth for each market, so you can
+                compare before scoping a multi-country phase.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {sameTopicElsewhere.map((c: CountryRec) => (
+                  <a href={`/countries/${c.slug}/${topic}/`} class="card group !p-4">
+                    <span class="text-sm font-semibold">{c.flag} {topicLabel} in {c.title}</span>
+                  </a>
+                ))}
+              </div>
+              <a href="/countries/" class="mt-5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All 18 countries →</a>
+            </div>
+          )}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">{topicLabel} in {country.title}?</h2>
+              <p class="mt-2 text-sm text-brand-100">
+                A 30-minute call with a senior consultant who has shipped this. You leave with a written scope.
+              </p>
+              <a href={contactHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Book a call</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">{plainName} at a glance</h2>
+              <dl class="mt-4 space-y-2 text-sm">
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Currency</dt><dd class="font-semibold">{country.currency}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Locale</dt><dd class="font-semibold">{country.lang}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Cities covered</dt><dd class="font-semibold">{country.cities.length}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Odoo versions</dt><dd class="font-semibold">v12 to v19</dd></div>
+              </dl>
+              <a href={parentUrl} class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Odoo partner in {country.title} →</a>
+            </div>
+
+            {providerGroups.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 bg-white p-6">
+                <h2 class="text-sm font-semibold">What the badges mean</h2>
+                <ul class="mt-4 space-y-3 text-sm">
+                  {providerGroups.map(g => (
+                    <li>
+                      <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(g.support)}`}>{supportLabel(g.support)}</span>
+                      <span class="mt-2 block text-ink-600">{GROUP_INTRO[g.support]}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {sameTopicElsewhere.length > 0 && (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h2 class="text-sm font-semibold">{topicLabel} elsewhere</h2>
+                <ul class="mt-4 space-y-2">
+                  {sameTopicElsewhere.map((c: CountryRec) => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/countries/${c.slug}/${topic}/`}>{c.flag} {c.title}</a></li>
+                  ))}
+                </ul>
+                <a href="/countries/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All 18 countries →</a>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50">
+    <div class="container-site">
+      <div class="relative overflow-hidden rounded-3xl bg-odoo-gradient p-10 sm:p-16 text-white">
+        <div class="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent-400/30 blur-3xl"></div>
+        <div class="relative max-w-2xl">
+          <div class="text-4xl">{country.flag}</div>
+          <h2 class="h2 mt-4 text-white">Scope {topicLabel.toLowerCase()} for your {plainName} rollout.</h2>
+          <p class="lede mt-4 text-brand-100">
+            Send us the list above with your answers against it. We come back with what is configuration, what is a
+            connector, and what is a build, priced before the project starts.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Book a scoping call</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp us</a>
+            <a href="/pricing/" class="btn-secondary !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">See pricing</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

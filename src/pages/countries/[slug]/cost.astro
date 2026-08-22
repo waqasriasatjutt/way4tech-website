@@ -1,0 +1,1035 @@
+---
+/*
+ * Per-country Odoo cost pages: /countries/<slug>/cost/
+ *
+ * A static route, so it wins over the sibling [topic].astro dynamic route and
+ * does not disturb the five topics that file emits.
+ *
+ * Rules this file follows, and that any edit has to keep:
+ *
+ *  - Every price on the page comes from PRICING in src/data/site.ts. No day
+ *    rate, hourly rate, per-country figure or multiplier is introduced here.
+ *  - Every regulatory or product statement is printed verbatim from
+ *    country-detail.ts. Nothing is reworded, summarised or inferred into a new
+ *    fact. Our own writing is delivery commentary only: what a given piece of
+ *    work costs us to build and test, never what a rule says.
+ *  - No competitor, partner or third-party licence figure is printed. Two lines
+ *    in country-detail.ts quote a paid module price as an anchor; safeLine()
+ *    filters those out before anything renders.
+ *  - The cost drivers are derived from structured fields wherever possible
+ *    (the support enum, module lists, array lengths). Text matching is used
+ *    only for the e-invoicing signals, and it is negation-aware, so "no
+ *    clearance step" and "post-audit, not clearance" do not read as clearance.
+ *  - Every lookup is guarded. A country with no detail record emits no page.
+ *
+ * No Offer or Product schema: these are indicative starting points, not offers.
+ */
+import Base from '~/layouts/Base.astro';
+import { SITE, COUNTRIES, SERVICES, PRICING, FAQS } from '~/data/site';
+import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+import type { CountryDetail, CountryProvider, OdooSupport } from '~/data/country-detail';
+
+type CountryRec = (typeof COUNTRIES)[number];
+type ServiceRec = (typeof SERVICES)[number];
+
+export function getStaticPaths() {
+  return COUNTRIES
+    .filter((c: CountryRec) => Boolean(COUNTRY_DETAIL[c.slug]))
+    .map((c: CountryRec) => ({ params: { slug: c.slug }, props: { country: c } }));
+}
+
+const { country } = Astro.props as { country: CountryRec };
+const detail: CountryDetail | undefined = COUNTRY_DETAIL[country.slug];
+
+const plainName = country.title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
+const pageUrl = `${SITE.url}/countries/${country.slug}/cost/`;
+const parentUrl = `/countries/${country.slug}/`;
+const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&source=countries/${country.slug}/cost`;
+
+/* ── Data, guarded ───────────────────────────────────────────────── */
+const ei = detail?.einvoicing;
+const taxFacts = detail?.tax || [];
+const payrollFacts = detail?.payroll || [];
+const accountingFacts = detail?.accounting || [];
+const payments: CountryProvider[] = detail?.payments || [];
+const shipping: CountryProvider[] = detail?.shipping || [];
+const odooModules: string[] = detail?.odoo?.modules || [];
+const odooNative: string[] = detail?.odoo?.native || [];
+const odooCustom: string[] = detail?.odoo?.custom || [];
+const openQuestions = typeof detail?.openQuestions === 'number' ? detail.openQuestions : 0;
+
+/* ── Price-leak filter ───────────────────────────────────────────────
+   country-detail.ts carries two lines that quote a third-party module
+   price as an anchor. We do not publish other people's licence costs, so
+   any line that pairs a currency amount with a product word is dropped
+   whole rather than edited. Thresholds and penalties in tax text are not
+   product prices and are unaffected: they carry no product word. */
+const PRICE_AMOUNT = /(usd|eur|gbp|us\$|\$|€|£)\s?[0-9][0-9,.]*/i;
+const PRODUCT_WORD = /(module|modules|connector|connectors|apps store|licen[cs]|subscription|price anchor|lists at|per user)/i;
+
+function safeLine(s: string): boolean {
+  const t = String(s || '').trim();
+  if (!t) return false;
+  if (PRICE_AMOUNT.test(t) && PRODUCT_WORD.test(t)) return false;
+  return true;
+}
+
+const clean = (arr: string[]): string[] => (arr || []).filter((s: string) => safeLine(s));
+
+/* ── Negation-aware matching ─────────────────────────────────────────
+   Used only on the e-invoicing text. A keyword counts as present only if
+   no negation word sits between the previous sentence boundary and the
+   keyword itself, so "there is no clearance step" and "post-audit, not
+   clearance" both read as absent, while "Clearance model, not post-audit
+   reporting" reads as present. */
+const NEGATION_TAIL = /\b(no|not|never|without|nor|neither|none|nothing|zero)\b[^.;:!?]*$/i;
+
+/* A negation landing just after the keyword counts too: "real-time reporting
+   will not be implemented" is not a real-time reporting requirement. Only verb
+   forms are listed, so "clearance model, not post-audit reporting" still reads
+   as clearance, which is the whole point. */
+const NEGATION_AHEAD = /^[^.;:!?]{0,60}?\b(will not|shall not|is not|are not|was not|were not|does not|do not|did not|would not|has not|have not|cannot|can not|is no|are no)\b/i;
+
+function positiveMatch(text: string, source: string): boolean {
+  const t = String(text || '');
+  if (!t) return false;
+  const rx = new RegExp(source, 'gi');
+  let m: RegExpExecArray | null = rx.exec(t);
+  while (m !== null) {
+    const before = t.slice(0, m.index);
+    const after = t.slice(m.index + m[0].length);
+    if (!NEGATION_TAIL.test(before) && !NEGATION_AHEAD.test(after)) return true;
+    if (rx.lastIndex === m.index) rx.lastIndex += 1;
+    m = rx.exec(t);
+  }
+  return false;
+}
+
+/* "There is no mandate" reads three ways in this data: an explicit negative
+   about an obligation, a post-audit or voluntary description, or a line that
+   opens by saying there is nothing. The middle form is negation-checked, so a
+   clearance market that describes itself as "not post-audit" is not misread. */
+const NO_MANDATE_EXPLICIT = /(\bno\b|\bnot\b)[^.;:!?]{0,80}\b(mandate|mandatory|obliged|obligation|compulsory)\b/i;
+const NO_MANDATE_SOFT = '\\bpost[ -]audit\\b|\\bvoluntary\\b';
+const NO_MANDATE_OPENER = /^\s*(nothing|none|nobody)\b/i;
+
+function readsAsNoMandate(line: string): boolean {
+  const t = String(line || '');
+  if (!t) return false;
+  if (NO_MANDATE_EXPLICIT.test(t) || NO_MANDATE_OPENER.test(t)) return true;
+  return positiveMatch(t, NO_MANDATE_SOFT);
+}
+
+/* A line only counts as evidence of a live requirement if it does not open by
+   saying there is no obligation, and does not hedge. A market whose notes say
+   "that is expectation, not a published rule" must never render as a
+   requirement someone has to budget for. */
+const BLANKET_NEGATIVE = /^\s*(nothing\b|none\b|no\b|nobody\b|there (is|are) no\b)/i;
+const HEDGED = /expectation|expected|proposed|\(draft\)|not yet published|no published|when a specification|anticipat|likely/i;
+
+function usableEvidence(line: string): boolean {
+  const t = String(line || '');
+  if (!t) return false;
+  const opener = t.split(/[.;:!?]/)[0] || '';
+  if (BLANKET_NEGATIVE.test(opener)) return false;
+  if (readsAsNoMandate(opener)) return false;
+  if (HEDGED.test(t)) return false;
+  return true;
+}
+
+/* Requirements first, then status, then who it applies to: the first hit
+   for a signal is then usually the most concrete line available. */
+const eiPool: string[] = ei
+  ? clean([...(ei.requirements || []), String(ei.status || ''), String(ei.appliesTo || '')])
+  : [];
+
+interface EiSignal { key: string; label: string; note: string; src: string }
+
+const EI_SIGNALS: EiSignal[] = [
+  {
+    key: 'clearance',
+    label: 'A clearance step',
+    note: 'The authority sits inside the invoice flow, so the integration has to work before you can invoice at all. That means a submission queue, retries, idempotency keys, stored responses and an audit trail, plus a test cycle against the authority whose pace you do not control. On most quotes in this market it is the single largest line.',
+    src: '\\bclearance\\b(?! certificates?)|\\bcleared\\b',
+  },
+  {
+    key: 'window',
+    label: 'A submission clock',
+    note: 'Submission runs against a deadline, so a failure cannot sit until someone notices at month end. Monitoring, alerting and a written replay procedure get built and tested, and finance signs off who handles an exception and how fast.',
+    src: '\\breal[ -]?time\\b|within \\d+ hours?|within \\d+ (working |business )?days?',
+  },
+  {
+    key: 'network',
+    label: 'Exchange through a network',
+    note: 'Documents move through a network or an intermediary rather than a portal you log into, so there is a party to contract, onboard and test with before any Odoo work is proven end to end. Book calendar time for that, not only build time.',
+    src: '\\bpeppol\\b|access point|accredited service provider|four[ -]corner',
+  },
+  {
+    key: 'format',
+    label: 'A specified format',
+    note: 'The format is fixed down to field level, so the work is a mapping sheet rather than a template edit. Every field is a decision about where that data lives in Odoo today and who keeps it right afterwards.',
+    src: '\\bUBL\\b|\\bXML\\b|\\bJSON\\b|\\bPINT\\b|XRechnung|ZUGFeRD|EN 16931|data dictionary|implementation standard',
+  },
+  {
+    key: 'seal',
+    label: 'Signatures, seals or printed codes',
+    note: 'These touch the document layout, the certificate lifecycle and the archive at the same time. Small in code, and reliably underestimated in testing, because every document type has to be re-checked.',
+    src: 'QR code|digital signature|cryptographic|fiscal seal|signing certificate',
+  },
+  {
+    key: 'archive',
+    label: 'An archiving rule',
+    note: 'Documents have to be produced again years later, in a form an auditor accepts. That is a hosting, backup and access decision taken at design time, not a setting switched on at the end.',
+    src: 'archiv|kept for \\d+ years|retention period|retained for \\d+ years|long[ -]term storage',
+  },
+];
+
+const eiEvidencePool = eiPool.filter((line: string) => usableEvidence(line));
+
+const eiHits = EI_SIGNALS
+  .map((s: EiSignal) => ({ signal: s, evidence: eiEvidencePool.filter((line: string) => positiveMatch(line, s.src)) }))
+  .filter(h => h.evidence.length > 0);
+
+/* The no-mandate reading only renders where no clearance step was found, so a
+   market cannot show both at once. */
+const hasClearance = eiHits.some(h => h.signal.key === 'clearance');
+const noMandateEvidence = hasClearance ? [] : eiPool.filter((line: string) => readsAsNoMandate(line));
+
+/* ── Providers, grouped by what they cost to reach ───────────────── */
+const bySupport = (list: CountryProvider[], s: OdooSupport): CountryProvider[] =>
+  (list || []).filter((p: CountryProvider) => p && p.support === s);
+
+const payCustom = bySupport(payments, 'custom_build');
+const payPaid = bySupport(payments, 'third_party_paid');
+const payNative = bySupport(payments, 'native');
+const payCommunity = bySupport(payments, 'oca_or_community');
+const shipCustom = bySupport(shipping, 'custom_build');
+const shipPaid = bySupport(shipping, 'third_party_paid');
+const shipNative = bySupport(shipping, 'native');
+const shipCommunity = bySupport(shipping, 'oca_or_community');
+
+const names = (list: CountryProvider[]): string[] =>
+  (list || []).map((p: CountryProvider) => String(p.name || '')).filter((n: string) => n.length > 0);
+
+const notesOf = (list: CountryProvider[]): { name: string; note: string }[] =>
+  (list || [])
+    .filter((p: CountryProvider) => p && safeLine(String(p.note || '')))
+    .map((p: CountryProvider) => ({ name: String(p.name || ''), note: String(p.note || '') }));
+
+const buildCount = payCustom.length + shipCustom.length;
+const paidCount = payPaid.length + shipPaid.length;
+const nativeCount = payNative.length + shipNative.length;
+const communityCount = payCommunity.length + shipCommunity.length;
+const statutoryCount = taxFacts.length + payrollFacts.length + accountingFacts.length;
+
+/* Cash on delivery changes the cash cycle, not just the checkout, so it is
+   worth its own driver when the market data mentions it. */
+const codCarriers = names(
+  (shipping || []).filter((p: CountryProvider) => positiveMatch(String(p.note || ''), 'cash on delivery'))
+);
+const codPayments = names(
+  (payments || []).filter((p: CountryProvider) => positiveMatch(String(p.note || ''), 'cash on delivery|cash at the door'))
+);
+const codNames = [...codCarriers, ...codPayments];
+
+/* Payroll: the module list is the structured signal. */
+const hasPayrollLocalization = odooModules.some((m: string) => /hr_payroll/i.test(String(m || '')));
+const payrollCustomLines = clean(odooCustom.filter((l: string) => /payroll/i.test(String(l || ''))));
+const payrollNativeLines = clean(odooNative.filter((l: string) => /payroll/i.test(String(l || ''))));
+
+/* Second-language work, when the market data says so. */
+const languageLines = clean(
+  [...odooNative, ...odooCustom].filter((l: string) =>
+    positiveMatch(String(l || ''), 'bilingual|secondary language|second language|right[ -]to[ -]left|Arabic')
+  )
+);
+
+/* The custom list, minus anything already printed under payroll. */
+const usedCustom = new Set<string>(hasPayrollLocalization ? [] : payrollCustomLines);
+const otherCustomLines = clean(odooCustom).filter((l: string) => !usedCustom.has(l));
+
+/* ── Cost drivers ────────────────────────────────────────────────────
+   Titles and bodies are ours and describe delivery work only. Evidence
+   is printed verbatim from country-detail.ts. */
+interface Driver {
+  id: string;
+  title: string;
+  body: string;
+  tags?: string[];
+  evidence?: string[];
+  quoted?: { name: string; note: string }[];
+}
+
+const upDrivers: Driver[] = [];
+const downDrivers: Driver[] = [];
+
+if (payCustom.length > 0) {
+  upDrivers.push({
+    id: 'pay-build',
+    title: `${payCustom.length} payment ${payCustom.length === 1 ? 'rail has' : 'rails have'} no Odoo connector we would put in production`,
+    body: 'Each one is an API build with its own tests: authorization, capture, refund and a deliberate failure in sandbox, repeated once in production with a small live amount, then settlement mapped to the ledger so the bank reconciliation clears. Price them one at a time. This is where a checkout budget doubles quietly.',
+    quoted: notesOf(payCustom).slice(0, 4),
+  });
+}
+
+if (payPaid.length > 0) {
+  upDrivers.push({
+    id: 'pay-paid',
+    title: `${payPaid.length} payment ${payPaid.length === 1 ? 'rail needs' : 'rails need'} a paid connector`,
+    body: 'The connector licence sits outside our fee and is quoted separately by whoever sells it. Our side is configuration, the four-test cycle per provider, and the reconciliation mapping. Budget for keeping each one current across Odoo upgrades, because a connector that stops at your next version is a cost you meet later.',
+    tags: names(payPaid),
+  });
+}
+
+if (shipCustom.length > 0) {
+  upDrivers.push({
+    id: 'ship-build',
+    title: `${shipCustom.length} ${shipCustom.length === 1 ? 'carrier has' : 'carriers have'} no Odoo connector`,
+    body: 'Rating, label printing, tracking and cash on delivery reconciliation are four separate pieces of work with four separate failure modes, and we quote them separately. Carrier test credentials rarely carry your negotiated rates, so the account and the rate card get validated before the connector is written.',
+    quoted: notesOf(shipCustom).slice(0, 4),
+  });
+}
+
+if (shipPaid.length > 0) {
+  upDrivers.push({
+    id: 'ship-paid',
+    title: `${shipPaid.length} ${shipPaid.length === 1 ? 'carrier sits' : 'carriers sit'} behind a paid connector`,
+    body: 'Cheaper than a build and not free. The licence is quoted separately, and our work is the account setup, the rate check against your contract, and the label and tracking test on real shipments.',
+    tags: names(shipPaid),
+  });
+}
+
+if (codNames.length > 0) {
+  upDrivers.push({
+    id: 'cod',
+    title: 'Cash on delivery is in the flow',
+    body: 'Cash on delivery touches the order, the stock move and the cash reconciliation at once. The courier holds your money for days and remits in batches, so someone has to match remittances back to orders and chase the gaps. That is a reporting and reconciliation build, not a checkbox, and it needs an owner in finance before go-live.',
+    tags: codNames.slice(0, 8),
+  });
+}
+
+if (!hasPayrollLocalization && payrollFacts.length > 0) {
+  upDrivers.push({
+    id: 'payroll-build',
+    title: 'Payroll is built here, not switched on',
+    body: `No payroll localization module appears in our ${plainName} module list, so every contribution, ceiling, deduction and statutory file becomes a salary rule, a bank file or a report that we write and test. Add at least one parallel run against your current system, reconciled line by line, before anyone switches.`,
+    evidence: payrollCustomLines.slice(0, 3),
+  });
+}
+
+if (otherCustomLines.length > 0) {
+  upDrivers.push({
+    id: 'custom-list',
+    title: `${otherCustomLines.length} ${otherCustomLines.length === 1 ? 'item' : 'items'} Odoo does not cover for ${plainName}`,
+    body: 'This is the honest part of a quote. Each line below is scoped, priced and agreed as a build before the project starts, rather than discovered halfway through and raised as a change request.',
+    evidence: otherCustomLines.slice(0, 8),
+  });
+}
+
+if (statutoryCount > 0) {
+  upDrivers.push({
+    id: 'statutory',
+    title: `${statutoryCount} statutory items to configure, test and hand over`,
+    body: `Tax, accounting and payroll items on our own ${plainName} list. Each one becomes a configuration, a test document and a number your accountant checks independently before sign-off. Individually cheap, collectively the reason a localization is a work package rather than a setting.`,
+  });
+}
+
+if (languageLines.length > 0) {
+  upDrivers.push({
+    id: 'language',
+    title: 'Documents in more than one language',
+    body: 'A second language on printed documents is not a translation pass at the end. Account names, product names, report layouts and every customer-facing template carry it, and someone on your side has to own the wording. Budget review time from a native speaker, and expect the layout work to be re-checked after it.',
+    evidence: languageLines.slice(0, 2),
+  });
+}
+
+if (openQuestions > 0) {
+  upDrivers.push({
+    id: 'open-questions',
+    title: `${openQuestions} open questions in our own ${plainName} notes`,
+    body: 'Where our research did not reach a primary source, we mark it open rather than pricing a guess. Those questions get closed in discovery against your entity, your documents and your advisor, which is exactly why a fixed price comes after discovery and not before it.',
+  });
+}
+
+if (odooModules.length > 0) {
+  downDrivers.push({
+    id: 'modules',
+    title: `${odooModules.length} official Odoo ${odooModules.length === 1 ? 'module covers' : 'modules cover'} part of this market`,
+    body: 'Configuration and testing, not development. Anything on this list is install, configure and verify work that sits inside the tier price rather than beside it.',
+    tags: odooModules.filter((m: string) => Boolean(String(m || '').trim())),
+  });
+}
+
+if (odooNative.length > 0) {
+  downDrivers.push({
+    id: 'native',
+    title: 'What you get without a build',
+    body: 'Printed as checked. Where a requirement is met by something below, the work is proving it against your documents, not writing it.',
+    evidence: clean(odooNative).slice(0, 6),
+  });
+}
+
+if (hasPayrollLocalization && payrollNativeLines.length > 0) {
+  downDrivers.push({
+    id: 'payroll-native',
+    title: 'Payroll starts from a localization rather than a blank page',
+    body: 'A payroll localization module is in the list above, so the structure exists and the work is configuration, employee data quality and a parallel run. Bad master data, not missing code, is what slips a payroll go-live.',
+    evidence: payrollNativeLines.slice(0, 2),
+  });
+}
+
+if (payNative.length > 0) {
+  downDrivers.push({
+    id: 'pay-native',
+    title: `${payNative.length} payment ${payNative.length === 1 ? 'provider ships' : 'providers ship'} with Odoo`,
+    body: 'Configured before anyone buys anything. Starting from what already ships is the cheapest checkout you can have, and it keeps the number of things that break after an upgrade down.',
+    tags: names(payNative),
+  });
+}
+
+if (shipNative.length > 0) {
+  downDrivers.push({
+    id: 'ship-native',
+    title: `${shipNative.length} ${shipNative.length === 1 ? 'carrier ships' : 'carriers ship'} with Odoo`,
+    body: 'Rating, labels and tracking without a connector purchase or an API build. If your volume can move to one of these, that is a real saving on build and on support.',
+    tags: names(shipNative),
+  });
+}
+
+if (communityCount > 0) {
+  downDrivers.push({
+    id: 'community',
+    title: `${communityCount} ${communityCount === 1 ? 'item has' : 'items have'} a community module`,
+    body: 'Install and test rather than build, then budget a little for keeping it current across upgrades. Cheaper than a build, and not free.',
+    tags: [...names(payCommunity), ...names(shipCommunity)],
+  });
+}
+
+if (noMandateEvidence.length > 0) {
+  downDrivers.push({
+    id: 'no-clearance',
+    title: 'No live authority integration to build here, on this evidence',
+    body: 'Where documents are exchanged or filed rather than cleared in the moment, e-invoicing is a format and archive job instead of a live integration, which is the cheaper end of this work. It also moves. Schemes get mandated with lead time, so we get the invoice data right now rather than retrofitting it under a deadline later.',
+    evidence: noMandateEvidence.slice(0, 2),
+  });
+}
+
+/* ── Underestimated, some of it conditional on this market ───────── */
+interface Underestimated { t: string; d: string }
+const underestimated: Underestimated[] = [];
+
+underestimated.push({
+  t: 'Your team’s hours, not ours.',
+  d: 'The days we quote are ours. The days that decide the outcome are yours: cleaning master data, agreeing the chart of accounts, testing, and deciding. Name one person who can decide, and protect their calendar.',
+});
+underestimated.push({
+  t: 'Data migration is an agreement problem.',
+  d: 'Opening balances, open invoices, stock counts and the item master. Pulling the data is the easy half. Agreeing which version of it is true takes longer, because the old system carries duplicates and wrong costs that nobody has owned for years.',
+});
+underestimated.push({
+  t: 'Numbering and sequences.',
+  d: 'Invoice sequences are the part that breaks quietly and costs the most to unwind after go-live. They get signed off before the first test document, not after the first live one.',
+});
+if (eiHits.length > 0 || buildCount > 0 || paidCount > 0) {
+  underestimated.push({
+    t: 'Other people’s calendars.',
+    d: 'Sandbox credentials, bank test batches, carrier accounts, gateway contracts and authority registrations run at a pace we do not set. This is the most common reason a plan slips, and starting it in week one costs nothing.',
+  });
+}
+if (payrollFacts.length > 0) {
+  underestimated.push({
+    t: 'The parallel payroll run.',
+    d: 'At least one cycle run alongside your current system and reconciled line by line with HR and finance before you switch. It is a week of two people’s time and it is not the place to save money.',
+  });
+}
+if (codNames.length > 0) {
+  underestimated.push({
+    t: 'Reconciling cash that a courier is holding.',
+    d: 'The order is delivered, the cash arrives days later in a batch, and the two have to meet in the ledger. Without a report for it, someone rebuilds that match in a spreadsheet every week for the life of the system.',
+  });
+}
+underestimated.push({
+  t: 'The users who join later.',
+  d: 'Training the pilot group is in every plan. The people who arrive three months after go-live are not. Record the sessions, keep the written procedures current, and the second wave costs you nothing.',
+});
+underestimated.push({
+  t: 'The second entity.',
+  d: `One company reporting in ${country.currency} is a different project from two entities that consolidate. If a second entity, branch or currency is coming inside a year, say so during scoping. Retrofitting it touches the chart of accounts and the reporting, which is more expensive than planning it.`,
+});
+underestimated.push({
+  t: 'Life after hypercare.',
+  d: 'Hypercare is included in the tiers above. What happens the month after it ends is a separate decision with a separate cost, and it is cheaper to agree before you need it than during an incident.',
+});
+
+/* ── What we need to quote ───────────────────────────────────────── */
+const needToQuote: string[] = [];
+needToQuote.push(`Your legal entities, the currency each one reports in, and whether they consolidate. Odoo runs multi-company and multi-currency, and your books can sit in ${country.currency} while you trade in others.`);
+needToQuote.push('User count by role, split between people who enter transactions and people who only read reports. The split changes the training plan and the rollout, not just the number.');
+needToQuote.push('The modules you need on day one, and the ones you want in phase two. Phasing is the cheapest lever you have on the first invoice.');
+needToQuote.push('Monthly volume: invoices, sales orders, deliveries, payslips. Volume decides hosting, performance work and how much of the process has to be automated rather than typed.');
+needToQuote.push('The system you are leaving, what data has to come across, and how far back. Two years of history and ten years of history are different projects.');
+needToQuote.push('Every system Odoo has to talk to, and who owns each one on your side. Integrations are priced per system, and each one needs a named contact who can get us credentials.');
+if (ei && String(ei.scheme || '').trim()) {
+  needToQuote.push('Where you stand with the e-invoicing scheme named on this page: what you are registered for, and any credential or certificate already issued to you.');
+}
+if (payments.length > 0) {
+  needToQuote.push('The gateways you use today, the methods your customers actually pay with, and a month of settlement reports so the ledger mapping can be tested against real payouts.');
+}
+if (shipping.length > 0) {
+  needToQuote.push('The couriers you ship with, your account numbers and rate cards, and whether you collect cash on delivery.');
+}
+if (payrollFacts.length > 0) {
+  needToQuote.push('Headcount, every contract type you run, and one full payslip for each type from your current system.');
+}
+needToQuote.push('Your target go-live date and what is driving it. A date tied to a financial year end or a compliance deadline changes sequencing, and sometimes cost.');
+needToQuote.push('Who signs off. One name, not a committee.');
+
+/* ── Published tiers and published timelines ─────────────────────── */
+const tiers = Array.isArray(PRICING) ? PRICING : [];
+const starterPrice = tiers[0]?.price || '';
+const growthPrice = tiers[1]?.price || '';
+
+const faqAnswer = (needle: string): string => {
+  const hit = (FAQS || []).find((f: { q: string; a: string }) => String(f.q || '').toLowerCase().includes(needle));
+  return hit ? String(hit.a || '') : '';
+};
+const timelineAnswer = faqAnswer('how long');
+const fixedPriceAnswer = faqAnswer('fixed-price');
+
+/* ── Topic siblings for this country ─────────────────────────────── */
+type TopicKey = 'e-invoicing' | 'accounting-tax' | 'payroll' | 'payments' | 'shipping';
+const TOPIC_ORDER: TopicKey[] = ['e-invoicing', 'accounting-tax', 'payroll', 'payments', 'shipping'];
+const TOPIC_LABEL: Record<TopicKey, string> = {
+  'e-invoicing': 'E-invoicing',
+  'accounting-tax': 'Accounting and tax',
+  'payroll': 'Payroll',
+  'payments': 'Payments',
+  'shipping': 'Shipping',
+};
+
+function hasTopicData(d: CountryDetail | undefined, t: TopicKey): boolean {
+  if (!d) return false;
+  if (t === 'e-invoicing') return Boolean(d.einvoicing && String(d.einvoicing.scheme || '').trim());
+  if (t === 'accounting-tax') return (d.tax?.length || 0) + (d.accounting?.length || 0) > 0;
+  if (t === 'payroll') return (d.payroll?.length || 0) > 0;
+  if (t === 'payments') return (d.payments?.length || 0) > 0;
+  if (t === 'shipping') return (d.shipping?.length || 0) > 0;
+  return false;
+}
+
+const siblingTopics = TOPIC_ORDER
+  .filter((t: TopicKey) => hasTopicData(detail, t))
+  .map((t: TopicKey) => ({ key: t, label: TOPIC_LABEL[t], href: `/countries/${country.slug}/${t}/` }));
+
+/* ── Same page, other markets. Nearby first, then a rotation so the
+   tail differs from country to country. ─────────────────────────── */
+const REGION_OF: Record<string, string> = {
+  'saudi-arabia': 'gulf', 'uae': 'gulf', 'qatar': 'gulf', 'kuwait': 'gulf', 'oman': 'gulf', 'bahrain': 'gulf',
+  'egypt': 'me', 'jordan': 'me', 'turkey': 'me',
+  'pakistan': 'sasia', 'india': 'sasia', 'bangladesh': 'sasia',
+  'united-kingdom': 'eu', 'germany': 'eu', 'france': 'eu',
+  'united-states': 'na', 'canada': 'na',
+  'australia': 'apac',
+};
+const myRegion = REGION_OF[country.slug] || '';
+const countryIndex = Math.max(0, COUNTRIES.findIndex((c: CountryRec) => c.slug === country.slug));
+const rotIdx = (i: number, len: number, step: number) => (i + countryIndex * step) % len;
+const costElsewhere = COUNTRIES
+  .map((c: CountryRec, i: number) => ({ c, i, near: myRegion && REGION_OF[c.slug] === myRegion ? 0 : 1 }))
+  .filter(x => x.c.slug !== country.slug && Boolean(COUNTRY_DETAIL[x.c.slug]))
+  .sort((a, b) => a.near - b.near || rotIdx(a.i, COUNTRIES.length, 4) - rotIdx(b.i, COUNTRIES.length, 4))
+  .slice(0, 6)
+  .map(x => x.c);
+
+const costServices: ServiceRec[] = ['odoo-implementation', 'odoo-consultancy', 'odoo-localization', 'odoo-support']
+  .map((slug: string) => SERVICES.find((s: ServiceRec) => s.slug === slug))
+  .filter((s): s is ServiceRec => Boolean(s));
+
+/* Signal chips: raw counts, no index or score. */
+const signalChips = [
+  { label: 'Needs a build', n: buildCount, cls: 'bg-rose-50 text-rose-700 ring-rose-200' },
+  { label: 'Paid connector', n: paidCount, cls: 'bg-amber-50 text-amber-800 ring-amber-200' },
+  { label: 'Ships with Odoo', n: nativeCount, cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
+  { label: 'Community module', n: communityCount, cls: 'bg-ink-100 text-ink-700 ring-ink-300' },
+  { label: 'Statutory items', n: statutoryCount, cls: 'bg-brand-50 text-brand-700 ring-brand-200' },
+  { label: 'Open questions', n: openQuestions, cls: 'bg-ink-100 text-ink-700 ring-ink-300' },
+].filter(s => s.n > 0);
+
+const reviewedStamp = new Date(`${COUNTRY_DETAIL_REVIEWED}T00:00:00Z`);
+const reviewedOn = Number.isNaN(reviewedStamp.getTime())
+  ? COUNTRY_DETAIL_REVIEWED
+  : reviewedStamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+const regionSubtag = String(country.lang || '').split('-')[1] || '';
+const hreflangAlternates = regionSubtag ? [{ lang: `en-${regionSubtag.toUpperCase()}`, href: pageUrl }] : [];
+
+const metaDescription = `What an Odoo implementation costs in ${plainName}: our published starting points, and what drives the number up or down in this market.`;
+
+/* BreadcrumbList only. These are indicative starting points, so no Offer
+   and no Product node belongs on this page. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Countries', item: `${SITE.url}/countries/` },
+      { '@type': 'ListItem', position: 3, name: country.title, item: `${SITE.url}/countries/${country.slug}/` },
+      { '@type': 'ListItem', position: 4, name: 'Cost', item: pageUrl },
+    ],
+  },
+];
+---
+<Base
+  title={`Odoo Implementation Cost in ${country.title}`}
+  description={metaDescription}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 12% 12%, rgba(135,90,123,0.5) 0%, transparent 45%), radial-gradient(circle at 88% 88%, rgba(0,160,157,0.28) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-14 sm:py-20">
+      <nav class="text-sm text-brand-200">
+        <a href="/" class="hover:text-white">Home</a>
+        {' / '}<a href="/countries/" class="hover:text-white">Countries</a>
+        {' / '}<a href={parentUrl} class="hover:text-white">{country.title}</a>
+        {' / '}<span class="text-white">Cost</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3">
+          <span class="text-4xl">{country.flag}</span>
+          <span class="eyebrow !text-brand-200">Odoo cost in {country.title}</span>
+        </div>
+        <h1 class="h1 mt-5">What an Odoo implementation costs in {plainName}</h1>
+        <p class="lede mt-6 text-ink-200">
+          The published starting points first, then the honest part: what actually moves the number in this market,
+          taken from our own {plainName} localization notes rather than a general answer about ERP projects.
+        </p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Get a scoped price</a>
+          <a href={parentUrl} class="btn-secondary !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Full {plainName} overview</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {siblingTopics.length > 0 && (
+    <section class="border-b border-ink-200 bg-white py-4">
+      <div class="container-site flex flex-wrap items-center gap-x-6 gap-y-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">Also for {plainName}</span>
+        {siblingTopics.map(s => (
+          <a href={s.href} class="text-sm font-semibold text-brand-600 hover:text-brand-700">{s.label}</a>
+        ))}
+        <a href={parentUrl} class="text-sm font-semibold text-ink-600 hover:text-brand-700">Country overview</a>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+
+          <h2 class="h3">The starting points we publish</h2>
+          <p class="mt-3 text-ink-700">
+            The same figures as our pricing page, and they are starting points rather than quotes. Scope decides the
+            number: the modules you switch on, the users you train, the systems Odoo has to talk to, and how much of
+            the {plainName} list further down is configuration rather than a build.
+          </p>
+
+          {tiers.length > 0 && (
+            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+              {tiers.map(t => (
+                <div class={t.highlight
+                  ? 'rounded-2xl border-2 border-brand-500 bg-white p-6'
+                  : 'rounded-2xl border border-ink-200 bg-white p-6'}>
+                  <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <span class="text-sm font-bold uppercase tracking-wider text-ink-900">{t.name}</span>
+                    <span class="text-xs text-ink-500">{t.period}</span>
+                  </div>
+                  <p class="mt-2 text-2xl font-bold text-brand-700">{t.price}</p>
+                  <p class="mt-2 text-sm text-ink-600">{t.desc}</p>
+                  <ul class="mt-4 space-y-1.5">
+                    {(t.features || []).map((f: string) => (
+                      <li class="flex gap-2 text-sm text-ink-700">
+                        <span class="mt-2 inline-block h-1.5 w-1.5 flex-none rounded-full bg-brand-400"></span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div class="mt-6 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">
+            <p>
+              <strong class="text-ink-900">Read the tiers as scope brackets, not as country prices.</strong>
+              {' '}Nothing on this page charges more for {plainName} because it is {plainName}. What changes between
+              markets is how much of the work below is a build, and that is what decides where you land inside a
+              bracket, or outside it.
+            </p>
+            {timelineAnswer && (
+              <p class="mt-3"><strong class="text-ink-900">Timelines we publish:</strong> {timelineAnswer}</p>
+            )}
+            {fixedPriceAnswer && (
+              <p class="mt-3"><strong class="text-ink-900">Fixed price or time and materials:</strong> {fixedPriceAnswer}</p>
+            )}
+          </div>
+
+          <h2 class="h3 mt-14">What drives the number in {plainName}</h2>
+          <p class="mt-3 text-ink-700">
+            Everything below comes from our own {plainName} research file. The counts are the short version: how many
+            things a rollout here has to reach, and what each one takes to reach from Odoo.
+          </p>
+          {signalChips.length > 0 && (
+            <div class="mt-5 flex flex-wrap items-center gap-2">
+              {signalChips.map(s => (
+                <span class={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${s.cls}`}>
+                  {s.label}
+                  <span class="font-bold">{s.n}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {ei && String(ei.scheme || '').trim().length > 0 && (eiHits.length > 0 || noMandateEvidence.length > 0) && (
+            <div class="mt-10 overflow-hidden rounded-2xl border border-brand-200">
+              <div class="bg-brand-50 p-6 sm:p-8">
+                <span class="eyebrow">The e-invoicing line</span>
+                <p class="mt-3 text-xl font-bold leading-snug text-brand-800 sm:text-2xl">{ei.scheme}</p>
+                <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Authority:</span> {ei.authority}</p>
+              </div>
+              <div class="bg-white p-6 sm:p-8">
+                {eiHits.length > 0 && (
+                  <p class="text-ink-700">
+                    In a market with a live scheme this is the biggest single variable on a quote. What follows is what
+                    our {plainName} notes actually say, and what each of those things costs to build and test.
+                  </p>
+                )}
+                {eiHits.length > 0 && (
+                  <div class="mt-6 space-y-5">
+                    {eiHits.map(h => (
+                      <div class="rounded-xl border border-ink-200 bg-white p-5">
+                        <div class="text-sm font-bold text-ink-900">{h.signal.label}</div>
+                        <p class="mt-2 text-sm text-ink-700">{h.signal.note}</p>
+                        {h.evidence.length > 0 && (
+                          <p class="mt-3 border-l-2 border-brand-300 bg-ink-50 px-4 py-3 text-sm text-ink-600">{h.evidence[0]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {eiHits.length === 0 && noMandateEvidence.length > 0 && (
+                  <p class="text-ink-700">
+                    Our notes show no live clearance step to build against here, which is the cheaper end of this
+                    work. The evidence is printed further down, and it is the reason we would not put an e-invoicing
+                    integration in a {plainName} budget today without a rule to build to.
+                  </p>
+                )}
+                {siblingTopics.some(s => s.key === 'e-invoicing') && (
+                  <a href={`/countries/${country.slug}/e-invoicing/`} class="mt-6 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
+                    Every {plainName} e-invoicing requirement in full →
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {upDrivers.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">What pushes a {plainName} quote up</h2>
+              <p class="mt-3 text-ink-700">
+                Each item is a real work package with its own tests and its own handover. The quoted lines are printed
+                from our {plainName} file as checked, not summarised.
+              </p>
+              <div class="mt-6 space-y-4">
+                {upDrivers.map((d: Driver) => (
+                  <div class="rounded-2xl border border-ink-200 bg-white p-5 sm:p-6">
+                    <div class="flex items-start gap-3">
+                      <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-rose-50 text-xs font-bold text-rose-700">+</span>
+                      <div>
+                        <h3 class="text-base font-bold text-ink-900">{d.title}</h3>
+                        <p class="mt-2 text-ink-700">{d.body}</p>
+                        {(d.tags || []).length > 0 && (
+                          <div class="mt-3 flex flex-wrap gap-2">
+                            {(d.tags || []).map((t: string) => (
+                              <span class="chip text-[11px]">{t}</span>
+                            ))}
+                          </div>
+                        )}
+                        {(d.evidence || []).length > 0 && (
+                          <ul class="mt-4 space-y-2">
+                            {(d.evidence || []).map((e: string) => (
+                              <li class="border-l-2 border-ink-300 bg-ink-50 px-4 py-3 text-sm text-ink-600">{e}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {(d.quoted || []).length > 0 && (
+                          <ul class="mt-4 space-y-2">
+                            {(d.quoted || []).map((q: { name: string; note: string }) => (
+                              <li class="border-l-2 border-ink-300 bg-ink-50 px-4 py-3 text-sm text-ink-600">
+                                <span class="font-semibold text-ink-900">{q.name}.</span> {q.note}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {downDrivers.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">What holds a {plainName} quote down</h2>
+              <p class="mt-3 text-ink-700">
+                The other half of an honest answer. Where Odoo already covers this market, the work is configuration
+                and proof, and that is the cheapest kind of day on any project.
+              </p>
+              <div class="mt-6 space-y-4">
+                {downDrivers.map((d: Driver) => (
+                  <div class="rounded-2xl border border-ink-200 bg-white p-5 sm:p-6">
+                    <div class="flex items-start gap-3">
+                      <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-50 text-xs font-bold text-emerald-700">-</span>
+                      <div>
+                        <h3 class="text-base font-bold text-ink-900">{d.title}</h3>
+                        <p class="mt-2 text-ink-700">{d.body}</p>
+                        {(d.tags || []).length > 0 && (
+                          <div class="mt-3 flex flex-wrap gap-2">
+                            {(d.tags || []).map((t: string) => (
+                              <span class="chip text-[11px]">{t}</span>
+                            ))}
+                          </div>
+                        )}
+                        {(d.evidence || []).length > 0 && (
+                          <ul class="mt-4 space-y-2">
+                            {(d.evidence || []).map((e: string) => (
+                              <li class="border-l-2 border-emerald-300 bg-ink-50 px-4 py-3 text-sm text-ink-600">{e}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p class="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm">
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Checked</span>
+            <span class="text-ink-700">Localization notes quoted on this page checked on {reviewedOn}.</span>
+          </p>
+          <p class="mt-4 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">
+            Prices on this page are indicative starting points for a scope, not an offer, and they do not include any
+            third-party licence, connector or subscription you buy directly. Rules, formats and provider coverage
+            change, so we confirm scope against the rules in force at build time before a fixed price is signed. See
+            {' '}<a href="/pricing/" class="font-semibold text-brand-600 hover:text-brand-700">pricing</a> and our
+            {' '}<a href="/services/odoo-localization/" class="font-semibold text-brand-600 hover:text-brand-700">Odoo localization service</a>.
+          </p>
+
+          <h2 class="h3 mt-14">What gets underestimated on a {plainName} budget</h2>
+          <p class="mt-3 text-ink-700">
+            Not the build. Almost never the build. These are the lines that turn a good number into a bad one, and
+            every one of them is cheap to plan and expensive to discover.
+          </p>
+          <ol class="mt-6 space-y-4">
+            {underestimated.map((u: Underestimated, i: number) => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">{i + 1}</span>
+                <span class="text-ink-700"><strong class="text-ink-900">{u.t}</strong> {u.d}</span>
+              </li>
+            ))}
+          </ol>
+
+          <h2 class="h3 mt-14">What we need to know to quote it</h2>
+          <p class="mt-3 text-ink-700">
+            Bring these to the first call and you leave with a scoped {plainName} plan and a number, instead of a
+            range. Every item is something that changes the price, which is why we ask for it before quoting rather
+            than after.
+          </p>
+          <ul class="mt-6 space-y-3">
+            {needToQuote.map((n: string, i: number) => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{i + 1}</span>
+                <span class="text-ink-700">{n}</span>
+              </li>
+            ))}
+          </ul>
+
+          {costServices.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Services behind this work</h2>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {costServices.map((s: ServiceRec) => (
+                  <a href={`/services/${s.slug}/`} class="card group !p-4">
+                    <div class="flex items-center gap-2 text-sm">
+                      <span class="text-xl">{s.icon}</span>
+                      <span class="font-semibold">{s.title}</span>
+                    </div>
+                    <p class="mt-2 text-xs text-ink-600">{s.tagline}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {siblingTopics.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">The {plainName} detail behind these numbers</h2>
+              <p class="mt-3 text-ink-700">
+                Each topic has its own page with the full item list, printed as checked. That is the source for
+                everything quoted above.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {siblingTopics.map(s => (
+                  <a href={s.href} class="card group !p-4">
+                    <span class="text-sm font-semibold">{s.label} in {plainName}</span>
+                    <p class="mt-2 text-xs text-ink-600">Full detail, printed as checked.</p>
+                  </a>
+                ))}
+                <a href={parentUrl} class="card group !p-4">
+                  <span class="text-sm font-semibold">{plainName} country overview</span>
+                  <p class="mt-2 text-xs text-ink-600">Services, modules, client work and delivery for {plainName}.</p>
+                </a>
+              </div>
+            </div>
+          )}
+
+          {costElsewhere.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Odoo cost in other markets we cover</h2>
+              <p class="mt-3 text-ink-700">
+                Costing a rollout across borders? Each page runs the same analysis on that market's own data, so you
+                can see where the build work sits before you phase the programme.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {costElsewhere.map((c: CountryRec) => (
+                  <a href={`/countries/${c.slug}/cost/`} class="card group !p-4">
+                    <span class="text-sm font-semibold">{c.flag} Odoo cost in {c.title}</span>
+                  </a>
+                ))}
+              </div>
+              <a href="/countries/" class="mt-5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All {COUNTRIES.length} countries →</a>
+            </div>
+          )}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">Want the number, not the range?</h2>
+              <p class="mt-2 text-sm text-brand-100">
+                A 30-minute call with a senior consultant who has shipped this. You leave with a written scope and a
+                price against it.
+              </p>
+              <a href={contactHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Get a scoped price</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            {tiers.length > 0 && (starterPrice || growthPrice) && (
+              <div class="rounded-2xl border border-ink-200 bg-white p-6">
+                <h2 class="text-sm font-semibold">Published starting points</h2>
+                <dl class="mt-4 space-y-2 text-sm">
+                  {tiers.map(t => (
+                    <div class="flex justify-between gap-3">
+                      <dt class="text-ink-600">{t.name}</dt>
+                      <dd class="font-semibold">{t.price}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p class="mt-3 text-xs text-ink-500">Starting points for a scope, not offers. Scope decides the number.</p>
+                <a href="/pricing/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Full pricing →</a>
+              </div>
+            )}
+
+            {signalChips.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 bg-white p-6">
+                <h2 class="text-sm font-semibold">{plainName} cost signals</h2>
+                <ul class="mt-4 space-y-2 text-sm">
+                  {signalChips.map(s => (
+                    <li class="flex items-center justify-between gap-3">
+                      <span class="text-ink-600">{s.label}</span>
+                      <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${s.cls}`}>{s.n}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p class="mt-3 text-xs text-ink-500">Counts from our own {plainName} research file, not a score.</p>
+              </div>
+            )}
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">{plainName} at a glance</h2>
+              <dl class="mt-4 space-y-2 text-sm">
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Currency</dt><dd class="font-semibold">{country.currency}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Locale</dt><dd class="font-semibold">{country.lang}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Cities covered</dt><dd class="font-semibold">{country.cities.length}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">Odoo versions</dt><dd class="font-semibold">v12 to v19</dd></div>
+              </dl>
+              <a href={parentUrl} class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Odoo partner in {country.title} →</a>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">What the labels mean</h2>
+              <ul class="mt-4 space-y-3 text-sm">
+                <li>
+                  <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">{SUPPORT_LABEL.native}</span>
+                  <span class="mt-2 block text-ink-600">Ships with Odoo. Configuration, not development.</span>
+                </li>
+                <li>
+                  <span class="inline-flex items-center rounded-full bg-ink-100 px-2.5 py-1 text-[11px] font-semibold text-ink-700 ring-1 ring-ink-300">{SUPPORT_LABEL.oca_or_community}</span>
+                  <span class="mt-2 block text-ink-600">A community module exists. Install, test, and budget for keeping it current across upgrades.</span>
+                </li>
+                <li>
+                  <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">{SUPPORT_LABEL.third_party_paid}</span>
+                  <span class="mt-2 block text-ink-600">A paid connector covers this. Its licence sits outside our fee and is quoted separately.</span>
+                </li>
+                <li>
+                  <span class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 ring-1 ring-rose-200">{SUPPORT_LABEL.custom_build}</span>
+                  <span class="mt-2 block text-ink-600">No connector we would put in production. This is scoped, priced and built.</span>
+                </li>
+              </ul>
+            </div>
+
+            {costElsewhere.length > 0 && (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h2 class="text-sm font-semibold">Cost in other markets</h2>
+                <ul class="mt-4 space-y-2">
+                  {costElsewhere.map((c: CountryRec) => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/countries/${c.slug}/cost/`}>{c.flag} {c.title}</a></li>
+                  ))}
+                </ul>
+                <a href="/countries/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All {COUNTRIES.length} countries →</a>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50">
+    <div class="container-site">
+      <div class="relative overflow-hidden rounded-3xl bg-odoo-gradient p-10 sm:p-16 text-white">
+        <div class="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent-400/30 blur-3xl"></div>
+        <div class="relative max-w-2xl">
+          <div class="text-4xl">{country.flag}</div>
+          <h2 class="h2 mt-4 text-white">Turn this into a number for your {plainName} rollout.</h2>
+          <p class="lede mt-4 text-brand-100">
+            Answer the list above and we come back with what is configuration, what is a connector, and what is a
+            build, priced before the project starts rather than after it.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Get a scoped price</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp us</a>
+            <a href="/pricing/" class="btn-secondary !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">See pricing</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

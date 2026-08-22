@@ -1,0 +1,63 @@
+---
+title: "Choosing an Odoo payment gateway when Stripe is not available where you are"
+description: "Odoo shipping a connector is not the same as you being able to open an account. How to pick a gateway when the default answer does not trade in your market and the local card scheme is not native."
+date: 2026-05-21
+tags: ["payments", "ecommerce", "odoo"]
+---
+
+Most Odoo shop plans start with the same assumption: switch on Stripe, take cards, done. It is a reasonable assumption in about half the markets we work in and completely wrong in the other half, and the discovery usually happens after the storefront is built.
+
+## Shipping a connector is not the same as being able to use it
+
+Odoo 19 ships a Stripe connector. It ships everywhere, including in countries where a locally registered business cannot open a Stripe account at all. From our country pages:
+
+- **Saudi Arabia.** Stripe ships with Odoo 19, but Stripe's own country list does not include Saudi Arabia, so a Saudi registered business cannot open a Stripe account to act as its acquirer. This is the most common surprise on a Saudi Odoo project.
+- **Qatar and Kuwait.** Neither is on Stripe's list of countries where a business can open an account, so a Qatar or Kuwait registered company cannot collect in riyal or dinar through it.
+- **Oman.** Stripe's country list does not include Oman.
+- **Pakistan.** Stripe's country list does not include Pakistan. Any Pakistani project that assumed Stripe needs replanning.
+- **Bangladesh.** A Bangladeshi company cannot open a Stripe account even though Odoo ships the connector.
+- **India.** Stripe's own country page still lists India as Preview and it has been invite only for Indian businesses since May 2024, so signup is by sales contact and approval is not guaranteed.
+
+PayPal has the same shape of problem. PayPal shut its domestic India payments business on 1 April 2021 and now handles only cross border, so an Indian merchant cannot use it to collect from Indian customers. PayPal does not operate in Pakistan either.
+
+The rule to take away: check the provider's own country list against the country of the legal entity that will hold the merchant account, not against where you are shipping to. That check takes ten minutes and it belongs in discovery, next to the [ecommerce build plan](/services/odoo-ecommerce/).
+
+## The second trap: the card most of your customers carry is not Visa
+
+Even where a global gateway works, it may not reach the scheme local buyers actually hold. Again from the country pages:
+
+- **mada** is the national debit scheme operated by Saudi Payments under the Saudi Central Bank and it is the card most Saudi shoppers carry. A shop that only offers Visa and Mastercard will lose orders.
+- **KNET** is the debit scheme every Kuwaiti bank issues on, and Checkout.com puts it at nearly 80 percent of online transactions in Kuwait.
+- **NAPS** is the debit network Qatari banks issue on. Tap Payments states NAPS carries over 70 percent of online transactions in Qatar.
+- **BENEFIT** runs Bahrain's national switch and its payments gateway, and a Bahraini checkout that skips Benefit debit cards misses the cards most residents carry.
+- **OmanNet** is the Central Bank of Oman national ATM and POS switch, and Omani bank debit cards run on it.
+- **PayPak** is Pakistan's own card scheme, run by 1LINK, and a large number of locally issued debit cards carry it instead of Visa or Mastercard. Nothing in Odoo speaks to PayPak on its own, so whether a PayPak card works at your checkout depends entirely on which local acquirer you connect.
+- **Troy** is Turkey's own scheme, run by BKM. Odoo does not talk to Troy directly, you accept it through a Turkish acquirer.
+- **girocard** is the counter-example worth knowing. It is Germany's own debit scheme with roughly 100 million cards in circulation, but it is a shop counter scheme and not an online one: since giropay closed there is no girocard ecommerce route, Odoo 19 ships no girocard method, and online acceptance would be a custom build.
+
+France is a different flavour again. More than 95 percent of Cartes Bancaires cards are co-badged with Visa or Mastercard, and EEA rules make you offer the shopper a network choice at checkout, so a French store has to show CB as its own brand rather than hiding it behind a generic card button.
+
+## Three routes, in order of cost
+
+**Route one: a provider Odoo already ships.** This is always the cheapest path when it exists. Amazon Payment Services ships as a payment provider in Odoo 19 and reaches Saudi, UAE, Qatar, Kuwait, Bahrain and Oman merchants, carrying mada, KNET, Benefit, NAPS and OmanNet depending on the market. Paymob ships in Odoo 19 and Odoo's documentation states it operates in Egypt, Oman, Saudi Arabia and the United Arab Emirates. Turkey has iyzico shipped natively. India has Razorpay and PayU shipped natively, and UPI is switched on as a method inside the native Razorpay or PayU provider, so no extra module is needed once you hold that acquirer account. Egypt has Paymob, and Meeza ships as a card brand so it shows on the checkout as a real logo rather than a generic card box.
+
+**Route two: a paid connector from the apps store.** This is where most Gulf and South Asian projects land. Moyasar, HyperPay, Geidea, PayTabs, Telr, Tap Payments and Checkout.com all reach Saudi local methods through paid Odoo 19 connectors. Safepay and the Bank Alfalah Alfa gateway cover Pakistan. SSLCommerz puts cards, ten mobile wallet brands, internet banking and bank EMI behind one integration in Bangladesh. A few are free: Cybrosys publishes a free MyFatoorah module for Odoo 19, and a free N-Genius payment provider module is published for the UAE.
+
+**Route three: a build.** Instant bank rails are almost always here. Raast in Pakistan, Fawran in Qatar, Aani in the UAE, Fawri and Fawateer in Bahrain, InstaPay in Egypt, eFAWATEERcom and CliQ in Jordan, Interac e-Transfer in Canada, PayID and PayTo in Australia. No Odoo provider ships for Interac Debit or Interac e-Transfer, so account-to-account collection and reconciliation is a build, and most Canadian merchants take e-Transfer as an offline method against Odoo's built in Wire Transfer and reconcile by hand.
+
+## Two decisions that are not about gateways at all
+
+**Cash on delivery is an accounting design, not a checkbox.** Odoo 19 ships cash on delivery as an in person method with nothing to buy, but it changes the configuration: the order is confirmed unpaid, the courier collects, and the money arrives from a carrier remittance rather than from the checkout. That needs a reconciliation step against the carrier statement and somebody who owns it. In Pakistan most online orders are still paid at the door, and COD surcharges and OTP confirmation need an apps store add-on on top.
+
+**Bank transfer is a real payment method for B2B.** Odoo 19 ships the Wire Transfer method, which prints your account details and a payment reference on the order and holds it until you confirm the funds arrived. In Saudi Arabia, the UAE, Qatar and Kuwait, B2B buyers routinely settle invoices this way rather than by card. Do not design a checkout that assumes every order is a card.
+
+## A checklist you can run in one meeting
+
+1. Which legal entity holds the merchant account, and is that country on the provider's own list?
+2. Which local scheme do most of our buyers carry, and does the chosen gateway enable it on our account?
+3. Does Odoo ship this provider, is there a paid connector for our exact version, or is this a build?
+4. What happens on a decline, a timeout, an abandoned redirect and a duplicate submission? An order stuck between paid and confirmed is a support call and a refund.
+5. Do we need a second provider as a fallback so one outage does not take the whole checkout down?
+6. If we take COD, who reconciles the courier remittance and how often?
+
+The provider lists, their Odoo support level and the verification state of each entry sit on our country pages: [Saudi Arabia](/countries/saudi-arabia/payments/), [Kuwait](/countries/kuwait/payments/), [Qatar](/countries/qatar/payments/), [Pakistan](/countries/pakistan/payments/), [India](/countries/india/payments/) and [Turkey](/countries/turkey/payments/). If you are picking a gateway before the storefront exists, that is the right order to do it in.

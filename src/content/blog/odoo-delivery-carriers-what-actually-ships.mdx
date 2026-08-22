@@ -1,0 +1,68 @@
+---
+title: "What Odoo's delivery carrier list actually covers, and what that costs you"
+description: "Across eighteen markets only three carriers are native everywhere. Which carriers Odoo 19 ships, which it does not, what an aggregator connector really buys, and how to budget the gap."
+date: 2026-06-04
+tags: ["shipping", "ecommerce", "odoo"]
+---
+
+"Odoo integrates with shipping carriers" is one of those sentences that survives a whole sales cycle without anyone testing it. It is true. It is also narrower than almost every buyer assumes, and the gap lands squarely on the domestic leg, which is where most of your parcels go.
+
+## The three that are native everywhere
+
+Across the eighteen markets we maintain country data for, exactly three carriers ship as delivery connectors in Odoo 19 in every one of them: DHL Express, FedEx and UPS. That is the whole universally native list.
+
+A few markets get one more, and only one:
+
+- **United States**: USPS ships as a direct connector, which needs a USPS business account through the Business Customer Onboarding Portal and offers USPS Domestic Service and USPS International Service. EasyPost also ships.
+- **Canada**: EasyPost ships.
+- **United Kingdom, Germany and France**: Sendcloud ships.
+- **India**: Shiprocket ships, described by Odoo as an Indian service connecting to multiple carriers, shipping to over 220 countries, with courier priority you set yourself.
+- **Australia**: Starshipit ships.
+
+Notice what that pattern means. Odoo covers your outbound international express well and your domestic delivery hardly at all, unless you happen to be in one of six countries.
+
+## What is missing, by name
+
+Aramex is the clearest case. It is headquartered in Dubai and is the default courier for a great many UAE stores, it runs domestic and cross border delivery inside Saudi Arabia with cash on delivery and returns, it is one of the top five carriers in Kuwait's courier market, and it was founded in Amman in 1982 and still runs a Jordanian operation. Odoo ships no Aramex connector and the OCA delivery-carrier repository does not contain one either, so it is a paid apps store module every time. In India there are around ten Odoo 19 Aramex connectors from different vendors at a wide range of prices, which tells you something about how settled that integration is.
+
+The same holds across the region and beyond:
+
+- **Saudi Arabia**: SMSA, Naqel and Aramex are all outside Odoo's native carrier list and need paid connectors or a build.
+- **Pakistan**: PostEx, TCS, Leopards, M and P, Trax and Daewoo are all paid connectors or builds. PostEx is built around cash on delivery and advances the cash back to merchants, which is why online sellers pick it over a traditional courier.
+- **United Kingdom**: Odoo 19 ships no Royal Mail connector. Six paid apps store modules cover it for Odoo 19, most of them built on Click and Drop.
+- **Canada**: Odoo 19 does not ship a Canada Post connector, so you either buy one from the apps store or reach it through EasyPost.
+- **Australia**: no native Australia Post connector, so you buy one from the apps store or go through Starshipit. Aramex Australia is reachable through Shippit or MachShip rather than any native connector.
+- **Turkey**: no Turkish courier ships natively. Budget a paid connector per carrier, or a free community multi-carrier module that you have actually tested.
+- **Bangladesh and Egypt**: Pathao, Steadfast, RedX, Bosta and Mylerz are all paid connectors or builds.
+
+## What an aggregator connector actually buys
+
+This is the part that is worth reading twice, because it changes the cost model rather than the feature list. Sendcloud is the one aggregator Odoo 19 ships a connector for in Europe. What that means in practice: Odoo talks to Sendcloud, not to Royal Mail or Evri, so a paid Sendcloud subscription and its own carrier contracts are a required dependency. Same for Germany, where Odoo talks to Sendcloud and not to DHL or Hermes. EasyPost is the same deal in North America: the Odoo connector is free but the EasyPost account and its fees are a required dependency.
+
+So "native connector" on an aggregator means one integration and two contracts. That is often the right answer, especially in France where Sendcloud reaches Colissimo, Chronopost, Mondial Relay, Colis Prive, Relais Colis, DPD, GLS, GEODIS and Amazon Shipping through a single integration. But it should be priced as a subscription plus contracts, not as a free feature.
+
+## Two live caveats worth checking before you promise anything
+
+**FedEx.** Odoo does ship a FedEx connector, but Odoo's own documentation says new setups on the latest API have been blocked since 21 October 2025 and that legacy integrations stopped working on 1 June 2026, and it suggests Sendcloud as a workaround. Confirm the current state before putting FedEx in a scope document.
+
+**UPS.** Its street level address validation only applies to the United States and Puerto Rico, and you should use the current UPS provider in Odoo rather than the archived UPS Legacy one.
+
+## Address data is a carrier requirement, not a nicety
+
+Label failures are almost always data failures. FedEx shipments in Saudi Arabia require the receiver's short address or national address code, and that field has to be captured on the Odoo delivery address or labels will fail. If you are launching a Saudi shop, that is a checkout field and a migration mapping, decided in the [catalogue and checkout phase](/services/odoo-ecommerce/) rather than found on the first pick round.
+
+## Cash on delivery changes the integration, not just the payment
+
+In Pakistan, the Gulf, Bangladesh and Egypt, a large share of parcels are collected on the doorstep. That means the amount to collect is part of the booking payload, the courier remits later, and reconciliation runs against a carrier statement rather than a gateway settlement. Any carrier connector you buy should be checked against that flow specifically. Our own [Gulf and South Asia shipping connector](/products/wt-delivery-carrier-connector/) was built for exactly this reason: it adds Aramex, SMSA Express, Naqel Express, Leopards Courier and TCS as delivery methods with rates, waybills, labels, cancellation and tracking, and it carries the COD amount, a flat COD fee and a percentage in the tariff so both end up in the quote.
+
+## How to budget the gap
+
+Work through it in this order.
+
+1. **List the carriers actually on your loading bay**, not the ones in the brochure. Include the returns carrier and the one you use for heavy or bulky items.
+2. **Mark each one native, paid connector, or build.** Our country pages carry that classification per market: [Saudi Arabia](/countries/saudi-arabia/shipping/), [Pakistan](/countries/pakistan/shipping/), [United Kingdom](/countries/united-kingdom/shipping/), [Australia](/countries/australia/shipping/).
+3. **Decide per carrier or via an aggregator.** One aggregator contract with three carriers behind it usually beats three connectors, unless you have negotiated rates the aggregator cannot honour.
+4. **Price the ongoing cost, not just the install.** Connectors are bought once and maintained forever, and each one needs re-checking at every Odoo upgrade.
+5. **Test the failure cases.** A rejected address will be rejected identically on retry, a timeout will not. A connector that retries everything is worse than one that retries nothing.
+
+The honest summary: Odoo gives you DHL, FedEx and UPS out of the box, plus one aggregator in a handful of markets. Everything else is a line item. Put it in the estimate at the start, alongside the [inventory and delivery setup](/modules/inventory/) it hangs off, and the shop launch stops being the moment you find out.

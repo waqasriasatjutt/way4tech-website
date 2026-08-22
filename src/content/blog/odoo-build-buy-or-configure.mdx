@@ -1,0 +1,73 @@
+---
+title: "Build it, buy it, or configure it: picking Odoo modules without regret"
+description: "A three-way test for every requirement, what to check on an apps store module before you buy, how to write custom code that survives an upgrade, and the questions that kill bad requests early."
+date: 2026-08-13
+tags: ["customization", "modules", "odoo"]
+---
+
+Every Odoo requirement lands in one of three places: configure what is already there, buy something maintained, or write code. Choosing badly is not usually a disaster on day one. It is a bill that arrives at every upgrade for the next five years.
+
+## The three-way test
+
+Run each requirement through this in order, because the order is the cost order.
+
+**Can it be configured?** Configuration is free to change later. Code is not. Show the standard behaviour first and ask the requester to explain why it fails. A useful share of requests stop there without anyone losing anything, particularly requests raised in the first fortnight, which are usually descriptions of the previous system rather than descriptions of the business.
+
+**Is it really a reporting request?** A large share of customisation requests are about a number somebody cannot find. Those are closed by a dashboard or a report, not by a model change. A configurable [dashboard builder](/products/wt-dashboard-builder/) closes more of these than anything else we install.
+
+**Does something maintained already cover most of it?** If it does, buying is cheaper than building and it keeps you off a private fork. This is worth saying even when it means less work for the vendor, and a vendor who never says it is telling you something.
+
+Only what survives all three deserves code.
+
+## When buying is clearly right
+
+Some gaps are large, well-defined and shared by thousands of businesses. Those are exactly the ones somebody already maintains.
+
+The clearest examples are the ones where Odoo genuinely ships nothing for your market. Aramex is not in Odoo and not in the OCA delivery-carrier repository, so it is a paid apps store module every time. Royal Mail has no Odoo 19 connector, but six paid modules cover it, most of them built on Click and Drop. Pakistan's FBR digital invoicing has nothing in core, and the apps store carries options from a free module by Zalino Tech through paid ones between roughly 25 and 450 US dollars. For the UAE, a paid Odoo 19 module that generates PINT AE UBL 2.1 and submits to one provider's Peppol access point lists at around 1,855 US dollars, before your own mapping and testing work. Those figures come off our country pages and they are useful as anchors: they tell you the shape of the market, not what your project will cost.
+
+Some gaps have a free answer that is easy to miss. Cybrosys publishes a free MyFatoorah payment provider module for Odoo 19. A free N-Genius payment provider module is published for the UAE. Checking for those before commissioning a build takes an afternoon.
+
+## What to check on a store module before you buy
+
+Buying badly is its own failure mode, and the damage shows up at the next upgrade rather than at install.
+
+1. **Does it exist for your exact version?** Not "the vendor says it will." Check the listing.
+2. **Can you read the source?** We will not reverse-engineer or patch an encrypted third-party module without its author's licence, and neither should anyone else. If you cannot read it, you cannot maintain it, and no one can promise you upgrade compatibility for it.
+3. **What does it depend on?** A connector that requires a paid subscription behind it is a different purchase. Odoo ships a Sendcloud connector, but Odoo talks to Sendcloud and not to the carrier, so the subscription and the carrier contracts are a required dependency. The EasyPost connector is free and the EasyPost account is not.
+4. **Is it one module or a bundle?** Bundling unrelated features into a single module means you cannot uninstall one without losing the others, and an upgrade fails as a whole rather than in one place.
+5. **What happens at the next version?** Keep the licence and the vendor contact. On an upgrade, the assessment has to check which third-party modules exist for the target version and which have no successor, and rewriting one that has no successor is a separate quote.
+6. **Has anyone tested it against your flow?** A free community multi-carrier module is only worth having if you have actually tested it, and the same goes for anything doing tax, stock or money.
+
+## When building is right, and how to build it so it lasts
+
+Some requirements really are the business. Write those as code, and write them so the next upgrade has something to attach to.
+
+**One module per coherent feature**, with its own manifest and dependency list. That way you can uninstall one thing without losing the others, and an upgrade fails in one place rather than everywhere.
+
+**Extend, do not overwrite.** Core files are never edited. It works until the first update, then it silently reverts or breaks the module that depends on it. Behaviour is added by extending existing models rather than replacing them, which is precisely why some custom code ports in an afternoon and other custom code costs real money at every single version.
+
+**Access rights written with the model, not after.** Custom models added without record rules are visible to everyone, which is usually discovered by the wrong person.
+
+**Settings, not constants.** Anything a manager might reasonably want to change should be configurable.
+
+**Tests where it matters.** On logic that touches money, stock, approvals or anything customer-facing, yes. On a colour change, no, because the test costs more than the defect. Agree the line during specification rather than applying one rule to everything.
+
+**Performance at real volume.** Logic that is fine on ten demo records can be unusable on a hundred thousand. Anything that loops over records or computes across a table gets checked at realistic counts before it ships.
+
+**You own it.** Source in your repository with the commit history intact, plus build and deploy instructions, no licence key and no obfuscation. If you replace the vendor, the next team can read what was written. That is a contract term worth insisting on regardless of who does the work.
+
+## The upgrade is where the decision gets graded
+
+This is the honest reason to care about any of it. In an upgrade assessment, custom modules are graded per module: code that extends standard behaviour ports quickly, and code that replaces standard behaviour or was written as edits to core is expensive at every version.
+
+An upgrade is also the cheapest moment to delete custom code that exists because an older version lacked a feature the target version now ships as standard. That decision belongs to the business rather than to the developers, and it is worth putting on the agenda deliberately rather than porting everything by reflex.
+
+## A note on edition
+
+None of this is an argument about Community or Enterprise. Several of the most common gaps, scheduling views, spreadsheet-style entry and map-based planning, come up specifically on Community, and the answer there is usually buy rather than build: a maintained [Gantt view](/products/wt-gantt-view/) or [grid view](/products/wt-grid-view/) costs less than a bespoke one and does not become your maintenance problem. What Community does and does not include, and when paying for Enterprise is the cheaper answer, is set out on our [Community page](/odoo-community/) rather than guessed at here.
+
+## The one question to keep asking
+
+Before any request becomes code: what breaks in the business if the standard behaviour is used instead? Requests that cannot answer it go on a parked list. Teams that review that list a quarter later usually delete most of it.
+
+That single habit does more to control the cost of an Odoo estate than any technology choice. The rest of how we handle it, from requirement capture through to handover, is on the [customization service page](/services/odoo-customization/), and if you have inherited an estate and do not know which category your existing modules fall into, that is what an [audit](/services/odoo-audit/) is for.

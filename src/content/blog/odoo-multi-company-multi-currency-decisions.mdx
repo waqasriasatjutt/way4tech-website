@@ -1,0 +1,68 @@
+---
+title: "Multi-company and multi-currency in Odoo: the calls you cannot take back"
+description: "One database or several, how many decimals, where the data physically lives, and which entity files what. The setup decisions that are cheap on day one and a migration afterwards."
+date: 2026-07-30
+tags: ["multi-company", "accounting", "odoo"]
+---
+
+Most ERP decisions can be revisited. A handful cannot, or can only be revisited by doing the project again. For groups running more than one company or more than one currency, almost all of those sit in the first fortnight.
+
+## One database or several
+
+Multi-company inside one database gives you consolidated reporting and shared master data, at the price of shared configuration. Separate databases give isolation, at the price of every cross-entity report. Reversing either later is a migration, not a setting.
+
+The question that usually settles it is not technical: how do you actually report? If the group consolidates in a spreadsheet today and is happy doing so, separate databases cost you less than you think. If the board reads a consolidated position monthly and argues about intercompany, one database earns its constraints.
+
+Two things push towards separation harder than most teams expect. The first is data residency, which we come back to below. The second is filing mechanics. In the United Kingdom, only one company and one user can be connected to HMRC at a time, so group filings have to be run in sequence. That is not a reason to split a database, but it is a reason to find out before you promise finance a one-click group close.
+
+## The chart of accounts, before anything posts
+
+Company structure, chart of accounts and analytic design are cheap to choose and expensive to change once posted. That is the whole point. Settle them in the design phase, before the first transaction, and settle them against how the group is actually managed rather than against how the previous system happened to be coded.
+
+For a multi-entity group there is a second layer: whether every company shares one chart or each carries its local one with a mapping to a group chart. Local charts are not optional in some markets. Odoo ships localization packages that install a country chart automatically when the company country is set, and several of them auto-install with the Accounting app, so the decision is partly made for you the moment a company record gets a country.
+
+Two practical constraints worth knowing. Germany ships SKR03 and SKR04, with SKR03 installed by default, and DATEV export split into documents and journal entries. Canada ships 13 provincial and territorial fiscal positions plus an International one, so the right GST, HST, PST or QST combination is applied by customer province. Neither is something you want to discover mid-rollout.
+
+## Decimals are a design decision, not a currency record
+
+This one costs real money and gets skipped constantly. The Kuwaiti dinar has three decimal places, and Odoo core already ships KWD with rounding 0.001, so the currency record itself is right out of the box. That is not the same as the system being right. Product prices, unit prices, tax rounding and any price list or import mapping must be set to three decimals or you will book rounding differences on every line. The same three-decimal discipline applies to Omani rial and Bahraini dinar work.
+
+There is a matching problem on the compliance side. In Jordan, Odoo carries three decimals and the tax authority carries nine, so the acceptable difference, under 0.001, needs agreeing with the client's auditor before go-live rather than after the first rejection. Qatari riyal is configured with two decimals in Odoo core, so no rounding work is needed there, which is a useful reminder that this is a per-currency question and not a blanket setting.
+
+If you take one thing from this section: write down the decimal places for every currency in scope, then check product price precision, unit price precision, tax computation and every import template against it. Do it once, at the start.
+
+## Where the data physically lives
+
+This is the constraint that can invalidate a hosting choice after the fact.
+
+Turkey does not permit archiving outside the country, so books, records and their attachments cannot sit in a foreign region, and that constrains where the Odoo database and its filestore physically live. Our country notes put it bluntly: check where the database, filestore and attachments sit before signing anything, because this can rule out a default cloud region.
+
+Kuwait requires accounting records to be maintained in Kuwait and available for inspection, though records may be in English and may be held in a computerised system, which matters when you are choosing where to host and in what language to name accounts.
+
+Retention periods differ per entity too, and they drive attachment and archive design rather than just ledger design. Oman requires accounting records and supporting documents to be kept for ten years after the end of the accounting period. Germany requires invoices to be kept for eight years under section 14b UStG. Indian companies hold records for eight years under section 128(5) of the Companies Act 2013. Canada requires records supporting a GST or HST position to be archived for six years from the end of the fiscal year, with the system preserving confidentiality, integrity and availability, and archiving abroad allowed with conditions. Pakistani sales tax records must be retained six years after the end of the tax period under section 24 of the Sales Tax Act 1990.
+
+A group with entities in several of those markets does not have one retention policy. It has several, and the longest one usually wins by default unless somebody designs it properly.
+
+## Presentation is not always IFRS-shaped
+
+Odoo's default financial reports are shaped for IFRS-style presentation. That is not universal.
+
+Egypt has not adopted IFRS. Financial statements follow Egyptian Accounting Standards, which are close to IFRS but not identical and not as complete. Two differences land directly in an ERP: employees' profit sharing is recognised as an equity distribution rather than an expense in profit or loss, and a different model applies to the effect of currency devaluation. EAS also removes some of the IFRS presentation options that Odoo's default reports assume. The practical consequence is that the default profit and loss and the employee profit share posting both need reworking.
+
+Qatar is a language constraint rather than a standards one: for taxable years starting on or after 1 January 2020, financial statements must be submitted in Arabic. Plan for a bilingual chart of accounts and Arabic report layouts, not an English-only book that gets hand-translated each year.
+
+## Tax that varies below country level
+
+Two markets deserve a specific warning because they defeat a single tax configuration.
+
+**United States.** There is no federal sales tax and no VAT. Forty-five states levy a state sales tax, thirty-eight allow local sales taxes on top, and registration is driven by economic nexus after South Dakota v. Wayfair, with six different threshold patterns across states. Odoo's native tax engine will not track economic nexus, jurisdiction boundaries or product taxability across that. The decision is buy AvaTax or accept manual rate maintenance, and it should be made before the project starts, not during UAT. Nothing in Odoo tells you that you crossed a state threshold either, so nexus monitoring is a reporting build or a subscription.
+
+**Canada.** GST is 5 percent, HST replaces it in several provinces at different rates, Quebec charges QST on top of GST, and British Columbia, Manitoba and Saskatchewan charge PST. An Odoo setup therefore needs province-driven fiscal positions, not one tax.
+
+Australia adds a payroll variant of the same problem: payroll tax is a state tax with per-state rates and thresholds, and no Odoo payroll tax module is documented.
+
+## The short version
+
+Decide these before the first posting, not after: one database or several, whose chart of accounts, decimals per currency, where the data may physically sit, retention per entity, and whether the group's reporting standard matches what Odoo produces by default. Everything on that list is a settings conversation on day one and a migration on day two hundred.
+
+If you want the local specifics rather than the general shape, they sit on the country pages: [Kuwait](/countries/kuwait/accounting-tax/), [Turkey](/countries/turkey/accounting-tax/), [Canada](/countries/canada/accounting-tax/) and [the United States](/countries/united-states/accounting-tax/). Getting the structure argued out with the reasoning written down is what an [Odoo consultancy engagement](/services/odoo-consultancy/) is for, and the country setup that follows is [localization work](/services/odoo-localization/). If the sticking point is reporting rather than structure, it is worth checking what [dynamic financial reports](/products/wt-dynamic-financial-reports/) already produce before the decision gets made on a gap that is not really there.

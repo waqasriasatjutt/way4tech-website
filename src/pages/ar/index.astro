@@ -1,0 +1,314 @@
+---
+/*
+ * /ar/ - index of the eight Arabic-language market pages.
+ *
+ * Same rules as the country pages: the only figures on this page are counted from
+ * src/data/country-detail.ts at build time. No rate, scheme, threshold, deadline,
+ * provider name, partner tier, certification or customer count appears here.
+ */
+import BaseAr from '~/layouts/BaseAr.astro';
+import { SITE, COUNTRIES } from '~/data/site';
+import { COUNTRY_DETAIL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+
+const AR_SLUGS = ['saudi-arabia', 'uae', 'qatar', 'kuwait', 'oman', 'bahrain', 'egypt', 'jordan'];
+
+const AR_NAME: Record<string, string> = {
+  'saudi-arabia': 'المملكة العربية السعودية',
+  'uae': 'الإمارات العربية المتحدة',
+  'qatar': 'دولة قطر',
+  'kuwait': 'دولة الكويت',
+  'oman': 'سلطنة عُمان',
+  'bahrain': 'مملكة البحرين',
+  'egypt': 'جمهورية مصر العربية',
+  'jordan': 'المملكة الأردنية الهاشمية',
+};
+
+const CITY_AR: Record<string, string> = {
+  Riyadh: 'الرياض', Jeddah: 'جدة', Dammam: 'الدمام', Khobar: 'الخبر',
+  Makkah: 'مكة المكرمة', Madinah: 'المدينة المنورة',
+  Dubai: 'دبي', 'Abu Dhabi': 'أبوظبي', Sharjah: 'الشارقة', Ajman: 'عجمان', RAK: 'رأس الخيمة',
+  Doha: 'الدوحة', 'Al Rayyan': 'الريان', Lusail: 'لوسيل',
+  'Kuwait City': 'مدينة الكويت', Hawalli: 'حولي',
+  Muscat: 'مسقط', Salalah: 'صلالة', Sohar: 'صحار',
+  Manama: 'المنامة', Muharraq: 'المحرق',
+  Cairo: 'القاهرة', Alexandria: 'الإسكندرية', Giza: 'الجيزة',
+  Amman: 'عمّان', Zarqa: 'الزرقاء', Irbid: 'إربد',
+};
+
+/* Slugs that lost their COUNTRIES entry or their detail entry drop off the list
+   rather than rendering a card with nothing in it. */
+const markets = AR_SLUGS
+  .map(slug => {
+    const c = COUNTRIES.find(x => x.slug === slug);
+    const d = COUNTRY_DETAIL[slug];
+    if (!c || !d || !AR_NAME[slug]) return null;
+    return {
+      slug,
+      name: AR_NAME[slug] || '',
+      flag: c.flag,
+      currency: c.currency,
+      cities: (c.cities || []).map(x => CITY_AR[x] || x),
+      payments: (d.payments || []).length,
+      shipping: (d.shipping || []).length,
+      modules: (d.odoo?.modules || []).length,
+      covered: (d.odoo?.native || []).length,
+      needsWork: (d.odoo?.custom || []).length,
+    };
+  })
+  .filter((m): m is NonNullable<typeof m> => m !== null);
+
+const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const reviewedOn = (() => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(COUNTRY_DETAIL_REVIEWED || ''));
+  if (!m) return String(COUNTRY_DETAIL_REVIEWED || '');
+  const month = AR_MONTHS[Number(m[2]) - 1];
+  return month ? `${Number(m[3])} ${month} ${m[1]}` : String(COUNTRY_DETAIL_REVIEWED);
+})();
+
+const pageUrl = `${SITE.url}/ar/`;
+
+/* Self-referential only. The English pages do not link back to these URLs yet, and
+   a one-way pair is a claim we are not entitled to make. */
+const hreflangAlternates = [{ lang: 'ar', href: pageUrl }];
+
+const metaDescription = 'صفحات أودو بالعربية لثمانية أسواق: الفوترة الإلكترونية، والضرائب، والرواتب، والمحاسبة، ووسائل الدفع وشركات الشحن، وما يغطيه أودو جاهزًا في كل سوق.';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    inLanguage: 'ar',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'الأسواق الناطقة بالعربية', item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'أسواق أودو الناطقة بالعربية',
+    inLanguage: 'ar',
+    numberOfItems: markets.length,
+    itemListElement: markets.map((m, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: m.name,
+      url: `${SITE.url}/ar/${m.slug}/`,
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'تنفيذ أودو وتهيئته للأسواق الناطقة بالعربية',
+    serviceType: 'Odoo ERP implementation, customization, localization and support',
+    description: 'تنفيذ أودو وتخصيصه وتهيئته للسوق المحلي ودعمه للشركات في الأسواق الناطقة بالعربية.',
+    url: pageUrl,
+    inLanguage: 'ar',
+    provider: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      email: SITE.email,
+      telephone: SITE.phone,
+    },
+    areaServed: markets.map(m => ({ '@type': 'Country', name: m.name })),
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: `${SITE.url}/contact/`,
+      availableLanguage: ['Arabic', 'English'],
+    },
+  },
+];
+
+const sections = [
+  { t: 'الفوترة الإلكترونية', d: 'المنظومة والجهة المسؤولة وأين وصلت ومن تشمله وما تتطلبه فنيًا.' },
+  { t: 'الضريبة', d: 'ما يجب أن تضبطه إعدادات الضريبة قبل التشغيل الفعلي.' },
+  { t: 'الرواتب', d: 'الاشتراكات والاستقطاعات وحماية الأجور ونهاية الخدمة.' },
+  { t: 'المحاسبة', d: 'الإطار المحاسبي ومتطلبات التدقيق وحفظ السجلات.' },
+  { t: 'وسائل الدفع', d: 'المزوّدون الذين تحتاجهم صفحة الدفع، وكيف يصل كل منهم إلى أودو.' },
+  { t: 'الشحن', d: 'الناقلون المحليون والدوليون وما يتطلبه ربطهم بأودو.' },
+  { t: 'ما يغطيه أودو', d: 'ما يأتي جاهزًا مقابل ما يحتاج موصّلًا مدفوعًا أو تطويرًا.' },
+];
+---
+<BaseAr
+  title="أودو في الأسواق الناطقة بالعربية"
+  description={metaDescription}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+  enHref={`${SITE.url}/countries/`}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 85% 10%, rgba(135,90,123,0.55) 0%, transparent 45%), radial-gradient(circle at 15% 90%, rgba(0,160,157,0.3) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-16 sm:py-24">
+      <div class="max-w-3xl">
+        <div class="eyebrow !text-brand-200">بالعربية</div>
+        <h1 class="h1 mt-4">أودو في الأسواق الناطقة بالعربية</h1>
+        <p class="lede mt-6 text-ink-200">
+          ثمانية أسواق، وصفحة لكل سوق: الفوترة الإلكترونية، والضريبة، والرواتب، والمحاسبة، ووسائل
+          الدفع وشركات الشحن، وما الذي يغطيه أودو جاهزًا مقابل ما يحتاج تطويرًا. بلا وعود عامة، وبلا
+          رقم لا نستطيع إسناده إلى مصدر.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/contact/?source=ar" class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">احجز مكالمة تحديد النطاق</a>
+          <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">واتساب</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="border-b border-ink-200 bg-ink-50 py-8">
+    <div class="container-site">
+      <dl class="grid gap-6 sm:grid-cols-3">
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">الأسواق المغطاة بالعربية</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900">{markets.length}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">أقسام في كل صفحة</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900">{sections.length}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">آخر مراجعة للمعلومات</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900">{reviewedOn}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <h2 class="h3">اختاروا السوق</h2>
+      <p class="mt-3 max-w-3xl text-ink-700">
+        الأرقام على كل بطاقة محسوبة من محتوى الصفحة نفسها: عدد مزوّدي الدفع وشركات الشحن المذكورين
+        بالاسم، وعدد وحدات التهيئة المحلية، وكم بندًا يأتي مغطًّى مقابل كم بندًا يحتاج عملًا.
+      </p>
+      <div class="mt-8 grid gap-4 md:grid-cols-2">
+        {markets.map(m => (
+          <a href={`/ar/${m.slug}/`} class="card group block !p-6">
+            <div class="flex items-start gap-4">
+              <span class="text-4xl leading-none">{m.flag}</span>
+              <div class="min-w-0">
+                <div class="text-lg font-semibold text-ink-900 group-hover:text-brand-700">{m.name}</div>
+                <div class="mt-1 text-sm text-ink-600">
+                  عملة التقارير: <bdi dir="ltr">{m.currency}</bdi>
+                </div>
+              </div>
+            </div>
+
+            {m.cities.length > 0 && (
+              <div class="mt-4 flex flex-wrap gap-2">
+                {m.cities.map(c => <span class="chip">{c}</span>)}
+              </div>
+            )}
+
+            <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+              <div>
+                <dt class="text-xs text-ink-500">وسائل دفع</dt>
+                <dd class="font-bold text-ink-900">{m.payments}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-ink-500">شركات شحن</dt>
+                <dd class="font-bold text-ink-900">{m.shipping}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-ink-500">مغطّى في أودو</dt>
+                <dd class="font-bold text-emerald-700">{m.covered}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-ink-500">يحتاج عملًا</dt>
+                <dd class="font-bold text-amber-700">{m.needsWork}</dd>
+              </div>
+            </dl>
+
+            <div class="mt-5 text-sm font-semibold text-brand-600 group-hover:text-brand-700">افتح الصفحة ←</div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50">
+    <div class="container-site">
+      <div class="grid gap-10 lg:grid-cols-3">
+        <div>
+          <div class="eyebrow">المحتوى</div>
+          <h2 class="h2 mt-3">ما الذي تجدونه في كل صفحة</h2>
+          <p class="lede mt-4">
+            الترتيب نفسه في الأسواق الثمانية، حتى تستطيعوا المقارنة بينها بدل قراءة كل صفحة من جديد.
+          </p>
+        </div>
+        <div class="lg:col-span-2">
+          <ul class="grid gap-3 sm:grid-cols-2">
+            {sections.map(s => (
+              <li class="rounded-2xl border border-ink-200 bg-white p-5">
+                <div class="font-semibold text-ink-900">{s.t}</div>
+                <p class="mt-2 text-sm text-ink-600">{s.d}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-10 lg:grid-cols-3">
+        <div>
+          <div class="eyebrow">كيف نكتب هذه الصفحات</div>
+          <h2 class="h2 mt-3">قواعد نلتزم بها</h2>
+        </div>
+        <div class="lg:col-span-2 space-y-4">
+          <div class="rounded-2xl border border-ink-200 bg-white p-6">
+            <div class="font-semibold text-ink-900">لا رقم بلا مصدر</div>
+            <p class="mt-2 text-ink-700">
+              كل نسبة وحد وتاريخ ومرسوم على هذه الصفحات مأخوذ من مصدر جرى التحقق منه. وما لم نتمكّن من
+              إسناده تركناه خارج الصفحة بدل تخمينه.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-ink-200 bg-white p-6">
+            <div class="font-semibold text-ink-900">ما لم يُؤكَّد يُوسَم بذلك</div>
+            <p class="mt-2 text-ink-700">
+              البنود التي اتفقت عليها المصادر دون تأكيد من مصدر أوّلي تظهر موسومة بعبارة «غير مؤكد»،
+              ولا تُشدَّد صياغتها لتبدو أقوى مما هي عليه.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-ink-200 bg-white p-6">
+            <div class="font-semibold text-ink-900">تكلفة الربط معلنة مسبقًا</div>
+            <p class="mt-2 text-ink-700">
+              كل مزوّد دفع وكل شركة شحن يحمل وسمًا يقول إن كان يأتي مع أودو، أو يحتاج وحدة مجتمعية،
+              أو موصّلًا مدفوعًا، أو تطويرًا مخصصًا. هذا ما يحرّك السعر، فيُعرَض قبل العرض لا بعده.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-ink-200 bg-white p-6">
+            <div class="font-semibold text-ink-900">القرار النهائي لمستشاركم الضريبي</div>
+            <p class="mt-2 text-ink-700">
+              نضبط النظام على القواعد السارية وقت التنفيذ، ونؤكد كل رقم مع محاسبكم أو مستشاركم الضريبي
+              قبل الاعتماد. هذه الصفحات مرجع عمل، لا استشارة ضريبية أو قانونية.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="relative overflow-hidden rounded-3xl bg-odoo-gradient p-10 text-white sm:p-16">
+        <div class="absolute h-72 w-72 rounded-full bg-accent-400/30 blur-3xl" style="inset-inline-start:-5rem;top:-5rem;"></div>
+        <div class="relative max-w-2xl">
+          <h2 class="h2 text-white">أي سوق تبدأون منه؟</h2>
+          <p class="lede mt-4 text-brand-100">
+            ثلاثون دقيقة: أنظمتكم الحالية، والدول التي تعملون فيها، وشكل المرحلة الأولى الواقعية.
+            تخرجون بنطاق مكتوب.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="/contact/?source=ar" class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">احجز مكالمة</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">راسلنا على واتساب</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseAr>

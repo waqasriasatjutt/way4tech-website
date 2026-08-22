@@ -1,0 +1,438 @@
+---
+/*
+ * /compare/<slug>/ - one page per product comparison.
+ *
+ * Everything printed here comes from COMPARISONS in ~/data/comparisons.ts, with
+ * country and service names read from site.ts. Nothing on this page states a
+ * price for any product, and no section renders a heading without content
+ * underneath it: every block is guarded on the data it needs.
+ *
+ * Schema is BreadcrumbList and FAQPage only. No Product, no Review, no
+ * aggregateRating: this page compares two vendors and is not entitled to
+ * publish a rating for either.
+ */
+import Base from '~/layouts/Base.astro';
+import { SITE, SERVICES, COUNTRIES } from '~/data/site';
+import { COMPARISONS } from '~/data/comparisons';
+import type { Comparison, CompareRow, MigrationStep, CompareFaq } from '~/data/comparisons';
+
+export function getStaticPaths() {
+  const all: Comparison[] = Array.isArray(COMPARISONS) ? COMPARISONS : [];
+  return all
+    .filter(
+      (c) =>
+        c &&
+        typeof c.slug === 'string' &&
+        c.slug.trim().length > 0 &&
+        typeof c.product === 'string' &&
+        c.product.trim().length > 0,
+    )
+    .map((c) => ({ params: { slug: c.slug }, props: { cmp: c } }));
+}
+
+type CountryRec = (typeof COUNTRIES)[number];
+type ServiceRec = (typeof SERVICES)[number];
+
+const { cmp } = Astro.props as { cmp: Comparison };
+
+/* ── Defensive readers ──────────────────────────────────────────────
+   The page is generated from a hand-written data file. Anything missing
+   or malformed drops the block rather than rendering an empty heading. */
+const text = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+
+const strings = (v: unknown): string[] =>
+  Array.isArray(v)
+    ? v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((x) => x.trim())
+    : [];
+
+const product = text(cmp?.product) || 'the alternative';
+const shortName = text(cmp?.shortName) || product;
+const slug = text(cmp?.slug);
+const category = text(cmp?.category);
+const framing = text(cmp?.framing);
+
+const intro = strings(cmp?.intro);
+const odooSuits = strings(cmp?.odooSuits);
+const otherSuits = strings(cmp?.otherSuits);
+const pickOdoo = strings(cmp?.pickOdoo);
+const pickOther = strings(cmp?.pickOther);
+const notOdoo = text(cmp?.notOdoo);
+const migrationRisks = strings(cmp?.migrationRisks);
+
+const rows: CompareRow[] = Array.isArray(cmp?.rows)
+  ? cmp.rows
+      .filter(
+        (r): r is CompareRow =>
+          Boolean(r) && text(r?.dimension).length > 0 && text(r?.odoo).length > 0 && text(r?.other).length > 0,
+      )
+      .map((r) => ({ dimension: text(r.dimension), odoo: text(r.odoo), other: text(r.other) }))
+  : [];
+
+const migration: MigrationStep[] = Array.isArray(cmp?.migration)
+  ? cmp.migration
+      .filter((s): s is MigrationStep => Boolean(s) && text(s?.name).length > 0 && text(s?.body).length > 0)
+      .map((s) => ({ name: text(s.name), body: text(s.body) }))
+  : [];
+
+/* Four to six questions is the target. More than six on one page reads as
+   filler, so the tail is dropped from both the page and the schema. */
+const faqs: CompareFaq[] = (Array.isArray(cmp?.faqs)
+  ? cmp.faqs.filter((f): f is CompareFaq => Boolean(f) && text(f?.q).length > 0 && text(f?.a).length > 0)
+  : []
+)
+  .map((f) => ({ q: text(f.q), a: text(f.a) }))
+  .slice(0, 6);
+
+/* ── Country links ──────────────────────────────────────────────────
+   Slugs only in the data file. Names and flags come from COUNTRIES, so a
+   slug that no longer exists drops out instead of printing a blank row. */
+const countryBySlug = new Map(COUNTRIES.map((c: CountryRec) => [c.slug, c] as const));
+const countries = strings(cmp?.countries)
+  .map((s) => countryBySlug.get(s))
+  .filter((c): c is CountryRec => Boolean(c));
+
+/* ── Service links ──────────────────────────────────────────────────
+   These two links are the point of the page, so the href and a usable
+   label are literal. Title and tagline are upgraded from SERVICES when
+   the slug is found there, and never printed empty. */
+const serviceBySlug = new Map(SERVICES.map((s: ServiceRec) => [s.slug, s] as const));
+
+const serviceLinks = [
+  {
+    slug: 'odoo-migration',
+    fallbackTitle: 'Odoo Migration',
+    why: 'The mechanics of moving off an existing system: extracts, field mapping, balances at a cutover date, and one period run in both systems before the old one is switched off.',
+  },
+  {
+    slug: 'odoo-implementation',
+    fallbackTitle: 'Odoo Implementation',
+    why: 'What the rollout itself looks like: the phases, what you have to provide, the decisions you will be asked to make, and what is deliberately out of scope.',
+  },
+].map((l) => {
+  const rec = serviceBySlug.get(l.slug);
+  return {
+    href: `/services/${l.slug}/`,
+    title: text(rec?.title) || l.fallbackTitle,
+    tagline: text(rec?.tagline),
+    icon: text(rec?.icon),
+    why: l.why,
+  };
+});
+
+/* ── Other comparisons ──────────────────────────────────────────────*/
+const others = (Array.isArray(COMPARISONS) ? COMPARISONS : []).filter(
+  (c) => c && text(c.slug).length > 0 && c.slug !== slug && text(c.product).length > 0,
+);
+
+const h1 = `Odoo vs ${product}`;
+const pageUrl = `${SITE.url}/compare/${slug}/`;
+const contactHref = `/contact/?source=compare/${slug}`;
+
+const metaTitle = text(cmp?.metaTitle) || h1;
+const metaDescription =
+  text(cmp?.metaDescription) ||
+  framing ||
+  `${h1}: a comparison on deployment, customisation, ecosystem and implementation shape, including where ${product} is the better choice.`;
+
+const schema: object[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Compare', item: `${SITE.url}/compare/` },
+      { '@type': 'ListItem', position: 3, name: h1, item: pageUrl },
+    ],
+  },
+];
+
+if (faqs.length > 0) {
+  schema.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+}
+---
+<Base title={metaTitle} description={metaDescription} structuredData={schema}>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-brand-200">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/compare/" class="hover:text-white">Compare</a> / <span class="text-white">{h1}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        {category && <span class="chip !bg-white/10 !text-white">{category}</span>}
+        <h1 class="h1 mt-6">{h1}</h1>
+        {framing && <p class="lede mt-6 text-brand-100">{framing}</p>}
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Talk it through</a>
+          <a href="/compare/" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">All comparisons</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {intro.length > 0 && (
+    <section class="section pb-0">
+      <div class="container-site">
+        <div class="max-w-3xl space-y-5">
+          {intro.map((p) => <p class="text-lg text-ink-700">{p}</p>)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {(odooSuits.length > 0 || otherSuits.length > 0) && (
+    <section class="section">
+      <div class="container-site">
+        <h2 class="h3">Who each one suits</h2>
+        <div class="mt-8 grid gap-6 lg:grid-cols-2">
+          {odooSuits.length > 0 && (
+            <div class="rounded-2xl border border-brand-200 bg-brand-50 p-6 sm:p-8">
+              <h3 class="text-lg font-semibold text-brand-800">Odoo: the better fit for</h3>
+              <ul class="mt-5 space-y-3">
+                {odooSuits.map((s) => (
+                  <li class="flex gap-3 text-ink-800">
+                    <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-500"></span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {otherSuits.length > 0 && (
+            <div class="rounded-2xl border border-ink-200 bg-ink-50 p-6 sm:p-8">
+              <h3 class="text-lg font-semibold text-ink-900">{product}: the better fit for</h3>
+              <ul class="mt-5 space-y-3">
+                {otherSuits.map((s) => (
+                  <li class="flex gap-3 text-ink-800">
+                    <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-ink-400"></span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {rows.length > 0 && (
+    <section class="section pt-0">
+      <div class="container-site">
+        <h2 class="h3">Side by side</h2>
+        <p class="mt-3 max-w-3xl text-ink-600">
+          Structural facts only: how each one is deployed, extended, hosted and upgraded. There are no prices in this
+          table, for either product, because both are priced by region, edition and contract.
+        </p>
+        <div class="mt-8 overflow-x-auto rounded-2xl border border-ink-200">
+          <table class="w-full min-w-[48rem] border-collapse text-left text-sm">
+            <thead class="bg-ink-50">
+              <tr>
+                <th scope="col" class="w-1/5 px-5 py-4 font-semibold text-ink-900">Dimension</th>
+                <th scope="col" class="w-2/5 px-5 py-4 font-semibold text-brand-700">Odoo</th>
+                <th scope="col" class="w-2/5 px-5 py-4 font-semibold text-ink-900">{product}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-ink-100">
+              {rows.map((r) => (
+                <tr class="align-top">
+                  <th scope="row" class="px-5 py-4 text-left font-semibold text-ink-900">{r.dimension}</th>
+                  <td class="px-5 py-4 text-ink-700">{r.odoo}</td>
+                  <td class="px-5 py-4 text-ink-700">{r.other}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {(pickOdoo.length > 0 || pickOther.length > 0 || notOdoo) && (
+    <section class="section pt-0">
+      <div class="container-site">
+        <h2 class="h3">When to pick each</h2>
+        <div class="mt-8 grid gap-10 lg:grid-cols-2">
+          {pickOdoo.length > 0 && (
+            <div>
+              <h3 class="font-semibold text-ink-900">Pick Odoo when</h3>
+              <ul class="mt-5 space-y-3">
+                {pickOdoo.map((p) => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">✓</span>
+                    <span class="text-ink-700">{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {pickOther.length > 0 && (
+            <div>
+              <h3 class="font-semibold text-ink-900">Pick {shortName} when</h3>
+              <ul class="mt-5 space-y-3">
+                {pickOther.map((p) => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-100 text-xs font-bold text-accent-700">✓</span>
+                    <span class="text-ink-700">{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {notOdoo && (
+          <div class="mt-10 rounded-2xl border-l-4 border-accent-400 bg-ink-50 p-6 sm:p-8">
+            <h3 class="text-sm font-semibold uppercase tracking-wider text-accent-600">Where we would tell you not to pick Odoo</h3>
+            <p class="mt-3 text-lg text-ink-800">{notOdoo}</p>
+            <p class="mt-3 text-sm text-ink-600">
+              We sell Odoo work. We would still rather say this now than three months into a project that was never
+              going to fit.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  {(migration.length > 0 || migrationRisks.length > 0) && (
+    <section class="section bg-ink-50 border-y border-ink-100">
+      <div class="container-site">
+        <h2 class="h3">Moving from {shortName} to Odoo</h2>
+        <p class="mt-3 max-w-3xl text-ink-600">
+          How the work actually runs, in the order it runs. Most of the elapsed time is in the first two steps, not in
+          the configuration.
+        </p>
+
+        {migration.length > 0 && (
+          <ol class="mt-8 space-y-8 max-w-3xl">
+            {migration.map((s, idx) => (
+              <li class="flex gap-4">
+                <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">{idx + 1}</span>
+                <div class="min-w-0">
+                  <h3 class="font-semibold text-ink-900">{s.name}</h3>
+                  <p class="mt-2 text-ink-700">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {migrationRisks.length > 0 && (
+          <div class="mt-12 max-w-3xl">
+            <h3 class="font-semibold text-ink-900">Where these migrations go wrong</h3>
+            <ul class="mt-5 space-y-3">
+              {migrationRisks.map((r) => (
+                <li class="flex gap-3">
+                  <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-ink-200 text-xs font-bold text-ink-700">!</span>
+                  <span class="text-ink-700">{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  {serviceLinks.length > 0 && (
+    <section class="section">
+      <div class="container-site">
+        <h2 class="h3">The services that cover this work</h2>
+        <div class="mt-8 grid gap-5 md:grid-cols-2">
+          {serviceLinks.map((s) => (
+            <a href={s.href} class="card group flex flex-col">
+              <div class="flex items-center gap-3">
+                {s.icon && <span class="text-2xl">{s.icon}</span>}
+                <h3 class="text-lg font-semibold">{s.title}</h3>
+              </div>
+              {s.tagline && <p class="mt-2 text-sm text-ink-600">{s.tagline}</p>}
+              <p class="mt-3 flex-1 text-sm text-ink-700">{s.why}</p>
+              <span class="mt-4 text-sm font-semibold text-brand-600 group-hover:text-brand-700">Read the detail →</span>
+            </a>
+          ))}
+        </div>
+        <p class="mt-6 text-sm text-ink-600">
+          Running Odoo Community rather than the paid edition changes what you get and what you pay for.
+          <a href="/odoo-community/" class="ml-1 font-semibold text-brand-600 hover:text-brand-700">What Community includes and what it does not →</a>
+        </p>
+      </div>
+    </section>
+  )}
+
+  {countries.length > 0 && (
+    <section class="section pt-0">
+      <div class="container-site">
+        <h2 class="h3">Country localisation detail</h2>
+        <p class="mt-3 max-w-3xl text-ink-600">
+          Whichever system you choose, the local filing and payroll obligations are the same. These pages set out what
+          the localisation work involves in the markets where this comparison comes up most.
+        </p>
+        <div class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {countries.map((c) => (
+            <a href={`/countries/${c.slug}/`} class="flex items-start gap-3 rounded-xl border border-ink-200 bg-white p-4 hover:border-brand-300">
+              <span class="text-2xl leading-none">{c.flag}</span>
+              <span class="min-w-0">
+                <span class="block font-semibold text-ink-900">{c.title}</span>
+                {c.tagline && <span class="block text-sm text-ink-600">{c.tagline}</span>}
+              </span>
+            </a>
+          ))}
+        </div>
+        <a href="/countries/" class="mt-5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All {COUNTRIES.length} countries →</a>
+      </div>
+    </section>
+  )}
+
+  {faqs.length > 0 && (
+    <section class="section pt-0">
+      <div class="container-site">
+        <h2 class="h3">{h1}: common questions</h2>
+        <div class="mt-8 max-w-3xl divide-y divide-ink-100 border-y border-ink-100">
+          {faqs.map((f) => (
+            <div class="py-5">
+              <h3 class="font-semibold text-ink-900">{f.q}</h3>
+              <p class="mt-2 text-ink-700">{f.a}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {others.length > 0 && (
+    <section class="section pt-0">
+      <div class="container-site">
+        <h2 class="h3">Other comparisons</h2>
+        <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {others.map((o) => (
+            <a href={`/compare/${o.slug}/`} class="card group !p-5">
+              <h3 class="font-semibold text-ink-900">Odoo vs {o.product}</h3>
+              {text(o.framing) && <p class="mt-2 text-sm text-ink-600">{text(o.framing)}</p>}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site text-center">
+      <h2 class="h2">Still deciding?</h2>
+      <p class="lede mx-auto mt-4 max-w-2xl">
+        Send us what you are running now and what is breaking. A 30-minute call is usually enough to say whether Odoo is
+        the right move, and we will tell you when it is not.
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={contactHref} class="btn-primary">Book a 30-minute call</a>
+        <a href="/services/odoo-consultancy/" class="btn-secondary">Odoo consultancy</a>
+      </div>
+    </div>
+  </section>
+</Base>

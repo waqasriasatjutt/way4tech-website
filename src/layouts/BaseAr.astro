@@ -1,0 +1,231 @@
+---
+/*
+ * Arabic (RTL) layout.
+ *
+ * Why this is not Base.astro:
+ *  1. Base.astro hard-codes <html lang="en"> with no dir attribute. An Arabic page
+ *     needs lang="ar" dir="rtl" on the html element itself, not on a wrapper.
+ *  2. Header.astro and Footer.astro are English-only and built on fixed-width
+ *     mega panels. Dropping an English mega-nav on top of an Arabic page reads
+ *     badly and the panels are sized for LTR reading order, so this layout ships
+ *     a small Arabic header and footer instead of a broken translation of them.
+ *  3. Base.astro injects an Organization schema carrying a partner-tier slogan and
+ *     a deployment count. Nothing on these pages makes a claim of that kind, in the
+ *     body or in structured data, so the schema is passed in explicitly instead.
+ *
+ * The portal override in Base.astro is deliberately not called here: there is no
+ * Arabic content authored in the portal, and an English override landing inside an
+ * Arabic page would be worse than no override.
+ */
+import { SITE } from '~/data/site';
+import '~/styles/global.css';
+
+export interface HreflangAlternate {
+  lang: string;
+  href: string;
+}
+
+export interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  structuredData?: object | object[];
+  hreflang?: HreflangAlternate[];
+  /* English counterpart, used only for the visible language switch in the header.
+     It is NOT emitted as an hreflang pair, because the reverse link does not exist
+     on the English page and a one-way pair is a false claim. */
+  enHref?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  structuredData,
+  hreflang,
+  enHref,
+  noindex = false,
+} = Astro.props;
+
+const pageTitle = `${title} | ${SITE.name}`;
+const imageURL = new URL('/og.png', SITE.url).toString();
+const alternates = Array.isArray(hreflang) ? hreflang : [];
+const sdArray = Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : [];
+const year = new Date().getFullYear();
+
+/* Inter carries the Latin brand names and module codes; IBM Plex Sans Arabic
+   carries the Arabic. Both come from the font host the site already uses. */
+const fontHref = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+
+/* The eight markets these pages cover, for the header and footer only. Deliberately
+   a plain local const rather than a named export: the pages own their own content
+   map and nothing here should become an implicit data dependency. */
+const AR_MARKETS = [
+  { slug: 'saudi-arabia', name: 'المملكة العربية السعودية', short: 'السعودية', flag: '🇸🇦' },
+  { slug: 'uae', name: 'الإمارات العربية المتحدة', short: 'الإمارات', flag: '🇦🇪' },
+  { slug: 'qatar', name: 'دولة قطر', short: 'قطر', flag: '🇶🇦' },
+  { slug: 'kuwait', name: 'دولة الكويت', short: 'الكويت', flag: '🇰🇼' },
+  { slug: 'oman', name: 'سلطنة عُمان', short: 'عُمان', flag: '🇴🇲' },
+  { slug: 'bahrain', name: 'مملكة البحرين', short: 'البحرين', flag: '🇧🇭' },
+  { slug: 'egypt', name: 'جمهورية مصر العربية', short: 'مصر', flag: '🇪🇬' },
+  { slug: 'jordan', name: 'المملكة الأردنية الهاشمية', short: 'الأردن', flag: '🇯🇴' },
+];
+---
+<!doctype html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#714B67" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={noindex ? 'noindex,follow' : 'index,follow'} />
+
+    {alternates.map((alt) => (
+      <link rel="alternate" hreflang={alt.lang} href={alt.href} />
+    ))}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={pageTitle} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageURL} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href={fontHref} onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href={fontHref} /></noscript>
+
+    {sdArray.map((sd) => (
+      <script type="application/ld+json" set:html={JSON.stringify(sd)} />
+    ))}
+
+    <style is:global>
+      /* global.css sets an Inter-specific feature list and negative heading tracking.
+         Both are wrong for Arabic: the tracking crowds joined letterforms. */
+      html[dir='rtl'] {
+        font-feature-settings: normal;
+      }
+      html[dir='rtl'] body {
+        font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+      }
+      html[dir='rtl'] h1,
+      html[dir='rtl'] h2,
+      html[dir='rtl'] h3,
+      html[dir='rtl'] h4,
+      html[dir='rtl'] h5 {
+        letter-spacing: normal;
+        line-height: 1.45;
+      }
+      /* Arabic needs more leading than Inter at the same size. */
+      html[dir='rtl'] p,
+      html[dir='rtl'] li,
+      html[dir='rtl'] dd {
+        line-height: 1.95;
+      }
+      /* Latin runs inside Arabic text: brand names, module codes, currency codes.
+         bdi isolates the bidi run so a trailing full stop stays on the Arabic side. */
+      html[dir='rtl'] bdi {
+        font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+      }
+      html[dir='rtl'] code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        direction: ltr;
+        unicode-bidi: isolate;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-white text-ink-900 antialiased">
+    <header class="sticky top-0 z-50 border-b border-ink-100 bg-white/90 backdrop-blur-md">
+      <div class="container-site flex h-16 items-center justify-between gap-4">
+        <a href="/ar/" class="flex shrink-0 items-center gap-2.5" aria-label="Way4Tech">
+          <img src="/logo.svg" alt="Way4Tech" width="160" height="38" class="h-9 w-auto" />
+        </a>
+
+        <!-- Short market names only: the formal names are long enough to overflow a
+             16-unit header row once four of them sit side by side. -->
+        <nav class="hidden min-w-0 items-center gap-1 text-sm font-medium text-ink-700 lg:flex" aria-label="التنقل الرئيسي">
+          <a href="/ar/" class="rounded-md px-3 py-2 hover:bg-ink-50 hover:text-brand-700">كل الأسواق</a>
+          {AR_MARKETS.map((m) => (
+            <a href={`/ar/${m.slug}/`} class="rounded-md px-2.5 py-2 hover:bg-ink-50 hover:text-brand-700">{m.short}</a>
+          ))}
+        </nav>
+
+        <div class="flex shrink-0 items-center gap-2">
+          {enHref && (
+            <a href={enHref} class="btn-ghost text-sm" hreflang="en" lang="en" dir="ltr">English</a>
+          )}
+          <a href="/contact/" class="btn-primary text-sm">اطلب عرض سعر</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="mt-24 bg-ink-900 text-ink-100">
+      <div class="container-site py-14">
+        <div class="grid gap-10 md:grid-cols-3">
+          <div>
+            <img src="/logo.svg" alt="Way4Tech" width="180" height="42" class="h-10 w-auto brightness-0 invert" />
+            <p class="mt-4 max-w-sm text-sm text-ink-300">
+              تنفيذ أودو وتخصيصه وتعريبه ودعمه. صفحات هذا القسم مخصصة للأسواق الناطقة بالعربية.
+            </p>
+            <div class="mt-6 space-y-2 text-sm">
+              <a class="block text-ink-300 hover:text-white" href={`mailto:${SITE.email}`}>
+                البريد الإلكتروني: <bdi dir="ltr">{SITE.email}</bdi>
+              </a>
+              <a class="block text-ink-300 hover:text-white" href={SITE.whatsapp} target="_blank" rel="noopener">
+                واتساب: <bdi dir="ltr">{SITE.phone}</bdi>
+              </a>
+              <a class="block text-ink-300 hover:text-white" href={SITE.social.linkedin} target="_blank" rel="noopener">لينكد إن</a>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-brand-300">الأسواق</div>
+            <ul class="mt-4 grid gap-2 text-sm text-ink-300 sm:grid-cols-2">
+              {AR_MARKETS.map((m) => (
+                <li><a class="hover:text-white" href={`/ar/${m.slug}/`}>{m.name}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-brand-300">روابط</div>
+            <ul class="mt-4 space-y-2 text-sm text-ink-300">
+              <li><a class="hover:text-white" href="/contact/">تواصل معنا</a></li>
+              <li><a class="hover:text-white" href="/ar/">كل الأسواق الناطقة بالعربية</a></li>
+              <li><a class="hover:text-white" href="/" hreflang="en" lang="en" dir="ltr">Way4Tech in English</a></li>
+            </ul>
+            <p class="mt-6 text-xs leading-relaxed text-ink-400">
+              المعلومات التنظيمية المعروضة هنا مرجعية وليست استشارة ضريبية أو قانونية. تُراجَع كل قيمة مع
+              محاسبكم أو مستشاركم الضريبي قبل الاعتماد.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-12 border-t border-white/10 pt-6 text-xs text-ink-400">
+          © {year} {SITE.name}
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

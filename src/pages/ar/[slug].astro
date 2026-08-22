@@ -1,0 +1,610 @@
+---
+/*
+ * Arabic country pages: /ar/<slug>/
+ *
+ * Eight Arabic-speaking markets only. These are not translations of the English
+ * country pages, they are Arabic pages built from the same source of truth.
+ *
+ * Rules this file follows, deliberately:
+ *  - Every regulatory fact comes from src/data/country-detail.ts. Nothing from
+ *    src/data/site.ts is printed except the country name, flag, cities, currency
+ *    code and locale code, none of which is a regulatory or provider claim.
+ *  - The Arabic text below is a rendering of the source claim, not a new claim.
+ *    Every rate, threshold, date, decree number, currency amount, brand name and
+ *    module name is carried across unchanged. Latin runs are wrapped in <bdi> so
+ *    bidi reordering cannot move a full stop into the middle of a brand name.
+ *  - Arabic is keyed to the English source by a leading substring rather than by
+ *    array index. If the source claim is reworded the Arabic drops out of the page
+ *    instead of being paired with the wrong fact. Silence beats a wrong pairing.
+ *  - The "verified: false" qualifier is read from the data at render time, never
+ *    copied into the Arabic, so it cannot drift.
+ *  - No partner tier, certification, award, customer count, or any competitor or
+ *    licence price appears here or in the structured data.
+ */
+import BaseAr from '~/layouts/BaseAr.astro';
+import { SITE, COUNTRIES } from '~/data/site';
+import { COUNTRY_DETAIL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
+
+/* ── Arabic content, one entry per market ────────────────────────────
+   Keys inside taxAr / payrollAr / accountingAr / requirementsAr / nativeAr /
+   customAr are the first characters of the English source string. Keys inside
+   paymentsAr / shippingAr are the provider name exactly as the data spells it. */
+import { AR_CONTENT, AR_SLUGS } from '~/data/ar-content';
+import type { ArCountry, ArProviderText } from '~/data/ar-content';
+
+export function getStaticPaths() {
+  return AR_SLUGS
+    .map(slug => ({ slug, country: COUNTRIES.find(c => c.slug === slug), ar: AR_CONTENT[slug] }))
+    /* A slug that lost its entry in either file drops the page rather than
+       rendering a heading with nothing under it. */
+    .filter((x): x is { slug: string; country: (typeof COUNTRIES)[number]; ar: ArCountry } =>
+      Boolean(x.country && x.ar))
+    .map(x => ({ params: { slug: x.slug }, props: { country: x.country, ar: x.ar } }));
+}
+
+const { country, ar } = Astro.props as { country: (typeof COUNTRIES)[number]; ar: ArCountry };
+
+const detail: CountryDetail | undefined = COUNTRY_DETAIL[country.slug];
+const pageUrl = `${SITE.url}/ar/${country.slug}/`;
+const enUrl = `${SITE.url}/countries/${country.slug}/`;
+
+/* ── Shared Arabic vocabulary ─────────────────────────────────────── */
+const SUPPORT_LABEL_AR: Record<OdooSupport, string> = {
+  native: 'ضمن أودو',
+  oca_or_community: 'وحدة مجتمعية',
+  third_party_paid: 'موصّل مدفوع',
+  custom_build: 'تطوير مخصص',
+};
+const SUPPORT_CLASS: Record<OdooSupport, string> = {
+  native: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  oca_or_community: 'bg-ink-100 text-ink-700 ring-ink-300',
+  third_party_paid: 'bg-amber-50 text-amber-800 ring-amber-200',
+  custom_build: 'bg-rose-50 text-rose-700 ring-rose-200',
+};
+const supportClass = (s: OdooSupport) => SUPPORT_CLASS[s] || SUPPORT_CLASS.custom_build;
+const supportLabel = (s: OdooSupport) => SUPPORT_LABEL_AR[s] || '';
+const SUPPORT_LEGEND: OdooSupport[] = ['native', 'oca_or_community', 'third_party_paid', 'custom_build'];
+
+/* What each badge costs the buyer, in one line each. */
+const SUPPORT_MEANING_AR: Record<OdooSupport, string> = {
+  native: 'يأتي مع أودو 19 ولا يحتاج شراء وحدة.',
+  oca_or_community: 'وحدة مجانية من المجتمع أو من ناشر خارجي.',
+  third_party_paid: 'وحدة مدفوعة من متجر تطبيقات أودو.',
+  custom_build: 'لا توجد وحدة جاهزة: يُبنى الربط ضمن نطاق العمل.',
+};
+
+const KIND_AR: Record<string, string> = {
+  'domestic card scheme': 'شبكة بطاقات محلية',
+  'regional gateway': 'بوابة دفع إقليمية',
+  'local gateway': 'بوابة دفع محلية',
+  'local acquirer': 'جهة استحواذ محلية',
+  'local acquirer and gateway': 'جهة استحواذ وبوابة دفع محلية',
+  'local gateway and acquirer': 'بوابة دفع وجهة استحواذ محلية',
+  'global gateway': 'بوابة دفع عالمية',
+  'global gateway not available locally': 'بوابة دفع عالمية غير متاحة محليًا',
+  'global gateway (not available in Oman)': 'بوابة دفع عالمية غير متاحة في عُمان',
+  'mobile wallet': 'محفظة إلكترونية',
+  'instant bank transfer': 'تحويل بنكي فوري',
+  'bank transfer': 'تحويل بنكي',
+  'domestic bank transfer': 'تحويل بنكي محلي',
+  'manual bank payment': 'دفع بنكي يدوي',
+  'cash on delivery': 'الدفع عند الاستلام',
+  'BNPL': 'اشترِ الآن وادفع لاحقًا',
+  'installments': 'تقسيط',
+  'national post': 'البريد الوطني',
+  'domestic express': 'شحن سريع محلي',
+  'regional express': 'شحن سريع إقليمي',
+  'global express': 'شحن سريع دولي',
+  'domestic and regional express': 'شحن سريع محلي وإقليمي',
+  'domestic and global express': 'شحن سريع محلي ودولي',
+  'last mile': 'التوصيل للميل الأخير',
+  'aggregator': 'مجمِّع شركات شحن',
+  'freight forwarding': 'شحن ونقل بضائع',
+  'air freight': 'شحن جوي',
+};
+
+const CITY_AR: Record<string, string> = {
+  Riyadh: 'الرياض', Jeddah: 'جدة', Dammam: 'الدمام', Khobar: 'الخبر',
+  Makkah: 'مكة المكرمة', Madinah: 'المدينة المنورة',
+  Dubai: 'دبي', 'Abu Dhabi': 'أبوظبي', Sharjah: 'الشارقة', Ajman: 'عجمان', RAK: 'رأس الخيمة',
+  Doha: 'الدوحة', 'Al Rayyan': 'الريان', Lusail: 'لوسيل',
+  'Kuwait City': 'مدينة الكويت', Hawalli: 'حولي',
+  Muscat: 'مسقط', Salalah: 'صلالة', Sohar: 'صحار',
+  Manama: 'المنامة', Muharraq: 'المحرق',
+  Cairo: 'القاهرة', Alexandria: 'الإسكندرية', Giza: 'الجيزة',
+  Amman: 'عمّان', Zarqa: 'الزرقاء', Irbid: 'إربد',
+};
+const cityAr = (c: string) => CITY_AR[c] || c;
+const citiesAr = (country.cities || []).map(cityAr);
+
+/* Every market on this index, for the sidebar. Names live here, not in the
+   layout, so the page owns its own copy. */
+const AR_MARKET_NAMES: Record<string, string> = {
+  'saudi-arabia': 'المملكة العربية السعودية',
+  'uae': 'الإمارات العربية المتحدة',
+  'qatar': 'دولة قطر',
+  'kuwait': 'دولة الكويت',
+  'oman': 'سلطنة عُمان',
+  'bahrain': 'مملكة البحرين',
+  'egypt': 'جمهورية مصر العربية',
+  'jordan': 'المملكة الأردنية الهاشمية',
+};
+const otherMarkets = AR_SLUGS
+  .filter(s => s !== country.slug)
+  .map(s => ({ slug: s, name: AR_MARKET_NAMES[s] || '', flag: COUNTRIES.find(c => c.slug === s)?.flag || '' }))
+  .filter(m => Boolean(m.name));
+
+/* ── Lookup by leading substring of the English source ─────────────── */
+function pick(map: Record<string, string> | undefined, en: string): string | undefined {
+  if (!map || !en) return undefined;
+  const key = Object.keys(map).find(k => en.startsWith(k));
+  return key ? map[key] : undefined;
+}
+
+/* Facts that have an Arabic rendering. Anything unmatched is dropped, not
+   printed in English. */
+function arFacts(facts: CountryFact[] | undefined, map: Record<string, string> | undefined) {
+  return (facts || [])
+    .map(f => ({ text: pick(map, f.claim), verified: f.verified }))
+    .filter((f): f is { text: string; verified: boolean } => Boolean(f.text));
+}
+function arLines(lines: string[] | undefined, map: Record<string, string> | undefined): string[] {
+  return (lines || []).map(l => pick(map, l)).filter((x): x is string => Boolean(x));
+}
+function arProviders(items: CountryProvider[] | undefined, map: Record<string, ArProviderText> | undefined) {
+  return (items || [])
+    .map(p => ({ p, t: map ? map[p.name] : undefined }))
+    .filter((x): x is { p: CountryProvider; t: ArProviderText } => Boolean(x.t))
+    .map(x => ({
+      name: x.p.name,
+      kind: KIND_AR[x.p.kind] || '',
+      note: x.t.note,
+      support: x.p.support,
+      verified: x.p.verified,
+    }));
+}
+
+const taxFacts = arFacts(detail?.tax, ar.taxAr);
+const payrollFacts = arFacts(detail?.payroll, ar.payrollAr);
+const accountingFacts = arFacts(detail?.accounting, ar.accountingAr);
+const einvReqs = arLines(detail?.einvoicing?.requirements, ar.einvoicing?.requirementsAr);
+const paymentItems = arProviders(detail?.payments, ar.paymentsAr);
+const shippingItems = arProviders(detail?.shipping, ar.shippingAr);
+const nativeLines = arLines(detail?.odoo?.native, ar.nativeAr);
+const customLines = arLines(detail?.odoo?.custom, ar.customAr);
+
+/* Module strings are 'l10n_xx' or 'l10n_xx (English label)'. Only the code is
+   printed: the parenthetical is an English label, not a fact worth translating. */
+const MODULE_RE = /^(OCA\s+)?([a-z][a-z0-9]*(?:_[a-z0-9]+)+)/;
+const moduleCodes: string[] = [];
+for (const m of detail?.odoo?.modules || []) {
+  const hit = MODULE_RE.exec(String(m).trim());
+  if (hit) moduleCodes.push(hit[2]);
+}
+
+const hasEinv = Boolean(ar.einvoicing && detail?.einvoicing);
+const hasCoverage = nativeLines.length > 0 || customLines.length > 0 || moduleCodes.length > 0;
+
+const factSections = [
+  { id: 'tax', title: `الضريبة في ${ar.shortName}`, intro: 'ما يجب أن تضبطه إعدادات الضريبة قبل التشغيل الفعلي.', facts: taxFacts },
+  { id: 'payroll', title: `الرواتب في ${ar.shortName}`, intro: 'ما يجب أن تحتسبه الرواتب وتستقطعه وتقدّمه.', facts: payrollFacts },
+  { id: 'accounting', title: `المحاسبة في ${ar.shortName}`, intro: 'الإطار المحاسبي الذي تقع دفاتركم داخله.', facts: accountingFacts },
+].filter(s => s.facts.length > 0);
+
+const providerSections = [
+  {
+    id: 'payments',
+    title: `وسائل الدفع في ${ar.shortName}`,
+    intro: `مزوّدو الدفع الذين تحتاجهم صفحة الدفع فعليًا في ${ar.shortName}، وكيف يصل كل واحد منهم إلى أودو.`,
+    items: paymentItems,
+  },
+  {
+    id: 'shipping',
+    title: `الشحن وشركات التوصيل في ${ar.shortName}`,
+    intro: 'الناقلون الذين يحرّكون الأحجام الحقيقية هنا، وما يتطلبه تسعيرهم وطباعة بوالصهم وتتبّعهم من داخل أودو.',
+    items: shippingItems,
+  },
+].filter(s => s.items.length > 0);
+
+const jumpLinks = [
+  { href: '#e-invoicing', label: 'الفوترة الإلكترونية', show: hasEinv },
+  { href: '#tax', label: 'الضريبة', show: taxFacts.length > 0 },
+  { href: '#payroll', label: 'الرواتب', show: payrollFacts.length > 0 },
+  { href: '#accounting', label: 'المحاسبة', show: accountingFacts.length > 0 },
+  { href: '#payments', label: 'وسائل الدفع', show: paymentItems.length > 0 },
+  { href: '#shipping', label: 'الشحن', show: shippingItems.length > 0 },
+  { href: '#odoo-coverage', label: 'ما يغطيه أودو', show: hasCoverage },
+].filter(x => x.show);
+
+/* Review date as '22 أغسطس 2026'. Western digits on purpose: the source figures
+   are Western digits and Gulf finance teams read them that way. */
+const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const reviewedOn = (() => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(COUNTRY_DETAIL_REVIEWED || ''));
+  if (!m) return String(COUNTRY_DETAIL_REVIEWED || '');
+  const month = AR_MONTHS[Number(m[2]) - 1];
+  return month ? `${Number(m[3])} ${month} ${m[1]}` : String(COUNTRY_DETAIL_REVIEWED);
+})();
+
+const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&source=${encodeURIComponent(`ar/${country.slug}`)}`;
+
+/* ── hreflang ──────────────────────────────────────────────────────
+   Self-referential only. The English page at /countries/<slug>/ does not link
+   back to this URL, and this file cannot add that link without editing a page it
+   does not own. A one-way pair is a claim Google is entitled to ignore and we are
+   not entitled to make, so the 'en' alternate is left out until the reverse link
+   exists on the English page. */
+const hreflangAlternates = [{ lang: 'ar', href: pageUrl }];
+
+/* ── Structured data ───────────────────────────────────────────────
+   No rate, scheme, authority, threshold or deadline goes in here. Structured data
+   is the wrong place to assert a regulatory claim; the detail stays in the body. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: `تنفيذ أودو ودعمه في ${ar.name}`,
+    serviceType: 'Odoo ERP implementation, customization, localization and support',
+    description: `تنفيذ أودو وتخصيصه وتهيئته للسوق المحلي ودعمه للشركات في ${ar.name}.`,
+    url: pageUrl,
+    inLanguage: 'ar',
+    provider: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      email: SITE.email,
+      telephone: SITE.phone,
+    },
+    areaServed: [
+      { '@type': 'Country', name: ar.name },
+      ...citiesAr.map(c => ({ '@type': 'City', name: c })),
+    ],
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: `${SITE.url}/contact/`,
+      availableLanguage: ['Arabic', 'English'],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    inLanguage: 'ar',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'الأسواق الناطقة بالعربية', item: `${SITE.url}/ar/` },
+      { '@type': 'ListItem', position: 3, name: ar.name, item: pageUrl },
+    ],
+  },
+];
+---
+<BaseAr
+  title={`أودو في ${ar.name}`}
+  description={ar.metaDescription}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+  enHref={enUrl}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 85% 10%, rgba(135,90,123,0.55) 0%, transparent 45%), radial-gradient(circle at 15% 90%, rgba(0,160,157,0.3) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-16 sm:py-24">
+      <nav class="text-sm text-brand-200" aria-label="مسار التنقل">
+        <a href="/ar/" class="hover:text-white">الأسواق الناطقة بالعربية</a>
+        <span class="px-2">/</span>
+        <span class="text-white">{ar.name}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="text-6xl">{country.flag}</div>
+        <h1 class="h1 mt-6">تنفيذ أودو في {ar.name}</h1>
+        <p class="lede mt-6 text-ink-200">{ar.lede}</p>
+        {citiesAr.length > 0 && (
+          <div class="mt-6 flex flex-wrap gap-2">
+            {citiesAr.map(c => <span class="chip !bg-white/10 !text-white">{c}</span>)}
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <section class="border-b border-ink-200 bg-ink-50 py-8">
+    <div class="container-site">
+      <dl class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">عملة التقارير</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900"><bdi dir="ltr">{country.currency}</bdi></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">رمز اللغة والمنطقة</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900"><bdi dir="ltr">{country.lang}</bdi></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">عدد المدن المغطّاة</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900">{citiesAr.length}</dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">آخر مراجعة للمعلومات</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900">{reviewedOn}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {jumpLinks.length > 0 && (
+    <section class="border-b border-ink-200 bg-white py-4">
+      <div class="container-site flex flex-wrap items-center gap-x-6 gap-y-2">
+        <span class="text-xs font-semibold tracking-wider text-ink-500">انتقل إلى</span>
+        {jumpLinks.map(l => (
+          <a href={l.href} class="text-sm font-semibold text-brand-600 hover:text-brand-700">{l.label}</a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <h2 class="h3">تهيئة أودو لسوق {ar.shortName}</h2>
+          <p class="mt-4 text-lg text-ink-700">
+            نشر أودو في {ar.shortName} ليس تثبيتًا قياسيًا مع تغيير العملة. معالجة الضريبة، وشكل الفاتورة،
+            وقواعد الرواتب، والتقارير التي يقدّمها محاسبكم فعليًا: كلها يجب أن تستقيم قبل التشغيل. البنود
+            أدناه هي ما نضبطه ونختبره ضمن التنفيذ.
+          </p>
+          <p class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm">
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">مراجَع</span>
+            <span class="text-ink-700">روجعت المعلومات التنظيمية في هذه الصفحة بتاريخ {reviewedOn}.</span>
+          </p>
+          <p class="mt-6 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">
+            النسب وصيغ التقديم والحدود ومواعيد الرفع تتغيّر. نضبط النظام على القواعد السارية وقت التنفيذ،
+            ونؤكد كل رقم مع محاسبكم أو مستشاركم الضريبي قبل الاعتماد. وإذا تغيّرت قاعدة بعد التشغيل فهي
+            تذكرة دعم، لا إعادة بناء.
+          </p>
+
+          {hasEinv && ar.einvoicing && detail?.einvoicing && (
+            <section id="e-invoicing" class="mt-14 scroll-mt-24">
+              <h2 class="h3">الفوترة الإلكترونية في {ar.shortName}</h2>
+              <p class="mt-3 text-ink-700">المنظومة، ومن تلزمه، وما تفرضه على نظامكم.</p>
+              <div class="mt-6 overflow-hidden rounded-2xl border border-brand-200">
+                <div class="bg-brand-50 p-6 sm:p-8">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="eyebrow">المنظومة</span>
+                    {detail.einvoicing.verified === false && (
+                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">غير مؤكد</span>
+                    )}
+                  </div>
+                  <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{ar.einvoicing.scheme}</p>
+                  <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">الجهة المسؤولة:</span> {ar.einvoicing.authority}</p>
+                </div>
+                <div class="space-y-6 bg-white p-6 sm:p-8">
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-ink-500">أين وصلت</div>
+                    <p class="mt-2 text-ink-700">{ar.einvoicing.status}</p>
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-ink-500">من تشمله</div>
+                    <p class="mt-2 text-ink-700">{ar.einvoicing.appliesTo}</p>
+                  </div>
+                  {einvReqs.length > 0 && (
+                    <div>
+                      <div class="text-xs font-semibold tracking-wider text-ink-500">ما تتطلبه</div>
+                      <ul class="mt-3 space-y-3">
+                        {einvReqs.map(r => (
+                          <li class="flex gap-3">
+                            <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-500"></span>
+                            <span class="text-ink-700">{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {factSections.map(sec => (
+            <section id={sec.id} class="mt-14 scroll-mt-24">
+              <h2 class="h3">{sec.title}</h2>
+              <p class="mt-3 text-ink-700">{sec.intro}</p>
+              <ul class="mt-6 space-y-3">
+                {sec.facts.map(f => (
+                  <li class={f.verified === false
+                    ? 'rounded-xl border border-dashed border-ink-300 bg-ink-50 p-4 sm:p-5'
+                    : 'rounded-xl border border-ink-200 bg-white p-4 sm:p-5'}>
+                    <p class="text-ink-700">{f.text}</p>
+                    {f.verified === false && (
+                      <p class="mt-2 text-[11px] font-semibold tracking-wider text-ink-500">غير مؤكد: مصادر متطابقة دون تأكيد من مصدر أوّلي.</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
+          {providerSections.map(sec => (
+            <section id={sec.id} class="mt-14 scroll-mt-24">
+              <h2 class="h3">{sec.title}</h2>
+              <p class="mt-3 text-ink-700">{sec.intro}</p>
+              {sec.id === 'payments' && (
+                <div class="mt-5 rounded-2xl border border-ink-200 bg-ink-50 p-5">
+                  <div class="text-xs font-semibold tracking-wider text-ink-500">ماذا تعني الوسوم</div>
+                  <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+                    {SUPPORT_LEGEND.map(s => (
+                      <li class="flex flex-wrap items-center gap-2 text-sm text-ink-700">
+                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(s)}`}>{supportLabel(s)}</span>
+                        <span>{SUPPORT_MEANING_AR[s]}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {sec.items.map(p => (
+                  <div class={p.verified === false
+                    ? 'rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-5'
+                    : 'rounded-2xl border border-ink-200 bg-white p-5'}>
+                    <div class="flex flex-wrap items-start justify-between gap-2">
+                      <span class="font-semibold text-ink-900"><bdi dir="ltr">{p.name}</bdi></span>
+                      {p.verified === false ? (
+                        <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{supportLabel(p.support)}، غير مؤكد</span>
+                      ) : (
+                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(p.support)}`}>{supportLabel(p.support)}</span>
+                      )}
+                    </div>
+                    {p.kind && <div class="mt-1 text-xs text-ink-500">{p.kind}</div>}
+                    <p class="mt-2 text-sm text-ink-600">{p.note}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+
+          {hasCoverage && (
+            <section id="odoo-coverage" class="mt-14 scroll-mt-24">
+              <h2 class="h3">ما يغطيه أودو جاهزًا في {ar.shortName}</h2>
+              <p class="mt-3 text-ink-700">
+                السؤال الكامن خلف كل عرض سعر: كم من هذا إعداد وكم منه تطوير. القائمة الأولى تأتي مع أودو.
+                والثانية موصّل مدفوع أو وحدة مجتمعية أو عمل نحدّد نطاقه ونسعّره مسبقًا.
+              </p>
+              <div class="mt-6 rounded-3xl bg-ink-900 p-6 text-white sm:p-8">
+                {moduleCodes.length > 0 && (
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-brand-200">وحدات التهيئة المحلية</div>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      {moduleCodes.map(code => (
+                        <span class="inline-flex max-w-full items-baseline rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/15">
+                          <code class="font-mono text-xs font-semibold text-white">{code}</code>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div class="mt-8 grid gap-4 md:grid-cols-2">
+                  {nativeLines.length > 0 && (
+                    <div class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-400/20 text-xs font-bold text-emerald-300">✓</span>
+                        <span class="font-semibold">مغطّى</span>
+                        <span class="ms-auto text-xs font-semibold text-emerald-300">{nativeLines.length}</span>
+                      </div>
+                      <ul class="mt-4 space-y-3">
+                        {nativeLines.map(n => (
+                          <li class="flex gap-3 text-sm text-white/80">
+                            <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-emerald-400"></span>
+                            <span>{n}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {customLines.length > 0 && (
+                    <div class="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400/20 text-xs font-bold text-amber-300">!</span>
+                        <span class="font-semibold">يحتاج عملًا</span>
+                        <span class="ms-auto text-xs font-semibold text-amber-300">{customLines.length}</span>
+                      </div>
+                      <ul class="mt-4 space-y-3">
+                        {customLines.map(c => (
+                          <li class="flex gap-3 text-sm text-white/80">
+                            <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber-400"></span>
+                            <span>{c}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p class="mt-5 text-sm text-ink-700">
+                كل ما تحت «يحتاج عملًا» يُسعَّر كنطاق معلن، لا يُكتشف في منتصف المشروع. أرسلوا قائمة الوحدات
+                التي تشغّلونها اليوم وسنصنّفها بالطريقة نفسها مقابل متطلبات {ar.shortName}.
+              </p>
+            </section>
+          )}
+
+          <h2 class="h3 mt-14">كيف ننفّذ في {ar.shortName}</h2>
+          <p class="mt-4 text-ink-700">
+            التنفيذ عن بُعد أولًا. لا ندّعي مكتبًا في كل مدينة نخدمها، ولا نضع تكلفة مكتب في عرض السعر.
+            ننتقل إلى موقعكم لورش التحليل وتدريب المستخدمين وأسبوع التشغيل حين يستدعي العمل الحضور.
+          </p>
+          <ul class="mt-6 space-y-4">
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">1</span>
+              <span class="text-ink-700"><strong class="text-ink-900">العمل بالعربية والإنجليزية.</strong> نعمل مع فرقكم بالعربية، والتوثيق يُسلَّم بالعربية أو الإنجليزية حسب طلبكم.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">2</span>
+              <span class="text-ink-700"><strong class="text-ink-900">مخرجات ثنائية اللغة.</strong> أودو يدعم تعدد اللغات والاتجاه من اليمين إلى اليسار، فالفواتير والواجهات ثنائية اللغة خطوة إعداد لا تطوير خاص.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">3</span>
+              <span class="text-ink-700"><strong class="text-ink-900">تقدّم مرئي.</strong> اجتماع يومي قصير، وعرض أسبوعي، وتقرير أسبوعي مكتوب. ترون البناء وهو يحدث لا عند التسليم.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">4</span>
+              <span class="text-ink-700"><strong class="text-ink-900">اعتماد على قاعدة اختبار.</strong> يشغّل فريقكم إعدادات {ar.shortName} في بيئة اختبار ويعتمدها قبل الانتقال، مع خطة تراجع مكتوبة.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">5</span>
+              <span class="text-ink-700"><strong class="text-ink-900">دعم بعد التشغيل.</strong> عقود دعم باتفاقية مستوى خدمة، ومراقبة على مدار الساعة، ونسخ احتياطي متحقَّق منه، وترقيع أمني.</span>
+            </li>
+          </ul>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">أودو في {ar.shortName}؟</h2>
+              <p class="mt-2 text-sm text-brand-100">مكالمة تحديد نطاق مجانية مع استشاري أول يعرف متطلبات {ar.shortName}.</p>
+              <a href={contactHref} class="btn-primary mt-5 w-full bg-white !text-brand-700 hover:bg-brand-50">احجز مكالمة</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary mt-3 w-full !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">واتساب</a>
+            </div>
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">{ar.shortName} في سطور</h2>
+              <dl class="mt-4 space-y-2 text-sm">
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">العملة</dt><dd class="font-semibold"><bdi dir="ltr">{country.currency}</bdi></dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">رمز اللغة</dt><dd class="font-semibold"><bdi dir="ltr">{country.lang}</bdi></dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">المدن</dt><dd class="font-semibold">{citiesAr.length}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-600">التنفيذ</dt><dd class="font-semibold">عن بُعد وفي الموقع</dd></div>
+              </dl>
+              <a href={enUrl} hreflang="en" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
+                <span lang="en" dir="ltr">Read this page in English</span>
+              </a>
+            </div>
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">أسواق أخرى</h2>
+              <ul class="mt-4 space-y-2">
+                {otherMarkets.map(m => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/ar/${m.slug}/`}>{m.flag} {m.name}</a></li>
+                ))}
+              </ul>
+              <a href="/ar/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">كل الأسواق ←</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="relative overflow-hidden rounded-3xl bg-odoo-gradient p-10 text-white sm:p-16">
+        <div class="absolute h-72 w-72 rounded-full bg-accent-400/30 blur-3xl" style="inset-inline-start:-5rem;top:-5rem;"></div>
+        <div class="relative max-w-2xl">
+          <div class="text-4xl">{country.flag}</div>
+          <h2 class="h2 mt-4 text-white">حدّدوا نطاق مشروع أودو في {ar.shortName}.</h2>
+          <p class="lede mt-4 text-brand-100">
+            ثلاثون دقيقة: أنظمتكم الحالية، والبنود المذكورة أعلاه، وشكل المرحلة الأولى الواقعية.
+            تخرجون بنطاق مكتوب. بلا التزام وبلا نص مبيعات.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">احجز مكالمة تحديد النطاق</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">راسلنا على واتساب</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseAr>

@@ -1,0 +1,60 @@
+---
+title: "Clearance or reporting: the question that decides your Odoo e-invoicing build"
+description: "A clearance mandate puts the tax authority inside your order-to-cash. A reporting mandate does not. That one distinction changes the Odoo build, the data work and the go-live plan."
+date: 2026-05-07
+tags: ["e-invoicing", "compliance", "odoo"]
+---
+
+Two projects can both be called "e-invoicing" and share almost no engineering. What separates them is whether the tax authority sits in front of your invoice or beside it. Get that wrong in the first scoping call and every estimate after it is wrong too.
+
+## Three models, and what each one does to your invoice
+
+**Clearance.** The document goes to the authority, the authority validates it, and only then is it a valid invoice. Saudi Arabia works this way for standard tax invoices, which are sent to ZATCA's Fatoora platform and validated before they are a valid invoice. India works the same way: the invoice JSON goes to an Invoice Registration Portal, which validates it and returns an Invoice Reference Number and a digitally signed QR code, and the document is not a valid tax invoice without them. Pakistan is clearance too, with invoice data going to FBR's Computerized System in real time and a unique FBR invoice number coming back before the invoice is issued to the buyer. Egypt runs a clearance model where a B2B or B2G invoice is submitted to the ETA portal and validated before it counts as a valid invoice. Jordan's JoFotara returns a QR code that must be printed on the document the customer receives.
+
+**Continuous reporting.** The invoice reaches the buyer through an accredited intermediary and the authority is told about it in parallel. The UAE model is explicit: the supplier's Accredited Service Provider reports the Tax Data Document to the Federal Tax Authority in parallel with delivering the invoice through the buyer's ASP, and this is continuous reporting, not the pre-clearance model Saudi Arabia uses, which is a different build. Oman is the same shape, where invoice data reaches the Oman Tax Authority at the same time as the buyer rather than the invoice being held until the authority signs it. France reports through a Plateforme Agreee, which passes the invoice data to the tax administration.
+
+**Post-audit.** Nobody is told anything in real time. Germany's B2B rule has no government platform and no real-time reporting, and transmission is free choice, for example email or Peppol. Australia uses Peppol post-audit exchange: the invoice goes supplier access point to buyer access point and the ATO never sees it.
+
+## Why the distinction is the whole project
+
+In a clearance market, an outside system now holds a veto over your invoice. That is not a file format problem, it is a state machine problem. The invoice stops being finished when it is printed. It gains submitted, accepted, rejected and pending, those states have to be visible where your finance team works, and somebody has to own the ones that are not accepted. In our [e-invoicing service](/services/odoo-e-invoicing/) that owner is a named condition of go-live, because rejected documents that belong to everybody belong to nobody, and the list becomes a project by month two.
+
+In a reporting market the invoice is not blocked, but you pick up a different dependency: you do not connect to the authority yourself. In the UAE you must appoint an Accredited Service Provider. In Oman invoices move through an accredited service provider rather than being posted to the tax authority directly. That turns a piece of your compliance into a vendor selection, a contract, and a second integration timeline you do not control.
+
+Post-audit markets are the cheapest build and get underestimated for a different reason: the obligation is often to receive. Every German business has had to be able to receive structured e-invoices since 1 January 2025. Reading inbound supplier e-invoices into vendor bills is the half of the scope people forget.
+
+## What Odoo ships, and what it does not
+
+This is where quotes go wrong, because "Odoo supports e-invoicing" is both true and useless. Country by country, from our country pages:
+
+- **Saudi Arabia.** l10n_sa_edi covers ZATCA Phase 2 clearance and reporting, the compliant XML for tax invoices, simplified tax invoices, credit notes and debit notes, plus storage of the XML, QR codes and ZATCA responses. Simplified invoices raised through Point of Sale are handled by l10n_sa_edi_pos and l10n_sa_pos.
+- **India.** l10n_in_edi and l10n_in_ewaybill handle IRN and QR generation, submission and cancellation, plus e-way bills against the NIC portal from sales and purchase documents.
+- **Jordan.** l10n_jo_edi does compliant generation, real-time submission for validation, and invoice status tracking inside Odoo.
+- **Egypt.** l10n_eg_edi_eta submits from a sales journal, with the ETA activity code and branch ID set per journal.
+- **Turkey.** The Nilvera modules cover e-Fatura and e-Arsiv, e-Irsaliye dispatch notes and e-Defter output.
+- **France.** Odoo completed the DGFiP registration and is an approved platform, shipping l10n_fr_pdp to send and receive, plus l10n_fr_pdp_pos for POS e-reporting.
+- **UAE.** Nothing. There is no UAE e-invoicing module in the official localization and no UAE page in Odoo's e-invoicing documentation. Odoo's own Peppol support sends BIS Billing 3.0, XRechnung CIUS and NLCIUS, and PINT AE is not among them.
+- **Oman.** Nothing. Odoo's Peppol access point service covers European countries plus Turkey and includes no GCC country, and a search of the Odoo apps store for Oman e-invoicing returns zero apps.
+- **Pakistan.** Nothing in core talks to the FBR or PRAL API. In practice you buy one of the apps store modules or build the integration.
+
+Read that list against the pitch you were given. Two markets with live or dated mandates, the [UAE](/countries/uae/e-invoicing/) and [Oman](/countries/oman/e-invoicing/), have no shipped module at all.
+
+## The details that actually break go-lives
+
+The format is rarely the problem. These are.
+
+**Master data.** Records that were fine for a printed invoice fail validation in bulk on day one, in front of customers. Jordan alone needs the company name in the ERP to match the ISTD registration, the invoice currency to be JOD, and customer country plus Tax ID as mandatory fields. France adds four new mandatory invoice mentions including the buyer's SIREN. Profile the data and count the gaps before anyone writes code.
+
+**Rules that are process changes in technical costume.** JoFotara rejects negative quantities and negative unit prices, so global or document-level discounts have to be re-expressed as a percentage on each line. That is a pricing and promotions decision for the commercial team, not a configuration toggle. Saudi Arabia allows a single invoice sequence and no parallel sequences, which quietly kills a common multi-branch numbering habit.
+
+**Time boxes.** India rejects invoices, credit notes and debit notes older than 30 days at the IRP for larger taxpayers, so back-dated posting has to be blocked inside Odoo rather than discovered at submission. Saudi simplified B2C invoices are reported to Fatoora within 24 hours. Neither is a batch job you run when convenient.
+
+**Archiving.** Turkey does not permit archiving outside the country, which constrains where the database and its attachments physically sit. That is a hosting decision taken before signature, not a detail at the end.
+
+**Specifications that move.** ZATCA publishes the binding detail in separate versioned documents: the Electronic Invoice Data Dictionary, the XML Implementation Standard and the Security Features Implementation Standards. Budget for re-testing against each release, not only at go-live. Odoo's own e-invoicing documentation states it is an overview and not legal advice.
+
+## What to ask before you sign
+
+Which model is it, clearance or reporting? Is there a shipped Odoo module for this exact market and this exact version, a paid connector, or nothing? Who is the accredited intermediary and who holds that contract? Who on our side works the rejection list every morning? Where does the archive live in five years, and who can read it?
+
+A proposal that does not answer those is priced against the easy version of the project. The specifics per market sit on our country pages, which are sourced and reviewed separately: [Saudi Arabia](/countries/saudi-arabia/e-invoicing/), [India](/countries/india/e-invoicing/), [Jordan](/countries/jordan/e-invoicing/), [Pakistan](/countries/pakistan/e-invoicing/), [France](/countries/france/e-invoicing/) and [Germany](/countries/germany/e-invoicing/). The requirement itself comes from your accountant or auditor, never from a software vendor, and the [localization work](/services/odoo-localization/) underneath it is a separate conversation again.

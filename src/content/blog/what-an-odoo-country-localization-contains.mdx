@@ -1,0 +1,68 @@
+---
+title: "A chart of accounts is not compliance: what an Odoo country localization actually contains"
+description: "Odoo ships a localization for your country. That can mean anything from a chart of accounts and nothing else to a full clearance integration. How to tell which one you are getting."
+date: 2026-08-20
+tags: ["localization", "compliance", "odoo"]
+---
+
+"Odoo has a localization for your country" is a true statement that hides a range of about twenty to one in delivered value. At one end it means a chart of accounts and literally nothing else. At the other it means a live clearance integration, payroll rules and a filing API. Knowing which you are buying is a ten-minute check that changes an entire budget.
+
+## Tier one: a chart of accounts
+
+**Qatar.** The l10n_qa manifest describes itself as the base module to manage the accounting chart for Qatar and lists exactly one activated feature: chart of accounts. It auto-installs with the Accounting app when the company country is Qatar and pulls in l10n_gcc_invoice, which adds Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills. That is the whole module.
+
+**Kuwait.** Same picture. The l10n_kw manifest describes itself as the base module to manage the accounting chart for Kuwait and lists exactly one activated feature. KWD ships in Odoo core with rounding 0.001, so the three-decimal currency is correct by default.
+
+Neither is a criticism of the modules. There is no VAT in either market, so there is no tax engine to configure. But it does mean that everything else is yours. In Kuwait that includes the 5 percent contract retention and tax clearance certificate cycle, which is an AP and AR process build with its own reporting, and the four-instalment tax payment schedule. In Qatar it includes withholding tax at 5 percent with the 16th-of-month remittance and the monthly Dhareeba statement, plus contract notification tracking inside 30 days with a QAR 10,000 penalty for each miss.
+
+**Bangladesh.** l10n_bd ships a chart of accounts, taxes and a tax report. There is no Mushak register, no Mushak 9.1 report and no audit file export in the official module.
+
+**Pakistan.** l10n_pk gives a basic chart of accounts, sales tax taxes, a tax report and a withholding tax report. Pakistan is listed among Odoo's countries but has no fiscal localization documentation page, unlike India, Saudi Arabia and the UAE.
+
+## Tier two: taxes, fiscal positions and a return layout
+
+**Oman.** l10n_om ships in Odoo 19 core and auto-installs with Accounting. It carries a chart of accounts based on Omani practice with account groups and default mappings, VAT taxes covering standard 5 percent, zero-rated domestic, exports, exempt, imports and reverse charge, fiscal positions that adjust tax automatically based on whether the customer or vendor is registered, a tax report laid out to match the Oman VAT return, and Omani governorates loaded as state records.
+
+That is a meaningful difference from tier one: the return format is modelled rather than needing to be built from the ledger. **Bahrain** sits in the same band, shipping two tax report layouts, a full VAT report and a simplified one.
+
+The caveat on tier two is documentation rather than function. Bahrain has no dedicated fiscal localization page in the Odoo 19 documentation, unlike Oman, Saudi Arabia and the UAE, so the module manifest is the only official description of what it does. Read it.
+
+## Tier three: statutory integrations
+
+**Saudi Arabia** ships eight modules: l10n_sa, l10n_sa_reports, l10n_sa_edi, l10n_sa_edi_pos, l10n_sa_pos, l10n_sa_withholding_tax, l10n_sa_hr_payroll and l10n_sa_hr_payroll_account. That covers ZATCA Phase 2 clearance and reporting with storage of the XML, QR codes and ZATCA responses, simplified invoices through Point of Sale, down payments, retention and credit and debit notes through the e-invoicing flow, withholding tax applied at payment, and payroll.
+
+**India** ships the accounting and reports modules plus e-invoicing, e-way bill, e-way bill stock, payroll, payroll accounting and time off. Natively that gives GSTR-1, GSTR-2B and GSTR-3B reporting, IRN and QR generation against the NIC IRP, e-way bills from sales, purchase, receipts and delivery orders, GSTIN verification of partners, and TDS and TCS threshold alerts.
+
+**United Kingdom** ships l10n_uk, l10n_uk_reports, l10n_uk_bacs, l10n_uk_reports_cis and l10n_uk_hmrc: a CT600-ready chart and VAT100-ready tax structure, VAT return submission to HMRC through the MTD VAT API, Bacs files for paying suppliers and collecting from customers, and CIS monthly returns.
+
+**United States** ships accounting, reports, check printing on the three common pre-printed positions, NACHA file export, 1099 data preparation, the Avalara AvaTax integration, and payroll with an ADP work-entry export.
+
+## The gaps that are consistently yours, at every tier
+
+Four categories almost never come in the box, whatever tier you are on.
+
+**Filing transmission.** The UAE VAT report exports to Excel and PDF; there is no EmaraTax submission in the localization. Germany produces the Umsatzsteuervoranmeldung report but does not transmit it to ELSTER. Dhareeba has no Odoo integration, so Qatari filing stays manual unless you build an export. Odoo prepares data far more often than it files.
+
+**Statutory presentation beyond the tax report.** India's localization documents GSTR-1, GSTR-2B and GSTR-3B, and GSTR-9 and GSTR-9C are not among them. Germany's E-Bilanz under section 5b EStG is not in Odoo. UK iXBRL statutory accounts are not tagged by Odoo for HMRC or Companies House, which matters more now that HMRC's free filing service closed on 31 March 2026 and Companies House goes software-only in April 2028. Canada's documentation does not mention GIFI codes, so the mapping from your chart to schedules 100 and 125 is your job.
+
+**Payroll.** Covered in its own right elsewhere, but worth repeating here: the localization list and the payroll localization list are different lists, and having the first does not give you the second.
+
+**Local payment and courier rails.** In Jordan, eFAWATEERcom, CliQ and MEPS acquiring have no Odoo module, and Aramex and any domestic last-mile courier need a paid connector or a custom one. That pattern repeats across markets.
+
+## One question that reframes a whole project
+
+Ask the vendor: which module produces each statutory output we are obliged to send, and does it send it or export it?
+
+That single question separates the three tiers instantly. If the answer is a report you download and re-key into a portal, that is fine, but it is an operational process with an owner, not an integration, and it should be described that way in the proposal.
+
+## Two things worth knowing about how localizations install
+
+They install themselves. Several of these packages auto-install with the Accounting app when the company country is set, which means the moment a company record gets a country, some of your chart of accounts decisions have already been made. On a multi-company build that is a sequencing detail worth getting right first time.
+
+They are core modules, not an edition feature. If you are weighing Community against Enterprise, the country localization is not the deciding factor: the fiscal packages sit in Odoo core. What actually differs between the editions is set out on our [Community page](/odoo-community/), and it is a separate decision from this one.
+
+## Where to check before you sign
+
+Read the manifest of the modules you are being told cover your market, or ask for the module list in writing. Then hold each statutory obligation up against it. Our country pages do that comparison already, market by market, splitting what Odoo covers natively from what has to be built or bought: [Qatar](/countries/qatar/), [Kuwait](/countries/kuwait/), [Oman](/countries/oman/), [Bangladesh](/countries/bangladesh/accounting-tax/) and [the United Kingdom](/countries/united-kingdom/accounting-tax/).
+
+The requirement itself comes from your accountant, auditor or in-house finance lead, in writing, and nobody should take a rate, a threshold or a filing obligation from a software vendor. What the [localization service](/services/odoo-localization/) does is configure that requirement, prove it against documents your adviser recognises, and agree who watches for changes afterwards, because a system that was correct last year is not automatically correct now. If you have inherited a setup and want to know which tier you are actually running on, that is a good use of an [audit](/services/odoo-audit/).

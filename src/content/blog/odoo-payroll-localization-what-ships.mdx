@@ -1,0 +1,58 @@
+---
+title: "Odoo payroll localization: twelve countries ship, and what the rest costs to build"
+description: "Which markets have an official Odoo payroll localization, what those modules actually cover, what has to be built where there is none, and why the parallel run is the only proof that counts."
+date: 2026-06-18
+tags: ["payroll", "hr", "odoo"]
+---
+
+Payroll is the one module where nearly right and wrong are the same thing. It is also the module where the gap between "Odoo has payroll" and "Odoo has payroll for my country" is widest, and the answer is a short, checkable list.
+
+## The list
+
+Odoo 19 documents payroll localizations for twelve countries: Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, the United Arab Emirates and the United States.
+
+That is the whole list. If your country is not on it, the statutory side of payroll is a build or a purchase, and it should be priced as one in the first conversation rather than assumed into the implementation. Versions move things around, so check it against the exact version you are installing before anyone signs.
+
+## What a localization actually gives you
+
+Having one does not mean payroll configures itself. It means the statutory engine exists and you are configuring rather than writing it.
+
+**Saudi Arabia.** l10n_sa_hr_payroll sets GOSI deduction rates by employee nationality, handles end of service, and produces WPS reports. Employee bank records must carry an IBAN in line with WPS rules, so bank data quality is a go-live blocker, not a nice-to-have. The rate structure behind it is real work to get right: GOSI for Saudi employees totals 21.5 percent of covered wages, 9.75 percent from the employee and 11.75 percent from the employer, and for non-Saudi employees it is 2 percent paid by the employer.
+
+**United Arab Emirates.** l10n_ae_hr_payroll and l10n_ae_hr_payroll_account cover end of service gratuity by tenure band, housing, transport, medical, overtime and annual passage allowances, annual leave encashment, unpaid leave, GPSSA and DIFC DEWS for UAE nationals, and WPS reports. Employee IDs and bank accounts drive the WPS extract, so that data has to be clean before the first run.
+
+**Jordan.** l10n_jo_hr_payroll computes progressive income tax with exemptions for residents, non-residents, blind employees and dependants, social security on both sides, housing and transport allowances, leave logic, overtime and end of service benefit.
+
+**United States.** l10n_us_hr_payroll gives rules, contracts, allowances, deductions and payslips, with an ADP work entry export. What it does not give you is the filing: Forms 941, 940, W-2 and W-3, EFTPS deposits, state withholding registrations and SUTA are not in the box. Most US Odoo clients keep ADP, Gusto or Paychex and use l10n_us_hr_payroll_account for the postings. That is a sensible answer, not a failure.
+
+**Australia.** l10n_au_hr_payroll installs an Australian Employee salary structure, and l10n_au_hr_payroll_api submits STP and SuperStream through the SuperChoice API with ATO-approved security controls including MFA, session timeouts and audit logging. One live caveat: payday super started on 1 July 2026, and the Odoo 19 Australian documentation we reviewed does not describe the seven business day fund receipt window or the qualifying earnings base, so confirm your version handles both before go-live rather than assuming it does. State payroll tax is separate again, with rates and thresholds differing per state and no Odoo payroll tax module documented.
+
+## What "no localization" actually costs
+
+The build is never just tax slabs. It is the statutory file formats, the accrual models and the reporting that sits beside them.
+
+**Pakistan.** There is no payroll localization, so EOBI, provincial social security and the salary tax slabs are all custom. The detail generic builds get wrong: EOBI old-age benefits contribution is 5 percent from the employer and 1 percent from the employee, calculated on the federal minimum wage rather than on actual salary. Employers with six or more workers register with the provincial institution for the province the employee works in, PESSI in Punjab and SESSI in Sindh, and that contribution is employer only. Salary tax withheld is deposited with FBR within seven days and the withholding statement is filed quarterly by the 20th after quarter end.
+
+**Qatar.** Not on the list. GRSIA contributions for Qatari nationals, end of service gratuity accrual and the WPS Salary Information File all need paid apps store modules or a custom build. The SIF is a delimited text file with a fixed field order and a mandatory header carrying establishment number, pay month and year, total amount and transaction count, and Odoo has no native SIF export.
+
+**Kuwait.** Not on the list. PIFSS applies to Kuwaiti nationals only: the employer pays 11.5 percent up to a KWD 2,750 monthly ceiling, and the employee pays 8 percent up to the same ceiling plus a further 2.5 percent up to a KWD 1,500 ceiling. Two different employee ceilings is exactly where payroll configurations go wrong.
+
+**Oman.** No payroll localization, and a search of the Odoo apps store for Oman payroll returns zero apps, with the WPS and SIF modules on the store targeting Saudi Arabia, the UAE and Qatar. Social Protection Fund rules and the Article 61 gratuity, which is not less than the basic wage for each year of service calculated on the final basic wage with allowances excluded, both need building.
+
+**Bahrain.** No localization. SIO contributions run at 26 percent total for Bahraini employees, 18 employer and 8 employee, and 4 percent for expatriate employees, 3 employer and 1 employee. Nationals of other GCC states working in Bahrain are covered under their home country's rules, so you need a nationality-driven contribution rule rather than a simple local or expatriate switch. Expatriate end of service moved to a monthly SIO contribution from 1 March 2024 at 4.2 percent of monthly wage for the first three years and 8.4 percent thereafter, with service before that date staying the employer's liability under the old rules. That is two parallel models running at once.
+
+**United Kingdom.** No official localization. The documented route is the Employment Hero Payroll integration, and RTI submissions, auto-enrolment assessment and statutory payments are not in the standard product.
+
+**Germany and France.** Neither is on the list. Odoo ships l10n_fr_hr_payroll_account, which supplies the accounting side of French payroll rules only, and there is no DSN generator in standard Odoo, so French clients in practice run payroll in a dedicated tool or with a cabinet comptable and post the resulting journal entries into Odoo. Germany has no ELSTER-side payroll filing either.
+
+**Canada.** Not on the list, so CPP and the second additional CPP tier, EI, federal and provincial tax tables, T4 and T4A slips and the ROE need a third-party app or a custom build. CPP alone needs two earnings ceilings, not one, and has to split the deductible and credit-eligible portions.
+
+## The part that decides whether it works
+
+Whichever side of the list you are on, the proof is identical and it is not a demo. Run a completed period in the new system, compare employee by employee against payslips you already issued, and investigate every difference including the small ones, because a rounding difference on one employee usually means a rule is wrong for a category. Two consecutive clean periods is the entry condition for go-live in our [payroll setup work](/services/odoo-payroll-setup/), and there is no substitute.
+
+Three practical notes that come out of doing this repeatedly. Put the awkward cases in the parallel run deliberately: joiners, leavers, unpaid leave, mid-period grade changes and arrears. Test the bank file with the bank, not against its written specification, because banks reject files for reasons their own documentation does not mention. And go live at the start of a cycle, since a mid-year start means loading year-to-date figures for every employee, which is real work and a real source of error.
+
+Our own [payroll engine](/products/wt-hrms-payroll/) exists because of the twelve-country list: it is country-agnostic, with salary structures, a rule engine, batch processing and a dry-run preview, which is what a parallel run depends on. The [bank disbursement files](/products/wt-hrms-payroll-bank-files/) module exists for the same reason, since the file format is where a payroll go-live actually stalls.
+
+Statutory detail per market sits on the country pages, sourced separately from this one: [Saudi Arabia](/countries/saudi-arabia/payroll/), [Pakistan](/countries/pakistan/payroll/), [United Kingdom](/countries/united-kingdom/payroll/), [Germany](/countries/germany/payroll/) and [Canada](/countries/canada/payroll/). The rules themselves should come from your accountant or payroll adviser in writing. We configure and prove them. We do not decide them.

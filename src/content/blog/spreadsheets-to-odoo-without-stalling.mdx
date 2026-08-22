@@ -1,0 +1,69 @@
+---
+title: "Moving off spreadsheets into Odoo without stalling halfway"
+description: "The failure mode is not a bad system, it is a half-migrated one where both the sheet and the ERP are partly true. A working order for the move, and the decisions that keep it going."
+date: 2026-07-02
+tags: ["implementation", "data-migration", "odoo"]
+---
+
+The businesses that stall on this are rarely the ones who chose the wrong software. They are the ones who ran the spreadsheet and the ERP side by side for a quarter, then quietly went back to the spreadsheet because it was the only place the numbers were complete. Avoiding that is mostly sequencing.
+
+## Start with the numbers the business is actually managed by
+
+Before anyone opens Odoo, write down the handful of figures your management meeting runs on. Not the report catalogue, the figures. Those decide the chart of accounts and the analytic structure, and both are cheap to choose now and painful to change once the ledger has entries in it.
+
+This is also the point to separate two things that get argued as one: what is genuinely different about how you operate, and what is habit inherited from the last system. A spreadsheet lets you do anything, so over time it accumulates rules nobody would defend if asked. Some of those rules are the business. Most are not. Asking the question early is free.
+
+## Take the exceptions, not the happy path
+
+When we map a process, the walkthrough deliberately records the exceptions rather than the normal flow. The happy path is never what breaks a rollout. In a spreadsheet business the exceptions live in cell comments, tab colours, a column somebody added in 2023, and in one person's head. Get them out. The interview with whoever maintains the sheet is the highest-value hour of the whole project.
+
+While you are there, list every report someone actually reads and who reads it. Reporting is where scope quietly doubles. The short list the business genuinely cannot close a month without is a go-live condition. Everything else is phase two, and teams that revisit that parked list a quarter later usually delete most of it.
+
+## Clean in the extract, never in the target
+
+This is the rule people break and then pay for. Cleaning inside the new system is slow, and the mess lands in front of users during their first week, which is exactly when they are deciding whether to trust it.
+
+So: extract, clean and de-duplicate, then load. Map every legacy column to a target field in writing, including the ones you decide to drop, because a column you cannot explain is a column you should not migrate. Load in dependency order: partners, then products, then balances, then open documents.
+
+Spreadsheet data has a signature set of problems worth planning for specifically. The same customer under four spellings. Product codes that encode a category that changed meaning two years ago. Quantities stored as text. Dates in two formats because two people maintained the file. Prices that are net in one tab and gross in another. None of these are hard individually. All of them are slow if you find them one at a time during UAT.
+
+A repeatable import that logs its errors is worth building on day one rather than hand-fixing a sheet at midnight, which is why [import and export tooling](/products/wt-import-export/) is on almost every implementation we run. Catching a duplicate customer at creation rather than merging later is the same economics, and a [duplicate warning](/products/wt-duplicate-partner/) costs nothing to switch on.
+
+## Reconcile with the person who closes your books
+
+Load quality is not a feeling. Agree control totals against the old system and have them signed off by whoever closes your books: debtor and creditor balances, stock value, open orders, bank balances. Reconciliation is the deliverable, not the load.
+
+Then agree a cut-off date and freeze changes in the spreadsheet from that point. This is the single most skipped step and it is the one that creates the half-migrated quarter. If the sheet stays writable, somebody keeps working in it, and they are not being difficult: they are doing their job in the only place that still works.
+
+## How much history to bring
+
+Masters and open items are not optional. Full transactional history is a cost decision, not a technical one. Many teams keep the old file readable for a year and migrate only what they need to trade, which is usually the right call and almost always cheaper than the alternative.
+
+For a spreadsheet business specifically, there is a second argument for restraint: the history in the sheet is frequently inconsistent with itself. Migrating it does not make it consistent, it makes it consistent-looking, which is worse. Keep it, archive it, do not import it.
+
+## Give the Excel habit somewhere to go
+
+The people you are moving are fast in a spreadsheet. Handing them a form with one record on screen at a time feels like a demotion, and that feeling is a real adoption risk rather than a soft one. Two things help.
+
+First, keep the flows they use every day short, and be honest about where a grid genuinely beats a form. Spreadsheet-style entry is one of the most common requests from teams migrating off Excel, and an existing [grid view](/products/wt-grid-view/) saves a bespoke build. Second, put the numbers managers care about on one screen. Adoption usually turns on a handful of figures in front of people who will not open a report, which is why a configurable dashboard closes more customisation requests than any other single thing.
+
+## Keep the first phase small enough to finish
+
+The strongest predictor of a successful rollout is a first phase small enough to actually complete. Starting narrow gets you a live system with real numbers in it, and the second phase is then scoped by people who now know the software rather than by people imagining it. The one thing to settle early regardless is the chart of accounts, because changing it after posting is painful.
+
+Practically that usually means: sales and invoicing, or purchasing and inventory, before anything else. Payroll and e-invoicing are their own projects with their own proof conditions, and bolting them onto a first phase is how a four-week job becomes a four-month one.
+
+## Name the owner of the master data
+
+If nobody owns the product file and the customer file, both rot within a quarter and you end up back where you started, only in a more expensive system. Naming the owner during design costs nothing and prevents the duplicate-record problem most ERP projects grow into.
+
+## What to hold yourself to
+
+- A written process map with the exceptions on it, not the happy path.
+- A field-by-field mapping, including the columns you chose to drop.
+- Control totals signed off by whoever closes your books.
+- A cut-off date, and a spreadsheet that is read-only after it.
+- A short list of reports that are conditions of go-live, and a parked list for everything else.
+- One named owner for the customer file and one for the product file.
+
+None of that is software work. It is the part that decides whether the software work lands, which is why it sits at the front of how we run an [Odoo implementation](/services/odoo-implementation/) rather than being absorbed into a build phase. If you are still weighing whether to move at all, the [Odoo versus spreadsheets comparison](/compare/odoo-vs-spreadsheets/) covers that side of it. If you want a view of what the phases and the published bands cover before you commit to anything, the [pricing page](/pricing/) sets that out, and the [accounting module page](/modules/accounting/) covers what you are actually moving into.

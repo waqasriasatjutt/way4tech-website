@@ -1,0 +1,511 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import { MODULE_CATALOG } from '~/data/modules-catalog';
+import { getCollection } from 'astro:content';
+
+/*
+ * /odoo-community/ - the Community vs Enterprise decision page.
+ *
+ * Every number on this page is counted off MODULE_CATALOG at build time, so
+ * nothing here can drift from the modules we actually ship. No Odoo price, no
+ * per-user figure and no saving amount is stated anywhere: those are not in
+ * our data and they move by region and by contract.
+ *
+ * Two sentences are printed verbatim out of the catalogue rather than
+ * reworded, and both are guarded, so a renamed key drops the sentence instead
+ * of rendering an empty block.
+ */
+
+type CatalogEntry = {
+  name?: unknown;
+  summary?: unknown;
+  intro?: unknown;
+  sections?: unknown;
+  category?: unknown;
+};
+
+const catalog: Record<string, CatalogEntry> =
+  MODULE_CATALOG && typeof MODULE_CATALOG === 'object'
+    ? (MODULE_CATALOG as unknown as Record<string, CatalogEntry>)
+    : {};
+
+const keys = Object.keys(catalog);
+const total = keys.length;
+
+/** Trimmed, non-empty string or null. */
+function str(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+/* Manifest categories are two-level: 'Services/Hospital', 'Human Resources/Payroll'.
+   Same first-level grouping and the same anchor ids as /products/, so the links
+   below land on the right block of that page. */
+function familyOf(category: unknown): string {
+  const head = (typeof category === 'string' ? category : '').split('/')[0]?.trim() ?? '';
+  if (!head) return 'Other';
+  return head === 'Themes' ? 'Theme' : head;
+}
+
+function anchorOf(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'group';
+}
+
+/** Anything array-shaped, or an empty array. Never throws on a bad shape. */
+function list(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+/** Everything a module says about itself, for the Community mention count. */
+function textOf(entry: CatalogEntry | undefined): string {
+  if (!entry) return '';
+  const parts: string[] = [];
+  const name = str(entry.name);
+  const summary = str(entry.summary);
+  if (name) parts.push(name);
+  if (summary) parts.push(summary);
+  for (const line of list(entry.intro)) {
+    const s = str(line);
+    if (s) parts.push(s);
+  }
+  for (const section of list(entry.sections)) {
+    const raw = section as { heading?: unknown; bullets?: unknown } | null | undefined;
+    const heading = str(raw?.heading);
+    if (heading) parts.push(heading);
+    for (const bullet of list(raw?.bullets)) {
+      const s = str(bullet);
+      if (s) parts.push(s);
+    }
+  }
+  return parts.join(' ');
+}
+
+/** First intro paragraph of a catalogue entry, or null. */
+function firstIntro(entry: CatalogEntry | undefined): string | null {
+  const intro = list(entry?.intro);
+  return intro.length > 0 ? str(intro[0]) : null;
+}
+
+const counts = new Map<string, number>();
+for (const key of keys) {
+  const family = familyOf(catalog[key]?.category);
+  counts.set(family, (counts.get(family) ?? 0) + 1);
+}
+
+const groups = [...counts.entries()]
+  .map(([name, count]) => ({ name, count, id: anchorOf(name) }))
+  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+/** Modules that name Community in their own description. */
+const saysCommunity = keys.filter((key) => /community/i.test(textOf(catalog[key]))).length;
+
+/* Printed, not reworded. Both optional. */
+const assetsEntry = catalog['wt-account-asset'];
+const assetsName = str(assetsEntry?.name);
+const assetsQuote = firstIntro(assetsEntry);
+
+const themeEntry = catalog['way4tech-enterprise-theme'];
+const themeName = str(themeEntry?.name);
+const themeQuote = str(themeEntry?.summary);
+
+/* Link the Community vs Enterprise post only if it is really in the collection
+   and not a draft. A renamed file drops the link rather than 404s. */
+const posts = await getCollection('blog');
+const comparisonPost =
+  posts.find((p) => p.slug === 'odoo-community-vs-enterprise-2026' && !p.data.draft) ?? null;
+
+const pageUrl = `${SITE.url}/odoo-community/`;
+
+const ENTERPRISE_ONLY_APPS = [
+  'Documents',
+  'Sign',
+  'Planning',
+  'Field Service',
+  'Marketing Automation',
+  'Social Marketing',
+  'Helpdesk',
+  'Appraisals',
+  'Approvals',
+  'Quality',
+  'Barcode',
+  'IoT',
+  'VoIP',
+];
+
+const GAPS = [
+  {
+    title: 'Studio',
+    body: 'The no-code editor for views, fields, reports and automations. Community has no equivalent. The same changes get made in module code by a developer, which is more durable and less immediate. If you want an administrator changing a form on a Tuesday afternoon without calling anyone, that is a real reason to pay for Enterprise.',
+  },
+  {
+    title: 'The official mobile apps',
+    body: 'The iOS and Android apps come with Enterprise. Community gives you the responsive web client in a phone browser. It works, people use it every day, and it is not the same as an installed app with push notifications.',
+  },
+  {
+    title: 'Several apps that exist only in Enterprise',
+    body: `${ENTERPRISE_ONLY_APPS.join(', ')}. If two or more of those sit in the middle of how you work, Enterprise is probably the cheaper answer before you count anything else.`,
+  },
+  {
+    title: 'Accounting beyond Invoicing',
+    body: 'Community ships Invoicing. Bank statement synchronization, follow-up automation, deferred revenue and asset depreciation are Enterprise. Part of that gap can be filled with modules, part of it is not worth filling, and which is which depends on your close process.',
+  },
+  {
+    title: 'Four view types',
+    body: 'Gantt, cohort, map and dashboard views are Enterprise. A Community screen that wants to be a Gantt chart ends up as a list, a calendar, or a view somebody has to build.',
+  },
+  {
+    title: 'Odoo hosting and the Odoo support desk',
+    body: 'Odoo Online and Odoo.sh both require an Enterprise subscription, and so does support direct from Odoo. Community runs on your server or on ours. That is a change of supplier rather than a missing feature, but it is a decision you make on day one, not later.',
+  },
+];
+
+const FAQS = [
+  {
+    q: 'Is Odoo Community free?',
+    a: 'The code is open source and there is no per-user license fee. Hosting, implementation, training, support and any paid module are not free. Community removes one line from the budget, not the budget.',
+  },
+  {
+    q: 'Do your modules need an Odoo Enterprise subscription?',
+    a:
+      total > 0
+        ? `No. All ${total} of them install on a plain Community database and none depends on an Enterprise application. ${saysCommunity} say Community in their own description, usually because they exist to close a gap Community has.`
+        : 'No. Our modules install on a plain Community database and none of them depends on an Enterprise application.',
+  },
+  {
+    q: 'What does Community genuinely not include?',
+    a: `Studio, the official iOS and Android apps, Accounting beyond Invoicing, the Gantt, cohort, map and dashboard view types, Odoo Online and Odoo.sh hosting with support direct from Odoo, and several apps that exist only in Enterprise: ${ENTERPRISE_ONLY_APPS.join(', ')}. Odoo moves things between editions between versions, so check that list against the exact version you are installing.`,
+  },
+  {
+    q: 'Is Community production ready?',
+    a: 'It is the same ORM, the same models and the same business logic that Enterprise runs on top of. What differs is which applications are installed, how the backend looks, and who answers when something breaks at month end. Treat the last one as the real question.',
+  },
+  {
+    q: 'When should we pay for Enterprise instead?',
+    a: 'When someone who does not write code has to change forms and reports themselves, when the official mobile apps matter to field staff, when two or more Enterprise-only apps are central to your process, or when you want Odoo hosting and supporting you directly. In those cases Enterprise is the cheaper answer and we will say so.',
+  },
+  {
+    q: 'Can we start on Community and move to Enterprise later?',
+    a: 'Yes. Same database, same data, with the Enterprise modules installed on top. The other direction has no one-click route: every Enterprise-only application has to be replaced or retired, and anything built in Studio has to become module code, before the Enterprise modules come out. Both directions are a project rehearsed on a copy, not a switch.',
+  },
+];
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Odoo Community', item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  },
+];
+
+const metaDescription =
+  total > 0
+    ? `All ${total} Way4Tech Odoo modules run on Odoo Community, with no Enterprise application required. What Community leaves out, when Enterprise is the right call, and how to move between them.`
+    : 'Odoo Community Edition: what it covers, what it leaves out, when Enterprise is the right call, and how to move between the two editions.';
+---
+
+<Base
+  title="Odoo Community Edition - what it covers and what it does not"
+  description={metaDescription}
+  structuredData={schema}
+>
+  <section class="bg-ink-900 text-white">
+    <div class="container-site py-16 sm:py-24">
+      <div class="max-w-3xl">
+        <div class="eyebrow text-brand-300">Odoo Community Edition</div>
+        <h1 class="h1 mt-4">
+          {total > 0
+            ? `All ${total} of our Odoo modules run on Odoo Community.`
+            : 'Odoo Community, built on and supported properly.'}
+        </h1>
+        <p class="lede mt-6 text-ink-300">
+          Not one of them needs an Odoo Enterprise subscription. That does not make Community the right
+          answer for every business, so this page says plainly what Community leaves out, who should pay
+          for Enterprise anyway, and what it takes to change your mind later.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/products/" class="btn-primary">See the module catalogue</a>
+          <a
+            href="/contact/?source=odoo-community"
+            class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10"
+          >Get a straight answer for your case</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site max-w-4xl">
+      <h2 class="h2">The decision, without the sales pitch</h2>
+      <div class="mt-6 space-y-4 text-ink-700">
+        <p>
+          Community and Enterprise share a core. Same ORM, same models, same fields, same business logic,
+          same API for custom modules. Enterprise is that core plus a set of extra applications, a
+          different backend look, the official mobile apps, Studio, and Odoo hosting and support, sold as
+          a per-user annual subscription.
+        </p>
+        <p>
+          So the question is never whether the core is good enough. It is whether you need the extra
+          applications, and whether a partner covers what you do need for less than the subscription costs
+          you at your seat count.
+        </p>
+        <p>
+          We do not print Odoo's prices here. They move by region, by contract and by the apps you take, and
+          a number on a consultancy page ages badly. Get the current figure for your seat count from Odoo or
+          from us, then read the two lists below and put them side by side.
+        </p>
+      </div>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/services/odoo-consultancy/" class="btn-secondary">Talk it through first</a>
+        {comparisonPost && (
+          <a href={`/blog/${comparisonPost.slug}/`} class="btn-ghost">
+            Read: {comparisonPost.data.title}
+          </a>
+        )}
+      </div>
+    </div>
+  </section>
+
+  {total > 0 && (
+    <section class="section bg-ink-50 border-y border-ink-100">
+      <div class="container-site">
+        <h2 class="h2">What we cover on Community</h2>
+        <p class="lede mt-4 max-w-3xl">
+          {total} modules across {groups.length} categories. Every one installs on a plain Community
+          database and none of them depends on an Enterprise application.
+          {saysCommunity > 0 &&
+            ` ${saysCommunity} say Community in their own description, usually because they exist to close a gap Community has.`}
+        </p>
+
+        {groups.length > 0 && (
+          <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {groups.map((g) => (
+              <a
+                href={`/products/#${g.id}`}
+                class="card group flex items-baseline justify-between gap-3"
+              >
+                <span class="font-semibold leading-snug">{g.name}</span>
+                <span class="text-2xl font-bold text-brand-600 group-hover:text-brand-700">{g.count}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        <p class="mt-8 text-sm text-ink-600">
+          Counted at build time from the module catalogue, so this page and the modules cannot say
+          different things. Every module page is written from that module's own manifest:
+          <a href="/products/" class="font-medium text-brand-600 hover:text-brand-700"> browse all {total}</a>.
+        </p>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container-site">
+      <h2 class="h2">What Community does not give you</h2>
+      <p class="lede mt-4 max-w-3xl">
+        This is the part most partners skip. Read it before you commit to either edition.
+      </p>
+
+      <div class="mt-10 grid gap-5 md:grid-cols-2">
+        {GAPS.map((gap) => (
+          <div class="card">
+            <h3 class="text-lg font-semibold">{gap.title}</h3>
+            <p class="mt-2 text-sm text-ink-600">{gap.body}</p>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-8 rounded-2xl border border-ink-200 bg-ink-50 p-6">
+        <p class="text-sm text-ink-700">
+          That list is not everything, and Odoo moves applications between editions between versions. We
+          check the current version's application list against your actual process before anyone commits to
+          an edition. If something you depend on is Enterprise-only in the version you are installing, you
+          hear it at that point, not after go-live.
+        </p>
+      </div>
+
+      {(assetsQuote || themeQuote) && (
+        <div class="mt-8 grid gap-5 md:grid-cols-2">
+          {assetsQuote && (
+            <div class="card">
+              <div class="eyebrow text-brand-600">A gap we close</div>
+              <p class="mt-3 text-sm text-ink-700">{assetsQuote}</p>
+              {assetsName && (
+                <a
+                  href="/products/wt-account-asset/"
+                  class="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >{assetsName} →</a>
+              )}
+            </div>
+          )}
+          {themeQuote && (
+            <div class="card">
+              <div class="eyebrow text-brand-600">A gap we close</div>
+              <p class="mt-3 text-sm text-ink-700">{themeQuote}</p>
+              <p class="mt-2 text-sm text-ink-600">
+                Look and feel only. It does not give you Studio, the mobile apps, or any Enterprise
+                application.
+              </p>
+              {themeName && (
+                <a
+                  href="/products/way4tech-enterprise-theme/"
+                  class="mt-4 inline-block text-sm font-medium text-brand-600 hover:text-brand-700"
+                >{themeName} →</a>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-y border-ink-100">
+    <div class="container-site">
+      <h2 class="h2">Who should pick which</h2>
+      <div class="mt-10 grid gap-5 lg:grid-cols-3">
+        <div class="card">
+          <span class="badge">Pay for Enterprise</span>
+          <ul class="mt-4 space-y-3 text-sm text-ink-700">
+            <li>Someone who does not write code needs to change forms and reports themselves. That is Studio.</li>
+            <li>Field staff live on their phones and a browser tab is not enough.</li>
+            <li>Two or more Enterprise-only applications sit in the middle of your process.</li>
+            <li>You want Odoo hosting and supporting you directly, with no partner in between.</li>
+            <li>You have no developer, no partner, and no appetite for finding one.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="badge">Pick Community</span>
+          <ul class="mt-4 space-y-3 text-sm text-ink-700">
+            <li>You have a partner or an in-house developer, so a code change is routine rather than an event.</li>
+            <li>Your workflow is unusual enough that it needs real modules on either edition.</li>
+            <li>You want to read and change every line of what runs your business.</li>
+            <li>Per-user cost scales badly for you: many light users, several entities, or seasonal headcount.</li>
+            <li>You are building a product on top of Odoo, not only running your own business on it.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="badge">Honestly, either</span>
+          <ul class="mt-4 space-y-3 text-sm text-ink-700">
+            <li>Small team, standard sales, purchase, stock and invoicing, nothing exotic.</li>
+            <li>Both editions will run your business. The choice is who you would rather pay, and for what.</li>
+            <li>Work out the subscription for your seat count, put it next to a partner's setup and support, then pick.</li>
+            <li>Ask us and we will do that arithmetic with you, including the times the answer is Enterprise.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site max-w-4xl">
+      <h2 class="h2">Changing your mind later</h2>
+      <div class="mt-8 space-y-6">
+        <div class="card">
+          <h3 class="text-lg font-semibold">Community to Enterprise</h3>
+          <p class="mt-2 text-ink-700">
+            Same database, same data. The Enterprise modules install on top and the extra applications
+            appear. Custom modules written for Community keep working, because they were written against
+            the same core. The real work is the subscription, moving hosting if you go to Odoo Online or
+            Odoo.sh, and retesting your customizations against the Enterprise theme and against any app you
+            have been duplicating.
+          </p>
+        </div>
+        <div class="card">
+          <h3 class="text-lg font-semibold">Enterprise to Community</h3>
+          <p class="mt-2 text-ink-700">
+            There is no one-click route back. The data stays in the database, but every Enterprise-only
+            application has to be replaced or retired first, and anything built in Studio has to become real
+            module code before the Enterprise modules are removed. We have done it for clients who were
+            paying for applications nobody opened. It is a project rehearsed on a copy, not a switch you
+            flip on a Friday.
+          </p>
+        </div>
+      </div>
+      <p class="mt-6 text-sm text-ink-600">
+        Either direction gets scoped, rehearsed on a clone, and cut over on a date you choose:
+        <a href="/services/odoo-migration/" class="font-medium text-brand-600 hover:text-brand-700">
+          Odoo Migration &amp; Upgrade</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-y border-ink-100">
+    <div class="container-site">
+      <h2 class="h2">How we work with Community</h2>
+      <div class="mt-10 grid gap-5 md:grid-cols-3">
+        <a href="/services/odoo-implementation/" class="card group">
+          <h3 class="text-lg font-semibold group-hover:text-brand-700">Implementation</h3>
+          <p class="mt-2 text-sm text-ink-600">
+            Discovery, configuration, data migration, training and go-live on a Community database you own
+            outright.
+          </p>
+          <span class="mt-4 inline-block text-sm font-medium text-brand-600">Odoo Implementation →</span>
+        </a>
+        <a href="/services/odoo-migration/" class="card group">
+          <h3 class="text-lg font-semibold group-hover:text-brand-700">Migration and upgrade</h3>
+          <p class="mt-2 text-sm text-ink-600">
+            An older Odoo to a current version, or one edition to the other, rehearsed on a copy before the
+            live cutover.
+          </p>
+          <span class="mt-4 inline-block text-sm font-medium text-brand-600">Odoo Migration &amp; Upgrade →</span>
+        </a>
+        <a href="/services/odoo-support/" class="card group">
+          <h3 class="text-lg font-semibold group-hover:text-brand-700">Support</h3>
+          <p class="mt-2 text-sm text-ink-600">
+            Community has no Odoo support desk behind it. This is the line item that replaces it:
+            monitoring, backups, patching and fixes.
+          </p>
+          <span class="mt-4 inline-block text-sm font-medium text-brand-600">Odoo Support &amp; Maintenance →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site max-w-4xl">
+      <h2 class="h2 text-center">Community questions we get asked</h2>
+      <div class="mt-10 space-y-3">
+        {FAQS.map((f) => (
+          <details class="group rounded-xl border border-ink-200 bg-white open:border-brand-200">
+            <summary class="flex cursor-pointer items-center justify-between gap-4 p-5 font-semibold">
+              <span>{f.q}</span>
+              <span class="text-brand-600 transition group-open:rotate-45">+</span>
+            </summary>
+            <p class="px-5 pb-5 text-ink-700">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-900 text-white">
+    <div class="container-site text-center">
+      <h2 class="h2">Tell us what you run and we will tell you which edition to buy</h2>
+      <p class="lede mx-auto mt-4 max-w-2xl text-ink-300">
+        Your seat count, the apps you actually use, and whether anyone on your side writes code. That is
+        enough for a straight recommendation, and sometimes the recommendation is Enterprise.
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href="/contact/?source=odoo-community" class="btn-primary">Book a 30-minute call</a>
+        <a
+          href={SITE.whatsapp}
+          target="_blank"
+          rel="noopener"
+          class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10"
+        >WhatsApp</a>
+      </div>
+    </div>
+  </section>
+</Base>

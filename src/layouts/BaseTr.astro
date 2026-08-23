@@ -1,0 +1,220 @@
+---
+/*
+ * Turkish layout for the /tr/ section.
+ *
+ * Why this is not Base.astro, checked rather than assumed:
+ *  1. Base.astro hard-codes <html lang="en">. A Turkish page needs lang="tr" on
+ *     the html element itself, both for search engines and because CSS
+ *     text-transform is language-sensitive: without lang="tr" an uppercased
+ *     Turkish "i" becomes "I" instead of "İ".
+ *  2. Base.astro injects an Organization schema whose slogan asserts a partner
+ *     tier and whose description carries a years figure, a deployment count, a
+ *     module count and a country count. None of that is verified, so nothing on
+ *     these pages makes a claim of that kind, in the body or in structured data.
+ *     Structured data is passed in explicitly instead.
+ *  3. Header.astro and Footer.astro are English-only mega panels. A Turkish page
+ *     carrying an English mega-nav reads as a machine translation of somebody
+ *     else's site, so this layout ships a small Turkish header and footer.
+ *
+ * Turkish is left to right, so there is no dir handling here. The one typographic
+ * adjustment is text-transform: the .eyebrow utility in global.css uppercases,
+ * and locale-aware uppercasing of Turkish i/ı is inconsistent enough across
+ * browsers that these pages simply do not uppercase Turkish text.
+ *
+ * The portal override in Base.astro is deliberately not called: no Turkish
+ * content is authored in the portal, and an English override landing inside a
+ * Turkish page would be worse than no override.
+ */
+import { SITE } from '~/data/site';
+import { TR_TOPICS } from '~/data/tr-content';
+import '~/styles/global.css';
+
+export interface HreflangAlternate {
+  lang: string;
+  href: string;
+}
+
+export interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  structuredData?: object | object[];
+  hreflang?: HreflangAlternate[];
+  /* English counterpart, used only for the visible language switch. It is not
+     emitted as an hreflang pair from here: the pair is declared by the page,
+     and only where the reverse link genuinely exists. */
+  enHref?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  structuredData,
+  hreflang,
+  enHref,
+  noindex = false,
+} = Astro.props;
+
+const pageTitle = `${title} | ${SITE.name}`;
+const imageURL = new URL('/og.png', SITE.url).toString();
+const alternates = Array.isArray(hreflang) ? hreflang : [];
+const sdArray = Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : [];
+const year = new Date().getFullYear();
+
+/* Inter covers Latin Extended-A, so ç ğ ı İ ö ş ü all render from the font the
+   site already loads. No second font is pulled in for Turkish. */
+const fontHref = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
+
+const navTopics = Array.isArray(TR_TOPICS) ? TR_TOPICS : [];
+
+/* Built as an expression rather than written into the markup so the ampersand is
+   escaped once, by Astro, and the country value stays the English 'Turkey' the
+   existing lead pipeline matches on. */
+const trContactHref = '/contact/?country=Turkey&source=tr';
+---
+<!doctype html>
+<html lang="tr" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#714B67" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={noindex ? 'noindex,follow' : 'index,follow'} />
+
+    {alternates.map((alt) => (
+      <link rel="alternate" hreflang={alt.lang} href={alt.href} />
+    ))}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={pageTitle} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageURL} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href={fontHref} onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href={fontHref} /></noscript>
+
+    {sdArray.map((sd) => (
+      <script type="application/ld+json" set:html={JSON.stringify(sd)} />
+    ))}
+
+    <style is:global>
+      /* Turkish casing is a real trap: uppercasing "i" has to give "İ", and
+         browsers only do that when they know the language. Rather than depend on
+         it, Turkish eyebrows keep their case and get their emphasis from
+         tracking and weight. */
+      html[lang='tr'] .eyebrow {
+        text-transform: none;
+        letter-spacing: 0.08em;
+      }
+      /* global.css tightens heading tracking for English display copy. Turkish
+         words are longer and the diacritics sit close to the cap line, so the
+         negative tracking crowds them. */
+      html[lang='tr'] h1,
+      html[lang='tr'] h2,
+      html[lang='tr'] h3 {
+        letter-spacing: -0.01em;
+      }
+      html[lang='tr'] code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-white text-ink-900 antialiased">
+    <header class="sticky top-0 z-50 border-b border-ink-100 bg-white/90 backdrop-blur-md">
+      <div class="container-site flex h-16 items-center justify-between gap-4">
+        <a href="/tr/" class="flex shrink-0 items-center gap-2.5" aria-label="Way4Tech">
+          <img src="/logo.svg" alt="Way4Tech" width="160" height="38" class="h-9 w-auto" />
+        </a>
+
+        <nav class="hidden min-w-0 items-center gap-1 text-sm font-medium text-ink-700 lg:flex" aria-label="Ana menü">
+          <a href="/tr/turkey/" class="rounded-md px-3 py-2 hover:bg-ink-50 hover:text-brand-700">Türkiye</a>
+          {navTopics.map((t) => (
+            <a href={`/tr/${t.slug}/`} class="rounded-md px-2.5 py-2 hover:bg-ink-50 hover:text-brand-700">{t.label}</a>
+          ))}
+        </nav>
+
+        <div class="flex shrink-0 items-center gap-2">
+          {enHref && (
+            <a href={enHref} class="btn-ghost text-sm" hreflang="en" lang="en">English</a>
+          )}
+          <a href={trContactHref} class="btn-primary text-sm">Teklif alın</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="mt-24 bg-ink-900 text-ink-100">
+      <div class="container-site py-14">
+        <div class="grid gap-10 md:grid-cols-3">
+          <div>
+            <img src="/logo.svg" alt="Way4Tech" width="180" height="42" class="h-10 w-auto brightness-0 invert" />
+            <p class="mt-4 max-w-sm text-sm text-ink-300">
+              Odoo kurulumu, özelleştirmesi, yerelleştirmesi ve desteği. Bu bölümdeki sayfalar Türkiye pazarı için
+              hazırlandı.
+            </p>
+            <div class="mt-6 space-y-2 text-sm">
+              <a class="block text-ink-300 hover:text-white" href={`mailto:${SITE.email}`}>
+                E-posta: {SITE.email}
+              </a>
+              <a class="block text-ink-300 hover:text-white" href={SITE.whatsapp} target="_blank" rel="noopener">
+                WhatsApp: {SITE.phone}
+              </a>
+              <a class="block text-ink-300 hover:text-white" href={SITE.social.linkedin} target="_blank" rel="noopener">LinkedIn</a>
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold tracking-wider text-brand-300">Türkiye sayfaları</div>
+            <ul class="mt-4 space-y-2 text-sm text-ink-300">
+              <li><a class="hover:text-white" href="/tr/turkey/">Türkiye için Odoo yerelleştirmesi</a></li>
+              {navTopics.map((t) => (
+                <li><a class="hover:text-white" href={`/tr/${t.slug}/`}>{t.label}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <div class="text-xs font-bold tracking-wider text-brand-300">Bağlantılar</div>
+            <ul class="mt-4 space-y-2 text-sm text-ink-300">
+              <li><a class="hover:text-white" href={trContactHref}>İletişim</a></li>
+              <li><a class="hover:text-white" href="/tr/">Türkçe sayfaların tamamı</a></li>
+              <li><a class="hover:text-white" href="/countries/turkey/" hreflang="en" lang="en">Turkey page in English</a></li>
+            </ul>
+            <p class="mt-6 text-xs leading-relaxed text-ink-400">
+              Buradaki mevzuat bilgileri referans amaçlıdır; vergi veya hukuk danışmanlığı değildir. Her rakamı
+              uygulamaya almadan önce mali müşavirinizle teyit edin.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-12 border-t border-white/10 pt-6 text-xs text-ink-400">
+          © {year} {SITE.name}
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

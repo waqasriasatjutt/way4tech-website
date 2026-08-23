@@ -1,0 +1,565 @@
+---
+/*
+ * /tr/turkey/ - the full Türkiye page in Turkish.
+ *
+ * This is not a translation of /countries/turkey/. It is a Turkish page built
+ * from the same source of truth, src/data/country-detail.ts, with the Turkish
+ * rendering of each claim held in src/data/tr-content.ts and keyed to the
+ * English source by a leading substring. If a source claim is reworded, the
+ * Turkish drops out of the page rather than being paired with the wrong fact.
+ *
+ * Nothing here asserts a partner tier, a certification, an award, a customer
+ * count, a years figure, a team size or a rating, in the body or in the
+ * structured data. No rate, threshold, deadline, scheme, provider or module name
+ * appears that is not in the turkey entry of country-detail.ts.
+ *
+ * Every lookup is guarded: a missing COUNTRIES row or a missing detail entry
+ * drops the block instead of rendering an empty heading.
+ */
+import BaseTr from '~/layouts/BaseTr.astro';
+import { SITE, COUNTRIES } from '~/data/site';
+import { COUNTRY_DETAIL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+import type { CountryDetail } from '~/data/country-detail';
+import {
+  TR_COUNTRY,
+  TR_TOPICS,
+  TR_CITY,
+  TR_SUPPORT_LABEL,
+  TR_SUPPORT_MEANING,
+  TR_SUPPORT_ORDER,
+  TR_LANGUAGE_NOTE,
+  TR_DISCLAIMER,
+  TR_UNCONFIRMED_NOTE,
+  trFacts,
+  trLines,
+  trProviders,
+  trReviewDate,
+} from '~/data/tr-content';
+
+const tr = TR_COUNTRY;
+const country = COUNTRIES.find(c => c.slug === tr.enSlug);
+const detail: CountryDetail | undefined = COUNTRY_DETAIL[tr.enSlug];
+
+const pageUrl = `${SITE.url}/tr/${tr.slug}/`;
+const enUrl = `${SITE.url}/countries/${tr.enSlug}/`;
+const contactHref = `/contact/?country=${encodeURIComponent(country?.title || 'Turkey')}&source=${encodeURIComponent(`tr/${tr.slug}`)}`;
+
+const flag = country?.flag || '';
+const currency = country?.currency || '';
+const localeCode = country?.lang || '';
+const cities = (country?.cities || []).map(c => TR_CITY[c] || c);
+
+/* ── Support badge styling. Colour reads as cost to the buyer. ────── */
+const SUPPORT_CLASS: Record<string, string> = {
+  native: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  oca_or_community: 'bg-ink-100 text-ink-700 ring-ink-300',
+  third_party_paid: 'bg-amber-50 text-amber-800 ring-amber-200',
+  custom_build: 'bg-rose-50 text-rose-700 ring-rose-200',
+};
+const supportClass = (s: string) => SUPPORT_CLASS[s] || SUPPORT_CLASS.custom_build;
+const supportLabel = (s: string) => TR_SUPPORT_LABEL[s] || '';
+
+/* ── Facts, rendered only where a Turkish version exists ─────────── */
+const taxFacts = trFacts(detail?.tax, tr.taxTr);
+const payrollFacts = trFacts(detail?.payroll, tr.payrollTr);
+const accountingFacts = trFacts(detail?.accounting, tr.accountingTr);
+const einvReqs = trLines(detail?.einvoicing?.requirements, tr.einvoicing.requirementsTr);
+const paymentItems = trProviders(detail?.payments, tr.paymentsTr);
+const shippingItems = trProviders(detail?.shipping, tr.shippingTr);
+const nativeLines = trLines(detail?.odoo?.native, tr.nativeTr);
+const customLines = trLines(detail?.odoo?.custom, tr.customTr);
+
+/* Module strings are 'l10n_tr...' or 'l10n_tr... (English label)'. Only the code
+   is printed: the parenthetical is an English label, not a fact worth carrying
+   into Turkish. */
+const MODULE_RE = /^(OCA\s+)?([a-z][a-z0-9]*(?:_[a-z0-9]+)+)/;
+const moduleCodes: string[] = [];
+for (const m of detail?.odoo?.modules || []) {
+  const hit = MODULE_RE.exec(String(m).trim());
+  if (hit && hit[2]) moduleCodes.push(hit[2]);
+}
+
+const hasEinv = Boolean(detail?.einvoicing && String(detail.einvoicing.scheme || '').trim());
+const hasCoverage = nativeLines.length > 0 || customLines.length > 0 || moduleCodes.length > 0;
+
+const factSections = [
+  { id: 'vergi', title: "Türkiye'de vergi", intro: "Devreye almadan önce vergi yapılandırmasının doğru kurması gerekenler.", facts: taxFacts },
+  { id: 'bordro', title: "Türkiye'de bordro", intro: "Bordronun hesaplaması, kesmesi ve bildirmesi gerekenler.", facts: payrollFacts },
+  { id: 'muhasebe', title: "Türkiye'de muhasebe", intro: "Defterlerinizin içinde durduğu raporlama çerçevesi.", facts: accountingFacts },
+].filter(s => s.facts.length > 0);
+
+/* Slugs are read off TR_TOPICS rather than written here, so a slug change in one
+   place cannot leave a dead link behind on this page. */
+const slugOf = (kind: string) => TR_TOPICS.find(t => t.kind === kind)?.slug || '';
+const einvSlug = slugOf('einvoicing');
+
+const providerSections = [
+  {
+    id: 'odeme',
+    title: "Türkiye'de ödeme yöntemleri ve sanal POS",
+    intro: "Türkiye'de bir ödeme sayfasının gerçekten ihtiyaç duyduğu sağlayıcılar ve her birinin Odoo'ya nasıl ulaştığı.",
+    items: paymentItems,
+    slug: slugOf('payments'),
+    more: 'Ödeme yöntemleri sayfasının tamamı →',
+  },
+  {
+    id: 'kargo',
+    title: "Türkiye'de kargo ve teslimat",
+    intro: "Burada hacmi taşıyan kargolar ve Odoo içinden fiyatlandırma, etiket basımı ve takibin ne gerektirdiği.",
+    items: shippingItems,
+    slug: slugOf('shipping'),
+    more: 'Kargo sayfasının tamamı →',
+  },
+].filter(s => s.items.length > 0);
+
+/* Badge legend, only for the support levels that actually appear on the page. */
+const legendLevels = TR_SUPPORT_ORDER.filter(s =>
+  paymentItems.some(p => p.support === s) || shippingItems.some(p => p.support === s));
+
+const jumpLinks = [
+  { href: '#e-fatura', label: "e-Fatura", show: hasEinv },
+  { href: '#vergi', label: "Vergi", show: taxFacts.length > 0 },
+  { href: '#bordro', label: "Bordro", show: payrollFacts.length > 0 },
+  { href: '#muhasebe', label: "Muhasebe", show: accountingFacts.length > 0 },
+  { href: '#odeme', label: "Ödeme yöntemleri", show: paymentItems.length > 0 },
+  { href: '#kargo', label: "Kargo", show: shippingItems.length > 0 },
+  { href: '#odoo-kapsami', label: "Odoo ne kapsıyor", show: hasCoverage },
+].filter(x => x.show);
+
+/* The five topic pages, shown only where the country actually carries data. */
+const topicHas = (kind: string): boolean => {
+  if (kind === 'einvoicing') return hasEinv;
+  if (kind === 'accounting-tax') return taxFacts.length > 0 || accountingFacts.length > 0;
+  if (kind === 'payroll') return payrollFacts.length > 0;
+  if (kind === 'payments') return paymentItems.length > 0;
+  if (kind === 'shipping') return shippingItems.length > 0;
+  return false;
+};
+const topicLinks = TR_TOPICS.filter(t => topicHas(t.kind));
+
+const reviewedOn = trReviewDate(COUNTRY_DETAIL_REVIEWED);
+
+/* ── hreflang ──────────────────────────────────────────────────────
+   Reciprocal. /countries/turkey/ declares this URL as its Turkish alternate, so
+   the pair is real in both directions. A one-way claim would be worse than none. */
+const hreflangAlternates = [
+  { lang: 'tr', href: pageUrl },
+  { lang: 'en', href: enUrl },
+];
+
+/* ── Structured data ───────────────────────────────────────────────
+   No rate, scheme, authority, threshold or deadline goes in here, matching the
+   English and Arabic pages. Structured data is the wrong place to assert a
+   regulatory claim; the detail stays in the body. availableLanguage lists the
+   languages the delivery team actually works in, which does not include Turkish. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    inLanguage: 'tr',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Way4Tech', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Türkçe', item: `${SITE.url}/tr/` },
+      { '@type': 'ListItem', position: 3, name: tr.name, item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: `Odoo implementation and localization in ${tr.name}`,
+    serviceType: 'Odoo ERP implementation, customization, localization and support',
+    description: `Odoo implementation, localization, customization and support for businesses in ${tr.name}.`,
+    url: pageUrl,
+    inLanguage: 'tr',
+    provider: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      email: SITE.email,
+      telephone: SITE.phone,
+    },
+    areaServed: [
+      { '@type': 'Country', name: tr.name },
+      ...cities.map(c => ({ '@type': 'City', name: c })),
+    ],
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: `${SITE.url}/contact/`,
+      availableLanguage: ['English', 'Arabic', 'Urdu'],
+    },
+  },
+];
+---
+<BaseTr
+  title={tr.metaTitle}
+  description={tr.metaDescription}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+  enHref={enUrl}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 12% 12%, rgba(135,90,123,0.5) 0%, transparent 45%), radial-gradient(circle at 88% 88%, rgba(0,160,157,0.28) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-16 sm:py-24">
+      <nav class="text-sm text-brand-200" aria-label="Sayfa yolu">
+        <a href="/tr/" class="hover:text-white">Türkçe</a>
+        <span class="px-2">/</span>
+        <span class="text-white">{tr.name}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        {flag && <div class="text-6xl">{flag}</div>}
+        <h1 class="h1 mt-6">Türkiye için Odoo yerelleştirmesi</h1>
+        <p class="lede mt-6 text-ink-200">{tr.lede}</p>
+        {cities.length > 0 && (
+          <div class="mt-6 flex flex-wrap gap-2">
+            {cities.map(c => <span class="chip !bg-white/10 !text-white">{c}</span>)}
+          </div>
+        )}
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Kapsam görüşmesi ayarlayın</a>
+          <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="border-b border-ink-200 bg-ink-50 py-8">
+    <div class="container-site">
+      <dl class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {currency && (
+          <div>
+            <dt class="text-xs font-semibold tracking-wider text-ink-500">Raporlama para birimi</dt>
+            <dd class="mt-1 text-xl font-bold text-ink-900">{currency}</dd>
+          </div>
+        )}
+        {localeCode && (
+          <div>
+            <dt class="text-xs font-semibold tracking-wider text-ink-500">Dil ve bölge kodu</dt>
+            <dd class="mt-1 text-xl font-bold text-ink-900">{localeCode}</dd>
+          </div>
+        )}
+        {moduleCodes.length > 0 && (
+          <div>
+            <dt class="text-xs font-semibold tracking-wider text-ink-500">Yerelleştirme modülü</dt>
+            <dd class="mt-1 text-xl font-bold text-ink-900">{moduleCodes.length}</dd>
+          </div>
+        )}
+        <div>
+          <dt class="text-xs font-semibold tracking-wider text-ink-500">Son kontrol tarihi</dt>
+          <dd class="mt-1 text-xl font-bold text-ink-900">{reviewedOn}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {jumpLinks.length > 0 && (
+    <section class="border-b border-ink-200 bg-white py-4">
+      <div class="container-site flex flex-wrap items-center gap-x-6 gap-y-2">
+        <span class="text-xs font-semibold tracking-wider text-ink-500">Sayfada</span>
+        {jumpLinks.map(l => (
+          <a href={l.href} class="text-sm font-semibold text-brand-600 hover:text-brand-700">{l.label}</a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <h2 class="h3">Odoo'yu Türkiye'ye göre kurmak</h2>
+          <p class="mt-4 text-lg text-ink-700">
+            Türkiye'de Odoo devreye almak, para birimini TL yapıp standart kurulumu açmak değildir. e-belge akışı,
+            KDV ve tevkifat işleyişi, bordronun üç yasal kesintisi ve mali müşavirinizin gerçekten kullandığı
+            raporlar: hepsinin canlıya geçmeden önce oturması gerekir. Aşağıdaki maddeler, kurulum kapsamında
+            yapılandırdığımız ve test ettiğimiz kalemlerdir.
+          </p>
+          <p class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm">
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Kontrol edildi</span>
+            <span class="text-ink-700">Bu sayfadaki mevzuat bilgileri {reviewedOn} tarihinde kontrol edildi.</span>
+          </p>
+          <p class="mt-6 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">{TR_DISCLAIMER}</p>
+
+          {hasEinv && detail?.einvoicing && (
+            <section id="e-fatura" class="mt-14 scroll-mt-24">
+              <h2 class="h3">Türkiye'de e-Fatura ve e-Arşiv</h2>
+              <p class="mt-3 text-ink-700">Sistem kimi bağlıyor ve sizin tarafınızda neyi zorunlu kılıyor.</p>
+              <div class="mt-6 overflow-hidden rounded-2xl border border-brand-200">
+                <div class="bg-brand-50 p-6 sm:p-8">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="eyebrow">Sistem</span>
+                    {detail.einvoicing.verified === false && (
+                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Teyit edilmedi</span>
+                    )}
+                  </div>
+                  <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{tr.einvoicing.scheme}</p>
+                  <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Yetkili idare:</span> {tr.einvoicing.authority}</p>
+                </div>
+                <div class="space-y-6 bg-white p-6 sm:p-8">
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-ink-500">Bugün nerede duruyor</div>
+                    <p class="mt-2 text-ink-700">{tr.einvoicing.status}</p>
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-ink-500">Kimi kapsıyor</div>
+                    <p class="mt-2 text-ink-700">{tr.einvoicing.appliesTo}</p>
+                  </div>
+                  {einvReqs.length > 0 && (
+                    <div>
+                      <div class="text-xs font-semibold tracking-wider text-ink-500">Ne gerektiriyor</div>
+                      <ul class="mt-3 space-y-3">
+                        {einvReqs.map(r => (
+                          <li class="flex gap-3">
+                            <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-500"></span>
+                            <span class="text-ink-700">{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {einvSlug && (
+                <a href={`/tr/${einvSlug}/`} class="mt-5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">e-Fatura sayfasının tamamı →</a>
+              )}
+            </section>
+          )}
+
+          {factSections.map(sec => (
+            <section id={sec.id} class="mt-14 scroll-mt-24">
+              <h2 class="h3">{sec.title}</h2>
+              <p class="mt-3 text-ink-700">{sec.intro}</p>
+              <ul class="mt-6 space-y-3">
+                {sec.facts.map(f => (
+                  <li class={f.verified === false
+                    ? 'rounded-xl border border-dashed border-ink-300 bg-ink-50 p-4 sm:p-5'
+                    : 'rounded-xl border border-ink-200 bg-white p-4 sm:p-5'}>
+                    <p class="text-ink-700">{f.text}</p>
+                    {f.verified === false && (
+                      <p class="mt-2 text-[11px] font-semibold tracking-wider text-ink-500">{TR_UNCONFIRMED_NOTE}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
+          {providerSections.map(sec => (
+            <section id={sec.id} class="mt-14 scroll-mt-24">
+              <h2 class="h3">{sec.title}</h2>
+              <p class="mt-3 text-ink-700">{sec.intro}</p>
+              {sec.id === 'odeme' && legendLevels.length > 0 && (
+                <div class="mt-5 rounded-2xl border border-ink-200 bg-ink-50 p-5">
+                  <div class="text-xs font-semibold tracking-wider text-ink-500">Etiketler ne anlama geliyor</div>
+                  <ul class="mt-3 grid gap-2 sm:grid-cols-2">
+                    {legendLevels.map(s => (
+                      <li class="flex flex-wrap items-center gap-2 text-sm text-ink-700">
+                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(s)}`}>{supportLabel(s)}</span>
+                        <span>{TR_SUPPORT_MEANING[s] || ''}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {sec.items.map(p => (
+                  <div class={p.verified === false
+                    ? 'rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-5'
+                    : 'rounded-2xl border border-ink-200 bg-white p-5'}>
+                    <div class="flex flex-wrap items-start justify-between gap-2">
+                      <span class="font-semibold text-ink-900">{p.name}</span>
+                      {p.verified === false ? (
+                        <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{supportLabel(p.support)}, teyit edilmedi</span>
+                      ) : (
+                        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(p.support)}`}>{supportLabel(p.support)}</span>
+                      )}
+                    </div>
+                    {p.kind && <div class="mt-1 text-xs text-ink-500">{p.kind}</div>}
+                    <p class="mt-2 text-sm text-ink-600">{p.note}</p>
+                  </div>
+                ))}
+              </div>
+              {sec.slug && (
+                <a href={`/tr/${sec.slug}/`} class="mt-5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">{sec.more}</a>
+              )}
+            </section>
+          ))}
+
+          {hasCoverage && (
+            <section id="odoo-kapsami" class="mt-14 scroll-mt-24">
+              <h2 class="h3">Türkiye'de Odoo ile hazır gelen ne, gelmeyen ne</h2>
+              <p class="mt-3 text-ink-700">
+                Her teklifin arkasındaki asıl soru: bunun ne kadarı yapılandırma, ne kadarı geliştirme. İlk liste
+                Odoo ile birlikte gelir. İkincisi ücretli konnektör, topluluk modülü ya da kapsamını önceden
+                belirleyip fiyatladığımız iştir.
+              </p>
+              <div class="mt-6 rounded-3xl bg-ink-900 p-6 text-white sm:p-8">
+                {moduleCodes.length > 0 && (
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-brand-200">Yerelleştirme modülleri</div>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      {moduleCodes.map(code => (
+                        <span class="inline-flex max-w-full items-baseline rounded-lg bg-white/10 px-3 py-1.5 ring-1 ring-white/15">
+                          <code class="font-mono text-xs font-semibold text-white">{code}</code>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div class="mt-8 grid gap-4 md:grid-cols-2">
+                  {nativeLines.length > 0 && (
+                    <div class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-emerald-400/20 text-xs font-bold text-emerald-300">✓</span>
+                        <span class="font-semibold">Hazır geliyor</span>
+                        <span class="ml-auto text-xs font-semibold text-emerald-300">{nativeLines.length}</span>
+                      </div>
+                      <ul class="mt-4 space-y-3">
+                        {nativeLines.map(n => (
+                          <li class="flex gap-3 text-sm text-white/80">
+                            <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-emerald-400"></span>
+                            <span>{n}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {customLines.length > 0 && (
+                    <div class="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-amber-400/20 text-xs font-bold text-amber-300">!</span>
+                        <span class="font-semibold">İş gerektiriyor</span>
+                        <span class="ml-auto text-xs font-semibold text-amber-300">{customLines.length}</span>
+                      </div>
+                      <ul class="mt-4 space-y-3">
+                        {customLines.map(c => (
+                          <li class="flex gap-3 text-sm text-white/80">
+                            <span class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber-400"></span>
+                            <span>{c}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p class="mt-5 text-sm text-ink-700">
+                İş gerektiriyor tarafındaki her kalem, proje ortasında keşfedilen bir sürpriz değil, önceden ilan
+                edilmiş bir kapsam olarak fiyatlanır. Bugün çalıştırdığınız modüllerin listesini gönderin, aynı
+                yöntemle Türkiye gereklilikleri karşısında sınıflandıralım.
+              </p>
+            </section>
+          )}
+
+          {topicLinks.length > 0 && (
+            <section class="mt-14">
+              <h2 class="h3">Konu konu, tam ayrıntı</h2>
+              <p class="mt-3 text-ink-700">
+                Yukarıdaki bölümler özet. Her konunun kendi sayfası var ve orada liste özetlenmeden, olduğu gibi
+                yazılı.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {topicLinks.map(t => (
+                  <a href={`/tr/${t.slug}/`} class="card group !p-4">
+                    <span class="text-sm font-semibold">{t.label}</span>
+                    <p class="mt-2 text-xs text-ink-600">{t.lede}</p>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <h2 class="h3 mt-14">Türkiye projelerini nasıl yürütüyoruz</h2>
+          <p class="mt-4 text-ink-700">
+            Projeler öncelikle uzaktan yürür. Hizmet verdiğimiz her şehirde ofisimiz olduğunu iddia etmiyor ve teklife
+            ofis maliyeti koymuyoruz. Analiz atölyeleri, kullanıcı eğitimi ve devreye alma haftası gerektirdiğinde
+            yerinde oluruz.
+          </p>
+          <ul class="mt-6 space-y-4">
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">1</span>
+              <span class="text-ink-700"><strong class="text-ink-900">Proje dili.</strong> {TR_LANGUAGE_NOTE}</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">2</span>
+              <span class="text-ink-700"><strong class="text-ink-900">Özel entegratör sorusu ilk görüşmede sorulur.</strong> e-belge tarafında bugün kiminle çalıştığınız, Türkiye projelerinde kapsamı en çok değiştiren tek cevaptır. Teklif yazılmadan önce netleşir.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">3</span>
+              <span class="text-ink-700"><strong class="text-ink-900">Görünür ilerleme.</strong> Kısa günlük toplantı, haftalık demo ve yazılı haftalık rapor. Kurulumu teslim gününde değil, olurken görürsünüz.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">4</span>
+              <span class="text-ink-700"><strong class="text-ink-900">Onay test veritabanında verilir.</strong> Ekibiniz Türkiye yapılandırmasını test ortamında çalıştırır ve geçişten önce onaylar; geri dönüş planı yazılıdır.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">5</span>
+              <span class="text-ink-700"><strong class="text-ink-900">Devreye alma sonrası destek.</strong> SLA'ya bağlı destek sözleşmesi, 7/24 izleme, doğrulanmış yedekleme ve güvenlik yaması.</span>
+            </li>
+          </ul>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">Türkiye'de Odoo mu kuruyorsunuz?</h2>
+              <p class="mt-2 text-sm text-brand-100">
+                Türkiye gerekliliklerini bilen kıdemli bir danışmanla 30 dakikalık kapsam görüşmesi. Yazılı bir
+                kapsamla çıkarsınız.
+              </p>
+              <a href={contactHref} class="btn-primary mt-5 w-full bg-white !text-brand-700 hover:bg-brand-50">Görüşme ayarlayın</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary mt-3 w-full !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">Türkiye özeti</h2>
+              <dl class="mt-4 space-y-2 text-sm">
+                {currency && <div class="flex justify-between gap-3"><dt class="text-ink-600">Para birimi</dt><dd class="font-semibold">{currency}</dd></div>}
+                {localeCode && <div class="flex justify-between gap-3"><dt class="text-ink-600">Dil kodu</dt><dd class="font-semibold">{localeCode}</dd></div>}
+                {cities.length > 0 && <div class="flex justify-between gap-3"><dt class="text-ink-600">Kapsanan şehir</dt><dd class="font-semibold">{cities.length}</dd></div>}
+                {paymentItems.length > 0 && <div class="flex justify-between gap-3"><dt class="text-ink-600">Ödeme sağlayıcısı</dt><dd class="font-semibold">{paymentItems.length}</dd></div>}
+                {shippingItems.length > 0 && <div class="flex justify-between gap-3"><dt class="text-ink-600">Kargo</dt><dd class="font-semibold">{shippingItems.length}</dd></div>}
+                {moduleCodes.length > 0 && <div class="flex justify-between gap-3"><dt class="text-ink-600">Yerelleştirme modülü</dt><dd class="font-semibold">{moduleCodes.length}</dd></div>}
+              </dl>
+              <a href={enUrl} hreflang="en" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
+                <span lang="en">Read this page in English</span>
+              </a>
+            </div>
+
+            {topicLinks.length > 0 && (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h2 class="text-sm font-semibold">Türkçe sayfalar</h2>
+                <ul class="mt-4 space-y-2">
+                  {topicLinks.map(t => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/tr/${t.slug}/`}>{t.label}</a></li>
+                  ))}
+                </ul>
+                <a href="/tr/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Türkçe bölümün tamamı →</a>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="relative overflow-hidden rounded-3xl bg-odoo-gradient p-10 text-white sm:p-16">
+        <div class="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-accent-400/30 blur-3xl"></div>
+        <div class="relative max-w-2xl">
+          {flag && <div class="text-4xl">{flag}</div>}
+          <h2 class="h2 mt-4 text-white">Türkiye Odoo projenizin kapsamını birlikte çıkaralım.</h2>
+          <p class="lede mt-4 text-brand-100">
+            Otuz dakika: bugünkü sistemleriniz, yukarıdaki maddeler ve gerçekçi bir birinci fazın nasıl göründüğü.
+            Yazılı bir kapsamla çıkarsınız. Taahhüt yok, satış metni yok.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Kapsam görüşmesi ayarlayın</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">WhatsApp yazın</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseTr>

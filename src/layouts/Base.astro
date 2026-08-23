@@ -51,16 +51,28 @@ const twitterHandle = twitterHandleRaw ? (twitterHandleRaw.startsWith('@') ? twi
 
 const fontHref = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
 
+// Stable node identities. Giving the Organization an @id lets the WebSite node
+// point at it instead of repeating the whole company block.
+const orgId = new URL('/#organization', SITE.url).toString();
+const webSiteId = new URL('/#website', SITE.url).toString();
+
 const orgSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
+  '@id': orgId,
   name: SITE.name,
   legalName: 'Way4Tech',
   url: SITE.url,
   logo: new URL('/logo.svg', SITE.url).toString(),
+  image: {
+    '@type': 'ImageObject',
+    url: new URL('/og.png', SITE.url).toString(),
+    width: 1200,
+    height: 630,
+  },
   description: SITE.description,
   foundingDate: '2016',
-  slogan: 'Odoo Gold Partner - implementation, customization, SaaS, support.',
+  slogan: 'Odoo ERP implementation, customization, hosting, and support.',
   areaServed: SITE.locations,
   contactPoint: [{
     '@type': 'ContactPoint',
@@ -72,13 +84,30 @@ const orgSchema = {
   sameAs: [SITE.social.linkedin, SITE.social.github],
 };
 
+// The WebSite node belongs to the site as a whole, so it is emitted once, on the
+// homepage, and nowhere else. trailingSlash is 'always', so the built homepage
+// path is '/'; the '/index.html' form is accepted for a direct file hit.
+// No SearchAction: there is no internal search endpoint to point one at.
+const homePath = Astro.url.pathname;
+const isHome = homePath === '/' || homePath === '/index.html';
+
+const webSiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': webSiteId,
+  name: SITE.name,
+  url: new URL('/', SITE.url).toString(),
+  inLanguage: 'en',
+  publisher: { '@id': orgId },
+};
+
 const ovSchema = (() => {
   const raw = ov?.schema;
   if (!raw) return [];
   try { const v = typeof raw === 'string' ? JSON.parse(raw) : raw; return Array.isArray(v) ? v : [v]; }
   catch { return []; }
 })();
-const sdArray = [orgSchema, ...(Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : []), ...ovSchema];
+const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArray(structuredData) ? structuredData : structuredData ? [structuredData] : []), ...ovSchema];
 ---
 
 <!doctype html>

@@ -1,6 +1,7 @@
 ---
 import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
+import { MODULE_CATALOG, type StoreModule } from '~/data/modules-catalog';
 import { getCollection } from 'astro:content';
 import { fetchOdooBlogPosts, type OdooBlogPost } from '~/lib/odoo';
 
@@ -31,18 +32,65 @@ const tags = kind === 'odoo' ? odoo!.tags : post!.data.tags;
 
 const Content = kind === 'mdx' ? (await post!.render()).Content : null;
 
+/*
+ * Author identity.
+ *
+ * Posts under the site byline link to /author/waqas-riasat/, and their Person
+ * node in the schema carries the @id and url of that page so the two are one
+ * entity rather than a name repeated on thirteen pages. Posts written by anyone
+ * else in the Odoo portal keep a plain name and no link, because there is no
+ * author page standing behind them.
+ *
+ * These consts are read by the template only. getStaticPaths above is hoisted
+ * out of this scope and cannot see them, which is exactly why nothing here is
+ * referenced from inside it.
+ */
+const SITE_AUTHOR = 'Waqas Riasat';
+const AUTHOR_PATH = '/author/waqas-riasat/';
+const AUTHOR_URL = new URL(AUTHOR_PATH, SITE.url).toString();
+
+const authorName = (typeof author === 'string' ? author.trim() : '') || SITE.name;
+const isSiteAuthor = authorName.toLowerCase() === SITE_AUTHOR.toLowerCase();
+
+/* The one line of author evidence worth carrying onto a post: modules actually
+   listed on the store, counted from the catalogue on every build rather than
+   written down. Same test /products/ and the author page use. */
+const catalog: Record<string, StoreModule | undefined> = MODULE_CATALOG ?? {};
+const publishedModuleCount = Object.values(catalog).filter(
+  m => m?.published === true && typeof m.storeUrl === 'string' && m.storeUrl.trim().startsWith('https://apps.odoo.com/'),
+).length;
+
+const authorNode = isSiteAuthor
+  ? { '@type': 'Person', '@id': `${AUTHOR_URL}#person`, name: authorName, url: AUTHOR_URL }
+  : { '@type': 'Person', name: authorName };
+
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'Article',
   headline: title,
   description,
-  author: { '@type': 'Person', name: author },
+  author: authorNode,
   datePublished: date.toISOString(),
   dateModified: (kind === 'odoo' ? odoo!.writeDate : date).toISOString(),
   publisher: { '@type': 'Organization', name: SITE.name, logo: { '@type': 'ImageObject', url: `${SITE.url}/logo.svg` } },
 };
+
+/* Mirrors the breadcrumb printed in the hero. The template carried none before,
+   so this adds a node rather than duplicating one. */
+const slugParam = typeof Astro.params.slug === 'string' ? Astro.params.slug.trim() : '';
+const postPath = slugParam ? `/blog/${slugParam}/` : '/blog/';
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE.url}/` },
+    { '@type': 'ListItem', position: 2, name: 'Blog', item: new URL('/blog/', SITE.url).toString() },
+    { '@type': 'ListItem', position: 3, name: title, item: new URL(postPath, SITE.url).toString() },
+  ],
+};
 ---
-<Base title={title} description={description} structuredData={schema}>
+<Base title={title} description={description} structuredData={[schema, breadcrumbSchema]}>
   <section class="bg-odoo-gradient text-white">
     <div class="container-site py-14">
       <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/blog/" class="hover:text-white">Blog</a></nav>
@@ -53,7 +101,15 @@ const schema = {
         </div>
         <h1 class="mt-5 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">{title}</h1>
         {kind === 'odoo' && odoo!.subtitle && (<p class="mt-3 text-lg text-brand-100">{odoo!.subtitle}</p>)}
-        <p class="mt-4 text-brand-100">{author} · {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <p class="mt-4 text-brand-100">
+          {isSiteAuthor ? (
+            <a href={AUTHOR_PATH} rel="author" class="font-semibold text-white underline decoration-white/40 underline-offset-4 transition hover:decoration-white">{authorName}</a>
+          ) : (
+            <span>{authorName}</span>
+          )}
+          {' · '}
+          <time datetime={date.toISOString()}>{date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
+        </p>
       </div>
     </div>
   </section>
@@ -71,6 +127,23 @@ const schema = {
         {kind === 'mdx' && Content && <Content />}
         {kind === 'odoo' && <Fragment set:html={odoo!.contentHtml} />}
       </div>
+
+      {isSiteAuthor && (
+        <div class="mt-16 rounded-2xl border border-ink-200 p-6 sm:p-8">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-ink-500">Written by</h2>
+          <p class="mt-2 text-xl font-semibold">
+            <a href={AUTHOR_PATH} rel="author" class="hover:text-brand-700">{authorName}</a>
+          </p>
+          <p class="mt-3 text-ink-600">
+            Odoo developer at {SITE.name}.
+            {publishedModuleCount > 0
+              ? ` ${publishedModuleCount} modules published on the Odoo apps store.`
+              : ' Builds Odoo modules.'}
+            {' '}Writes the Odoo posts on this site.
+          </p>
+          <a href={AUTHOR_PATH} class="mt-4 inline-block text-sm font-semibold text-brand-700 hover:text-brand-800">Profile and published work</a>
+        </div>
+      )}
 
       <div class="mt-16 rounded-2xl bg-ink-50 p-8 text-center">
         <h3 class="text-xl font-semibold">Have an Odoo project?</h3>

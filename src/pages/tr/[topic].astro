@@ -1,0 +1,539 @@
+---
+/*
+ * /tr/<konu>/ - the five Türkiye topic pages, in Turkish.
+ *
+ * Slugs are the Turkish words a buyer actually types, not transliterations of
+ * the English routes: e-fatura, muhasebe-ve-vergi, bordro, odeme-yontemleri,
+ * kargo. They are defined once in src/data/tr-content.ts and imported here,
+ * because Astro hoists getStaticPaths out of component scope and a const in this
+ * frontmatter would be invisible inside it. Imports are visible.
+ *
+ * Each page maps to the same data as its English counterpart under
+ * /countries/turkey/<topic>/, read from src/data/country-detail.ts. Every
+ * regulatory line is the Turkish rendering of a claim that already exists there,
+ * keyed by a leading substring of the English source so a reworded source drops
+ * the line rather than mispairing it.
+ *
+ * A topic with no data produces no page. Every lookup is guarded.
+ */
+import BaseTr from '~/layouts/BaseTr.astro';
+import { SITE, COUNTRIES, SERVICES } from '~/data/site';
+import { COUNTRY_DETAIL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
+import type { CountryDetail, CountryFact } from '~/data/country-detail';
+import {
+  TR_COUNTRY,
+  TR_TOPICS,
+  TR_CITY,
+  TR_SUPPORT_LABEL,
+  TR_SUPPORT_ORDER,
+  TR_GROUP_INTRO,
+  TR_DISCLAIMER,
+  TR_UNCONFIRMED_NOTE,
+  TR_LANGUAGE_NOTE,
+  trFacts,
+  trProviders,
+  trReviewDate,
+} from '~/data/tr-content';
+import type { TrTopic, TrProviderView } from '~/data/tr-content';
+
+export function getStaticPaths() {
+  /* Astro hoists this out of component scope, so it can only see imports.
+     Everything below comes from an import or is declared inside this function. */
+  const detail = COUNTRY_DETAIL[TR_COUNTRY.enSlug];
+
+  const has = (d: CountryDetail | undefined, kind: string): boolean => {
+    if (!d) return false;
+    if (kind === 'einvoicing') return Boolean(d.einvoicing && (d.einvoicing.scheme || d.einvoicing.status));
+    if (kind === 'accounting-tax') return (d.tax?.length || 0) > 0 || (d.accounting?.length || 0) > 0;
+    if (kind === 'payroll') return (d.payroll?.length || 0) > 0;
+    if (kind === 'payments') return (d.payments?.length || 0) > 0;
+    if (kind === 'shipping') return (d.shipping?.length || 0) > 0;
+    return false;
+  };
+
+  return TR_TOPICS
+    .filter(t => has(detail, t.kind))
+    .map(t => ({ params: { topic: t.slug }, props: { topic: t } }));
+}
+
+const { topic } = Astro.props as { topic: TrTopic };
+
+const tr = TR_COUNTRY;
+const country = COUNTRIES.find(c => c.slug === tr.enSlug);
+const detail: CountryDetail | undefined = COUNTRY_DETAIL[tr.enSlug];
+
+const pageUrl = `${SITE.url}/tr/${topic.slug}/`;
+const parentUrl = '/tr/turkey/';
+const contactHref = `/contact/?country=${encodeURIComponent(country?.title || 'Turkey')}&source=${encodeURIComponent(`tr/${topic.slug}`)}`;
+const cities = (country?.cities || []).map(c => TR_CITY[c] || c);
+const flag = country?.flag || '';
+const reviewedOn = trReviewDate(COUNTRY_DETAIL_REVIEWED);
+
+/* ── Support badges ─────────────────────────────────────────────── */
+const SUPPORT_CLASS: Record<string, string> = {
+  native: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  oca_or_community: 'bg-ink-100 text-ink-700 ring-ink-300',
+  third_party_paid: 'bg-amber-50 text-amber-800 ring-amber-200',
+  custom_build: 'bg-rose-50 text-rose-700 ring-rose-200',
+};
+const supportClass = (s: string) => SUPPORT_CLASS[s] || SUPPORT_CLASS.custom_build;
+const supportLabel = (s: string) => TR_SUPPORT_LABEL[s] || '';
+
+/* ── e-Fatura topic ─────────────────────────────────────────────── */
+const showEinv = topic.kind === 'einvoicing' && Boolean(detail?.einvoicing);
+const einvReqs = showEinv
+  ? (detail?.einvoicing?.requirements || [])
+      .map(r => {
+        const key = Object.keys(tr.einvoicing.requirementsTr).find(k => r.startsWith(k));
+        return key ? tr.einvoicing.requirementsTr[key] : undefined;
+      })
+      .filter((x): x is string => Boolean(x))
+  : [];
+
+/* ── Fact topics: muhasebe-ve-vergi and bordro ──────────────────── */
+const SOURCE_MAP: Record<string, { facts: CountryFact[] | undefined; map: Record<string, string> }> = {
+  tax: { facts: detail?.tax, map: tr.taxTr },
+  accounting: { facts: detail?.accounting, map: tr.accountingTr },
+  payroll: { facts: detail?.payroll, map: tr.payrollTr },
+};
+
+const factGroups = (topic.groups || [])
+  .map(g => {
+    const src = SOURCE_MAP[g.source];
+    return { ...g, facts: src ? trFacts(src.facts, src.map) : [] };
+  })
+  .filter(g => g.facts.length > 0);
+
+const factCount = factGroups.reduce((n, g) => n + g.facts.length, 0);
+const factUnconfirmed = factGroups.reduce((n, g) => n + g.facts.filter(f => f.verified === false).length, 0);
+
+/* ── Provider topics: odeme-yontemleri and kargo ────────────────── */
+const providers: TrProviderView[] =
+  topic.kind === 'payments' ? trProviders(detail?.payments, tr.paymentsTr)
+  : topic.kind === 'shipping' ? trProviders(detail?.shipping, tr.shippingTr)
+  : [];
+
+const providerGroups = TR_SUPPORT_ORDER
+  .map(s => ({ support: s, items: providers.filter(p => p.support === s) }))
+  .filter(g => g.items.length > 0);
+
+/* Anything with an unrecognised support value still has to render. */
+const providerOther = providers.filter(p => !TR_SUPPORT_ORDER.includes(p.support));
+const providerUnconfirmed = providers.filter(p => p.verified === false).length;
+
+/* ── Cross links ────────────────────────────────────────────────── */
+const hasData = (kind: string): boolean => {
+  if (!detail) return false;
+  if (kind === 'einvoicing') return Boolean(detail.einvoicing && (detail.einvoicing.scheme || detail.einvoicing.status));
+  if (kind === 'accounting-tax') return (detail.tax?.length || 0) > 0 || (detail.accounting?.length || 0) > 0;
+  if (kind === 'payroll') return (detail.payroll?.length || 0) > 0;
+  if (kind === 'payments') return (detail.payments?.length || 0) > 0;
+  if (kind === 'shipping') return (detail.shipping?.length || 0) > 0;
+  return false;
+};
+const siblingTopics = TR_TOPICS.filter(t => t.slug !== topic.slug && hasData(t.kind));
+
+type ServiceRec = (typeof SERVICES)[number];
+const topicServices: ServiceRec[] = (topic.services || [])
+  .map(slug => SERVICES.find((s: ServiceRec) => s.slug === slug))
+  .filter((s): s is ServiceRec => Boolean(s));
+
+/* ── hreflang ──────────────────────────────────────────────────────
+   Self-referential only. The English topic page at
+   /countries/turkey/<topic>/ does not declare this URL in return, and this file
+   cannot add that link without editing a page it does not own. A one-way pair is
+   a claim we are not entitled to make, so no 'en' alternate is emitted here.
+   The visible English link in the sidebar is a plain link, not an hreflang. */
+const hreflangAlternates = [{ lang: 'tr', href: pageUrl }];
+
+/* ── Structured data ───────────────────────────────────────────────
+   Breadcrumbs plus a Service node, matching the English and Arabic pages. The
+   Service description carries no rate, scheme name, threshold or mandate:
+   structured data is the wrong place for a regulatory claim. No FAQPage.
+   availableLanguage lists the languages delivery actually runs in. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    inLanguage: 'tr',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Way4Tech', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Türkçe', item: `${SITE.url}/tr/` },
+      { '@type': 'ListItem', position: 3, name: tr.name, item: `${SITE.url}/tr/${tr.slug}/` },
+      { '@type': 'ListItem', position: 4, name: topic.label, item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: topic.serviceName,
+    serviceType: topic.serviceType,
+    description: topic.serviceDesc,
+    url: pageUrl,
+    inLanguage: 'tr',
+    provider: {
+      '@type': 'Organization',
+      name: SITE.name,
+      url: SITE.url,
+      email: SITE.email,
+      telephone: SITE.phone,
+    },
+    areaServed: [
+      { '@type': 'Country', name: tr.name },
+      ...cities.map(c => ({ '@type': 'City', name: c })),
+    ],
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: `${SITE.url}/contact/`,
+      availableLanguage: ['English', 'Arabic', 'Urdu'],
+    },
+  },
+];
+---
+<BaseTr
+  title={topic.metaTitle}
+  description={topic.metaDescription}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+  enHref={`${SITE.url}/countries/${tr.enSlug}/`}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 12% 12%, rgba(135,90,123,0.5) 0%, transparent 45%), radial-gradient(circle at 88% 88%, rgba(0,160,157,0.28) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-14 sm:py-20">
+      <nav class="text-sm text-brand-200" aria-label="Sayfa yolu">
+        <a href="/tr/" class="hover:text-white">Türkçe</a>
+        <span class="px-2">/</span>
+        <a href={parentUrl} class="hover:text-white">{tr.name}</a>
+        <span class="px-2">/</span>
+        <span class="text-white">{topic.label}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex items-center gap-3">
+          {flag && <span class="text-4xl">{flag}</span>}
+          <span class="eyebrow !text-brand-200">{topic.label} · {tr.name}</span>
+        </div>
+        <h1 class="h1 mt-5">{topic.h1}</h1>
+        <p class="lede mt-6 text-ink-200">{topic.lede}</p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Kapsam görüşmesi ayarlayın</a>
+          <a href={parentUrl} class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">Türkiye sayfasının tamamı</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {siblingTopics.length > 0 && (
+    <section class="border-b border-ink-200 bg-white py-4">
+      <div class="container-site flex flex-wrap items-center gap-x-6 gap-y-2">
+        <span class="text-xs font-semibold tracking-wider text-ink-500">Türkiye için ayrıca</span>
+        {siblingTopics.map(s => (
+          <a href={`/tr/${s.slug}/`} class="text-sm font-semibold text-brand-600 hover:text-brand-700">{s.label}</a>
+        ))}
+        <a href={parentUrl} class="text-sm font-semibold text-ink-600 hover:text-brand-700">Ülke özeti</a>
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+
+          {showEinv && detail?.einvoicing && (
+            <div>
+              <div class="overflow-hidden rounded-2xl border border-brand-200">
+                <div class="bg-brand-50 p-6 sm:p-8">
+                  <div class="flex flex-wrap items-center gap-3">
+                    <span class="eyebrow">Sistem</span>
+                    {detail.einvoicing.verified === false && (
+                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Teyit edilmedi</span>
+                    )}
+                  </div>
+                  <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{tr.einvoicing.scheme}</p>
+                  <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Yetkili idare:</span> {tr.einvoicing.authority}</p>
+                </div>
+                <div class="space-y-6 bg-white p-6 sm:p-8">
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-ink-500">Bugün nerede duruyor</div>
+                    <p class="mt-2 text-ink-700">{tr.einvoicing.status}</p>
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold tracking-wider text-ink-500">Kimi kapsıyor</div>
+                    <p class="mt-2 text-ink-700">{tr.einvoicing.appliesTo}</p>
+                  </div>
+                </div>
+              </div>
+
+              {einvReqs.length > 0 && (
+                <div class="mt-12">
+                  <h2 class="h3">Her gereklilik, tam listeyle</h2>
+                  <p class="mt-3 text-ink-700">
+                    {einvReqs.length} gereklilik. Her biri Odoo kurulumunuzda bir alana, bir belge şablonuna, saklanan
+                    bir yanıta veya bir API çağrısına dönüşmesi gerekiyor. Bir Türkiye e-belge projesi bu liste
+                    üzerinden fiyatlanır.
+                  </p>
+                  <ol class="mt-6 space-y-3">
+                    {einvReqs.map((r, i) => (
+                      <li class="flex gap-4 rounded-xl border border-ink-200 bg-white p-4 sm:p-5">
+                        <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{i + 1}</span>
+                        <span class="text-ink-700">{r}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+
+          {factGroups.length > 0 && (
+            <div>
+              <p class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-600">
+                <span class="inline-flex items-center rounded-full bg-ink-100 px-2.5 py-1 text-[11px] font-semibold text-ink-700 ring-1 ring-ink-300">{factCount} madde</span>
+                {factUnconfirmed > 0 && (
+                  <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{factUnconfirmed} teyit edilmedi</span>
+                )}
+                <span>Kontrol edildiği hâliyle, özetlenmeden.</span>
+              </p>
+              {factGroups.map(g => (
+                <section id={g.id} class="mt-10 scroll-mt-24">
+                  <h2 class="h3">{g.title}</h2>
+                  <p class="mt-3 text-ink-700">{g.intro}</p>
+                  <ol class="mt-6 space-y-3">
+                    {g.facts.map((f, i) => (
+                      <li class={f.verified === false
+                        ? 'flex gap-4 rounded-xl border border-dashed border-ink-300 bg-ink-50 p-4 sm:p-5'
+                        : 'flex gap-4 rounded-xl border border-ink-200 bg-white p-4 sm:p-5'}>
+                        <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{i + 1}</span>
+                        <div>
+                          <p class="text-ink-700">{f.text}</p>
+                          {f.verified === false && (
+                            <p class="mt-2 text-[11px] font-semibold tracking-wider text-ink-500">{TR_UNCONFIRMED_NOTE}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ))}
+            </div>
+          )}
+
+          {providers.length > 0 && (
+            <div>
+              <h2 class="h3">{topic.providerTitle}</h2>
+              <p class="mt-3 text-ink-700">{providers.length} kayıt. {topic.providerIntro}</p>
+              <div class="mt-5 flex flex-wrap items-center gap-2">
+                {providerGroups.map(g => (
+                  <span class={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(g.support)}`}>
+                    {supportLabel(g.support)}
+                    <span class="font-bold">{g.items.length}</span>
+                  </span>
+                ))}
+                {providerUnconfirmed > 0 && (
+                  <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">{providerUnconfirmed} teyit edilmedi</span>
+                )}
+              </div>
+
+              {providerGroups.map(g => (
+                <section class="mt-10">
+                  <div class="flex flex-wrap items-baseline gap-3">
+                    <h3 class="text-lg font-bold text-ink-900">{supportLabel(g.support)}</h3>
+                    <span class="text-sm text-ink-500">{providers.length} kaydın {g.items.length} tanesi</span>
+                  </div>
+                  <p class="mt-2 text-sm text-ink-600">{TR_GROUP_INTRO[g.support] || ''}</p>
+                  <div class="mt-5 space-y-3">
+                    {g.items.map(p => (
+                      <div class={p.verified === false
+                        ? 'rounded-2xl border border-dashed border-ink-300 bg-ink-50 p-5'
+                        : 'rounded-2xl border border-ink-200 bg-white p-5'}>
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-ink-900">{p.name}</span>
+                            {p.kind && <span class="chip text-[11px]">{p.kind}</span>}
+                          </div>
+                          <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(p.support)}`}>{supportLabel(p.support)}</span>
+                        </div>
+                        <p class="mt-3 text-sm text-ink-700">{p.note}</p>
+                        {p.verified === false && (
+                          <p class="mt-3 text-[11px] font-semibold tracking-wider text-ink-500">{TR_UNCONFIRMED_NOTE}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+
+              {providerOther.length > 0 && (
+                <section class="mt-10">
+                  <h3 class="text-lg font-bold text-ink-900">Listede ayrıca</h3>
+                  <div class="mt-5 space-y-3">
+                    {providerOther.map(p => (
+                      <div class="rounded-2xl border border-ink-200 bg-white p-5">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="font-semibold text-ink-900">{p.name}</span>
+                          {p.kind && <span class="chip text-[11px]">{p.kind}</span>}
+                        </div>
+                        <p class="mt-3 text-sm text-ink-700">{p.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+
+          <p class="mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-ink-200 bg-white px-4 py-3 text-sm">
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">Kontrol edildi</span>
+            <span class="text-ink-700">Bu sayfadaki yerelleştirme notları {reviewedOn} tarihinde kontrol edildi.</span>
+          </p>
+          <p class="mt-4 rounded-xl bg-ink-50 p-5 text-sm text-ink-700">
+            {TR_DISCLAIMER}
+            {' '}
+            <a href="/services/odoo-localization/" class="font-semibold text-brand-600 hover:text-brand-700" hreflang="en" lang="en">Odoo localization service</a>
+            {' '}sayfasında ayrıntısı var.
+          </p>
+
+          {(topic.build || []).length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Bu işi Türkiye için nasıl kuruyoruz</h2>
+              <p class="mt-3 text-ink-700">
+                Yukarıdaki listenin arkasındaki çalışma biçimi. On kullanıcılık bir kurulumda da, çok şirketli bir
+                programda da aynı dört adım; derinlik kapsama göre ölçeklenir.
+              </p>
+              <ol class="mt-6 space-y-4">
+                {topic.build.map((b, i) => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-accent-50 text-xs font-bold text-accent-600">{i + 1}</span>
+                    <span class="text-ink-700"><strong class="text-ink-900">{b.t}</strong> {b.d}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {(topic.need || []).length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Fiyatlayabilmemiz için sizden gerekenler</h2>
+              <p class="mt-3 text-ink-700">
+                Bunları ilk görüşmeye getirirseniz aralık değil, kapsamı ve fiyatı belirlenmiş bir plan alırsınız.
+              </p>
+              <ul class="mt-6 space-y-3">
+                {topic.need.map(n => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">✓</span>
+                    <span class="text-ink-700">{n}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {topicServices.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Bu işin arkasındaki hizmetler</h2>
+              <p class="mt-3 text-sm text-ink-600">Hizmet sayfaları İngilizcedir.</p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {topicServices.map(s => (
+                  <a href={`/services/${s.slug}/`} class="card group !p-4" hreflang="en">
+                    <div class="flex items-center gap-2 text-sm">
+                      <span class="text-xl">{s.icon}</span>
+                      <span class="font-semibold" lang="en">{s.title}</span>
+                    </div>
+                    <p class="mt-2 text-xs text-ink-600" lang="en">{s.tagline}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {siblingTopics.length > 0 && (
+            <div>
+              <h2 class="h3 mt-14">Türkiye yerelleştirmesinin geri kalanı</h2>
+              <p class="mt-3 text-ink-700">
+                Her konunun kendi sayfası var ve bu sayfadaki gibi tam listeyi taşıyor.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {siblingTopics.map(s => (
+                  <a href={`/tr/${s.slug}/`} class="card group !p-4">
+                    <span class="text-sm font-semibold">{s.label}</span>
+                    <p class="mt-2 text-xs text-ink-600">Tam liste, kontrol edildiği hâliyle.</p>
+                  </a>
+                ))}
+                <a href={parentUrl} class="card group !p-4">
+                  <span class="text-sm font-semibold">Türkiye ülke özeti</span>
+                  <p class="mt-2 text-xs text-ink-600">Tek sayfada e-belge, vergi, bordro, ödeme ve kargo.</p>
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">{topic.label} · {tr.name}</h2>
+              <p class="mt-2 text-sm text-brand-100">
+                Bu işi daha önce yapmış kıdemli bir danışmanla 30 dakika. Yazılı bir kapsamla çıkarsınız.
+              </p>
+              <a href={contactHref} class="btn-primary mt-5 w-full bg-white !text-brand-700 hover:bg-brand-50">Görüşme ayarlayın</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary mt-3 w-full !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">Proje dili</h2>
+              <p class="mt-3 text-sm text-ink-700">{TR_LANGUAGE_NOTE}</p>
+            </div>
+
+            {providerGroups.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 bg-white p-6">
+                <h2 class="text-sm font-semibold">Etiketler ne anlama geliyor</h2>
+                <ul class="mt-4 space-y-3 text-sm">
+                  {providerGroups.map(g => (
+                    <li>
+                      <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(g.support)}`}>{supportLabel(g.support)}</span>
+                      <span class="mt-2 block text-ink-600">{TR_GROUP_INTRO[g.support] || ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">Türkçe sayfalar</h2>
+              <ul class="mt-4 space-y-2">
+                <li><a class="text-sm text-ink-700 hover:text-brand-600" href={parentUrl}>{tr.name} ülke sayfası</a></li>
+                {siblingTopics.map(s => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/tr/${s.slug}/`}>{s.label}</a></li>
+                ))}
+              </ul>
+              <a href={`${SITE.url}/countries/${tr.enSlug}/`} hreflang="en" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">
+                <span lang="en">Turkey page in English</span>
+              </a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50">
+    <div class="container-site">
+      <div class="relative overflow-hidden rounded-3xl bg-odoo-gradient p-10 text-white sm:p-16">
+        <div class="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent-400/30 blur-3xl"></div>
+        <div class="relative max-w-2xl">
+          {flag && <div class="text-4xl">{flag}</div>}
+          <h2 class="h2 mt-4 text-white">Türkiye kurulumunuzda bu konunun kapsamını çıkaralım.</h2>
+          <p class="lede mt-4 text-brand-100">
+            Yukarıdaki listeyi kendi cevaplarınızla birlikte gönderin. Hangisi yapılandırma, hangisi konnektör,
+            hangisi geliştirme: proje başlamadan fiyatıyla birlikte dönelim.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Kapsam görüşmesi ayarlayın</a>
+            <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary !border-white/30 !bg-white/10 !text-white hover:!bg-white/20">WhatsApp yazın</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseTr>

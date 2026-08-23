@@ -1,0 +1,450 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import { MODULE_CATALOG, type StoreModule } from '~/data/modules-catalog';
+import { getCollection } from 'astro:content';
+import { fetchOdooBlogPosts } from '~/lib/odoo';
+
+/*
+ * Author page for the byline that sits on every blog post.
+ *
+ * Everything here is either read out of a data file in this repo or counted at
+ * build time. No count, no topic and no module name is written down on this
+ * page, so none of it can go stale and none of it can say something the data
+ * does not support.
+ *
+ *   MODULE_CATALOG - generated from the __manifest__.py of every module in the
+ *                    odoostore-19 repo. A module is counted here only where
+ *                    published is true AND storeUrl points at apps.odoo.com,
+ *                    the same test /products/ uses. Built-but-unlisted modules
+ *                    are not evidence, so they are not counted or linked.
+ *   blog + Odoo    - the posts carrying this byline, from the same two sources
+ *                    the blog index merges.
+ *   SITE.social    - the profile URLs, which are also the sameAs of the Person.
+ *
+ * Single static route, so there is no getStaticPaths and no hoisting problem:
+ * every const below is visible to the template.
+ */
+
+const AUTHOR_NAME = 'Waqas Riasat';
+const AUTHOR_PATH = '/author/waqas-riasat/';
+const AUTHOR_URL = new URL(AUTHOR_PATH, SITE.url).toString();
+const PERSON_ID = `${AUTHOR_URL}#person`;
+const APPS_ODOO = 'https://apps.odoo.com/';
+
+/* Two modules sit on the site under a slug that is not their catalogue key.
+   /products/[slug].astro builds them at the older slug, so an internal link has
+   to point at the same place or it 404s. */
+const ALIAS: Record<string, string> = {
+  'wt-whatsapp-otp-odoo': 'wt-whatsapp-otp',
+  'wt-barcode-scanner-offline': 'odoo-barcode-scanner',
+};
+
+interface PublishedModule {
+  slug: string;
+  name: string;
+  category: string;
+  family: string;
+  series: string;
+  price: number | null;
+  currency: string;
+  storeUrl: string;
+}
+
+/* Manifest categories are two-level: 'Services/Hospital', 'Human Resources/Payroll'.
+   The first level is the readable bucket. */
+function familyOf(category: string): string {
+  const head = (category || '').split('/')[0]?.trim() ?? '';
+  if (!head) return 'Other';
+  return head === 'Themes' ? 'Theme' : head;
+}
+
+/** Null when there is nothing honest to print. Never prints 0 and never says free. */
+function formatPrice(price: number | null, currency: string): string | null {
+  if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return null;
+  const code = (currency || 'USD').toUpperCase();
+  const digits = Number.isInteger(price) ? 0 : 2;
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'code',
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(price);
+  } catch {
+    return `${code} ${price.toFixed(digits)}`;
+  }
+}
+
+const catalog: Record<string, StoreModule | undefined> = MODULE_CATALOG ?? {};
+
+const published: PublishedModule[] = [];
+const seenSlugs = new Set<string>();
+for (const [key, mod] of Object.entries(catalog)) {
+  if (!mod) continue;
+  const storeUrl = typeof mod.storeUrl === 'string' ? mod.storeUrl.trim() : '';
+  if (mod.published !== true || !storeUrl.startsWith(APPS_ODOO)) continue;
+
+  const slug = ALIAS[key] || key;
+  if (seenSlugs.has(slug)) continue;
+  seenSlugs.add(slug);
+
+  const category = (typeof mod.category === 'string' ? mod.category.trim() : '') || 'Odoo modules';
+  const version = typeof mod.version === 'string' ? mod.version.trim() : '';
+  const parts = version.split('.');
+
+  published.push({
+    slug,
+    name: (typeof mod.name === 'string' ? mod.name.trim() : '') || slug,
+    category,
+    family: familyOf(category),
+    series: parts.length >= 2 && parts[0] && parts[1] ? `${parts[0]}.${parts[1]}` : '',
+    price: typeof mod.price === 'number' && Number.isFinite(mod.price) && mod.price > 0 ? mod.price : null,
+    currency: (typeof mod.currency === 'string' && mod.currency.trim() ? mod.currency.trim() : 'USD').toUpperCase(),
+    storeUrl,
+  });
+}
+
+const publishedCount = published.length;
+
+/* Areas, counted rather than asserted. Sorted by size then name, so two builds
+   of the same data produce the same page. */
+const familyCounts = new Map<string, number>();
+for (const m of published) familyCounts.set(m.family, (familyCounts.get(m.family) ?? 0) + 1);
+const families = [...familyCounts.entries()]
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+/* The Odoo series the listings target, read off the manifest version. Printed
+   only where the whole set agrees, so it can never overstate the range. */
+const seriesList = [...new Set(published.map(m => m.series).filter(Boolean))].sort();
+const seriesText = seriesList.length === 1 ? `Odoo ${seriesList[0]}` : '';
+
+/* The largest listings, as evidence a reader can open and inspect. Price is the
+   ordering only because it is the one size the manifest carries; the tie break
+   on name keeps the order stable. */
+const featured = published
+  .slice()
+  .sort((a, b) => (b.price ?? 0) - (a.price ?? 0) || a.name.localeCompare(b.name))
+  .slice(0, 6)
+  .map(m => ({ ...m, priceText: formatPrice(m.price, m.currency) }));
+
+interface PostRow {
+  href: string;
+  title: string;
+  description: string;
+  date: Date;
+  tags: string[];
+}
+
+const byThisAuthor = (name: unknown): boolean =>
+  typeof name === 'string' && name.trim().toLowerCase() === AUTHOR_NAME.toLowerCase();
+
+const toDate = (value: unknown): Date | null => {
+  const d = value instanceof Date ? value : new Date(String(value ?? ''));
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const mdxRows: PostRow[] = (await getCollection('blog'))
+  .filter(p => p?.data && p.data.draft !== true && byThisAuthor(p.data.author) && p.slug)
+  .map(p => {
+    const date = toDate(p.data.date);
+    return date
+      ? {
+          href: `/blog/${p.slug}/`,
+          title: (p.data.title || '').trim(),
+          description: (p.data.description || '').trim(),
+          date,
+          tags: Array.isArray(p.data.tags)
+            ? p.data.tags.filter(t => typeof t === 'string' && t.trim().length > 0)
+            : [],
+        }
+      : null;
+  })
+  .filter((p): p is PostRow => p !== null && p.title.length > 0);
+
+/* Posts written in the Odoo portal carry the portal user name. Only the ones
+   under this byline belong on this page. A fetch failure already comes back as
+   an empty list, so the build cannot break here. */
+const odooRows: PostRow[] = (await fetchOdooBlogPosts())
+  .filter(p => p && p.slug && byThisAuthor(p.author))
+  .map(p => {
+    const date = toDate(p.postDate);
+    return date
+      ? {
+          href: `/blog/${p.slug}/`,
+          title: (p.title || '').trim(),
+          description: (p.teaser || p.subtitle || '').trim(),
+          date,
+          tags: Array.isArray(p.tags) ? p.tags.filter(t => typeof t === 'string' && t.trim().length > 0) : [],
+        }
+      : null;
+  })
+  .filter((p): p is PostRow => p !== null && p.title.length > 0);
+
+const posts = [...mdxRows, ...odooRows].sort(
+  (a, b) => b.date.getTime() - a.date.getTime() || a.title.localeCompare(b.title),
+);
+const postCount = posts.length;
+
+/* Topics, in the vocabulary the site already uses. Post tags ordered by how
+   often they are actually used, then the module areas. Nothing invented and
+   nothing rephrased. */
+const tagCounts = new Map<string, { label: string; count: number }>();
+for (const p of posts) {
+  for (const raw of p.tags) {
+    const label = raw.trim();
+    const key = label.toLowerCase();
+    const seen = tagCounts.get(key);
+    if (seen) seen.count += 1;
+    else tagCounts.set(key, { label, count: 1 });
+  }
+}
+const postTopics = [...tagCounts.values()]
+  .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+  .map(t => t.label);
+
+/* The topics named in prose, read off the same tags. 'odoo' drops out because
+   it sits on nearly every post and says nothing. If the blog changes, this
+   sentence changes with it. */
+const headlineTopics = postTopics.filter(t => t.toLowerCase() !== 'odoo').slice(0, 5);
+const topicSentence =
+  headlineTopics.length > 1
+    ? `${headlineTopics.slice(0, -1).join(', ')} and ${headlineTopics[headlineTopics.length - 1]}`
+    : (headlineTopics[0] ?? '');
+
+const knowsAbout: string[] = [];
+const knowsSeen = new Set<string>();
+for (const label of [...postTopics, ...families.map(f => f.name)]) {
+  const key = label.toLowerCase();
+  if (!label || knowsSeen.has(key)) continue;
+  knowsSeen.add(key);
+  knowsAbout.push(label);
+  if (knowsAbout.length >= 24) break;
+}
+
+const socialRaw = (SITE.social ?? {}) as Record<string, string | undefined>;
+const profiles = ([
+  { label: 'GitHub', href: (socialRaw.github ?? '').trim() },
+  { label: 'LinkedIn', href: (socialRaw.linkedin ?? '').trim() },
+] as { label: string; href: string }[])
+  .filter(p => p.href.startsWith('http'))
+  .map(p => ({ ...p, handle: p.href.replace(/^https?:\/\//, '').replace(/\/+$/, '') }));
+
+const summaryLine =
+  publishedCount > 0
+    ? `${publishedCount} modules published on the Odoo apps store${seriesText ? `, all targeting ${seriesText}` : ''}.`
+    : '';
+
+const metaDescription = [
+  `${AUTHOR_NAME} builds Odoo modules and writes the Odoo articles on ${SITE.name}.`,
+  summaryLine,
+  postCount > 0 ? `${postCount} posts on this site.` : '',
+]
+  .filter(Boolean)
+  .join(' ');
+
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  '@id': PERSON_ID,
+  name: AUTHOR_NAME,
+  url: AUTHOR_URL,
+  description: `Builds and maintains Odoo modules listed on the Odoo apps store, and writes about Odoo implementation, localization and compliance on ${SITE.url}.`,
+  ...(profiles.length > 0 ? { sameAs: profiles.map(p => p.href) } : {}),
+  ...(knowsAbout.length > 0 ? { knowsAbout } : {}),
+  worksFor: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE.url}/` },
+    { '@type': 'ListItem', position: 2, name: 'Blog', item: new URL('/blog/', SITE.url).toString() },
+    { '@type': 'ListItem', position: 3, name: AUTHOR_NAME, item: AUTHOR_URL },
+  ],
+};
+---
+<Base
+  title={`${AUTHOR_NAME} - author profile`}
+  description={metaDescription}
+  structuredData={[personSchema, breadcrumbSchema]}
+>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 15% 10%, rgba(135,90,123,0.55) 0%, transparent 45%), radial-gradient(circle at 85% 90%, rgba(0,160,157,0.3) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-16 sm:py-24">
+      <nav class="text-sm text-ink-300" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/blog/" class="hover:text-white">Blog</a> / <span class="text-white">{AUTHOR_NAME}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="eyebrow text-brand-300">Author</div>
+        <h1 class="h1 mt-4">{AUTHOR_NAME}</h1>
+        <p class="lede mt-6 text-ink-200">
+          Odoo developer at {SITE.name}. Builds and maintains the modules listed on the Odoo apps store under this account, and writes the Odoo posts on this site.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {profiles.map(p => (
+            <a href={p.href} rel="me noopener" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10">
+              {p.label} <span class="font-normal text-ink-300">{p.handle}</span>
+            </a>
+          ))}
+          <a href="/contact/?source=author" class="btn-accent text-sm">Get in touch</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {(publishedCount > 0 || families.length > 0 || postCount > 0) && (
+    <section class="section">
+      <div class="container-site">
+        <div class="grid gap-5 sm:grid-cols-3">
+          {publishedCount > 0 && (
+            <div class="card text-center">
+              <div class="text-4xl font-bold text-brand-700">{publishedCount}</div>
+              <div class="mt-2 text-sm text-ink-600">Modules published on the Odoo apps store</div>
+            </div>
+          )}
+          {families.length > 0 && (
+            <div class="card text-center">
+              <div class="text-4xl font-bold text-brand-700">{families.length}</div>
+              <div class="mt-2 text-sm text-ink-600">Product areas those modules cover</div>
+            </div>
+          )}
+          {postCount > 0 && (
+            <div class="card text-center">
+              <div class="text-4xl font-bold text-brand-700">{postCount}</div>
+              <div class="mt-2 text-sm text-ink-600">Posts written on this site</div>
+            </div>
+          )}
+        </div>
+        <p class="mt-6 max-w-3xl text-sm text-ink-600">
+          Every figure on this page is counted at build time from the module catalogue and the blog, so it matches what is actually listed. Each listing below can be opened on the Odoo apps store and read in full.
+        </p>
+      </div>
+    </section>
+  )}
+
+  <section class="section bg-ink-50 border-y border-ink-100">
+    <div class="container-site">
+      <div class="max-w-3xl">
+        <h2 class="h3">What he works on</h2>
+        <ul class="mt-6 space-y-4">
+          <li class="flex gap-3">
+            <span class="mt-1 font-bold text-brand-600">→</span>
+            <div>
+              <strong class="text-ink-900">Odoo module development.</strong>
+              <p class="mt-1 text-ink-600">
+                {publishedCount > 0
+                  ? `${publishedCount} modules listed on the Odoo apps store${seriesText ? `, every one of them built for ${seriesText}` : ''}. The catalogue on this site is generated from the manifest of each module, so the pages and the code cannot drift apart.`
+                  : 'Odoo modules built against the manifest that ships with each one.'}
+              </p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="mt-1 font-bold text-brand-600">→</span>
+            <div>
+              <strong class="text-ink-900">Odoo implementation and support work.</strong>
+              <p class="mt-1 text-ink-600">Scoping, configuration, data migration, and the long tail of production support that follows a go-live.</p>
+            </div>
+          </li>
+          <li class="flex gap-3">
+            <span class="mt-1 font-bold text-brand-600">→</span>
+            <div>
+              <strong class="text-ink-900">Writing on this site.</strong>
+              <p class="mt-1 text-ink-600">
+                {postCount > 0
+                  ? `${postCount} posts${topicSentence ? `, tagged ${topicSentence} among others` : ''}. All of them are listed further down this page.`
+                  : 'Writing on Odoo, published on this site.'}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {featured.length > 0 && (
+    <section class="section">
+      <div class="container-site">
+        <div class="max-w-3xl">
+          <h2 class="h3">Published work you can inspect</h2>
+          <p class="mt-4 text-ink-600">The largest of the listings, linked to the Odoo apps store so the version, the description and the price can be checked at source.</p>
+        </div>
+        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {featured.map(m => (
+            <div class="card flex flex-col">
+              <div class="flex items-start justify-between gap-3">
+                <span class="chip">{m.category}</span>
+                {m.priceText && <span class="text-sm font-semibold text-ink-700">{m.priceText}</span>}
+              </div>
+              <h3 class="mt-4 text-lg font-semibold">{m.name}</h3>
+              {m.series && <p class="mt-2 text-sm text-ink-500">Odoo {m.series}</p>}
+              <div class="mt-5 flex flex-wrap gap-4 text-sm font-semibold">
+                <a href={m.storeUrl} target="_blank" rel="noopener" class="text-brand-700 hover:text-brand-800">On the Odoo apps store</a>
+                <a href={`/products/${m.slug}/`} class="text-ink-600 hover:text-brand-700">Details</a>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="mt-10">
+          <a href="/products/" class="btn-secondary">Browse every module</a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  {families.length > 0 && (
+    <section class="section bg-ink-50 border-y border-ink-100">
+      <div class="container-site">
+        <div class="max-w-3xl">
+          <h2 class="h3">Areas the published modules cover</h2>
+          <p class="mt-4 text-ink-600">Counted from the category in each module manifest.</p>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-2">
+          {families.map(f => (
+            <span class="chip">{f.name} <span class="ml-1.5 font-semibold text-ink-500">{f.count}</span></span>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {posts.length > 0 && (
+    <section class="section">
+      <div class="container-site">
+        <div class="max-w-3xl">
+          <h2 class="h3">Posts</h2>
+        </div>
+        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map(p => (
+            <a href={p.href} class="card group flex flex-col">
+              <div class="flex flex-wrap items-center gap-2">
+                {p.tags.map(t => <span class="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">{t}</span>)}
+              </div>
+              <h3 class="mt-4 text-lg font-semibold">{p.title}</h3>
+              {p.description && <p class="mt-3 flex-1 text-sm text-ink-600">{p.description}</p>}
+              <time datetime={p.date.toISOString()} class="mt-5 text-xs text-ink-500">
+                {p.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </time>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section bg-ink-900 text-white">
+    <div class="container-site">
+      <div class="max-w-2xl">
+        <h2 class="h3">Questions about an Odoo build?</h2>
+        <p class="mt-4 text-ink-300">Send the details and you get a straight answer on whether it is a configuration, a purchase, or a build.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href="/contact/?source=author" class="btn-primary">Contact</a>
+          <a href="/blog/" class="btn-secondary">Read the blog</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

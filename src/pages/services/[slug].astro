@@ -52,6 +52,11 @@ const faqs = Array.isArray(detail?.faqs)
 
 const pricingNote = typeof detail?.pricingNote === 'string' ? detail.pricingNote.trim() : '';
 const countryNote = typeof detail?.countryNote === 'string' ? detail.countryNote.trim() : '';
+
+/* These six have a page per market at /services/<slug>/<country>/. Without a link
+   from here the whole cluster is reachable only from the sitemap. */
+const CROSSED_SERVICES = ['odoo-implementation', 'odoo-customization', 'hire-odoo-developer', 'odoo-migration', 'odoo-support', 'odoo-integration'];
+const hasCountryPages = CROSSED_SERVICES.includes(service.slug);
 const lede = (typeof detail?.lede === 'string' && detail.lede.trim()) || service.tagline || '';
 
 /* ── Modules ────────────────────────────────────────────────────────
@@ -84,9 +89,15 @@ const modules = (Array.isArray(detail?.modules) ? detail!.modules : [])
 /* ── Countries ──────────────────────────────────────────────────────
    Slugs only. Every printed fact comes from COUNTRIES in site.ts. */
 const countryBySlug = new Map(COUNTRIES.map((c: CountryRec) => [c.slug, c] as const));
-const countries = strings(detail?.countries)
+const curatedCountries = strings(detail?.countries)
   .map(s => countryBySlug.get(s))
   .filter((c): c is CountryRec => Boolean(c));
+
+/* Where per-country pages exist, every market gets a link. The curated ones lead,
+   the rest follow: a country left out of the list here is a page nothing points at. */
+const countries: CountryRec[] = hasCountryPages
+  ? [...curatedCountries, ...COUNTRIES.filter((c: CountryRec) => !curatedCountries.some(x => x.slug === c.slug))]
+  : curatedCountries;
 
 /* ── Related services ───────────────────────────────────────────────
    Curated first, then filled from the rest so the block is never thin. */
@@ -315,7 +326,7 @@ if (faqs.length > 0) {
               {countryNote && <p class="mt-3 text-ink-600">{countryNote}</p>}
               <div class="mt-6 grid gap-3 sm:grid-cols-2">
                 {countries.map(c => (
-                  <a href={`/countries/${c.slug}/`} class="flex items-start gap-3 rounded-xl border border-ink-200 bg-white p-4 hover:border-brand-300">
+                  <a href={hasCountryPages ? `/services/${service.slug}/${c.slug}/` : `/countries/${c.slug}/`} class="flex items-start gap-3 rounded-xl border border-ink-200 bg-white p-4 hover:border-brand-300">
                     <span class="text-2xl leading-none">{c.flag}</span>
                     <span class="min-w-0">
                       <span class="block font-semibold text-ink-900">{c.title}</span>

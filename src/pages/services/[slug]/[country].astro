@@ -1,0 +1,368 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE, SERVICES, COUNTRIES } from '~/data/site';
+import { SERVICE_DETAIL } from '~/data/services-detail';
+import { COUNTRY_DETAIL, SUPPORT_LABEL } from '~/data/country-detail';
+import type { CountryProvider, OdooSupport } from '~/data/country-detail';
+
+/*
+ * Service crossed with market: /services/<service>/<country>/
+ *
+ * These exist because nothing on the site targeted the phrases buyers actually
+ * type. "Odoo partner in Turkey" was the only shape we had, while the pages
+ * ranking above us are titled "Odoo Development Company Turkey". A service page
+ * says how we work; a country page says what the market demands; neither answers
+ * "who does Odoo customization in my country", which is the question with budget
+ * behind it.
+ *
+ * The content is the intersection, never a merge of the two parents: the delivery
+ * shape comes from services-detail.ts, and what makes it harder or cheaper in this
+ * specific market comes from country-detail.ts. Both parents keep their own pages.
+ *
+ * getStaticPaths is hoisted out of component scope by Astro, so everything it
+ * needs is either imported or declared inside it.
+ */
+
+export function getStaticPaths() {
+  /* The six with real commercial search intent. Localization, e-invoicing and
+     payroll already have their own country topic pages under /countries/, so
+     duplicating them here would put two of our pages against each other. */
+  const CROSSED = [
+    'odoo-implementation',
+    'odoo-customization',
+    'hire-odoo-developer',
+    'odoo-migration',
+    'odoo-support',
+    'odoo-integration',
+  ];
+
+  const paths: { params: { slug: string; country: string }; props: { service: any; country: any } }[] = [];
+  for (const svc of SERVICES) {
+    if (!CROSSED.includes(svc.slug)) continue;
+    if (!SERVICE_DETAIL[svc.slug]) continue;
+    for (const c of COUNTRIES) {
+      if (!COUNTRY_DETAIL[c.slug]) continue;
+      paths.push({ params: { slug: svc.slug, country: c.slug }, props: { service: svc, country: c } });
+    }
+  }
+  return paths;
+}
+
+const { service, country } = Astro.props;
+
+const detail = SERVICE_DETAIL[service.slug];
+const cd = COUNTRY_DETAIL[country.slug];
+
+const plainName = country.title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
+const pageUrl = `${SITE.url}/services/${service.slug}/${country.slug}/`;
+const contactHref = `/contact/?service=${encodeURIComponent(service.title)}&country=${encodeURIComponent(country.title)}&source=services/${service.slug}/${country.slug}`;
+
+/* The headline phrase, chosen per service to match what people search rather than
+   what we call the service internally. */
+const H1_SHAPE: Record<string, string> = {
+  'odoo-implementation': `Odoo Implementation Services in ${plainName}`,
+  'odoo-customization': `Odoo Customization Services in ${plainName}`,
+  'hire-odoo-developer': `Hire Odoo Developers in ${plainName}`,
+  'odoo-migration': `Odoo Migration and Upgrade Services in ${plainName}`,
+  'odoo-support': `Odoo Support and AMC in ${plainName}`,
+  'odoo-integration': `Odoo Integration Services in ${plainName}`,
+};
+const heading = H1_SHAPE[service.slug] || `${service.title} in ${plainName}`;
+
+const metaDescription = `${heading}. ${detail?.lede || service.tagline}`.slice(0, 300);
+
+/* ── What makes this service harder or cheaper in THIS market ───────
+   Read off the country's own verified data. Nothing is asserted here that
+   the country pages do not already carry. */
+const nonNative = (list: CountryProvider[] | undefined): CountryProvider[] =>
+  (list || []).filter(p => p.support !== 'native');
+const native = (list: CountryProvider[] | undefined): CountryProvider[] =>
+  (list || []).filter(p => p.support === 'native');
+
+const payNonNative = nonNative(cd?.payments);
+const shipNonNative = nonNative(cd?.shipping);
+const payNative = native(cd?.payments);
+const shipNative = native(cd?.shipping);
+
+const drivers: { label: string; body: string }[] = [];
+if (cd?.einvoicing?.scheme) {
+  drivers.push({
+    label: 'E-invoicing',
+    body: `${plainName} runs ${cd.einvoicing.scheme}. That is configuration and testing work inside the build, not an afterthought, and it is the item most often left out of a quote.`,
+  });
+}
+if (payNonNative.length > 0) {
+  drivers.push({
+    label: 'Payments',
+    body: `${payNonNative.length} of the ${(cd?.payments || []).length} payment options that matter in ${plainName} are not shipped with Odoo, so they need a paid connector or a build. ${payNative.length} ship in the box.`,
+  });
+}
+if (shipNonNative.length > 0) {
+  drivers.push({
+    label: 'Shipping',
+    body: `${shipNonNative.length} of the ${(cd?.shipping || []).length} couriers used in ${plainName} have no Odoo connector. ${shipNative.length} do. Which ones you actually use changes the estimate more than the number of users does.`,
+  });
+}
+if ((cd?.odoo?.custom?.length || 0) > 0) {
+  drivers.push({
+    label: 'Gaps in the localization',
+    body: `Odoo's ${plainName} localization does not cover everything. The gaps are listed on the country page and each one is either a build or a bought module.`,
+  });
+}
+if ((cd?.payroll?.length || 0) > 0) {
+  drivers.push({
+    label: 'Payroll',
+    body: `Statutory payroll in ${plainName} has its own rules. Whether Odoo ships a payroll localization for this market decides if that is configuration or development.`,
+  });
+}
+
+const phases = (detail?.phases || []).slice(0, 5);
+const risks = (detail?.failureModes || []).slice(0, 4);
+const provides = (detail?.clientProvides || []).slice(0, 6);
+
+/* Sibling services in the same market, and the same service in nearby markets. */
+const CROSSED_SLUGS = ['odoo-implementation', 'odoo-customization', 'hire-odoo-developer', 'odoo-migration', 'odoo-support', 'odoo-integration'];
+const siblings = SERVICES.filter(s => CROSSED_SLUGS.includes(s.slug) && s.slug !== service.slug).slice(0, 5);
+const cIdx = Math.max(0, COUNTRIES.findIndex(c => c.slug === country.slug));
+const otherMarkets = COUNTRIES.filter(c => c.slug !== country.slug && COUNTRY_DETAIL[c.slug])
+  .slice(cIdx % 6)
+  .slice(0, 6);
+
+const faqs = (detail?.faqs || []).slice(0, 4);
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: heading,
+    serviceType: service.title,
+    /* Deliberately free of any rate, scheme or threshold: structured data is the
+       wrong place to assert a regulatory claim. */
+    description: `${service.title} for businesses in ${plainName}, delivered by ${SITE.name}.`,
+    url: pageUrl,
+    provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+    areaServed: { '@type': 'Country', name: plainName },
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: `${SITE.url}/contact/`,
+      availableLanguage: ['English', 'Arabic', 'Urdu'],
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Services', item: `${SITE.url}/services/` },
+      { '@type': 'ListItem', position: 3, name: service.title, item: `${SITE.url}/services/${service.slug}/` },
+      { '@type': 'ListItem', position: 4, name: plainName, item: pageUrl },
+    ],
+  },
+  ...(faqs.length > 0
+    ? [{
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqs.map(f => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      }]
+    : []),
+];
+
+const supportClass = (s: OdooSupport): string => {
+  if (s === 'native') return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
+  if (s === 'oca_or_community') return 'bg-ink-100 text-ink-700 ring-ink-200';
+  if (s === 'third_party_paid') return 'bg-amber-50 text-amber-800 ring-amber-200';
+  return 'bg-rose-50 text-rose-800 ring-rose-200';
+};
+---
+
+<Base title={heading} description={metaDescription} structuredData={schema}>
+  <section class="relative overflow-hidden bg-ink-900 text-white">
+    <div class="absolute inset-0" style="background-image: radial-gradient(circle at 15% 10%, rgba(135,90,123,0.55) 0%, transparent 45%), radial-gradient(circle at 85% 90%, rgba(0,160,157,0.3) 0%, transparent 50%);"></div>
+    <div class="container-site relative py-16 sm:py-24">
+      <nav class="text-sm text-brand-200">
+        <a href="/" class="hover:text-white">Home</a> /
+        <a href="/services/" class="hover:text-white">Services</a> /
+        <a href={`/services/${service.slug}/`} class="hover:text-white">{service.title}</a> /
+        <span class="text-white">{plainName}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="chip !bg-white/10 !text-white">{country.flag} {plainName}</span>
+          <span class="chip !bg-white/10 !text-white">{service.category}</span>
+        </div>
+        <h1 class="h1 mt-6">{heading}</h1>
+        {detail?.lede && <p class="lede mt-6 text-brand-100">{detail.lede}</p>}
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Get a quote for {plainName}</a>
+          <a href={`/countries/${country.slug}/`} class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">What {plainName} requires</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+
+          {drivers.length > 0 && (
+            <div>
+              <h2 class="h3">What changes the cost of {service.title.toLowerCase()} in {plainName}</h2>
+              <p class="mt-3 text-ink-700">
+                The delivery method is the same everywhere. What moves the number is what this market
+                demands of the system, and how much of that Odoo already covers.
+              </p>
+              <div class="mt-6 space-y-4">
+                {drivers.map(d => (
+                  <div class="card !p-5">
+                    <div class="text-sm font-bold uppercase tracking-wider text-brand-700">{d.label}</div>
+                    <p class="mt-2 text-ink-700">{d.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {phases.length > 0 && (
+            <div class="mt-14">
+              <h2 class="h3">How the work runs</h2>
+              <ol class="mt-6 space-y-6">
+                {phases.map((p, i) => (
+                  <li class="border-l-2 border-brand-200 pl-5">
+                    <div class="text-xs font-bold uppercase tracking-wider text-ink-500">Step {i + 1}</div>
+                    <div class="mt-1 font-semibold text-ink-900">{p.name}</div>
+                    <p class="mt-2 text-ink-700">{p.goal}</p>
+                    {p.deliverable && (
+                      <p class="mt-2 text-sm text-ink-600"><span class="font-semibold">You end up with:</span> {p.deliverable}</p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {(payNonNative.length > 0 || shipNonNative.length > 0) && (
+            <div class="mt-14">
+              <h2 class="h3">The integrations this market usually needs</h2>
+              <p class="mt-3 text-ink-700">
+                Badged by what it takes in Odoo. Anything not marked In Odoo is a paid connector or a
+                build, and that is the part quotes usually miss.
+              </p>
+              <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                {[...payNonNative.slice(0, 6), ...shipNonNative.slice(0, 6)].map(p => (
+                  <div class="card !p-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="font-semibold text-ink-900">{p.name}</span>
+                      {p.verified && (
+                        <span class={`inline-flex flex-none items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${supportClass(p.support)}`}>
+                          {SUPPORT_LABEL[p.support]}
+                        </span>
+                      )}
+                    </div>
+                    {p.kind && <div class="mt-1 text-xs text-ink-500">{p.kind}</div>}
+                  </div>
+                ))}
+              </div>
+              <p class="mt-5 text-sm">
+                <a class="font-semibold text-brand-600 hover:text-brand-700" href={`/countries/${country.slug}/payments/`}>All {plainName} payment options</a>
+                <span class="text-ink-400"> and </span>
+                <a class="font-semibold text-brand-600 hover:text-brand-700" href={`/countries/${country.slug}/shipping/`}>couriers</a>
+              </p>
+            </div>
+          )}
+
+          {provides.length > 0 && (
+            <div class="mt-14">
+              <h2 class="h3">What we need from you</h2>
+              <ul class="mt-6 space-y-3">
+                {provides.map(x => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">+</span>
+                    <span class="text-ink-700">{x}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {risks.length > 0 && (
+            <div class="mt-14">
+              <h2 class="h3">What goes wrong, and how we avoid it</h2>
+              <div class="mt-6 space-y-4">
+                {risks.map(r => (
+                  <div class="rounded-2xl bg-ink-50 p-5">
+                    <div class="font-semibold text-ink-900">{r.title}</div>
+                    <p class="mt-2 text-ink-700">{r.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {faqs.length > 0 && (
+            <div class="mt-14">
+              <h2 class="h3">Questions we get asked</h2>
+              <dl class="mt-6 space-y-6">
+                {faqs.map(f => (
+                  <div>
+                    <dt class="font-semibold text-ink-900">{f.q}</dt>
+                    <dd class="mt-2 text-ink-700">{f.a}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">{service.title} in {plainName}</h2>
+              <p class="mt-2 text-sm text-brand-100">
+                Tell us the modules, the user count and which local systems have to connect. We come
+                back with scope and a number.
+              </p>
+              <a href={contactHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Get a quote</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">Other services in {plainName}</h2>
+              <ul class="mt-4 space-y-2">
+                {siblings.map(s => (
+                  <li>
+                    <a class="text-sm text-ink-700 hover:text-brand-600" href={`/services/${s.slug}/${country.slug}/`}>{s.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">{service.title} elsewhere</h2>
+              <ul class="mt-4 space-y-2">
+                {otherMarkets.map(c => (
+                  <li>
+                    <a class="text-sm text-ink-700 hover:text-brand-600" href={`/services/${service.slug}/${c.slug}/`}>{c.flag} {c.title.replace(/\s*\([^)]*\)\s*/, ' ').trim()}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 p-6">
+              <h2 class="text-sm font-semibold">Before you brief anyone</h2>
+              <p class="mt-2 text-sm text-ink-700">
+                The {plainName} page lists what the market requires of the system, with sources.
+                Worth reading before you take quotes.
+              </p>
+              <a class="mt-3 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700" href={`/countries/${country.slug}/`}>Open the {plainName} page</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

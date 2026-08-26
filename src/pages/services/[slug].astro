@@ -51,6 +51,22 @@ const faqs = Array.isArray(detail?.faqs)
   : [];
 
 const pricingNote = typeof detail?.pricingNote === 'string' ? detail.pricingNote.trim() : '';
+/* The engagement vocabulary buyers type. The audit found none of these on the
+   site: odoo installation, odoo api, odoo data migration, odoo go-live,
+   odoo performance, odoo health check. They belong here, on the service pages. */
+const ENGAGEMENT: Record<string, string> = {
+  'odoo-implementation': 'Odoo installation, configuration, data migration and Odoo go-live support are all inside this engagement, not billed as extras afterwards.',
+  'odoo-customization': 'Custom modules, Odoo Studio work where Studio is enough, and the Odoo API where a screen is not the right answer.',
+  'odoo-integration': 'Odoo API integration to the systems you already run, whether that is a REST endpoint, a file drop or a database view.',
+  'odoo-migration': 'Odoo data migration and version upgrade, including the dry run that proves the numbers match before you commit to a go-live date.',
+  'odoo-support': 'Odoo support and AMC contracts, covering fixes, small changes, upgrades and an Odoo performance review when the database grows.',
+  'odoo-audit': 'An Odoo health check on the database you already run: Odoo optimization for speed, customisation debt, upgrade readiness and what it would cost to fix.',
+  'odoo-saas-hosting': 'Odoo cloud hosting, on premise on your own servers, or self hosted in your data centre. Backups, monitoring and patching either way.',
+  'hire-odoo-developer': 'Dedicated Odoo developers working to your backlog, in your timezone overlap, reporting the way your team already works.',
+  'odoo-consultancy': 'Odoo consultants who will tell you when the answer is configuration, when it is a module, and when Odoo is the wrong fit.',
+};
+const engagementLine = ENGAGEMENT[service.slug] || '';
+
 const countryNote = typeof detail?.countryNote === 'string' ? detail.countryNote.trim() : '';
 
 /* These six have a page per market at /services/<slug>/<country>/. Without a link
@@ -322,7 +338,8 @@ if (faqs.length > 0) {
 
           {countries.length > 0 && (
             <>
-              <h2 class="h3 mt-14">Where we deliver this</h2>
+              {engagementLine && <p class="mt-14 text-lg text-ink-700">{engagementLine}</p>}
+              <h2 class="h3 mt-10">Where we deliver this</h2>
               {countryNote && <p class="mt-3 text-ink-600">{countryNote}</p>}
               <div class="mt-6 grid gap-3 sm:grid-cols-2">
                 {countries.map(c => (

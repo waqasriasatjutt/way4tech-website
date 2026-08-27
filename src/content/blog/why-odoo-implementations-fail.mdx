@@ -1,0 +1,104 @@
+---
+title: "Why Odoo implementations fail"
+description: "Not the software. The same failure modes turn up across implementation, migration, integration, payroll, POS and e-invoicing work. Named plainly, with the cheap prevention against each one."
+date: 2026-08-26
+tags: ["implementation", "project-management", "odoo"]
+---
+
+Failed ERP projects are rarely dramatic. Nothing explodes. The system goes live, then month three arrives and finance cannot close, the warehouse is running a parallel spreadsheet, and somebody is re-keying orders that were supposed to arrive by themselves.
+
+We keep a written list of failure modes for every kind of engagement we sell, because naming them in a proposal is cheaper than discovering them in a project. Read across all of them and the same six patterns show up. If you want the early signals specifically, they are in [eight early warning signs an Odoo rollout is going wrong](/blog/odoo-implementation-early-warning-signs/).
+
+## The short version
+
+| Failure mode | What it looks like by month three | The cheap prevention |
+|---|---|---|
+| Scope written as a list of module names | Every request is arguably in scope, so every request is a dispute | Scope as outcomes and gaps with a disposition and a cost against each |
+| No named decision maker | The timeline drifts by weeks with nobody doing anything wrong | Name one per function, with authority to change a process |
+| Data cleaned after loading | The mess lands in front of users in their first week | Clean in the extract, prove it with reconciliation |
+| UAT run by the project team | Defects arrive after go-live instead of before | Scripted testing by the people who will use it daily |
+| Only the simple case tested | Credit notes, refunds and leavers break in month two | Test every in-scope document type and every exception |
+| Go-live on a period close | A normal defect becomes a crisis | Pick the date against the operating calendar in phase one |
+| No owner for the exception queue | Rejections and failures pile up because they belong to everybody | A named role with a daily routine |
+| Backups nobody has restored | The recovery plan is a theory | Drill the restore and record the duration |
+
+## Pattern one: decisions that were never actually made
+
+A scope that says sales, inventory and accounting prices nothing. Both sides sign it, both mean something different by it, and the argument arrives in month two. Scope has to be written as outcomes and gaps with a disposition against each, so both sides know what has been bought. That is the whole argument of [scoping a project that survives](/blog/scoping-an-odoo-project-that-survives/).
+
+The companion failure is authority. Without a decision maker in the room, every gap becomes another meeting, nobody is at fault, and the schedule slips anyway. Naming the decision maker per function is a condition of starting, not a nicety.
+
+Two more sit further upstream, in the advice that shaped the project. Editions get compared on subscription price while the internal effort, the hosting and the support are left out. And company structure, chart of accounts and analytic design get decided late, when they are cheap to choose and expensive to change once posted. Both belong in a [consultancy](/services/odoo-consultancy/) phase, before implementation starts.
+
+One more sounds soft and is not: the person who thinks the project is a mistake usually knows something the sponsor does not. Interview them.
+
+## Pattern two: data treated as a loading problem
+
+Cleaning inside the new system is slow, and the mess lands in front of users during their first week. Cleaning happens in the extract, before it touches the target, and the reconciliation proves it. The same failure has a compliance-flavoured version: master data that was fine for a printed invoice fails validation in bulk on go-live day, in front of customers, because nobody profiled it first.
+
+Upgrades have their own variant. Data problems fixed in the converted copy are lost at the next conversion and reappear at cutover, so they get corrected at source in the live system instead.
+
+E-commerce has the version that costs revenue rather than time: thin product data. Missing descriptions, single images and absent attributes hurt both conversion and search visibility, and it is a bigger job than anyone expects.
+
+If nobody owns the product file and the customer file after go-live, both rot within a quarter. Naming the owner during design costs nothing.
+
+## Pattern three: testing the path you already know works
+
+The project team knows the intended path and will not find the problems. Testing has to be scripted and run by the people who will use the system daily, including the ones who were sceptical about the change.
+
+Then there is the choice of what to test, and every discipline gets this wrong in the same shape:
+
+- E-invoicing: only the simple invoice is tested. Credit notes, corrections, foreign currency and mixed treatments behave differently and are exactly what breaks in month two.
+- Payroll: only the standard employee is tested. Joiners, leavers, unpaid leave, mid-period grade changes and arrears are where the differences live.
+- Integration: only the creation path is tested. Refunds, cancellations, partial shipments and returns are where integrations really break, because they are rarer and were never tested.
+- E-commerce: payment is tested only on the success path. Declines, timeouts, abandoned redirects and duplicate submissions are what actually happen, and an order stuck between paid and confirmed is a support call and a refund.
+- Point of sale: hardware is assumed rather than proved. Devices that meet a specification still misbehave in the room, so every printer, scanner, scale and terminal gets tested at the site.
+- Custom code: performance is tested on demo data. Logic that is fine on ten records can be unusable on a hundred thousand.
+
+Two more look like paperwork and are not. Payroll bank output tested only against a specification will still be rejected, because banks reject files for reasons that are not in their own documentation. And retail rollouts that skip the pilot multiply every problem by the number of sites, on the same day.
+
+## Pattern four: timing
+
+Two hard things at once turns a normal defect into a crisis. A go-live on a period close or a peak week is the most avoidable scheduling mistake there is, and the cutover date is chosen against your operating calendar in the first phase while it is still cheap to move.
+
+Payroll has a hard entry condition rather than a preference: two consecutive periods reconciling with no unexplained difference before you go live. Payroll errors are personal, visible and remembered.
+
+Upgrades have theirs: never upgrade straight from production. One attempt, no rehearsal, and every surprise happens with users waiting. The conversion is repeated on copies until it is boring, and only then scheduled. The rollback point, the freeze time and the decision maker go in the runbook before it starts, because cutovers occasionally have to be reversed. Our [migration service](/services/odoo-migration/) is built around that rehearsal loop.
+
+What gets left until last is always what has an external party attached. Integrations break on upgrade at the credential, endpoint and payload level, and each one has a vendor whose response time you do not control. Fulfilment left until after an e-commerce launch means orders arrive on day one and somebody re-keys them by hand. And the most expensive replatform mistake is invisible: launching without redirects.
+
+## Pattern five: code written for today
+
+Requirements captured as screenshots hide the rule behind the screen, and the rule is the thing that has to survive an upgrade. Core files edited directly work until the first update, then silently revert or break the module that depends on them. Everything belongs in a separate module that extends rather than replaces. Bundling unrelated features into one giant module means you cannot uninstall one without losing the others, and an upgrade fails as a whole rather than in one place.
+
+Access rights left until the end produce custom models visible to everyone, which is usually discovered by the wrong person. Rights get written with the model.
+
+And code you cannot read is code you have to keep paying the original author to touch. Source, repository access and a walkthrough are part of finishing. On an upgrade, the mirror image: making code run on the new version is not the same as making it still do the right thing. The full engineering position is on the [customization service page](/services/odoo-customization/).
+
+## Pattern six: nobody owns it after go-live
+
+Training that ends at go-live fails at the first period close. Refresher sessions get scheduled for that point, when the questions are real ones.
+
+Rejected e-invoices pile up because they belong to everybody. A named role with a daily routine is the difference between a work list and a backlog. The same is true of an integration dead-letter queue, an e-commerce shop with nobody looking after it, and a till with no daily reconciliation.
+
+Then the operational three that show up on almost every new [support](/services/odoo-support/) client. Backups that have never been restored: a green tick proves the job ran, not that the file is usable. Scheduled actions failing silently, sometimes for months, with the damage found at period close. And growth nobody watches, where database size, attachment volume and log files grow quietly until a disk fills at the worst possible moment. A change log such as [Audit Log and Access Tracking](/products/wt-audit-log/) answers the recurring question in the weeks after go-live, which is who changed this record.
+
+## The thing they have in common
+
+Every one of these is cheap to prevent and expensive to discover. None is a limitation of Odoo. They are decisions that were deferred, tests that were narrowed, or owners that were never named, and each has a fix that costs an hour in the right week.
+
+Which is why we publish the list. If a proposal you are reading does not name its own failure modes, ask the vendor what usually goes wrong on this kind of work. The answer, or the absence of one, tells you most of what you need.
+
+## FAQs
+
+**Is Odoo harder to implement than other ERP systems?**
+The failure modes above are not Odoo-specific. They are the failure modes of changing how a business runs. What differs by product is how much configuration is available before you need code, and how much of your market's compliance ships in the box.
+
+**We already went live and month three is going badly. What now?**
+Get a read-only assessment before changing anything. Fixes applied during a review contaminate the findings. Our [health audit](/services/odoo-audit/) is deliberately read-only, and every finding carries a severity and an effort so a real plan comes out of it.
+
+**How much of this can we prevent ourselves?**
+Most of it. A named decision maker per function, a scripted UAT run by real users, a go-live date away from period close, a named owner for every exception queue, and one restored backup.
+
+**Which failure mode is the most expensive?**
+Deciding the company structure, chart of accounts and analytic design late. Everything else here can be fixed after go-live at a known cost. Those three are cheap to choose and expensive to change once transactions are posted.

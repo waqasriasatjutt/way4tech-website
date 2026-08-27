@@ -1,0 +1,136 @@
+---
+title: "Odoo implementation in India: IRN, e-way bill and the audit trail question finance asks first"
+description: "What an Indian Odoo build has to satisfy: GST e-invoicing through an IRP, the e-way bill, the 30-day reporting bar, the rule 11(g) audit trail, and which couriers and gateways still need buying or building."
+date: 2026-08-19
+tags: ["india", "gst", "e-invoicing", "implementation"]
+---
+
+India is the market where Odoo covers the most out of the box and where the remaining gaps are the least obvious. The chart of accounts, GST returns, IRN generation, e-way bills and payroll all ship. What does not ship is the GSP relationship, the annual returns, the reporting bar that rejects a back-dated invoice, and the evidence your statutory auditor will want about the audit trail. Those are the items that decide whether an Indian go-live is clean.
+
+## What the invoice has to clear before it is valid
+
+The scheme is GST e-invoicing, e-invoice under rule 48(4) of the CGST Rules, with the e-way bill as a separate mandate for movement of goods. The authority is the Goods and Services Tax Network and the Invoice Registration Portals, principally the NIC portal, under the Central Board of Indirect Taxes and Customs.
+
+It is fully live and stable. The threshold has sat at INR 50 million aggregate annual turnover since 1 August 2023 and has not moved since. It binds registered persons whose aggregate annual turnover exceeded INR 50 million in any financial year from 2017-18 onwards, for B2B supplies, exports, credit notes and debit notes. B2C invoices are outside e-invoicing, which is the split that decides how many document flows you configure.
+
+What it technically requires:
+
+- **Clearance.** The invoice JSON goes to an Invoice Registration Portal, which validates it and returns an Invoice Reference Number and a digitally signed QR code. The document is not a valid tax invoice without them.
+- **The IRN and the signed QR code carried on the invoice** issued to the buyer.
+- **Registration with an IRP and API credentials**, normally obtained through a GST Suvidha Provider. Odoo's own integration uses BVM IT Consulting Services India as the GSP.
+- **A separate e-way bill** for movement of goods, generated against the NIC e-way bill portal, with its own document and validity rules.
+- **A reporting window.** Invoices, credit notes and debit notes older than 30 days are rejected by the IRP for larger taxpayers.
+- **Time-boxed cancellation** at the IRP, so credit notes rather than cancellations become the normal correction path.
+
+The 30-day rule is the one that bites in practice. Odoo will happily let a user post a back-dated invoice that the IRP then refuses, so the control has to be added inside the system rather than discovered at submission. And because cancellation closes fast, the finance team's habit of cancelling and reissuing has to be retrained into raising a credit note. Both are process changes, not settings. The [India e-invoicing page](/countries/india/e-invoicing/) carries the requirement set on its own.
+
+## The obligations that shape the ledger
+
+### Tax
+
+GST is the indirect tax. Since 22 September 2025 the structure is essentially two slabs, 5% and 18%, with 18% as the standard rate. The 12% and 28% slabs were removed and a 40% demerit rate now applies to a defined list of luxury and sin supplies. The change was given effect by notifications 9/2025 to 17/2025 Central Tax (Rate) and the matching Integrated Tax (Rate) notifications, all dated 17 September 2025 and effective 22 September 2025. Compensation cess on motor vehicles and caffeinated beverages was reduced to nil at the same time.
+
+If you are migrating from a system configured before that date, the tax master is wrong until someone proves otherwise. Check it in the extract, not after the first return.
+
+Filing runs on GSTR-1 for outward supplies and GSTR-3B to discharge the liability, with GSTR-2B as the input credit statement. Odoo's Indian accounting reports module produces GSTR-1, GSTR-2B and GSTR-3B.
+
+Two changes on the withholding side matter to an existing configuration. TCS on sale of goods under section 206C(1H) was omitted with effect from 1 April 2025, while TDS on purchase of goods under section 194Q, at 0.1%, still applies on the buyer side, so a system still collecting 206C(1H) is producing wrong documents. The equalisation levy on online advertising and digital advertising space was abolished with effect from 1 April 2025. The 206C(1H) and 194Q positions are unconfirmed at the primary level in our sources, as is the position that from 1 October 2025 any GST return whose due date is more than three years old is permanently barred from filing, covering GSTR-1, GSTR-1A, GSTR-3B, GSTR-4 through GSTR-8 and GSTR-9/9C. If that last one holds, old open periods can no longer be cleaned up after go-live, which changes what you migrate.
+
+### Payroll
+
+India is one of the countries with an official Odoo payroll localization, so the statutory engine exists and you are configuring rather than writing it. Provident fund is 12% from the employee and 12% from the employer, and of the employer share an amount equal to 8.33% of salary goes to the pension fund, on salary capped at INR 15,000 a month, for establishments with 20 or more employees. Employees State Insurance is a separate statutory contribution requiring an employer code and IP numbers, professional tax is a state-level deduction with a registration number per state, and the Labour Welfare Fund needs an establishment number. Odoo's Indian payroll localization handles all four.
+
+The moving part is the Labour Codes. The four came into force on 21 November 2025 and the final Central Rules were notified on 8 May 2026: the Code on Wages 2019, the Code on Social Security 2020, the Occupational Safety, Health and Working Conditions Code 2020, and the Industrial Relations Code 2020. States are still notifying their own rules, so the operative position differs by state. Two changes land directly in payroll: fixed-term employees become eligible for gratuity after one year of service, and gig and platform workers get social security coverage through a government registration portal, with a 90-day engagement test per aggregator. The Central Rules also fix minimum wages on a daily basis, with a stated conversion to hourly and to a 26-day month, and overtime at twice the ordinary rate. Any payroll build that assumes a 30-day divisor should be checked against that.
+
+### Accounting
+
+This is the section Indian finance directors raise first. Every company registered under the Companies Act 2013 must keep its books in accounting software that records an audit trail and edit log for every transaction, under rule 3(1) of the Companies (Accounts) Rules 2014, effective from 1 April 2023. It covers small companies, one person companies, dormant companies, Section 8 not-for-profits and foreign companies. LLPs, partnerships and proprietorships are outside it.
+
+The trail must stay enabled and cannot be switched off. The statutory auditor reports on it under rule 11(g) of the Companies (Audit and Auditors) Rules 2014, covering whether the feature ran all year, whether it was tampered with, and whether the trail was preserved. Records are held eight years under section 128(5) of the Companies Act 2013.
+
+On the routine side, Odoo's Indian localization carries GSTIN verification of partners, TDS and TCS threshold alerts with account suggestions, and the ability to fetch vendor e-invoices already filed on the GST portal.
+
+## What is not in Odoo for India
+
+Odoo ships a long module list here: **l10n_in**, **l10n_in_reports**, **l10n_in_edi**, **l10n_in_ewaybill**, **l10n_in_ewaybill_stock**, **l10n_in_hr_payroll**, **l10n_in_hr_payroll_account** and **l10n_in_hr_holidays**. In the box that gives you the Indian chart of accounts and the GST tax structure, GSTR-1, GSTR-2B and GSTR-3B reporting, e-invoicing against the NIC IRP with IRN and QR generation, submission and cancellation handling, e-way bill generation from sales and purchase documents and from receipts and delivery orders in Inventory, GSTIN verification of business partners, and TDS and TCS threshold alerts.
+
+The six gaps Odoo's own custom list names for India are where the project time goes:
+
+1. **GSP credentials and commercials.** The e-invoicing and e-way bill integrations run through a GST Suvidha Provider, currently BVM IT Consulting Services India, so credential setup and the GSP relationship are a project task, not a config switch.
+2. **The 30-day IRN reporting bar.** Add the control, or you find out at submission.
+3. **Annual returns.** The localization documents GSTR-1, GSTR-2B and GSTR-3B. GSTR-9 and GSTR-9C are not among them.
+4. **High-volume GSTR-2B matching** and reconciliation against the Invoice Management System. Workable in Odoo at small scale, usually an add-on or an external tool above that.
+5. **The rule 11(g) audit trail position.** Odoo logs changes, but what the statutory auditor will accept as evidence of an always-on, untampered trail has to be agreed and demonstrated before go-live.
+6. **Labour Code follow-through**, revisited per state as the wage definition, the 26-day divisor and gratuity for fixed-term staff settle.
+
+Item 5 is the one to settle in writing with the client's auditor during design. Where a stronger record is wanted, [Audit Log and Access Tracking](/products/wt-audit-log/) adds per-model audit rules covering creations, updates and deletions, field-level history showing old and new values, access-rights tracking for users, groups and permissions, and log entries that cannot be edited, only reviewed. Show that to the auditor before go-live, not during the audit.
+
+On the rails: of the **19 payment methods** on our India page, **11 are In Odoo** and **8 are free community modules**, so nothing here is a custom build. UPI, RuPay, net banking, NEFT/IMPS/RTGS wire transfer, Cash on Delivery and card EMI and Pay Later all arrive through the native Razorpay or PayU providers. CCAvenue, Paytm, PhonePe, Cashfree Payments, BillDesk, Easebuzz, Pine Labs and the HDFC Bank payment gateway have free modules published for Odoo 19. Two native connectors are traps: Stripe's own country page still lists India as Preview and it has been invite only for Indian businesses since May 2024, and PayPal shut its domestic India payments business on 1 April 2021 and now handles only cross border.
+
+Shipping is thinner. Of the **14 carriers**, **only 4 are In Odoo**: Shiprocket, DHL Express, FedEx and UPS. **Delhivery**, **Blue Dart**, **DTDC**, **Xpressbees**, **India Post (Speed Post)**, **Shadowfax**, **Aramex** and **AfterShip** need paid connectors or an aggregator account, and **Gati** and **Safexpress** have nothing on the apps store at all, so B2B pallet and part-load freight is a custom build. Note what "reached through Shiprocket" actually means commercially: the Shiprocket account and its fees are a required dependency for anything behind it, India Post included.
+
+## Local integrations against what it takes in Odoo
+
+| Local integration | What it is | What it takes in Odoo |
+|---|---|---|
+| UPI, RuPay, net banking | instant transfer and domestic cards | In Odoo, via Razorpay or PayU |
+| Razorpay, PayU, Adyen | local and global gateways | In Odoo |
+| NEFT, IMPS and RTGS transfer | bank transfer | In Odoo, wire transfer provider |
+| Cash on Delivery | cash on delivery | In Odoo |
+| EMI and Pay Later | BNPL | In Odoo, via Razorpay |
+| CCAvenue, Paytm, PhonePe | gateway and wallets | Community module |
+| Cashfree, BillDesk, Easebuzz | local gateways | Community module |
+| Pine Labs, HDFC Bank gateway | local gateways | Community module |
+| Shiprocket | aggregator | In Odoo |
+| DHL Express, FedEx, UPS | global express | In Odoo |
+| Delhivery, Blue Dart, DTDC | domestic express | Paid connector, or via Shiprocket |
+| Xpressbees | domestic express | Paid connector |
+| India Post (Speed Post) | national post | Paid connector, Shiprocket account required |
+| Shadowfax | last mile | Paid connector, aggregator account |
+| Aramex, AfterShip | express and aggregator | Paid connector |
+| Gati, Safexpress | B2B surface freight | Custom build |
+
+One caveat on the native carriers: Odoo's docs warn that new FedEx setups on the latest API have been blocked since 21 October 2025 and legacy integrations stopped on 1 June 2026.
+
+## Before kickoff: what you need ready
+
+- Your GSTIN per state and confirmation of whether aggregate annual turnover has ever exceeded INR 50 million in any financial year from 2017-18 onwards.
+- Your GSP account, or a decision to open one, with credentials for the IRP and the e-way bill portal.
+- Your entity type in writing. The rule 3(1) audit trail obligation applies to companies and not to LLPs, partnerships or proprietorships, and it changes what has to be demonstrated at go-live.
+- The name of your statutory auditor and a slot in their calendar to agree what satisfies rule 11(g).
+- Tax masters checked against the 22 September 2025 slab structure, plus confirmation that 206C(1H) has been switched off.
+- PF, ESI, professional tax and Labour Welfare Fund registration numbers, and the states each one applies to.
+- Open GST periods listed with their due dates, since anything more than three years past due may be barred from filing.
+- Opening balances signed off by whoever closes your books, and a named decision maker per function.
+
+## The rollout sequence
+
+Kept short, because it is the same everywhere and the detail above is what varies.
+
+1. **Discovery and process mapping.** Out comes a written process map, a numbered gap list and the module list that follows from it.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a number. That list is the contract.
+3. **Configuration and prototype.** A working system with a real sample of your data in it, demoed weekly against the process map.
+4. **Data migration and reconciliation.** Clean in the extract, never after loading, and sign off control totals against the old system.
+5. **Training, UAT and cutover.** Scripted testing run by daily users, a cutover runbook with a rollback point, and a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover, and a written phase two backlog.
+
+For India, put the GSP onboarding at the front of phase 2 and the first live IRN in phase 3. Both depend on an outside party, so neither compresses when the rest of the project is running early. The full sequence sits on the [Odoo implementation in India](/services/odoo-implementation/india/) page, and the [India cost page](/countries/india/cost/) covers what drives the number.
+
+## Questions we get asked
+
+**Does Odoo generate the IRN itself?**
+No. Odoo builds and sends the JSON, and the Invoice Registration Portal returns the IRN and the signed QR code. That is why the GSP account is on the critical path: without credentials there is no submission, and without submission there is no valid tax invoice.
+
+**Is the e-way bill part of e-invoicing?**
+No, it is a separate mandate for movement of goods with its own document and validity rules, generated against the NIC e-way bill portal. Odoo ships l10n_in_ewaybill and l10n_in_ewaybill_stock for it, so it is covered, but scope it as its own workstream with its own testing.
+
+**Will Odoo satisfy our auditor on the audit trail?**
+Odoo logs changes. What it cannot do on its own is prove to an auditor that the feature ran all year, was not tampered with and was preserved, which is exactly what rule 11(g) asks. Agree the evidence with the auditor during design and demonstrate it before go-live rather than in the audit.
+
+**We file GSTR-9 and GSTR-9C. Are those in the box?**
+No. The localization documents GSTR-1, GSTR-2B and GSTR-3B. The annual returns are outside it, so plan for an add-on, an external tool or your consultant's process.
+
+**Can we book Delhivery or Blue Dart directly instead of through Shiprocket?**
+Yes, with a paid direct connector for Odoo 19. The trade is straightforward: through Shiprocket the connector is free but the Shiprocket account and its fees are a required dependency, while a direct module costs money once and books on your own carrier contract.
+
+The wider statutory picture for this market, with payments, shipping and payroll broken out separately, sits on the [India country page](/countries/india/).

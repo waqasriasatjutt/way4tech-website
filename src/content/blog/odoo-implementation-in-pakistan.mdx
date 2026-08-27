@@ -1,0 +1,150 @@
+---
+title: "Odoo implementation in Pakistan: FBR Digital Invoicing first, everything else after"
+description: "What a Pakistani Odoo build has to satisfy before anything else: FBR Digital Invoicing clearance, provincial sales tax on services, section 153 withholding, and the wallets and couriers that have no connector at all."
+date: 2026-08-18
+tags: ["pakistan", "e-invoicing", "implementation", "localization"]
+---
+
+A Pakistani Odoo project has one fixed constraint before a single module is chosen: a sales tax registered person cannot issue a valid sales tax invoice until FBR's system has returned a number for it. Clearance decides the order everything else gets built in. What follows is that requirement in detail, the statutory load that shapes the ledger, and the local rails and couriers that have nothing waiting for them in Odoo.
+
+## What FBR requires before you issue an invoice
+
+The scheme is FBR Digital Invoicing, electronic sales tax invoicing under section 23 of the Sales Tax Act 1990 and Chapter XIV of the Sales Tax Rules 2006. The authority is the Federal Board of Revenue (FBR), Inland Revenue, and integration runs through PRAL (Pakistan Revenue Automation Pvt Ltd) or an FBR licensed integrator.
+
+It is live and in force for every sales tax registered person. SRO 1413(I)/2025 of 1 August 2025 brought all registered persons into scope on a phased calendar that ran out during 2025, and FBR's Sales Tax General Order 01 of 2026, dated 30 March 2026, restates the obligation as applying to all sales tax registered persons, corporate and non-corporate alike. Tier-1 retailers carry a separate standing obligation under the proviso to section 23(6) to integrate their retail outlets for real-time reporting of sales. That is a second workstream.
+
+The technical shape of it:
+
+- **Clearance, not post-audit reporting.** Invoice data goes to FBR's Computerized System in real time and the system returns a unique FBR invoice number before the invoice is issued to the buyer.
+- **JSON payload** posted to the FBR / PRAL digital invoicing web API. There is no XML format in this scheme, so schema work carried over from a Gulf project does not transfer.
+- **The unique FBR invoice number printed on the invoice**, in the format XXXXXX-DDMMYYHHMMSS-0001.
+- **A verifiable QR code of 7x7 mm**, generated from the unique FBR invoice number and printed on the receipt. The size is part of the requirement.
+- **A digital signature** created and recorded on the sales tax invoice.
+- **The registration number of the electronic invoicing or POS software** on the invoice, plus the FBR digital invoicing logo.
+- **A licensed integrator or PRAL** in the loop. STGO 01 of 2026 confirms a registered person may engage more than one licensed integrator.
+
+Two consequences fall out of that list. Invoice posting stops being an internal event: an invoice is accepted, queued or rejected by an outside system, and users have to see which. And the print layout becomes a compliance artefact, not a design choice. The [Pakistan e-invoicing page](/countries/pakistan/e-invoicing/) carries the requirement set on its own if you want to hand it to a finance lead.
+
+## The obligations that shape the ledger
+
+### Tax
+
+Federal sales tax on goods is 18%, set by section 3(1) of the Sales Tax Act 1990, with reduced rates and zero rating on specified goods.
+
+Services are not federal. Each province, plus Islamabad Capital Territory and Azad Jammu and Kashmir, levies its own sales tax on services within its jurisdiction, at rates in the 15% to 16% band. A seller operating across provinces needs a separate registration, rate set and return per authority. That is the most common reason a stock Odoo tax setup fails here, and it is a decision about companies, journals and tax groups that belongs in week one.
+
+The filing cycle is monthly: Annexure C by the 10th, payment by the 15th, and the return e-filed by the 18th of the month following the tax period. Manufacturers file an annual sales tax return on top of the monthly one, due 30 September following the financial year, and CNG taxpayers file quarterly.
+
+On the buying side, section 153 of the Income Tax Ordinance 2001 makes prescribed persons withhold tax on payments for supplies, services and contracts. Rates for payees not on the Active Taxpayers List are double the ATL rate, so the ERP has to carry ATL status per vendor and pick the rate pair from it. Withholding on IT and IT-enabled services under section 153(1)(b) is 4% for ATL and 8% for non-ATL, per FBR's withholding rate card updated to 30 June 2025 under the Finance Act 2025.
+
+### Payroll
+
+Odoo has no payroll localization for Pakistan. The Odoo 19 payroll localization list covers Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, the UAE and the United States. Pakistan is not on it, so EOBI, provincial social security and the salary tax slabs are a build or a purchase, and they belong in the first estimate rather than the third.
+
+Three further points are unconfirmed in our sources and should be checked with the client's own advisers. EOBI old-age benefits contribution is reported as 5% from the employer and 1% from the employee, calculated on the federal minimum wage rather than on actual salary; that fixed base is what most generic payroll builds get wrong. Employers with six or more workers are reported to need registration with the provincial social security institution for the province the employee works in, PESSI in Punjab and SESSI in Sindh, employer only. Salary tax is reported as due to FBR within seven days, with a withholding statement filed quarterly by the 20th after quarter end, against a tax year ending 30 June.
+
+### Accounting and records
+
+Sales tax records and documents must be retained six years after the end of the tax period to which they relate, under section 24 of the Sales Tax Act 1990. FBR's own summary page still says five years and is out of date against the Act, so take the Act.
+
+There is no SAF-T style audit file. The closest thing is Annexure C of the monthly sales tax return, now auto-populated from the electronic invoices cleared through the integrated system. The invoice data model and the return draw on the same data: get the clearance payload right and the annexure follows.
+
+Disclosure is driven by the schedules to the Companies Act 2017, administered by SECP: the Fourth Schedule for listed companies, the Fifth Schedule for non-listed companies, and the reporting framework per class of company set in the Third Schedule. SECP amends these by SRO. That point is unconfirmed at the primary level, as is the position that there is no statutory national chart of accounts.
+
+## What is not in Odoo for Pakistan
+
+This is where the budget goes.
+
+Odoo ships **l10n_pk (Pakistan - Accounting)**: a basic Pakistani chart of accounts, sales tax taxes, a tax report, a withholding tax report, and PKR currency with standard Odoo accounting on top. That is the whole of it.
+
+Of the **13 payment rails** on our Pakistan page, **only 4 are classified In Odoo**, and two of those four are a trap. Odoo 19 ships a Stripe connector, but Stripe's own country list does not include Pakistan, so a Pakistan registered business cannot open an account and switch it on. Odoo 19 ships a PayPal connector, but PayPal does not operate in Pakistan. What is genuinely usable out of the box is Cash on Delivery, covered by Odoo 19's built in Cash on Delivery and Pay on Site setup, and 1LINK interbank transfer (IBFT) through the built in wire transfer provider. Everything Pakistani buyers actually tap on a phone needs buying or building. **JazzCash**, **Safepay**, **Alfa Payment Gateway (Bank Alfalah)**, **PayPro** and **Keenu** need a paid connector. **Easypaisa**, **Raast P2M** and **PayPak** have no Odoo module at any version, so they are custom builds.
+
+Of the **13 couriers**, **only 3 are In Odoo**, and all three are global express: DHL Express, FedEx and UPS. Not one Pakistani domestic courier ships in the box. **PostEx**, **TCS**, **Leopards Courier (LCS)**, **Daewoo Express**, **ZoomCOD** and **Aramex** need paid apps store connectors. **M&P (Muller and Phipps)**, **Trax (SLG Trax)**, **Pakistan Post** and **Bykea** have nothing at any version, so booking stays manual or becomes a build.
+
+One caveat on the native three: Odoo's documentation says new FedEx setups on the latest API have been blocked since 21 October 2025 and legacy integrations stopped working on 1 June 2026, so confirm the current state before promising it.
+
+Odoo's own custom list for Pakistan names five items, and these become line items on a quote:
+
+1. The unique FBR invoice number, the 7x7 mm QR code, the digital signature, the software registration number on the invoice layout, and the 72-hour edit window with Commissioner approval after that.
+2. Provincial sales tax on services: separate registration, rate set and return per provincial authority, and the input tax split between the federal and provincial regimes.
+3. Section 153 withholding driven by vendor ATL status, with the ATL and non-ATL rate pair per payment type, plus the quarterly withholding statement.
+4. Sales tax return annexures and the STR-7 output.
+5. Payroll in full, because there is no Pakistan payroll localization.
+
+Items 1 and 5 are the two we sell as products rather than rebuild each time. [FBR Digital Invoicing Pakistan](/products/wt-fbr-digital-invoicing/) posts sales tax invoices as they are validated, stores the FBR invoice number and timestamp that come back, prints the number and QR code at the required size, and keeps every request and reply for an auditor. [WT HRMS Payroll - Pakistan](/products/wt-hrms-payroll-pk/) covers FBR income tax slabs, EOBI, SESSI/PESSI, provident fund, gratuity rules and a default salary structure. On the courier side, [Gulf and South Asia Shipping Carriers](/products/wt-delivery-carrier-connector/) adds Leopards Courier and TCS as delivery methods with rates, waybills, labels, cancellation and tracking.
+
+## Local rails against what it takes in Odoo
+
+| Local integration | What it is | What it takes in Odoo |
+|---|---|---|
+| Cash on Delivery | cash on delivery | In Odoo |
+| 1LINK interbank transfer (IBFT) | instant bank transfer | In Odoo |
+| JazzCash | mobile wallet | Paid connector |
+| Safepay | local gateway | Paid connector |
+| Alfa Payment Gateway (Bank Alfalah) | local gateway | Paid connector |
+| PayPro | local gateway | Paid connector, published at Odoo 18 |
+| Keenu | local gateway | Paid connector, POS terminal only |
+| Easypaisa | mobile wallet | Custom build |
+| Raast P2M | instant bank transfer | Custom build |
+| PayPak | domestic card scheme | Custom build |
+| DHL Express, FedEx, UPS | global express | In Odoo |
+| PostEx | domestic express | Paid connector |
+| TCS | domestic express | Paid connector |
+| Leopards Courier (LCS) | domestic express | Paid connector |
+| Daewoo Express | domestic express | Paid connector |
+| ZoomCOD | last mile | Paid connector |
+| Aramex | global express | Paid connector |
+| M&P (Muller and Phipps) | domestic express | Custom build |
+| Trax (SLG Trax) | last mile | Custom build |
+| Pakistan Post | national post | Custom build |
+| Bykea | last mile | Custom build |
+
+One note on reading that table: a paid connector published for Odoo 18 is not a paid connector for Odoo 19. The GoPayFast module and the PayPro module are both published at 18, so budget a port before quoting them on a 19 project. And almost every module named PayFast on the apps store is the unrelated South African company, so check the vendor before you buy.
+
+## Before kickoff: what you need ready
+
+Bring these to the first working session and the project starts on day one instead of day fifteen.
+
+- Your sales tax registration number and province, plus every provincial registration you hold for services.
+- The security token PRAL issued you, or the name of the licensed integrator you have contracted, and whether sandbox access is already open.
+- A decision on who signs. The digital signature and the software registration number both have to attach to something real before the first cleared invoice.
+- Your vendor list with Active Taxpayers List status against each one, because section 153 rates depend on it.
+- HS code, unit of measure and sale type per product, or a plan and a named owner for getting them.
+- The invoice you issue today, as a PDF, so the FBR fields land on your own layout rather than a generic one.
+- Opening balances signed off by whoever closes your books, and a named decision maker per function with authority to change a process, not just describe it.
+- A go-live date clear of your period close and of the 10th to 18th of a month.
+
+## The rollout sequence
+
+The commodity part, kept short, because the local detail above is what actually varies.
+
+1. **Discovery and process mapping.** Out comes a written process map, a numbered gap list and the module list that follows from it.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, and each carries a number. That list is the contract.
+3. **Configuration and prototype.** A working system holding a real sample of your data, demoed weekly against the process map.
+4. **Data migration and reconciliation.** Clean in the extract, never after loading, and sign off control totals against the old system.
+5. **Training, UAT and cutover.** Scripted testing run by the people who will use the system daily, plus a cutover runbook with a rollback point.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover, and a written phase two backlog.
+
+For Pakistan, phase 3 is where FBR sandbox testing belongs. Work through the test cases FBR requires in sandbox before UAT starts, not during it. The full sequence sits on the [Odoo implementation in Pakistan](/services/odoo-implementation/pakistan/) page, and the [Pakistan cost page](/countries/pakistan/cost/) sets out what drives the number.
+
+## Questions we get asked
+
+**Can we go live without FBR integration and add it later?**
+Only if you are not a sales tax registered person. If you are, an invoice issued without a unique FBR invoice number is not a valid sales tax invoice, so there is no window to defer into. What can be phased is the Tier-1 retail outlet obligation under the proviso to section 23(6), which is a separate integration from the invoicing one.
+
+**We sell services in three provinces. Is that one Odoo company or three?**
+Usually one company with a tax structure per authority, but it turns on whether the provincial registrations sit under one legal entity. What is not optional is a separate rate set and return per authority, and the input tax split between the federal and provincial regimes. Settle it during solution design, because it drives the chart of accounts.
+
+**Does l10n_pk handle the FBR clearance?**
+No. l10n_pk gives a basic chart of accounts, sales tax taxes, a tax report and a withholding tax report. The clearance API, the FBR invoice number, the QR code, the digital signature and the software registration number all sit outside it.
+
+**Our customers pay with Easypaisa. What does that cost?**
+A search of the Odoo apps store returns no Easypaisa connector at any version, so accepting it inside Odoo means building against the Easypaisa merchant API. JazzCash is the cheaper half of that pair, because a paid module routes it through the Alfa Payment Gateway redirect. If both wallets are must-haves, price one connector and one build, not two connectors.
+
+**How long does an implementation take?**
+Single-module projects run three to four weeks, multi-module rollouts eight to twelve. The variable is almost never the configuration. It is how quickly decisions get made and how clean the legacy data is. In Pakistan, add the FBR sandbox cycle, which is external and does not compress because the rest of the project is going well.
+
+**What happens if FBR rejects an invoice after go-live?**
+It should not be lost. A failed post gets queued and retried, the invoice shows whether it is not sent, queued, accepted or rejected, and the rejection carries the FBR error code with what to change. Do not ship a system where a rejected invoice is silent.
+
+The full statutory picture for this market, with payments, shipping and payroll broken out separately, sits on the [Pakistan country page](/countries/pakistan/).

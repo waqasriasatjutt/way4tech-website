@@ -1,0 +1,141 @@
+---
+title: "Odoo implementation in Egypt: two ETA systems, a USB key, and accounting standards that are not IFRS"
+description: "What an Egyptian Odoo build has to satisfy: ETA e-invoice clearance, the separate e-receipt system, CAdES-BES signing on a physical token, Egyptian Accounting Standards, and the payroll that has no localization."
+date: 2026-08-21
+tags: ["egypt", "eta", "e-invoicing", "implementation"]
+---
+
+Two things decide the shape of an Egyptian Odoo project, and neither is a module choice. The Egyptian Tax Authority runs two separate systems, one for invoices and one for receipts, and only the first is covered by Odoo's official modules. And Egypt has not adopted IFRS, so the default profit and loss statement is presenting on the wrong basis before anyone has posted a transaction. Everything below follows from those two facts.
+
+## What the ETA requires before an invoice counts
+
+The schemes are منظومة الفاتورة الإلكترونية and منظومة الإيصال الإلكتروني, the Egyptian e-invoice system and e-receipt system. The authority is the Egyptian Tax Authority (مصلحة الضرائب المصرية), ETA.
+
+Egypt runs a clearance model: a B2B or B2G invoice is submitted to the ETA portal and validated before it counts as a valid invoice. B2C is a separate e-receipt system that is still being switched on wave by wave, so two different builds are in play on the same project.
+
+All companies registered for VAT selling taxable goods or services have had to issue e-invoices for B2B since April 2023, and a paper invoice issued after that date cannot support an input VAT deduction. That last clause is what makes it commercial rather than merely legal: your customer's finance team will refuse the document. The B2C e-receipt obligation is phased, and the most recent wave confirmed by a Big Four or specialist source is the eighth sub-phase of stage two, under ETA Decision No. 281 of 2025, covering taxpayers named in the annex who are registered at the Sixth District and Fifth Settlement tax offices in Cairo, effective 15 September 2025.
+
+What it technically requires:
+
+- **Documents generated as XML or JSON in the ETA schema.**
+- **A CAdES-BES electronic signature** applied with an eSeal certificate held on an HSM or a USB token, over a canonicalised serialisation of the document so formatting differences do not break the signature.
+- **A UUID assigned by the ETA**, which credit notes and debit notes must reference back to.
+- **Real-time submission to the ETA portal and validation before delivery to the buyer.** This is clearance, not post-audit reporting.
+- **ETA product coding on every line**, plus an ETA activity code and branch ID on the issuing journal.
+- **Five-year archiving.** Archiving abroad is permitted, which is worth knowing because not every market in the region allows it.
+
+The signature is the item that surprises teams. It is not a certificate file you upload once. Every person who signs needs a specific USB key obtained from the ETA or Egypt Trust, and a cloud-hosted database needs a Windows virtual IoT box in the loop to generate the access token between the signing device and the database. That is a hosting and operations design decision, and it belongs in the first architecture conversation, not in week nine. The [Egypt e-invoicing page](/countries/egypt/e-invoicing/) carries the requirement set on its own.
+
+## The obligations that shape the ledger
+
+### Tax
+
+The standard VAT rate is 14% and applies to all goods and services, with limited exceptions. Machinery and equipment carry 5%. VAT returns are filed monthly and must be submitted within one month following the end of the reporting period, with payment due at the same time.
+
+Local withholding is the part that changes how vendor bills are posted. Withholding tax applies to local payments above EGP 300: 1.0% on contracting and supplying, 3.0% on all types of services and 5.0% on commissions. These are advance corporate tax payments, not an extra cost, so the ERP must track them as recoverable against the corporate income tax liability rather than writing them off to expense. Getting that wrong overstates cost and understates a receivable, every month, quietly.
+
+Payments to non-residents carry 20% withholding on royalties and on service payments. Dividends to non-resident corporate shareholders are 10% for unlisted shares and 5% for shares listed on the EGX, before treaty relief. The corporate income tax return is due within four months of the financial year end.
+
+### Payroll
+
+Social insurance is charged on the social insurance salary at 18.75% for the employer and 11% for the employee, and health insurance subscription is charged at 4% employer and 1% employee for basic cover on top of that.
+
+The detail that breaks generic builds is the band. The insurable wage band effective 1 January 2026 runs from EGP 2,700 to EGP 16,700 per month, and the cap is reset annually. Payroll needs the band as a dated parameter, not a hard-coded number, or the system quietly goes wrong every January.
+
+Labour Law No. 14 of 2025 took effect on 1 September 2025, with labour dispute provisions from 1 October 2025. Under it, employers must grant an annual salary increment of at least 3% of the social insured salary, with temporary exemptions available for eligible employers. That is a recurring payroll rule rather than a one-off adjustment, so it belongs in the salary structure.
+
+### Accounting
+
+Egypt has not adopted IFRS. Financial statements follow Egyptian Accounting Standards (EAS). Each standard or change is made by ministerial decree and published in the Egyptian Gazette, developed by a standard setting committee chaired by the chairman of the Financial Regulatory Authority.
+
+EAS is close to IFRS but not identical and not as complete, and two differences bite inside an ERP. Employees' profit sharing is recognised as an equity distribution rather than an expense in profit or loss. And a different model applies to the effect of currency devaluation. EAS also does not allow some IFRS options, including presenting a single statement of comprehensive income.
+
+The practical consequence for an Odoo build is that the default IFRS-shaped profit and loss and the employee profit share posting both need reworking, because l10n_eg gives a chart of accounts and taxes, not an EAS-compliant presentation. That reading is unconfirmed at the primary level in our sources, so agree the presentation with the client's auditor during design. Where the profit and loss has to be restructured, [Dynamic Financial Reports](/products/wt-dynamic-financial-reports/) helps because its Balance Sheet and Profit and Loss are built from an editable line structure rather than a fixed one, with comparison, PDF and Excel output.
+
+## What is not in Odoo for Egypt
+
+Odoo ships **l10n_eg (Egypt - Accounting)** and **l10n_eg_edi_eta (Egyptian E-invoice Integration)**. In the box that gives the Egyptian chart of accounts and taxes, ETA e-invoice submission from a sales journal with the ETA activity code and branch ID set per journal, ETA codes on customers and products, ETA portal API credentials registered against your Odoo system, and USB key signing routed through the Windows virtual IoT.
+
+Egypt is the outlier in this region on payments and the strongest market we cover for out-of-the-box acceptance. Of the **20 payment methods** on our Egypt page, **17 are classified In Odoo**. Odoo 19 ships **Paymob** and **Amazon Payment Services** as providers, **Meeza** as a card brand, a **Mobile Wallets Egypt** method restricted to Egypt and EGP, a **Kiosk** method for Aman and Masary terminals, a **Bank Installments** method, and separate methods for **valU**, **Sympl**, **Halan**, **Souhoola**, **Contact**, **Forsa**, **Aman** and **Premium Card**, each locked to Egypt and EGP. That means the Egyptian buy now pay later stack, which is what closes higher value baskets here, does not need a single connector purchase. Only three rails need work: **Fawry** and **PayTabs** need paid connectors, and **InstaPay (Instant Payment Network)** has no Odoo module, so reconciling the rail Egyptians now treat as the default way to send money is a custom build. Stripe is a native connector you cannot use, because Stripe's own country list does not include Egypt.
+
+Shipping is the reverse. Of the **11 carriers**, **only 3 are In Odoo** and all three are global express: DHL Express, FedEx and UPS. **Bosta**, **Mylerz**, **Aramex** and **J&T Express Egypt** need paid connectors, and **Egypt Post**, **ShipBlu**, **Egypt Express (EGXPRESS)** and **Flextock** have nothing, so four of eleven are custom builds. Egypt Post matters more than its classification suggests: 4,238 post offices reach places the private couriers price badly. For the Aramex leg, [Gulf and South Asia Shipping Carriers](/products/wt-delivery-carrier-connector/) adds it as a delivery method with rates, waybills, labels, cancellation and tracking.
+
+Odoo's own custom list for Egypt names six items:
+
+1. **B2C e-receipts.** The official modules cover invoices, not the e-receipt system, so point of sale e-receipt submission is a paid third-party app or a build.
+2. **Signing infrastructure.** The USB key per signer and the Windows virtual IoT box for cloud databases.
+3. **EAS presentation.** Employee profit share as an equity distribution, no single statement of comprehensive income, and the EAS foreign currency model.
+4. **Arabic invoice and report layouts.**
+5. **Local withholding tax at 1%, 3% and 5%** on supplier payments above EGP 300, tracked as advance corporate tax.
+6. **Payroll.** Egypt's entry states there is no official Egyptian payroll localization, covering social insurance at 18.75% and 11% within the annual wage band, health insurance, the Labour Law 14 of 2025 3% annual increment and training fund contribution, and salary tax. Odoo's published payroll localization list elsewhere names Egypt among twelve countries, so check what is actually installable on the exact version you are deploying before you price this either way. It is the single most expensive assumption on an Egyptian quote.
+
+## Local integrations against what it takes in Odoo
+
+| Local integration | What it is | What it takes in Odoo |
+|---|---|---|
+| Paymob | local gateway | In Odoo |
+| Amazon Payment Services | regional gateway | In Odoo |
+| Meeza | domestic card scheme | In Odoo |
+| Mobile wallets (Vodafone Cash, Orange Cash, e& Cash, WE Pay) | mobile wallets | In Odoo |
+| valU, Sympl, Halan, Souhoola | BNPL | In Odoo |
+| Contact, Forsa, Aman | BNPL | In Odoo |
+| Premium Card, Bank instalments | installments | In Odoo |
+| Kiosk cash payment (Aman and Masary) | cash collection | In Odoo |
+| Cash on delivery, wire transfer | cash and bank transfer | In Odoo |
+| Fawry | local gateway | Paid connector |
+| PayTabs | local gateway | Paid connector |
+| InstaPay | instant bank transfer | Custom build |
+| DHL Express, FedEx, UPS | global express | In Odoo |
+| Bosta | domestic express | Paid connector |
+| Mylerz | domestic express | Paid connector |
+| Aramex | regional express | Paid connector |
+| J&T Express Egypt | domestic express | Paid connector |
+| Egypt Post | national post | Custom build |
+| ShipBlu | last mile | Custom build |
+| Egypt Express (EGXPRESS) | domestic express | Custom build |
+| Flextock | aggregator | Custom build |
+
+Cash on delivery deserves one line of its own. Every domestic courier here, Bosta, Mylerz, Aramex and ShipBlu included, is built around collecting and remitting it, which means reconciliation happens against courier settlement files rather than against the checkout. Design that flow before go-live.
+
+## Before kickoff: what you need ready
+
+- Your ETA portal API credentials: Client ID and Client Secret 1 and 2, registered against your Odoo system.
+- Your ETA activity code and branch ID per issuing journal, and confirmation of which branches are in scope.
+- The USB keys, one per person who will sign, obtained from the ETA or Egypt Trust, plus a decision on where the database is hosted and whether a Windows virtual IoT box is needed.
+- ETA product codes mapped to your product list. Every line needs one, and the mapping is the longest data task on the project.
+- Confirmation of whether you are in scope for B2C e-receipts, and under which ETA decision.
+- Your auditor's position on EAS presentation, specifically employee profit sharing and the profit and loss layout.
+- Your vendor list with the withholding category against each one: contracting and supplying, services or commissions.
+- Opening balances signed off by whoever closes your books, and a named decision maker per function.
+
+## The rollout sequence
+
+The commodity part, kept short.
+
+1. **Discovery and process mapping.** A written process map, a numbered gap list and the module list that follows.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a number.
+3. **Configuration and prototype.** A working system holding a real sample of your data, demoed weekly against the process map.
+4. **Data migration and reconciliation.** Clean in the extract, never after loading, and sign off control totals against the old system.
+5. **Training, UAT and cutover.** Scripted testing by daily users, a cutover runbook with a rollback point, and a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover, and a phase two backlog.
+
+For Egypt, the signing infrastructure belongs in phase 2, not phase 3. Procuring USB keys and standing up the IoT path takes calendar time that no amount of developer effort compresses. The [Odoo implementation in Egypt](/services/odoo-implementation/egypt/) page has the full sequence and the [Egypt cost page](/countries/egypt/cost/) covers what drives the number.
+
+## Questions we get asked
+
+**Does l10n_eg_edi_eta cover our point of sale receipts?**
+No. The official modules cover invoices, not the e-receipt system. B2C e-receipt submission from point of sale is a paid third-party app or a build, which is why several ETA e-receipt POS apps exist on the store.
+
+**Can we host Odoo outside Egypt?**
+Archiving abroad is permitted under the e-invoice requirements, so hosting location is not blocked the way it is in some neighbouring markets. What it does affect is signing: a cloud-hosted database needs the Windows virtual IoT in the loop for the USB key.
+
+**Why does our profit and loss look wrong to the auditor?**
+Most likely the presentation basis. Egypt has not adopted IFRS, and under EAS employees' profit sharing is an equity distribution rather than an expense in profit or loss, and a single statement of comprehensive income is not allowed. Odoo's default reports are IFRS-shaped, so this is a reporting rework rather than a posting error.
+
+**Do we need a connector to take valU or Sympl?**
+No. Odoo 19 ships valU, Sympl, Halan, Souhoola, Contact, Forsa, Aman and Premium Card as payment methods restricted to Egypt and EGP, routed through Paymob. Egypt is unusual in this: the instalment stack is in the box.
+
+**Our buyers all ask for InstaPay. What does that take?**
+A build. InstaPay is the Central Bank of Egypt's instant rail, operated by the Egyptian Banks Company, and no Odoo module exposes it. You either reconcile the bank feed manually or build against a bank API.
+
+The full statutory picture for this market, with payments, shipping and payroll broken out separately, sits on the [Egypt country page](/countries/egypt/).

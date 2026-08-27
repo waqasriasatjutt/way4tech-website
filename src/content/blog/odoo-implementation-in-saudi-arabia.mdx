@@ -1,0 +1,122 @@
+---
+title: "Odoo implementation in Saudi Arabia: what ZATCA decides before you do"
+description: "A Saudi Odoo build is shaped by Fatoora clearance, GOSI and a payment and courier list that sits mostly outside Odoo's shipped connectors. What the market requires, what is missing, and what to have ready."
+date: 2026-08-18
+tags: ["saudi-arabia", "e-invoicing", "implementation"]
+---
+
+A Saudi Odoo project is not a generic ERP project with Arabic switched on. Two facts set the shape of it before anyone opens a requirements workshop. The tax authority holds a veto over your standard tax invoices, and almost every payment method and courier a Saudi business actually uses sits outside the connector list Odoo ships. Everything below comes from the same country data behind our [Saudi Arabia localization page](/countries/saudi-arabia/).
+
+## Fatoora sits inside your order-to-cash, not beside it
+
+The scheme is Fatoora (فاتورة), run by the Zakat, Tax and Customs Authority (ZATCA). Phase 1, generation, has applied since 4 December 2021. Phase 2, integration with the Fatoora platform, has applied since 1 January 2023 and is rolled out wave by wave. Wave 25 is the latest announced: taxpayers whose VAT-taxable revenue exceeded SAR 187,500 in 2022, 2023, 2024 or 2025 must integrate by 1 February 2027. That is the lowest revenue trigger of any wave so far, so the population still outside Phase 2 is now small businesses.
+
+It binds VAT-registered persons resident in Saudi Arabia. Phase 1 already applies to all of them. Phase 2 applies from the date in your wave notification, and ZATCA notifies each wave at least six months before its integration date. Six months is your entire runway, which makes the wave letter a project trigger rather than a filing.
+
+What it obliges technically:
+
+- **Standard tax invoices, B2B and B2G, are cleared.** The invoice is sent to ZATCA's Fatoora platform and validated before it is a valid invoice. Your document is not finished when it is printed.
+- **Simplified tax invoices, B2C, are reported.** You issue to the customer, then report to Fatoora within 24 hours.
+- **UBL-based XML.** The buyer copy can be XML, or PDF/A-3 with the XML embedded.
+- **A QR code on the invoice** from Phase 1 onward.
+- **A single invoice sequence.** Multiple parallel sequences are not allowed, which kills the common habit of a separate numbering series per branch or per salesperson.
+- **A live API integration** with Fatoora for clearance, reporting and validation responses, which your system has to store.
+
+ZATCA publishes the binding detail in separate versioned documents: the Electronic Invoice Data Dictionary, the Electronic Invoice XML Implementation Standard and the Security Features Implementation Standards. Read the current version before you build. Version drift is why Saudi e-invoicing needs a retest budget rather than a one-time integration line. The full breakdown sits on our [Saudi e-invoicing page](/countries/saudi-arabia/e-invoicing/).
+
+Odoo covers a real part of this. l10n_sa_edi handles ZATCA Phase 2 clearance and reporting, the compliant XML for tax invoices, simplified tax invoices, credit notes and debit notes, plus storage of the XML, QR codes and ZATCA responses. Simplified invoices raised through Point of Sale are handled by l10n_sa_edi_pos and l10n_sa_pos. Down payments, retention and debit and credit notes run through the e-invoicing flow. This is one of the few markets where the shipped localization does the hard part.
+
+## The obligations that shape the ledger and the payroll run
+
+**VAT is 15%.** The rate was raised from 5% to 15% on 1 July 2020 and has not moved since. Returns are quarterly if annual supplies do not exceed SAR 40 million and monthly above that. The return is due by the end of the month following the tax period: ZATCA set 30 April 2026 as the deadline for the Q1 2026 return. Crossing SAR 40 million changes your filing rhythm, so the threshold belongs in the close calendar, not only in the tax setup.
+
+**Corporate income tax is 20% of net adjusted profits** and falls on the non-Saudi, non-GCC ownership share. Zakat is 2.5% of the Zakat base and falls on the Saudi and GCC share. A mixed-ownership company is split between the two. That one rule dictates how the chart of accounts and the analytic structure have to carry ownership, because the split is computed, not estimated. The corporate income tax or Zakat return is due to ZATCA within 120 days of the taxpayer's year end.
+
+**Withholding tax comes off the vendor payment run, not the year-end close.** It applies to payments from a resident or a permanent establishment to a non-resident: 5% on dividends, 5% on interest, 15% on royalties, and 5%, 15% or 20% on services depending on the type. It must be paid within the first ten days of the month following the month of payment. Odoo applies withholding tax at payment through l10n_sa_withholding_tax, which is the right place for it, but somebody has to own that ten-day remittance.
+
+**Payroll has an official localization, which is rare.** GOSI for Saudi employees totals 21.5% of covered wages: 9.75% from the employee and 11.75% from the employer. For non-Saudi employees it is 2%, paid by the employer. l10n_sa_hr_payroll sets GOSI deduction rates by employee nationality, handles end of service, and produces WPS reports. Employee bank records must carry an IBAN in line with WPS rules, so bank data quality is a go-live blocker, not a nice-to-have. Saudi Arabia is one of the twelve countries with an official Odoo payroll localization, alongside Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Turkiye, the United Arab Emirates and the United States.
+
+**Accounting.** IFRS Accounting Standards as endorsed by SOCPA are required for all publicly accountable entities. SOCPA runs a technical, Sharia and legal review before endorsing each standard, so the endorsed text can differ from the IASB text. SMEs apply IFRS for SMEs as endorsed in Saudi Arabia, or full endorsed IFRS if they apply it in full rather than picking standards selectively. Companies owned by Saudis, or by Saudis and non-Saudis, must file audited financial statements with the tax return.
+
+## What is not in Odoo for this market
+
+This is the section that decides the budget, and it is the one nobody publishes.
+
+Of the nineteen payment rails that matter in Saudi Arabia, five ship with Odoo 19: Amazon Payment Services, Paymob, the Wire Transfer method, cash on delivery, and Stripe. The other fourteen do not. Thirteen of those need a paid apps store connector or a build, and only one, MyFatoorah, has a free community module.
+
+Stripe is the trap. It ships with Odoo 19, but Stripe's own country list does not include Saudi Arabia, so a Saudi registered business cannot open a Stripe account to act as its acquirer. This is the most common surprise on a Saudi Odoo project, and the answer is a SAMA licensed gateway instead. mada is the national debit scheme operated by Saudi Payments under the Saudi Central Bank and it is the card most Saudi shoppers carry, so an Odoo shop that only offers Visa and Mastercard will lose orders.
+
+Of the sixteen couriers, three are native: DHL Express, FedEx and UPS. Thirteen are not. SMSA Express, Naqel Express, Aramex, AJEX Logistics Services, iMile, J&T Express, Torod and AfterShip all need paid connectors. Saudi Post SPL, Zajil Express, Barq, OTO and Carriyo have nothing on the Odoo 19 apps store at all, so they are a build. Look at the shape of that: the national post is a custom build, and the aggregator route that promises more than eighteen Saudi carriers behind one integration is also a custom build plus a subscription. Our own [Gulf and South Asia shipping carriers connector](/products/) covers Aramex, SMSA Express and Naqel Express with rates, waybills, labels, cancellation and tracking, which removes three of the thirteen.
+
+The rest of the custom list from our country data:
+
+- **Payments.** Stripe, the default Odoo answer everywhere else, is not available for Saudi businesses. Amazon Payment Services and Paymob both ship with Odoo 19 and both cover Saudi Arabia; mada, STC Pay and BNPL come from paid apps-store connectors.
+- **Couriers.** SMSA, Naqel and Aramex are all outside Odoo's native carrier list. Only DHL Express, FedEx and UPS are native for this market.
+- **Specification drift.** Budget for re-testing against each ZATCA release, not just at go-live.
+- **Sign-off.** Odoo's own e-invoicing documentation states it is an overview and not legal advice. Compliance sign-off stays with your tax adviser.
+
+## Local rails against what they take in Odoo
+
+| Local rail or courier | What it is | What it takes in Odoo |
+| --- | --- | --- |
+| mada | Domestic card scheme | Paid connector |
+| Amazon Payment Services | Regional gateway | In Odoo |
+| Paymob | Regional gateway | In Odoo |
+| STC Pay (stc bank) | Mobile wallet | Paid connector |
+| Moyasar | Local gateway | Paid connector |
+| HyperPay | Local gateway | Paid connector |
+| Geidea | Local acquirer and gateway | Paid connector |
+| Tamara | BNPL | Paid connector |
+| Tabby | BNPL | Paid connector |
+| MyFatoorah | Regional gateway | Community module |
+| sarie instant payments | Instant bank transfer | Custom build |
+| Cash on delivery | Cash on delivery | In Odoo |
+| Saudi Post SPL | National post | Custom build |
+| SMSA Express | Domestic express | Paid connector |
+| Naqel Express | Domestic express | Paid connector |
+| Aramex | Domestic and regional express | Paid connector |
+| AJEX Logistics Services | Domestic express | Paid connector |
+| Barq | Last mile | Custom build |
+| Zajil Express | Domestic express | Custom build |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| OTO (tryoto) | Aggregator | Custom build |
+| Carriyo | Aggregator | Custom build |
+
+## Pre-kickoff checklist
+
+Have these before the first workshop, not during UAT.
+
+1. **Your ZATCA wave letter.** The integration date in it is the only date that matters. If you have not had one, note the Wave 25 trigger of SAR 187,500 of VAT-taxable revenue in 2022, 2023, 2024 or 2025.
+2. **The current versions of the three ZATCA documents:** the Electronic Invoice Data Dictionary, the Electronic Invoice XML Implementation Standard and the Security Features Implementation Standards.
+3. **A decision on invoice numbering.** One sequence across the company. If you run parallel series today, agree now which one survives and what happens to the others.
+4. **Your ownership split**, Saudi and GCC against non-Saudi, because it drives the Zakat and corporate income tax treatment.
+5. **Employee IBANs, complete and validated.** WPS reporting fails on the first missing one.
+6. **Your gateway decision**, with mada confirmed as enabled on that account, and a written answer on STC Pay, Apple Pay, Tamara and Tabby.
+7. **Your courier list with account numbers**, split into DHL, FedEx and UPS on one side and everything else on the other.
+8. **A named owner for rejected invoices.** Clearance produces a rejection queue from day one, and rejected documents that belong to everybody belong to nobody.
+
+## The rollout itself is the commodity part
+
+Six phases, and they are the same six anywhere. [Discovery and process mapping](/services/odoo-implementation/saudi-arabia/) puts the current process on paper and produces a numbered gap list. Solution design gives each gap one of four dispositions, configure, customise, change the process, or leave out, each with a cost, and that signed list is the scope. Configuration and prototype builds the company, warehouse, journal and pricing structure and loads your awkward products, not your simple ones. Data migration loads in dependency order, partners, products, balances, then open documents, and ends in control totals signed off by whoever closes your books. Training, UAT and cutover runs scripted testing by the people who will use the system daily, with a written cutover runbook and a go or no-go call against agreed criteria. Hypercare stabilises the system and hands the administrator role to your side.
+
+The Saudi-specific weight is not in these phases. It is in the ZATCA integration testing that runs alongside them and in the connector count above. Ballpark numbers sit on our [Saudi Arabia cost page](/countries/saudi-arabia/cost/).
+
+## Questions we actually get asked
+
+**Does Odoo handle ZATCA Phase 2 out of the box?**
+The e-invoicing part, largely yes. l10n_sa_edi covers clearance and reporting, the compliant XML for tax invoices, simplified tax invoices, credit notes and debit notes, and stores the XML, QR codes and ZATCA responses. What is not out of the box is the operational half: keeping up with each ZATCA specification release and running the rejection queue.
+
+**We already use Stripe elsewhere in the group. Can we use it in Riyadh?**
+Not as your Saudi acquirer. Stripe ships with Odoo 19, but Saudi Arabia is not on Stripe's list of countries where a business can open an account. Amazon Payment Services and Paymob both ship with Odoo 19 and both cover Saudi Arabia.
+
+**Can we keep a separate invoice number series per branch?**
+No. A single invoice sequence is required and multiple parallel sequences are not allowed. If your current system runs one series per branch, that change lands in the first phase, and it usually touches more downstream reports than people expect.
+
+**Is Saudi payroll included, or do we build it?**
+Included. Saudi Arabia is one of the twelve countries with an official Odoo payroll localization. l10n_sa_hr_payroll sets GOSI rates by nationality, handles end of service and produces WPS reports. The work left is data quality: every employee needs an IBAN that satisfies WPS rules.
+
+**How much of our courier setup will be custom?**
+Of the sixteen carriers relevant to this market, three are native. Expect paid connectors for SMSA, Naqel and Aramex, and a build for Saudi Post SPL or any aggregator route. Price the module licences and any aggregator subscription separately from the implementation, because they recur.
+
+**What happens if ZATCA changes the specification after go-live?**
+You retest. The data dictionary, the XML implementation standard and the security features standard are versioned documents on the developer portal, and a change to any of them can invalidate what passed last quarter. Treat Saudi e-invoicing as something with a maintenance line in the budget, not a one-off integration.

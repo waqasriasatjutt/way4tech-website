@@ -1,8 +1,23 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { SITE, COUNTRIES, SERVICES, SOLUTIONS, PRODUCTS, CASE_STUDIES, PRICING } from '~/data/site';
+import { SITE, COUNTRIES, SERVICES, SOLUTIONS, CASE_STUDIES, PRICING } from '~/data/site';
 import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
 import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
+/* Name aliases, region grouping, theme sniffing, product scoring and the support
+   badge palette all live in ~/utils/country now, because this page was not the only
+   copy. See the header of that file for why an import rather than a page const. */
+import {
+  REGION_OF,
+  countryIndexOf,
+  makeCaseRank,
+  makeRotIdx,
+  plainNameOf,
+  regionOf,
+  selectCountryProducts,
+  supportClass,
+  themesOf,
+} from '~/utils/country';
+import type { CaseRec, CountryRec, ProductRec } from '~/utils/country';
 
 export function getStaticPaths() {
   return COUNTRIES.map(c => ({ params: { slug: c.slug }, props: { country: c } }));
@@ -10,56 +25,19 @@ export function getStaticPaths() {
 
 const { country } = Astro.props;
 
-type ProductRec = (typeof PRODUCTS)[number];
-type CaseRec = (typeof CASE_STUDIES)[number];
-type CountryRec = (typeof COUNTRIES)[number];
-
 const pageUrl = `${SITE.url}/countries/${country.slug}/`;
-const countryIndex = Math.max(0, COUNTRIES.findIndex((c: CountryRec) => c.slug === country.slug));
+const countryIndex = countryIndexOf(country.slug);
 
-/* ── Name aliases, derived from the title string only ──────────────
-   'Saudi Arabia (KSA)' -> ['saudi arabia', 'ksa', 'sa']
-   'United Arab Emirates' -> ['united arab emirates', 'uae']
-   Used to match case studies, which store a short country label. */
-function aliasesOf(title: string): string[] {
-  const paren = title.match(/\(([^)]+)\)/);
-  const base = title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
-  const words = base.split(/\s+/);
-  const out = [base];
-  if (paren) out.push(paren[1]);
-  if (words.length > 1) out.push(words.map(w => w[0]).join('').toUpperCase());
-  return out.map(a => a.toLowerCase());
-}
+const plainName = plainNameOf(country.title);
 
-const plainName = country.title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
-const aliasList = aliasesOf(country.title);
+/* Region decides only the ordering of case studies and the sidebar country
+   list. It is never printed as a claim. */
+const myRegion = regionOf(country.slug);
 
-/* Region grouping is used only to order case studies and the country
-   list in the sidebar. It is never printed as a claim. */
-const REGION_OF: Record<string, string> = {
-  'saudi-arabia': 'gulf', 'uae': 'gulf', 'qatar': 'gulf', 'kuwait': 'gulf', 'oman': 'gulf', 'bahrain': 'gulf',
-  'egypt': 'me', 'jordan': 'me', 'turkey': 'me',
-  'pakistan': 'sasia', 'india': 'sasia', 'bangladesh': 'sasia',
-  'united-kingdom': 'eu', 'germany': 'eu', 'france': 'eu',
-  'united-states': 'na', 'canada': 'na',
-  'australia': 'apac',
-};
-const myRegion = REGION_OF[country.slug] || '';
-
-/* ── Themes, read off the country's own highlights ─────────────────
-   No new facts are introduced here. These only decide which existing
-   services, products and modules get linked first. */
-const hay = `${country.title} ${country.tagline} ${country.highlights.join(' ')}`.toLowerCase();
-const hasText = (...needles: string[]) => needles.some(n => hay.includes(n));
-const hasToken = (...tokens: string[]) => tokens.some(t => new RegExp(`\\b${t}\\b`, 'i').test(hay));
-
-const themes = {
-  einvoicing: hasText('e-invoic', 'fatoorah', 'e-fatura', 'arşiv', 'mushak', 'irn', 'e-way', 'peppol', 'fec file'),
-  tax: hasToken('vat', 'gst', 'hst', 'pst', 'kdv', 'tax', 'bas', 'gobd', 'skr03', 'skr04', 'elster', 'mtd', 'avalara', 'taxjar'),
-  payroll: hasText('payroll', 'social security', 'social insurance', 'labor law', 'gosi', 'eobi', 'provident fund', 'sessi', 'pifss', 'pasi', 'nosi', 'sgk', 'wps', 'gratuity', 'pension', 'superannuation', 'lohn', 'dsn') || hasToken('sio', 'ssc', 'esi', 'esic', 'cpp', 'stp', 'rti'),
-  pos: hasToken('pos'),
-  bilingual: hasText('arabic', 'bilingual', 'rtl', 'urdu', 'bangla', 'english'),
-};
+/* Themes are read off the highlights this country already carries. No new fact
+   is introduced: they only decide which existing services, products and modules
+   get linked first. */
+const themes = themesOf(country);
 
 /* ── Services: compliance-led ordering, then the core stack ───────── */
 const serviceOrder: string[] = ['odoo-localization'];
@@ -78,64 +56,14 @@ const serviceRank = (slug: string) => {
 const countryServices = [...SERVICES].sort((a, b) => serviceRank(a.slug) - serviceRank(b.slug)).slice(0, 8);
 
 /* ── Deterministic rotation so the filler tail differs page to page ── */
-const rotIdx = (i: number, len: number, step: number) => (i + countryIndex * step) % len;
+const rotIdx = makeRotIdx(countryIndex);
 
-/* ── Products: scored against the country's own highlight words ───── */
-const STOP = new Set([
-  'with', 'from', 'that', 'this', 'your', 'their', 'into', 'odoo', 'tracking', 'management',
-  'system', 'file', 'files', 'compliance', 'reporting', 'filing', 'filings', 'templates',
-  'layouts', 'interfaces', 'ready', 'phase', 'auto', 'generation', 'first', 'real',
-]);
-const countryTokens = Array.from(new Set(
-  country.highlights.join(' ').toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/[\s-]+/)
-    .filter((w: string) => w.length >= 4 && !STOP.has(w)),
-));
-
-const namesCountry = (text: string, names: string[]) =>
-  names.some(a => a.length >= 3 && new RegExp(`\\b${a}\\b`, 'i').test(text));
-
-function productScore(p: ProductRec): number {
-  const t = `${p.title} ${p.tagline} ${p.short} ${p.category}`.toLowerCase();
-  /* A module named for another country never belongs on this page. */
-  const foreign = COUNTRIES.some((c: CountryRec) => c.slug !== country.slug && namesCountry(t, aliasesOf(c.title)));
-  if (foreign) return -100;
-  let score = 0;
-  if (namesCountry(t, aliasList)) score += 40;
-  for (const tok of countryTokens) if (t.includes(tok)) score += 6;
-  if (themes.payroll && p.category === 'HRMS') score += 8;
-  if (themes.pos && p.category === 'POS') score += 8;
-  return score;
-}
-
-const productPool = PRODUCTS
-  .map((p: ProductRec, i: number) => ({ p, i, score: productScore(p) }))
-  .sort((a, b) => b.score - a.score || rotIdx(a.i, PRODUCTS.length, 7) - rotIdx(b.i, PRODUCTS.length, 7));
-
-/* Cap any one category at 3 so 18 pages do not all show the same HRMS block. */
-const countryProducts: ProductRec[] = [];
-const catSeen: Record<string, number> = {};
-for (const x of productPool) {
-  const c = x.p.category;
-  if ((catSeen[c] || 0) >= 3) continue;
-  countryProducts.push(x.p);
-  catSeen[c] = (catSeen[c] || 0) + 1;
-  if (countryProducts.length === 6) break;
-}
+/* ── Products: scored against the highlight words of this country, then
+   capped at 3 per category so 18 pages do not all show the same HRMS block. */
+const countryProducts: ProductRec[] = selectCountryProducts(country, themes, countryIndex);
 
 /* ── Case studies: exact country first, then same region ─────────── */
-function slugForCountryName(name: string): string {
-  const n = name.trim().toLowerCase();
-  const hit = COUNTRIES.find((c: CountryRec) => aliasesOf(c.title).includes(n));
-  return hit ? hit.slug : '';
-}
-function caseRank(cs: CaseRec): number {
-  const s = slugForCountryName(cs.country);
-  if (s && s === country.slug) return 0;
-  if (s && myRegion && REGION_OF[s] === myRegion) return 1;
-  return 2;
-}
+const caseRank = makeCaseRank(country);
 const countryCases = CASE_STUDIES
   .map((cs: CaseRec, i: number) => ({ cs, i, rank: caseRank(cs) }))
   .sort((a, b) => a.rank - b.rank || rotIdx(a.i, CASE_STUDIES.length, 3) - rotIdx(b.i, CASE_STUDIES.length, 3))
@@ -178,15 +106,8 @@ const others = COUNTRIES
    reaches the structured data. */
 const detail: CountryDetail | undefined = COUNTRY_DETAIL[country.slug];
 
-/* Colour reads as cost to the buyer: shipped with Odoo, community
-   module, paid connector, build. */
-const SUPPORT_CLASS: Record<OdooSupport, string> = {
-  native: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  oca_or_community: 'bg-ink-100 text-ink-700 ring-ink-300',
-  third_party_paid: 'bg-amber-50 text-amber-800 ring-amber-200',
-  custom_build: 'bg-rose-50 text-rose-700 ring-rose-200',
-};
-const supportClass = (s: OdooSupport) => SUPPORT_CLASS[s] || SUPPORT_CLASS.custom_build;
+/* supportClass is imported: colour reads as cost to the buyer, and five pages
+   share the same palette. */
 const supportLabel = (s: OdooSupport) => SUPPORT_LABEL[s] || '';
 const SUPPORT_LEGEND: OdooSupport[] = ['native', 'oca_or_community', 'third_party_paid', 'custom_build'];
 

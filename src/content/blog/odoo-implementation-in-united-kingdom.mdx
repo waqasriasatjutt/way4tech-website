@@ -1,0 +1,133 @@
+---
+title: "Odoo implementation in the United Kingdom: MTD, Bacs and the parts that are not in the box"
+description: "What a UK Odoo build actually has to satisfy: Making Tax Digital through the HMRC API, CIS deduction rates, Bacs files, Peppol for public-sector buyers, and the payment rails and carriers Odoo 19 does not ship."
+date: 2026-08-19
+tags: ["united-kingdom", "odoo implementation", "e-invoicing", "compliance"]
+---
+
+Most articles about implementing an ERP in a country could be re-labelled for any other country and nobody would notice. This one starts with the obligations that decide the UK build, names them, and leaves the generic rollout steps until the end where they belong.
+
+## What the UK market requires of the system
+
+Start with e-invoicing, because it is the item most often assumed wrong in either direction.
+
+There is no UK B2B e-invoicing mandate in force. The scheme being built is mandatory e-invoicing for VAT invoices, run over Peppol, and it is being taken forward by HM Revenue and Customs jointly with the Department for Business and Trade. Public-sector obligations already exist and already bite: UK contracting authorities must be able to receive and process EN 16931-compliant e-invoices, and NHS England requires Peppol.
+
+Read that as a commercial fact rather than a legal one. Businesses are not obliged to issue e-invoices to each other. If you sell to the public sector, your buyer is already required to be able to receive a compliant e-invoice, so Peppol capability is a practical requirement on B2G contracts.
+
+What the scheme technically requires, as far as it is settled:
+
+- Structured, machine-readable invoice data that the recipient's system can process, not a PDF.
+- Peppol as the core interoperability network, so a four-corner exchange through an access point rather than a filing to a government portal.
+- No real-time reporting to HMRC at launch. The consultation response says real-time reporting will not be implemented in 2029 and would only follow once e-invoicing use is well established.
+- Format choice, phasing and the treatment of legacy EDI are still open. Nothing firm until the Budget 2026 roadmap.
+
+The practical consequence for scoping: you can build Peppol capability now and you cannot build the 2029 mandate now. Odoo runs its own Peppol access point and SMP, and the UK is on Odoo's list of countries eligible for Peppol registration, so the B2G side is a configuration exercise. Requirement by requirement, it sits on the [UK e-invoicing page](/countries/united-kingdom/e-invoicing/).
+
+## The tax, payroll and accounting obligations that shape the build
+
+**VAT.** The standard rate is 20 percent, the reduced rate is 5 percent (for example children's car seats and home energy) and the zero rate is 0 percent (for example most food and children's clothes). Registration is compulsory once total taxable turnover for the last 12 months goes over 90,000 pounds. Returns are usually filed every 3 months, and the deadline to file online and to pay is one calendar month and 7 days after the end of the accounting period.
+
+**Making Tax Digital.** MTD for VAT covers all VAT-registered businesses, and GOV.UK states they should all now be signed up. Returns are submitted from compatible software through HMRC's MTD VAT API, which is what Odoo's `l10n_uk_reports` module connects to. This is the most load-bearing item in a UK Odoo accounting build: the VAT return is not a PDF you print, it is an API call out of the system of record.
+
+MTD for Income Tax has already begun and moves in bands. It started on 6 April 2026 for sole traders and landlords with qualifying income over 50,000 pounds in the 2024 to 2025 tax year. The 30,000 pound band (2025 to 2026 income) joins on 6 April 2027, and the 20,000 pound band (2026 to 2027 income) on 6 April 2028. If your client base includes owner-managed trades, those dates land on them before they land on you.
+
+**Construction.** CIS deductions are 20 percent for registered subcontractors and 30 percent for unregistered ones, with 0 percent for gross payment status. VAT, materials, plant hire, fuel and consumable stores come out of the payment before the percentage is applied. That last sentence is the whole configuration problem: the deduction base is not the invoice total, so subcontractor bills need a line structure that separates labour from everything else. Odoo ships `l10n_uk_reports_cis` for CIS monthly returns to HMRC and CIS deduction reporting.
+
+**Payroll.** For 2026 to 2027 employer Class 1 National Insurance is 15 percent on earnings above the secondary threshold of 5,000 pounds a year (96 pounds a week, 417 pounds a month), and Employment Allowance is 10,500 pounds. Employee Class 1 on the standard category A is 0 percent up to the primary threshold, 8 percent from the primary threshold to the upper earnings limit and 2 percent above it. Employers must operate PAYE to collect income tax and National Insurance from pay. Minimum automatic enrolment pension contributions are 8 percent of qualifying earnings, of which the employer must pay at least 3 percent and the employee 5 percent, with qualifying earnings running from 6,240 to 50,270 pounds a year. Payrolling benefits in kind becomes mandatory from 6 April 2027, starting with company cars, car fuel, vans, van fuel and employer-provided medical benefits, with most remaining benefits following from April 2028. The original start date was April 2026 and was put back.
+
+**Statutory accounts.** Company Tax Returns should be filed online, the return is due 12 months after the end of the accounting period, and Corporation Tax is due 9 months and one day after the end of the period. HMRC's free service for filing company accounts and Company Tax Returns closed on 31 March 2026, so from 1 April 2026 companies must use commercial software to file annual accounts and Company Tax Returns with HMRC. Companies House accounts reform now starts in April 2028, not April 2027: from that date all companies must file accounts using commercial software in iXBRL, abridged accounts are removed, small companies and micro-entities must file a profit and loss account, and web and paper filing of accounts closes.
+
+Separately, the FRS 102 periodic review amendments apply to accounting periods beginning on or after 1 January 2026, with early adoption allowed. They bring in a five-step revenue model based on IFRS 15 and on-balance-sheet lease accounting for lessees based on IFRS 16, with exemptions for short-term and low-value leases. The lease change is the one that quietly reshapes a chart of accounts, because leases that used to be a monthly expense line become an asset and a liability.
+
+## What is not in Odoo for the UK market
+
+This is the section nobody publishes, and it is the one that decides the budget.
+
+**UK payroll is not there.** Odoo ships no official UK payroll localization. The payroll localizations documented for v19 are Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, UAE and the US. The documented UK route is the Employment Hero Payroll integration. RTI submissions, auto-enrolment assessment and statutory payments are not in the standard product. Plan for a payroll tool alongside Odoo with an interface for the journal, or a build. Our own [country-agnostic payroll engine](/products/wt-hrms-payroll/) exists precisely because that list has twelve names on it.
+
+**iXBRL statutory accounts are not there.** Odoo does not tag accounts for HMRC or Companies House. That stays with the accountant's software, which matters more now that HMRC's free filing service closed on 31 March 2026 and Companies House goes software-only in April 2028.
+
+**Group HMRC filing is serialised.** Only one company and one user can be connected to HMRC at a time, so group filings have to be run in sequence. If you are implementing for a group of trading companies, that is a process design item, not a technical footnote.
+
+**The 2029 e-invoicing build cannot be scoped yet.** Peppol is confirmed as the network, but the format, phasing and legacy EDI treatment come with the Budget 2026 roadmap. Anyone quoting a fixed price for UK e-invoicing compliance today is quoting against a specification that does not exist.
+
+Then the integrations. Of the 17 UK payment rails worth naming, 6 are not native to Odoo 19: Worldpay (now part of Global Payments), GoCardless, Checkout.com, Barclaycard, Square and SumUp. Of the 14 carriers, 10 are not native, and 3 of those have no Odoo 19 module at all: DX, Whistl and Parcelhub, and InPost UK. DX runs over 110 depots across the UK and Ireland and specialises in irregular dimension and weight freight, secure document exchange and same day courier work that parcel carriers refuse, so it is a build against their API. InPost UK runs the UK locker estate and, since absorbing Yodel in July 2026, the former Yodel home delivery network too.
+
+One nuance that catches people out: Sendcloud is native, but Odoo talks to Sendcloud, not to Royal Mail or Evri, so a paid Sendcloud subscription and its own carrier contracts are a required dependency.
+
+## Local integrations against what it takes in Odoo
+
+| Integration | What it is | Route in Odoo 19 |
+| --- | --- | --- |
+| Bacs Direct Debit | Instant bank transfer | In Odoo, locked to the UK and GBP |
+| Pay by Bank (open banking) | Instant bank transfer | In Odoo, restricted to the UK |
+| Klarna | BNPL | In Odoo |
+| Clearpay | BNPL | In Odoo, restricted to the UK |
+| Revolut Pay | Mobile wallet | In Odoo, restricted to the UK |
+| Stripe, Adyen, Mollie, PayPal | Global gateways | In Odoo |
+| Worldpay | Local acquirer | Community module |
+| GoCardless | Local gateway, Bacs mandates | Community module |
+| Square | Local gateway | Community module |
+| Checkout.com | Global gateway | Paid connector |
+| Barclaycard | Local acquirer | Paid connector |
+| SumUp | Local gateway | Paid connector |
+| DHL Express, UPS, FedEx | Global express | In Odoo |
+| Sendcloud | Aggregator | In Odoo, paid subscription required |
+| Royal Mail | National post | Paid connector |
+| DPD UK, Evri, APC Overnight | Parcel networks | Paid connector |
+| Palletways | Palletised freight | Paid connector |
+| Parcelforce Worldwide | Domestic express | Paid connector, through an aggregator |
+| DX | Irregular freight, secure documents | Custom build |
+| InPost UK | Lockers and home delivery | Custom build |
+| Whistl and Parcelhub | Business mail and parcels | Custom build |
+
+Read the right-hand column as a budget line. "Custom build" is not a warning, it is a number, and it is better to have that number before the project starts than during UAT. The [UK cost page](/countries/united-kingdom/cost/) sets out how those items land in a quote.
+
+## Pre-kickoff checklist
+
+Have these ready before day one and discovery does what it is supposed to do rather than becoming a chase.
+
+- **HMRC access.** The Government Gateway credentials for the MTD VAT connection, and a decision on which company connects first if there is a group.
+- **VAT position in writing.** Registration status, filing frequency, and whether any supplies fall under the reduced or zero rate.
+- **CIS status per subcontractor**, if you are in construction: registered, unregistered or gross payment status, plus how your current bills separate labour from materials, plant hire, fuel and consumable stores.
+- **Chart of accounts and opening balances**, signed off by whoever closes your books.
+- **The payroll decision.** Which tool runs PAYE and auto-enrolment, and who owns the journal that lands in Odoo.
+- **Bank details for Bacs.** The service user number, the sponsoring bank contact, and a sample file the bank has already accepted.
+- **Carrier contracts.** Account numbers and API credentials per carrier, plus a Sendcloud or aggregator account if you use one.
+- **Payment provider contracts.** Which acquirer you are already on, because keeping an existing merchant account often decides whether an item is configuration or a connector purchase.
+- **Named decision makers** per function with authority to change a process, not just describe it.
+- **A go-live date** that avoids your busiest weeks, your VAT quarter end and your period close.
+
+## The rollout, kept short
+
+The delivery sequence is the commodity part, and it runs the same way here as anywhere.
+
+1. **Discovery and process mapping.** Walkthroughs per function, recording the exceptions rather than the happy path. Ends with a written process map, a numbered gap list and the module list that follows from it.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, and each carries a cost. Ends with a signed scope.
+3. **Configuration and prototype.** A working system holding a representative slice of your data, including your awkward products rather than your simple ones.
+4. **Data migration and reconciliation.** Clean in the extract, load in dependency order, reconcile control totals against the old system and sign them off.
+5. **Training, UAT and cutover.** Scripted testing run by the people who will use the system daily, then a go or no-go call against agreed criteria rather than the calendar.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover.
+
+The UK-specific insertions are small and non-negotiable: prove one MTD VAT submission before go-live, and test the Bacs file with the bank rather than against the bank's written specification. Banks reject files for reasons their own documentation does not mention. Delivery detail sits on our [UK implementation page](/services/odoo-implementation/united-kingdom/).
+
+## Questions we actually get asked
+
+**Can Odoo file our VAT return, or do we still need the accountant's software?**
+Odoo submits the VAT return itself through HMRC's MTD VAT API using `l10n_uk_reports`. What it does not do is iXBRL-tagged statutory accounts or the Company Tax Return, so the accountant's software stays in the picture for the year end. Two systems, two jobs, and the split is clean.
+
+**We sell to the NHS. Do we need Peppol now?**
+In practice, yes. NHS England requires Peppol and UK contracting authorities must be able to receive and process EN 16931-compliant e-invoices. Odoo runs its own access point and SMP and the UK is on its eligible list, so this is configuration rather than a build.
+
+**Is UK payroll really not in Odoo?**
+Correct. There is no official UK payroll localization, and the documented route is the Employment Hero Payroll integration. RTI, auto-enrolment assessment and statutory payments are not in the standard product. The usual answer is to keep payroll where it is and post the journal into Odoo. That is a sensible answer, not a failure.
+
+**Our courier has no Odoo connector. What happens?**
+One of three things: a paid apps store module, an aggregator such as Sendcloud with its own subscription and carrier contracts, or a custom build against the carrier API. DX, InPost UK and Whistl or Parcelhub are in the third category today. The choice usually turns on parcel volume, because an aggregator fee per parcel beats a build until it does not.
+
+**We are a group of five companies. Does that change the accounting build?**
+It changes the filing process more than the ledger. Only one company and one user can be connected to HMRC at a time, so VAT submissions run in sequence with a named owner and a checklist. Decide that during design, not during your first quarter end.
+
+**What should we read before asking for a quote?**
+The [United Kingdom country page](/countries/united-kingdom/) for the full obligation set, then the [cost page](/countries/united-kingdom/cost/) for how the custom-build items above turn into numbers.

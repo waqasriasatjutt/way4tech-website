@@ -1,0 +1,139 @@
+---
+title: "Odoo implementation in Australia: PINT A-NZ, payday super, and nine payment rails with no connector"
+description: "What an Australian Odoo build has to satisfy: Peppol eInvoicing under PINT A-NZ Billing, GST and BAS, state payroll tax, payday super since 1 July 2026, and the payment and carrier rails Odoo 19 does not ship."
+date: 2026-08-26
+tags: ["australia", "odoo implementation", "e-invoicing", "payroll"]
+---
+
+Australia has the friendliest e-invoicing regime on this list and the least friendly payments landscape. No B2B mandate and no clearance step, but a format question that can stall a go-live, a superannuation rule that changed on 1 July 2026, and nine payment rails with no Odoo connector at all. Take them in that order.
+
+## What the Australian market requires of the system
+
+The scheme is eInvoicing, on the Peppol network, using the PINT A-NZ Billing specification. The authority is the Australian Taxation Office, acting as the Australian Peppol Authority.
+
+The model is post-audit, not clearance: the invoice goes supplier access point to buyer access point and the ATO never sees it. There is no government invoice approval, no QR code and no fiscal seal. You connect to an accredited access point, not to the ATO.
+
+Who it binds is the opposite of the European pattern. There is no B2B mandate; the obligations sit on Commonwealth government buyers. All federal agencies have had to be able to receive Peppol e-invoices since 1 July 2022. Non-corporate Commonwealth entities must be receiving at least 30 percent of invoices by e-invoicing from 1 July 2026 and must be able to process and send e-invoices automatically by December 2026, and they report progress quarterly to the Australian Peppol Authority. Private-sector B2B use stays voluntary: the proposed Business eInvoicing Right was never enforced.
+
+So compliance sits with the government entity, not the supplier. Suppliers are legally free to keep sending PDFs, although the ATO encourages agencies to make e-invoicing a contractual requirement, which is how it reaches you: through a contract clause rather than a law.
+
+One technical point decides the build, and it is the format. PINT A-NZ Billing is the current specification, replacing the earlier A-NZ Peppol BIS 3.0 profile, and PINT A-NZ Billing Process v1.1.2 carries a release date of 21 November 2025. Odoo can generate Peppol XML for a partner on the network, but its documented Peppol formats are BIS Billing 3.0, XRechnung CIUS and NLCIUS. PINT A-NZ Billing is not on that list. Confirm the format your version emits before you commit to a government buyer: this is the item that turns a two-week configuration into a phase of its own. We track it on our [Australia e-invoicing page](/countries/australia/e-invoicing/).
+
+Settle the sending question at the same time: whether your deployment transmits through an accredited access point or only produces XML for upload, because that decides whether you need an access point contract.
+
+A useful side effect for anyone redesigning invoice layouts: an invoice meeting the A-NZ Invoice Specification counts as a valid Australian tax invoice even without the words "tax invoice" or "GST invoice", provided all mandatory data fields are present.
+
+## The tax, payroll and accounting obligations that shape the build
+
+**GST.** GST is 10 percent on most goods, services and other items sold or consumed in Australia. Registration is compulsory at AUD 75,000 GST turnover, AUD 150,000 for non-profits, and from the first dollar for taxi, limousine and ride-sourcing operators and for anyone claiming fuel tax credits. You have 21 days to register once you know you will cross the threshold.
+
+GST and PAYG withholding are reported on the Business Activity Statement. BAS due dates can be quarterly, monthly or yearly depending on the taxpayer, and the ATO assigns the cycle, so it is not a preference you configure.
+
+**PAYG instalments.** All companies with turnover of AUD 20 million or more pay monthly, most others monthly or quarterly. Companies with annual tax below AUD 8,000 that are not GST-registered sit outside the instalment system. Small and medium businesses may opt into monthly reporting and payment from 1 July 2027.
+
+**Payroll tax is a state tax, not federal**, so an Australian build has to carry per-state rates and thresholds. New South Wales is 5.45 percent with an AUD 1,200,000 annual exemption threshold. Victoria is 4.85 percent general and 1.2125 percent for regional employers, with an AUD 1 million threshold from 1 July 2025. A single national payroll tax rule will be wrong for any client with staff in two states.
+
+**Superannuation changed on 1 July 2026. Check this first.** The superannuation guarantee rate is 12 percent of an employee's ordinary time earnings for FY2026. Payday super started on 1 July 2026: employers must pay SG contributions on each payday and the money must be received by the fund within seven business days of that payday. The legislation received royal assent on 6 November 2025.
+
+It is not only a timing change. Payday super replaces ordinary time earnings with qualifying earnings as the single base for both the SG amount and the SG charge. All commissions are now qualifying earnings, and salary-sacrificed amounts relating to qualifying earnings are included. STP and SuperStream reporting change with it. And under the new SG charge, paying late no longer clears the liability: notional earnings and an administrative uplift remain payable, and the uplift starts at 60 percent of the shortfall, with reductions for voluntary disclosure depending on timing. A late super run is now an expense, not an inconvenience.
+
+**Single Touch Payroll.** Tax and super information is reported to the ATO from STP-enabled software every time employees are paid, and STP Phase 2 has extended what must be reported. The end-of-year finalisation declaration is due by 14 July.
+
+**Accounting.** Accounting standards are made by the Australian Accounting Standards Board, a government agency, under section 334 of the Corporations Act 2001. Disclosing entities, registered schemes and registrable superannuation entities lodge complete financial reports with ASIC within three months after financial year end; all other entities have four months. Lodgement uses Form 388 unless the entity lodges with ASX, NSX, Cboe Australia or SSX instead. Public companies, large proprietary companies and foreign-controlled small proprietary companies are among those required to lodge, so check the client's classification early. Our data records the absence of a statutory chart of accounts and of a SAF-T style audit file as unconfirmed, so treat that as our read rather than a citation.
+
+## What is not in Odoo for the Australian market
+
+Australia is one of the better-served localizations. `l10n_au` ships the Australian chart of accounts and GST tax configuration at 10 percent standard, with variants for different transaction types including TPAR-specific taxes. `l10n_au_reports` produces the Business Activity Statement covering GST, PAYG withholding and deferred GST, plus the Taxable Payments Annual Report. ABA credit transfer file generation installs automatically with the base localisation, along with remittance advice. Payroll is real here, unlike most markets: `l10n_au_hr_payroll` installs an Australian Employee salary structure, `l10n_au_hr_payroll_account` posts the entries, and `l10n_au_hr_payroll_api` handles STP and SuperStream, submitting via the SuperChoice API with ATO-approved security controls including MFA, session timeouts and audit logging. STP finalisation is a report in the Payroll app, run by a designated STP Responsible user.
+
+The four gaps are narrow and expensive if missed.
+
+**Deferred GST.** The localisation does not fetch the DGST balance automatically from the ATO, so the figure goes into the BAS by hand each period. Importers should know that before their first quarter close.
+
+**Payday super.** Live since 1 July 2026. The Odoo 19 Australian documentation we reviewed does not describe the seven business day fund receipt window or the qualifying earnings base, so confirm your version handles both before go-live rather than assuming it does. This is the highest-risk assumption in an Australian payroll build right now.
+
+**State payroll tax.** Rates and thresholds differ per state and no Odoo payroll tax module is documented, so it is configuration or a build.
+
+**Peppol sending and format.** Both questions above, in writing, before a government buyer gets a date.
+
+Then the rails, and this is where Australian budgets go. Of the 18 payment methods worth naming, only 4 are native: Stripe, PayPal, Adyen, and Apple Pay and Google Pay through Stripe's express checkout. BECS Direct Entry has a free community Odoo 19 module for GoCardless, which lists BECS among its supported schemes. Four are paid connectors: eftpos, Tyro, Afterpay and Zip. Zip has a shortcut worth knowing: Zip Pay and Zip Money can both be switched on through Stripe or Adyen as a payment partner, and both of those ship natively.
+
+That leaves nine with no connector at all. Three are the bank rails Australian businesses actually use. BPAY is how customers pay bills from online banking using a biller code and a Customer Reference Number, supported by over 25 financial institutions, so invoices need a CRN printed on them and a reconciliation process behind them. PayID links a bank account to a mobile number, email address, ABN or organisation identifier, is offered by over 100 Australian financial institutions, and shows the payer the account holder name before they confirm. PayTo lets a customer authorise a business to take payments from their bank account under an agreement they manage in their own online banking, which makes it the item to solve for recurring billing. Each is a build, and all three land in the same place: bank statement matching. Odoo Community cannot read a bank statement file at all, so a [statement import](/products/wt-bank-statement-import/) is what makes CRN and PayID reconciliation practical.
+
+The other six are local gateways an existing business is likely already on: Airwallex, Fat Zebra and SecurePay, Pin Payments, eWAY, Windcave and Zeller. One trap: SecurePay is now wholly owned by Fat Zebra, so older SecurePay documentation and connectors point at the previous owner.
+
+On carriers, 10 of the 14 worth naming are not native, and Australia Post is one of them. The national postal operator, running Parcel Post and Express Post domestically and reaching over 220 international destinations, has no native Odoo 19 connector, so you either buy one from the apps store or go through Starshipit. Starshipit is the aggregator Odoo 19 does ship for Australasian couriers, connecting to over 60 carriers including Australia Post and DHL, with two conditions: a paid Starshipit subscription, and shipping rules set up under Settings and Rules inside Starshipit before Odoo will pick the right service. Four carriers have no route and are builds: Team Global Express, Allied Express, Hunter Express and MachShip, which matters most to buyers shipping pallets rather than parcels.
+
+## Local integrations against what it takes in Odoo
+
+| Integration | What it is | Route in Odoo 19 |
+| --- | --- | --- |
+| Stripe, PayPal, Adyen | Global gateways | In Odoo |
+| Apple Pay and Google Pay | Mobile wallet | In Odoo, Stripe express checkout |
+| BECS Direct Entry | Direct entry credits and debits | Community module, via GoCardless |
+| eftpos | Domestic card scheme | Paid connector, through an acquirer |
+| Tyro | Local gateway | Paid connector |
+| Afterpay | BNPL | Paid connector |
+| Zip Pay and Zip Money | BNPL | Paid connector, or through Stripe or Adyen |
+| BPAY | Bill payment from online banking | Custom build, CRN on the invoice |
+| PayID on the New Payments Platform | Instant bank transfer | Custom build |
+| PayTo | Bank-authorised recurring debit | Custom build |
+| eWAY, Windcave, Pin Payments | Local gateways | Custom build |
+| Fat Zebra and SecurePay, Zeller | Local gateways | Custom build |
+| Airwallex | Local gateway, multi-currency | Custom build |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| Starshipit | Aggregator | In Odoo, paid subscription and rules setup |
+| Australia Post | National post | Paid connector or Starshipit |
+| StarTrack | B2B freight | Paid connector |
+| Sendle | Domestic express | Paid connector |
+| CouriersPlease | Domestic express | Paid connector, through Shippit |
+| Aramex Australia | Domestic express | Paid connector, through Shippit or MachShip |
+| Shippit | Aggregator | Paid connector plus account |
+| Team Global Express | Domestic express and freight | Custom build |
+| Allied Express | Domestic express | Custom build |
+| Hunter Express | Freight, courier and 3PL | Custom build |
+| MachShip | Aggregator | Custom build |
+
+Read the right-hand column as budget lines. The [Australia cost page](/countries/australia/cost/) sets out how they land in a quote.
+
+## Pre-kickoff checklist
+
+- **Your BAS cycle as the ATO assigned it**, and your next lodgement date.
+- **Every state you employ in**, with headcount, since payroll tax rates and thresholds are per state.
+- **A written payday super position**: which system pays, when, and how receipt by the fund inside seven business days is evidenced.
+- **Whether you sell to Commonwealth agencies**, and whether any contract already carries an e-invoicing clause.
+- **An access point decision** if e-invoicing is in scope, plus written confirmation of the format your Odoo version emits.
+- **Your deferred GST position** if you import, since the DGST figure is entered by hand.
+- **How customers pay you today**, split between card, BPAY, PayID, PayTo and direct entry, with monthly volumes.
+- **Carrier accounts and API credentials**, plus a Starshipit or Shippit account if you use one.
+- **Chart of accounts and opening balances**, signed off by whoever closes your books.
+
+## The rollout, kept short
+
+1. **Discovery and process mapping.** Walkthroughs per function, recording the exceptions rather than the happy path. Ends with a process map and a numbered gap list.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a cost. Ends with a signed scope.
+3. **Configuration and prototype.** A working system holding a real slice of your data, including the awkward products rather than the simple ones.
+4. **Data migration and reconciliation.** Clean in the extract, load in dependency order, reconcile control totals and sign them off.
+5. **Training, UAT and cutover.** Scripted testing by the people who will use the system daily, then a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover.
+
+Two Australian insertions are non-negotiable. Run one full pay cycle end to end in UAT, including the STP submission and the super payment, and prove the money reaches the fund inside seven business days. And test the ABA file with the bank rather than against its written specification, because banks reject files for reasons their documentation does not mention. Delivery detail is on our [Australia implementation page](/services/odoo-implementation/australia/).
+
+## Questions we actually get asked
+
+**Do we have to send e-invoices?**
+Not unless a contract says so. There is no B2B mandate and compliance sits with the government entity, not the supplier. It becomes your problem when a Commonwealth buyer puts it in the contract, which the ATO encourages agencies to do.
+
+**Can Odoo produce a compliant Australian e-invoice?**
+It produces Peppol XML, but its documented formats are BIS Billing 3.0, XRechnung CIUS and NLCIUS, and PINT A-NZ Billing is not among them. Get written confirmation of the format before you promise a government buyer a date, and settle separately whether your deployment sends through an accredited access point or only produces a file.
+
+**Is Australian payroll actually in Odoo?**
+More than in most markets. You get an Australian salary structure, accounting entries, and STP and SuperStream through `l10n_au_hr_payroll_api`. What is not documented is the payday super change: the seven business day receipt window and the qualifying earnings base. Confirm both before go-live, and remember the SG charge uplift starts at 60 percent of the shortfall if you are late.
+
+**Why is Australia Post not built in?**
+Odoo ships a small carrier set and Australia Post is not in it. Buy an apps store connector, or use Starshipit, which does ship with Odoo 19 and reaches over 60 carriers, at the cost of a subscription and rule setup inside Starshipit first.
+
+**Our gateway is eWAY. Can we keep it?**
+Yes, but as a build. eWAY, Windcave, Pin Payments, Zeller, Airwallex, and Fat Zebra with SecurePay all have no Odoo 19 connector. If keeping the gateway is not a hard requirement, moving to Stripe or Adyen is configuration instead, and Zip comes along with either. Price that trade honestly at design time.
+
+**We invoice by BPAY. What does that mean for the build?**
+A CRN on every invoice, a rule for generating it, and a reconciliation process matching receipts back to invoices, none of it native. Same for PayID and PayTo: budget them as builds, not settings. The full obligation set is on the [Australia country page](/countries/australia/).

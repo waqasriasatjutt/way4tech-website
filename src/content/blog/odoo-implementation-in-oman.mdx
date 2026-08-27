@@ -1,0 +1,124 @@
+---
+title: "Odoo implementation in Oman: Fawtara has dates, Odoo has nothing for it"
+description: "Decision 189/2026 fixes Oman's e-invoicing dates at 1 April 2027 and 1 October 2027, on PINT OM over Peppol. Odoo 19 ships a solid Oman accounting localization and no e-invoicing at all. Where that leaves your plan."
+date: 2026-08-22
+tags: ["oman", "e-invoicing", "implementation"]
+---
+
+Oman is the market where the accounting localization is better than most buyers expect and the compliance gap is worse. Odoo 19 ships a real Omani chart of accounts, VAT taxes, fiscal positions and a tax report shaped like the VAT return. It ships nothing at all for Fawtara, which now has binding dates. Planning an Omani rollout means knowing exactly where that line falls. The data behind this is on our [Oman localization page](/countries/oman/).
+
+## Fawtara: dates fixed, specification published, module absent
+
+The scheme is Fawtara (فوترة), the Oman Tax Authority e-invoicing system, run by the Oman Tax Authority. Nothing is mandatory yet. As of 22 August 2026 the OTA is running a voluntary pilot with about 100 selected large VAT-registered companies, and Decision 189/2026, issued 9 August 2026, fixes the binding dates at 1 April 2027 and 1 October 2027.
+
+It binds VAT-registered taxable persons. Decision 189/2026 obliges those with annual supplies above OMR 5 million from 1 April 2027, and those at or below OMR 5 million from 1 October 2027. Before those dates participation is voluntary and in practice limited to the OTA's invited pilot group of about 100 large taxpayers.
+
+What it obliges technically:
+
+- **Structured XML built to the PINT OM specification.** Three documents are published: PINT OM Billing, PINT OM Self-Billing, and the Oman Tax Data Document (TDD) used to report invoice data to the OTA. Paper invoices, PDFs and emailed images stop counting as tax invoices once the obligation applies.
+- **Exchange over Peppol.** The OTA was approved as a Peppol Authority on 7 January 2026 and publishes an Oman SMP API specification, so invoices move through an accredited service provider rather than being posted to the tax authority directly.
+- **A five-corner model:** supplier, supplier's service provider, buyer's service provider, buyer, and the OTA. Invoice data reaches the OTA at the same time as the buyer. This is continuous reporting, not per-invoice pre-clearance where the invoice is held until the authority signs it.
+- **Amended Article 143 of the VAT Executive Regulations** requires each invoice to be issued in an approved, secured electronic format that keeps it intact and stored, with a unique number per invoice.
+- **Accredited service provider registration opened in March 2026.** The OTA portal publishes a Service Provider Registration User Manual alongside the SMP API specification.
+
+The number that should set your estimate: the draft data dictionary grew from 53 mandatory invoice fields in the November 2025 OTA draft to 73 in the PINT OM framework. Field-level mapping at that scale is real work, and twenty extra mandatory fields are twenty places your master data has to be complete rather than mostly complete. We keep the current position on our [Oman e-invoicing page](/countries/oman/e-invoicing/).
+
+## Tax, payroll and accounting that shape the build
+
+**VAT is 5%.** Registration is mandatory once annual supplies reach OMR 38,500 and voluntary from OMR 19,250. Returns are quarterly, with the return and the payment both due 30 days after the end of the quarter. Late payment carries additional tax of 1% per month, and late filing an administrative penalty of OMR 500 to OMR 5,000.
+
+**Withholding tax is 10%** on royalties, research and development fees, software use rights, management fees and services paid to a foreign company with no permanent establishment in Oman. It must be withheld and remitted within 14 days from the end of the month in which the amount was paid or credited, whichever is earlier. Since 1 March 2018 service WHT applies whether the service is performed inside or outside Oman, which catches more supplier invoices than most finance teams assume. Withholding tax on dividends and interest paid to non-resident investors has been suspended since a Royal Directive of 11 January 2023, and WHT on leasing ships, aircraft and aircraft engines has been suspended since 29 December 2022.
+
+**Corporate income tax is 15%.** A 3% rate applies to a qualifying small Omani proprietorship or LLC with registered capital of OMR 60,000 or less at the start of the tax year, gross income of OMR 150,000 or less, and an average of 25 employees or fewer. Petroleum companies are taxed at 55%.
+
+**Personal income tax arrives on 1 January 2028** under Royal Decree 56/2025: 5% of taxable income for individuals whose total annual income exceeds OMR 42,000. Payroll withholding logic will be needed before that date.
+
+**Payroll.** Omani nationals contribute to the Social Protection Fund, set up by Royal Decree 52/2023. The employee share is 8% of salary, and the employer pays a larger share covering old age, work injury and the job security scheme. Our data also records, unconfirmed, that expatriate employees do not join the Omani old age pension scheme and that their end of service is handled through the Labour Law gratuity rather than through the Social Protection Fund. Confirm that before you build the contribution rules around it.
+
+Article 61 of the Labour Law (Royal Decree 53/2023) gives a worker not covered by the Social Protection Law a gratuity of not less than the basic wage for each year of service, calculated on the final basic wage and pro-rated for part years. Allowances do not enter the calculation, so your salary structure has to keep basic wage cleanly separable.
+
+The Wage Protection System is mandatory for private sector employers under Ministerial Decision 729/2024, effective 16 December 2024, which replaced Decision 299/2023. Wages must be transferred through a bank or financial institution regulated by the Central Bank of Oman within three days of the end of the wage entitlement period. Fines are OMR 50 per worker and double on repeat, with preliminary work permits suspended until the breach is cleared. Exemptions exist for workers in their first 30 days, workers on unpaid leave, labour disputes running 30 days or more, work suspensions not caused by the employer, and absconding reports approved 30 or more days earlier. Payroll needs to flag these cases rather than silently drop them from the file.
+
+**Accounting.** IFRS as issued by the IASB is required, with no local modifications and no accounting policy options removed. For listed issuers the hook is Article 282 of the Executive Regulation of the Capital Market Law (Royal Decree 80/1998). The IFRS for SMEs standard has not been adopted in Oman. The annual income tax return is due within four months of the financial year end and must be accompanied by audited accounts signed by an auditor registered in Oman; SME taxpayers on the 3% rate may instead file a simplified income statement within three months of year end. Accounting records and supporting documents must be kept for ten years after the end of the accounting period they relate to, which drives archive and attachment retention design in Odoo, not just the ledger.
+
+## What is not in Odoo for this market
+
+Start with what is there, because the Omani accounting localization goes further than most in the Gulf. l10n_om ships in Odoo 19 core from Odoo S.A. and auto-installs with Accounting, alongside l10n_om_reports and l10n_gcc_invoice. Between them you get a chart of accounts based on Omani practice with account groups and default account mappings, VAT taxes covering standard 5%, zero-rated domestic, exports, exempt, imports and reverse charge, fiscal positions that adjust tax automatically based on whether the customer or vendor is registered, a tax report laid out to match the Oman VAT return, Omani governorates loaded as country state records, and Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills.
+
+Now the gap:
+
+- **Fawtara e-invoicing. Odoo 19 has nothing for it.** The Oman localization documentation makes no mention of e-invoicing, Odoo's Peppol access point service covers European countries plus Turkey and includes no GCC country, and a search of the Odoo apps store for Oman e-invoicing returns zero apps. PINT OM generation, the Tax Data Document, SMP connectivity and accredited service provider integration are all a build.
+- **Payroll.** There is no Odoo payroll localization for Oman. The only GCC payroll localizations Odoo ships are the United Arab Emirates and Saudi Arabia. Social Protection Fund contribution rules and Article 61 end of service gratuity both need building.
+- **WPS Salary Information File generation.** A search of the Odoo apps store for Oman payroll returns zero apps, and the WPS and SIF modules on the store target Saudi Arabia, the UAE and Qatar. Oman needs a custom generator against the employer's bank layout.
+- **Omanisation quota tracking** and the annual workforce localisation plan filed with the Ministry of Labour.
+- **Withholding tax at 10%** on payments to non-resident suppliers, including the 14-day remittance cycle. l10n_om does not model it.
+- **Personal income tax withholding** ahead of the 1 January 2028 start.
+
+On payments, eighteen rails matter in Oman and six ship with Odoo 19: OmanNet, Amazon Payment Services, Paymob, cash on delivery, the Wire Transfer method, and Stripe. Stripe is native only as a connector: Stripe's own country list does not include Oman, so an Omani registered company cannot open an account to accept payments. Of the twelve that are not native, two have community modules, Thawani Pay and MyFatoorah, four need a paid connector, and six are a build, including Amwal Pay, the Bank Muscat e-commerce gateway, the pay+ and eFloos wallets, MpClear and the new Maal card.
+
+On couriers, ten matter and three are native: DHL Express, FedEx and UPS. Aramex, Naqel Express and SMSA Express need paid connectors, and our own [Gulf and South Asia shipping carriers connector](/products/) covers those three with rates, waybills, labels, cancellation and tracking. Asyad Express, Oman Post, iMile and Posta Plus have nothing on the apps store. Asyad Express matters most of the four: it is the state owned express arm that Oman Post operates under, with 11 last mile centres and door to door delivery across Oman in 24 to 72 hours, plus cash on delivery and returns, and it is the default domestic carrier for an Omani online store. The default domestic carrier being a custom build is the kind of thing that should appear in a quote, and usually does not.
+
+## Local rails against what they take in Odoo
+
+| Local rail or courier | What it is | What it takes in Odoo |
+| --- | --- | --- |
+| OmanNet | Domestic card scheme | In Odoo |
+| Maal card | Domestic card scheme | Custom build |
+| Thawani Pay | Local gateway | Community module |
+| Amazon Payment Services | Regional gateway | In Odoo |
+| Paymob | Regional gateway | In Odoo |
+| Tap Payments | Regional gateway | Paid connector |
+| MyFatoorah | Regional gateway | Community module |
+| PayTabs | Regional gateway | Paid connector |
+| Amwal Pay | Local gateway | Custom build |
+| Bank Muscat e-commerce gateway | Local acquirer | Custom build |
+| pay+ | Mobile wallet | Custom build |
+| eFloos | Mobile wallet | Custom build |
+| MpClear | Instant bank transfer | Custom build |
+| Apple Pay and Samsung Pay | Mobile wallet | Paid connector |
+| Cash on delivery, bank transfer in OMR | Local settlement | In Odoo |
+| Asyad Express | Domestic express | Custom build |
+| Oman Post | National post | Custom build |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| Aramex | Domestic express | Paid connector |
+| Naqel Express | Domestic express | Paid connector |
+| SMSA Express | Domestic express | Paid connector |
+| iMile | Last mile | Custom build |
+| Posta Plus | Domestic express | Custom build |
+
+## Pre-kickoff checklist
+
+1. **Your annual supplies figure against OMR 5 million.** Above it, your Fawtara date is 1 April 2027. At or below, 1 October 2027.
+2. **A shortlist of accredited service providers.** Registration opened in March 2026 and the OTA publishes a Service Provider Registration User Manual alongside the SMP API specification.
+3. **The three PINT OM documents:** PINT OM Billing, PINT OM Self-Billing and the Oman Tax Data Document.
+4. **A master data completeness check against 73 mandatory fields**, not the 53 in the November 2025 draft.
+5. **Your salary structure with basic wage cleanly separated**, because Article 61 gratuity is calculated on the final basic wage and allowances do not enter it.
+6. **Your bank's WPS file layout**, in writing, plus a list of the exemption cases you need flagged rather than dropped.
+7. **A list of non-resident suppliers** likely to attract the 10% withholding tax, given the 14-day remittance cycle.
+8. **A ten-year retention answer:** where attachments live, who can delete them, and what the backup actually covers.
+
+## The rollout itself is the commodity part
+
+[Six phases](/services/odoo-implementation/oman/). Discovery and process mapping produces a written process map and a numbered gap list. Solution design turns each gap into configure, customise, change the process, or leave out, each priced, and that signed list is the scope. Configuration and prototype runs pilot transactions end to end on a slice of your own data. Data migration loads partners, products, balances and open documents in that order and finishes with signed control totals. Training, UAT and cutover ends in a go or no-go call against agreed criteria. Hypercare stabilises and hands over.
+
+The Omani weight is the Fawtara field mapping and the accredited service provider integration, both of which run alongside the phases rather than inside one of them. Ranges are on our [Oman cost page](/countries/oman/cost/).
+
+## Questions we actually get asked
+
+**Is Fawtara mandatory now?**
+No. As of 22 August 2026 the OTA is running a voluntary pilot with about 100 selected large VAT-registered companies. Decision 189/2026 makes it binding from 1 April 2027 above OMR 5 million of annual supplies and from 1 October 2027 at or below that.
+
+**Does Odoo's Peppol support cover Oman?**
+No. Odoo's Peppol access point service covers European countries plus Turkey and includes no GCC country, and a search of the Odoo apps store for Oman e-invoicing returns zero apps. Exchange has to go through an accredited service provider with the mapping built on your side.
+
+**Is this the same as the Saudi build?**
+No. Oman is continuous reporting on a five-corner model where invoice data reaches the OTA at the same time as the buyer. Saudi Arabia pre-clears standard tax invoices before they are valid. The state machine on your invoice is different, and so is the failure mode.
+
+**How good is the Oman accounting localization?**
+Further than Qatar and Kuwait, which stop at the chart of accounts. l10n_om ships a chart of accounts, VAT taxes for standard, zero-rated, export, exempt, import and reverse charge, fiscal positions that adjust tax by registration status, and a tax report matching the VAT return.
+
+**Is there an Omani payroll module?**
+No. The only GCC payroll localizations Odoo ships are the UAE and Saudi Arabia. Social Protection Fund rules, Article 61 gratuity and the WPS file are all a build, and the apps store returns zero Oman payroll apps.
+
+**What about personal income tax in 2028?**
+Royal Decree 56/2025 brings it in on 1 January 2028 at 5% of taxable income for individuals whose total annual income exceeds OMR 42,000. Put payroll withholding on the phase two backlog now, so this year's salary structure does not have to be reopened.

@@ -1,0 +1,135 @@
+---
+title: "Odoo implementation in France: the Plateforme Agreee, the annuaire, and where go-lives slip"
+description: "What a French Odoo build has to satisfy from 1 September 2026: routing through an approved platform, the four new mandatory invoice mentions, FEC on audit, the DSN gap, and the payment and carrier rails Odoo 19 does not ship."
+date: 2026-08-21
+tags: ["france", "odoo implementation", "e-invoicing", "facturation electronique"]
+---
+
+France is the one market on this list where the e-invoicing reform decides the project rather than decorating it. Everything else in a French Odoo build, the chart of accounts, the VAT regime, the carrier set, sits downstream of one question: can your invoices reach the right platform with the right data on them.
+
+## What the French market requires of the system
+
+The scheme is facturation electronique, the mandatory B2B e-invoicing and e-reporting reform, run by the DGFiP under the Ministere de l'Economie et des Finances.
+
+It is live from 1 September 2026. Every business subject to French VAT must be able to receive e-invoices from that date, and large companies and ETIs must also issue them and file e-reporting. PME, TPE and micro-enterprises follow on 1 September 2027.
+
+Who it binds: businesses established in France and subject to French VAT, including those under the franchise en base. Receiving e-invoices covers all of them from 1 September 2026. Issuing e-invoices and transmitting e-reporting data covers grandes entreprises and entreprises de taille intermediaire from 1 September 2026, then PME, TPE and micro-enterprises from 1 September 2027.
+
+What it technically requires:
+
+- Invoices must be issued, transmitted and received through a Plateforme Agreee, a private operator registered by the DGFiP for three renewable years, under article 289 bis of the Code general des impots. The list of registered platforms is published on impots.gouv.fr.
+- The chosen platform passes the invoice data to the tax administration under article 289 E CGI. This is continuous transaction control by reporting through an accredited intermediary, not per-invoice clearance where the tax authority validates an invoice before it is legally valid.
+- The public portal no longer acts as a free exchange platform. Article 123 of the loi de finances pour 2026 formalised the simplification announced in August 2025, leaving the private platforms at the centre of the flow.
+- A central annuaire routes invoices to the recipient's platform. It is made available to the platforms and holds the addressing data. SIREN, SIRET and recipient establishment on the customer record are what make routing work.
+- A structured format built on the EN 16931 semantic model. DGFiP external specifications version 3.2 dated 30 April 2026, backed by AFNOR norms XP Z12-012, XP Z12-013 and XP Z12-014. The three accepted syntaxes are Factur-X (hybrid PDF plus XML), UBL and CII.
+- Four new mandatory invoice mentions: the buyer's SIREN, the delivery address when it differs from the billing address, the nature of the operation (goods, services or both), and the "TVA sur les debits" option when the seller has elected it.
+- E-reporting of transaction data, and in some cases payment data, covering what e-invoicing does not: B2C sales and cross-border transactions. Same channel, the platform. Articles 290 and 290 A CGI, and CGI annexe II articles 242 nonies M to 242 nonies P. It applies to grandes entreprises and ETI from 1 September 2026.
+
+The single most useful fact for an Odoo buyer: Odoo completed the DGFiP registration and is an approved platform, and ships `l10n_fr_pdp` to send and receive through it, plus `l10n_fr_pdp_pos` for POS e-reporting. Activation is in Accounting or Invoicing, then Configuration, Settings, French Electronic Invoicing. That removes the intermediary contract most French sellers assumed they had to sign separately. Requirement by requirement, it is on the [French e-invoicing page](/countries/france/e-invoicing/).
+
+## The tax, payroll and accounting obligations that shape the build
+
+**TVA.** The standard rate is 20 percent. Reduced rates of 10 percent, 5.5 percent and 2.1 percent apply only to categories expressly listed in the Code general des impots. Guadeloupe, Martinique and La Reunion run a separate 8.5 percent standard rate, which matters because Odoo's `l10n_fr_account` is scoped to mainland France, so overseas departments need separate handling.
+
+**Regime, which decides how the system files.** There are three. Franchise en base, with no VAT declaration, below 85,000 euros turnover for goods and hospitality or 37,500 euros for services. Regime reel simplifie between those thresholds and 945,000 euros for goods or 286,000 euros for services, filed annually on form CA12, with advance payments in July at 55 percent and December at 40 percent and a May balance. Regime reel normal above those thresholds, filed monthly on form CA3, or quarterly if VAT due is under 4,000 euros a year.
+
+One threshold catches growing businesses mid-project: a business on the regime simplifie whose annual VAT exceeds 15,000 euros has to switch to monthly filing. That is the one that usually forces a mid-year change in how the ERP files. All VAT returns and payments go online through the espace professionnel on impots.gouv.fr, and paper filing is not an option.
+
+From 1 September 2026 the DGFiP receives invoice and transaction data through approved platforms with the stated aim of pre-filling VAT returns. Plan for the VAT return in the ERP to be reconciled against what the platform already sent, not just computed locally. That is a genuine change in how the finance team works, and it belongs in the training plan.
+
+**Payroll.** The Declaration sociale nominative is the single monthly electronic filing built from payroll data. It goes through net-entreprises.fr, which is the deposit point, and it replaced the separate social declarations for private-sector employers. The deadline is commonly given as the 5th of the month following the pay period for employers with 50 or more employees and the 15th for employers under 50, but that split is stated by secondary sources rather than confirmed from a primary one, so treat it as unconfirmed and check it against URSSAF before you build a calendar around it.
+
+**Accounting.** The Plan Comptable General is set by the Autorite des normes comptables. The base text is reglement ANC 2014-03, amended since, most recently by reglement ANC 2026-04 of 4 May 2026 on accounting for corporate income taxes and related contributions. The reformed PCG from reglement ANC 2022-06 applies to financial years opened from 1 January 2025; reported effects include cutting the account list from around 2,000 to around 1,600, a narrower definition of exceptional result, and removal of the transfer-of-charges accounts 791, 796 and 797. Those specifics come from secondary sources and are unconfirmed, so read the reglement text before you rebuild a chart of accounts around them.
+
+**FEC.** The Fichier des Ecritures Comptables must be handed to the tax administration on a tax audit by any taxpayer keeping computerised accounts. Article L47 A-I of the Livre des procedures fiscales sets the obligation and article A47 A-1 sets the format. XML is accepted and the DGFiP publishes XSD schemas to validate against. Odoo ships FEC import as `l10n_fr_fec_import` for loading history. FEC export is not in the standard France localization; the OCA module `l10n_fr_fec_oca` covers it. That asymmetry is worth reading twice: the direction you need on an audit is the direction that is not in the box.
+
+## What is not in Odoo for the French market
+
+**French payroll, entirely.** France is not on Odoo's payroll localization list, which covers Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, UAE and the United States. Odoo ships `l10n_fr_hr_payroll_account`, which supplies the accounting side of French payroll rules only. There is no DSN generator in standard Odoo. In practice French clients run payroll in a dedicated tool or with a cabinet comptable and post the resulting journal entries into Odoo. Budget for a separate payroll tool plus an interface, not an Odoo payroll build. Where a client insists on running payroll inside Odoo, our [country-agnostic payroll engine](/products/wt-hrms-payroll/) gives the rule engine and the dry-run preview, and DSN still has to be solved separately.
+
+**Partner and product master data for the four new mandatory mentions.** Buyer SIREN on every B2B partner, delivery address when it differs, and operation nature per line. This is a data cleanup project across the customer master, and it is where go-lives slip. It is also the least glamorous line item in the quote and the one most often cut, which is why it is the one that bites.
+
+**Annuaire routing.** Wrong or stale SIREN and SIRET on customer records is the main cause of invoices that never reach the recipient's platform. Build validation and a monitoring view for undelivered invoices and returned lifecycle statuses before go-live, not after the first month of silence. A [duplicate customer warning](/products/wt-duplicate-partner/) at creation time is a cheap piece of the same problem, because two partner records for one SIREN is how the master goes bad in the first place.
+
+**Lifecycle status handling.** The platform sends statuses back and the business has to act on rejections. Standard Odoo screens will usually need extending into a proper exception queue with an owner.
+
+**FEC export, CA3 and CA12 filing forms, and DAS2** all sit in OCA modules rather than the standard localization, so a Community or Enterprise stack needs those pulled in and version-matched. Version matching is real work when a client upgrades.
+
+**Anything beyond the VAT report**, meaning the liasse fiscale, CVAE and OGA-specific exports.
+
+Then the rails. Of the 19 French payment methods worth naming, 13 are native to Odoo 19, which is unusually good coverage, and it is largely because Worldline's Odoo 19 mapping reaches Cartes Bancaires, Cofidis, FLOA Bank, Klarna and PayPal from one French acquiring contract. Six are not native: Wero, PayPlug, HiPay and Oney arrive through paid connectors, and Lyra and Monext (Payline) are builds. Oney is worth flagging because it sits behind a large share of the 3x and 4x offers French shoppers see, has no dedicated Odoo module, and arrives through the paid HiPay connector, which makes a HiPay contract a required dependency rather than an option.
+
+Shipping is the inverse. Only 4 of 15 carriers are native, and the one that carries France is Sendcloud: it is the single shipped Odoo 19 connector that actually reaches French carriers, covering Colissimo, Chronopost, Mondial Relay, Colis Prive, Relais Colis, DPD, GLS, GEODIS and Amazon Shipping from one integration. Two specifics worth knowing before you promise anything. Odoo ships the Mondial Relay pickup-point picker only: rates, labels and tracking are not covered and need a paid connector or a build. And Colis Prive requires you to bring your own contract.
+
+## Local integrations against what it takes in Odoo
+
+| Integration | What it is | Route in Odoo 19 |
+| --- | --- | --- |
+| Cartes Bancaires (CB) | Domestic card scheme | In Odoo |
+| Worldline | French acquirer, reaches CB, Cofidis, FLOA, Klarna | In Odoo |
+| SEPA Direct Debit (prelevement) | Bank direct debit | In Odoo, EUR and creditor identifier required |
+| Virement bancaire | SEPA credit transfer | In Odoo as Wire Transfer |
+| Alma | BNPL, France only | In Odoo |
+| FLOA, Cofidis | BNPL | In Odoo, via Worldline |
+| Stripe, Adyen, Mollie, PayPal | Gateways | In Odoo |
+| Wero | Bank-backed wallet | Paid connector, through a gateway |
+| PayPlug | French PSP | Paid connector |
+| HiPay | French gateway, widest local method list | Paid connector |
+| Oney | BNPL | Paid connector, HiPay contract required |
+| Lyra | French PSP, data hosted in France | Custom build |
+| Monext (Payline) | French PSP | Custom build |
+| Sendcloud | Aggregator reaching French carriers | In Odoo, paid subscription required |
+| DHL Express, UPS, FedEx | Global express | In Odoo |
+| Colissimo (La Poste) | National post, home delivery | Paid connector |
+| Chronopost | Timed next-morning express | Paid connector |
+| Chronofresh | Temperature controlled | Paid connector |
+| Mondial Relay | Pickup points | Paid connector, picker only in Odoo |
+| Relais Colis | Pickup points | Paid connector |
+| Colis Prive | Last mile, own contract required | Paid connector |
+| DPD France, GLS France | Domestic express | Paid connector |
+| GEODIS | Freight and pallets | Paid connector |
+| Boxtal | Shipping broker | Custom build |
+
+## Pre-kickoff checklist
+
+- **Your platform decision.** Whether you exchange through Odoo as an approved platform or through another registered operator, checked against the list published on impots.gouv.fr.
+- **A clean SIREN and SIRET on every B2B customer**, plus the recipient establishment. This is the routing key. Run the extract and count the blanks before anyone quotes the cleanup.
+- **Your VAT regime and filing frequency** in writing, including whether the 15,000 euro annual VAT figure is about to force you monthly.
+- **Delivery addresses separated from billing addresses** on the customer master, because it is now a mandatory mention when they differ.
+- **The operation nature per product or per line**: goods, services or both.
+- **Whether you have elected TVA sur les debits**, because it becomes a mention on the invoice.
+- **The payroll boundary.** Which tool produces the DSN and what journal comes back into Odoo.
+- **FEC history** from the legacy system for import, and a decision on who produces the FEC export on an audit.
+- **Carrier contracts** including any Colis Prive contract, plus a Sendcloud account if you are going that route.
+- **A named owner for the rejection queue**, because lifecycle statuses come back and somebody has to act on them from week one.
+
+## The rollout, kept short
+
+1. **Discovery and process mapping.** Per function, exceptions first. Ends with a process map, a numbered gap list and the module list.
+2. **Solution design and gap resolution.** Each gap dispositioned as configure, customise, change the process, or leave out of scope, each with a number.
+3. **Configuration and prototype.** A working system on a real slice of your data, with the platform connection exercised end to end.
+4. **Data migration and reconciliation.** Clean in the extract, load in dependency order, reconcile control totals and sign them off.
+5. **Training, UAT and cutover.** Scripted testing run by the people who will use the system daily, then a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, then administrator handover.
+
+The French insertion sits in phase three and phase four: exercise the annuaire routing with real customer SIRENs and watch what comes back, rather than proving it on test partners with clean data. Delivery detail is on our [French implementation page](/services/odoo-implementation/france/).
+
+## Questions we actually get asked
+
+**Do we have to sign with a platform operator separately?**
+Not necessarily. Odoo completed the DGFiP registration and is an approved platform, and ships `l10n_fr_pdp` for sending and receiving through it. If you prefer a different operator, the registered list is published on impots.gouv.fr.
+
+**Is this clearance, like some other countries?**
+No. The platform passes invoice data to the tax administration under article 289 E CGI. That is continuous transaction control by reporting through an accredited intermediary, not per-invoice clearance where the authority validates an invoice before it is legally valid. The practical difference is that you are not waiting on an approval to hand a customer their invoice.
+
+**We are a small company. Does 1 September 2026 apply to us?**
+Receiving does, from that date, whatever your size. Issuing and e-reporting start on 1 September 2026 only for grandes entreprises and ETI. PME, TPE and micro-enterprises follow on 1 September 2027.
+
+**Can Odoo produce our FEC?**
+It imports one out of the box through `l10n_fr_fec_import`. Export is not in the standard localization and comes from the OCA module `l10n_fr_fec_oca`, which has to be pulled in and version-matched to your Odoo release.
+
+**Why is master data cleanup a separate line in your quote?**
+Because the annuaire routes on SIREN, SIRET and recipient establishment, and wrong or stale values are the main cause of invoices that never arrive. Nothing rejects loudly. Invoices just do not land, and you find out at month end. Validation and a monitoring view for undelivered invoices are cheaper than that discovery.
+
+**Where do we get a number?**
+The [France country page](/countries/france/) carries the full obligation set, and the [cost page](/countries/france/cost/) turns the custom-build and cleanup rows above into a quote.

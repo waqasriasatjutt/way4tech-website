@@ -1,0 +1,109 @@
+---
+title: "What an Odoo implementation actually costs"
+description: "The published bands are the easy part. What moves the number is how many of your payment rails and couriers have no Odoo connector, and whether your market runs clearance or reporting e-invoicing. Counted per country."
+date: 2026-08-25
+tags: ["pricing", "implementation", "odoo"]
+---
+
+Our bands are published and they are short. Starter, from $4,900 per project: up to 2 modules, 10 users, discovery plus config plus training, 4 weeks, 1 month hypercare. Growth, from $14,900 per project: up to 6 modules, 50 users, custom modules and reports, 8 weeks, 3 months hypercare. Enterprise is quoted on scope: unlimited modules, unlimited users, custom architecture, phased rollout, SLA-backed support.
+
+Those numbers are not the interesting part of the conversation. Two identical businesses, same headcount, same module list, land in different bands because of where they trade. This post is about why.
+
+## The first cost driver: how much of your checkout and your dispatch is missing from Odoo
+
+We track the payment methods and couriers that actually matter in 18 markets, and we classify each one by what it takes to connect: shipped in Odoo, a community module, a paid connector, or a custom build. Anything that is not shipped in Odoo is project work with a number against it.
+
+The counts are lopsided.
+
+| Market | Payment methods not in Odoo | Couriers not in Odoo |
+|---|---|---|
+| Bahrain | 17 of 20 | 11 of 14 |
+| Jordan | 15 of 19 | 7 of 10 |
+| Qatar | 15 of 19 | 8 of 11 |
+| Saudi Arabia | 14 of 19 | 13 of 16 |
+| Australia | 14 of 18 | 10 of 14 |
+| UAE | 14 of 20 | 9 of 12 |
+| Pakistan | 9 of 13 | 10 of 13 |
+| India | 8 of 19 | 10 of 14 |
+| Germany | 7 of 19 | 10 of 14 |
+| United States | 7 of 20 | 8 of 13 |
+| United Kingdom | 6 of 17 | 10 of 14 |
+| Egypt | 3 of 20 | 8 of 11 |
+
+Two things fall out of that table immediately.
+
+The first is that couriers are the harder half almost everywhere. In most of these markets only DHL Express, FedEx and UPS are native, and those are not the carriers a domestic order ships on. In Saudi Arabia, SMSA, Naqel and Aramex are all outside Odoo's native carrier list and need paid connectors or a build. No Turkish courier ships natively, so you budget a paid connector per carrier, or a free community multi-carrier module that you have actually tested. In Jordan, Aramex and any domestic last-mile courier need a paid third-party connector or a custom one, because nothing for Jordan ships in the box.
+
+The second is that a rich local payments market is not the same as a cheap one. Jordan looks well served until you check what connects: eFAWATEERcom, CliQ and MEPS acquiring have no Odoo module, so collection and bank reconciliation against those rails is a build. Canada has the same shape. No Odoo payment provider ships for Interac Debit or Interac e-Transfer, so account-to-account collection and reconciliation is a build. Australia carries BPAY, PayID and PayTo in the same category.
+
+Saudi Arabia is the useful counter-example, because it shows how much one shipped provider is worth. Amazon Payment Services ships as a payment provider in Odoo 19 and carries mada and STC Pay on a Saudi account, which is the shortest route to Saudi local methods without buying a connector. That single fact removes a build from the scope.
+
+The practical version: count your rails before you accept a quote. Every method and every courier that is not shipped in Odoo is either a connector to evaluate and license, or an integration to specify, build, test against the failure paths, and then maintain when the other side changes their API. Integrations are quoted per flow for exactly this reason, so a scope can be reduced by dropping a flow rather than by cutting quality across all of them. The per-market detail sits on the country pages, for example [Bahrain payments](/countries/bahrain/payments/), [Saudi shipping](/countries/saudi-arabia/shipping/) and [Jordan payments](/countries/jordan/payments/).
+
+## The second cost driver: clearance, reporting, or neither
+
+Two projects can both be called e-invoicing and share almost no engineering. What separates them is whether the tax authority sits in front of your invoice or beside it.
+
+| Market | Model |
+|---|---|
+| Saudi Arabia | Clearance for standard tax invoices, reporting within 24 hours for simplified |
+| India | Clearance: IRN and signed QR returned before the document is valid |
+| Pakistan | Clearance: FBR returns a unique invoice number in real time |
+| Egypt | Clearance: ETA validates before the invoice counts |
+| Jordan | Clearance flow through the JoFotara API |
+| Turkey | Centralised continuous transaction control |
+| UAE | Continuous reporting, five-corner, through an Accredited Service Provider |
+| Oman | Continuous reporting through an accredited service provider on Peppol |
+| France | Reporting through a Plateforme Agreee |
+| Germany | Post-audit: no government platform, no real-time reporting for B2B |
+| Australia | Peppol post-audit: the ATO never sees the invoice |
+| Kuwait, Bahrain | No scheme in force |
+
+A clearance market puts an outside system's veto inside your order-to-cash. The invoice stops being finished when it is printed. It gains submitted, accepted, rejected and pending, those states have to be visible where your finance team works, and somebody has to own the ones that are not accepted. That is a state machine, an exception queue, an alert, and a named daily routine. It is not a file format.
+
+A reporting market costs differently. You do not connect to the authority yourself. In the UAE you must appoint an Accredited Service Provider. In Oman invoices move through an accredited service provider rather than being posted to the tax authority directly. That converts part of your compliance into a vendor selection, a contract, and a second integration timeline you do not control. Neither of those is in a software quote.
+
+Post-audit markets are the cheapest build and get underestimated for a different reason: the obligation is often to receive. Every German business has had to be able to receive structured e-invoices since 1 January 2025. Reading inbound supplier e-invoices into vendor bills is the half of the scope people forget to price.
+
+And then there is the case that costs nothing today and everything if you guess. Qatar's Cabinet approved a draft e-invoicing law and its executive regulations on 6 May 2026, and nothing is in force: no scope, no technical specification and no start date. No format, no clearance-versus-reporting decision, no QR rule, no signature or seal rule, and no accredited service provider list have been published. Anyone quoting these today is guessing. The correct budget line for Qatar e-invoicing is zero, plus a design that keeps invoice data structured and exportable.
+
+The full picture per market, including what ships in the localization and what does not, is on the country pages such as [UAE e-invoicing](/countries/uae/e-invoicing/) and [Germany e-invoicing](/countries/germany/e-invoicing/), and the model distinction is worked through in [clearance or reporting](/blog/odoo-e-invoicing-clearance-vs-reporting/).
+
+## The third driver, which is not technical at all
+
+Configuring Odoo is finite work and well understood. What takes the time is agreeing how the business will actually run: which company owns which cost, what a confirmed order commits you to, who may change a price, and what happens to the years of history in the system you are leaving. Those answers are not in the software.
+
+So the two levers with the largest effect on your final number are a named decision maker per function with authority to change a process rather than just describe it, and a legacy extract with somebody attached who can explain what the odd columns mean. Both are free. Neither appears in a proposal.
+
+Payroll deserves its own line. There is no Odoo payroll localization for Pakistan, Oman, Bahrain, Qatar, Canada, the United Kingdom or France, so the rules in those markets are a build or a bought module plus a parallel run. That is a workstream, not a checkbox.
+
+## How to read a quote against this
+
+Ask five questions before you compare two numbers.
+
+1. Which payment methods and which couriers are in scope, and for each one: shipped in Odoo, paid connector, or build?
+2. Is the e-invoicing model clearance, reporting or post-audit, and if it is reporting, who is the accredited intermediary and who holds that contract?
+3. Is inbound receiving of supplier e-invoices in scope, or only issuing?
+4. Is payroll localized in the box for this market, or is it a build with a parallel run attached?
+5. What is explicitly out of scope, in writing?
+
+A proposal that does not answer those is priced against the easy version of the project. Ours excludes hardware, Odoo subscription fees and any third-party application licences, and says so on the [implementation service page](/services/odoo-implementation/) rather than in a conversation later.
+
+We quote fixed-price where the scope is settled, with milestones and a change-request route for anything new, and time and materials for discovery work. We do not quote fixed-price against a scope nobody has written down. Country-level cost detail lives on the per-market cost pages, and the flow-by-flow view of connector work is under [integration](/services/odoo-integration/).
+
+## FAQs
+
+**Why do you publish a starting price rather than a fixed one?**
+Because the same module list costs different amounts in different markets, and the drivers above are the reason. The bands tell you which shape of project you are in. The number comes after somebody has counted your rails, your couriers and your document types.
+
+**Do you offer fixed-price projects?**
+Yes. For well-scoped implementations we deliver fixed-price with milestones. For discovery-phase work or ongoing customization we offer transparent time and materials.
+
+**Does a paid connector always beat a custom build?**
+Not always, but usually, when one exists for your exact version and it is maintained. The cost you are avoiding is not the first build, it is the maintenance every time the carrier or gateway changes something. Where nothing exists, as with Saudi Post SPL or a Turkish shipping aggregator, the build is the only option and it should be quoted as its own flow.
+
+**What is not included in your implementation price?**
+Hardware, Odoo subscription fees and third-party application licences, writing your accounting policy or approval limits, data your previous vendor cannot export, process re-engineering beyond the map agreed in discovery, and support once hypercare closes unless a support agreement is signed.
+
+**We are in a market with no e-invoicing mandate. Does that save us money?**
+Today, yes. Design for it anyway: keep invoice data structured and exportable, and avoid hard-coding numbering or archiving choices that would be painful to change when a specification lands.

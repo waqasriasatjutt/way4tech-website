@@ -1,0 +1,132 @@
+---
+title: "Odoo implementation in Germany: E-Rechnung, DATEV and the four rails you have to build"
+description: "What a German Odoo build has to satisfy: the section 14 UStG e-invoicing transition, SKR03 or SKR04, the DATEV handover, ELSTER and E-Bilanz gaps, and the payment and carrier integrations Odoo 19 does not ship."
+date: 2026-08-20
+tags: ["germany", "odoo implementation", "e-invoicing", "datev"]
+---
+
+A German Odoo project is decided by three things that are not in any generic ERP article: what section 14 UStG obliges you to receive and issue, how the books reach the Steuerberater, and which of the local payment and shipping rails have no connector at all. Start there.
+
+## What the German market requires of the system
+
+The scheme is E-Rechnung. B2B sits in section 14 UStG; federal B2G runs on XRechnung under the E-Rechnungsverordnung (ERechV). For B2B the authority is the Bundesministerium der Finanzen and the Land tax offices. For federal public contracts it is the Bund's central invoice receipt platforms, ZRE and OZG-RE.
+
+The status is the part that gets misread. Every German business has had to be able to receive structured e-invoices since 1 January 2025. Issuing is still in transition: 2026 is the last full year in which paper or PDF is allowed with the buyer's agreement. So the receiving side is already a live obligation for the client sitting in front of you, whatever they tell you about deadlines.
+
+Who it binds: domestic B2B supplies where both the supplier and the customer are established in Germany. Supplies exempt under section 4 nos. 8 to 29 UStG are out of scope and B2C is not covered. Separately, suppliers to federal contracting authorities have had to send e-invoices since 27 November 2020 for orders above 1,000 euro net.
+
+What it technically requires:
+
+- A structured electronic format that is issued, sent and received electronically and meets the European standard under Directive 2014/55/EU. XRechnung (pure XML) and ZUGFeRD (PDF with embedded XML) both qualify. Parties may also agree another format if the required data can be extracted correctly and interoperably.
+- Post-audit, not clearance. There is no government platform and no real-time reporting for B2B. Transmission is free choice, for example email or Peppol.
+- The transition under section 27 UStG: paper and other electronic formats stay allowed with the recipient's consent for supplies up to 31 December 2026, and up to 31 December 2027 if the issuer's total turnover in the previous calendar year was 800,000 euro or less. Legacy EDI that does not meet the standard also runs to 31 December 2027.
+- Invoices must be kept for 8 years under section 14b UStG.
+- Federal B2G: XRechnung as the standard, the Leitweg-ID as a mandatory field carried in the buyer reference, plus bank details, payment terms and an email or De-Mail address, submitted through the federal portal after registering a user account. Direct contracts up to 1,000 euro are exempt.
+
+Two design consequences fall straight out of that. First, because it is post-audit with free transmission, there is no portal integration to build and no clearance latency to design around, which makes Germany technically easier than a clearance market. Second, the harder half is inbound: reading supplier XRechnung and ZUGFeRD files into vendor bills, not producing your own. The [German e-invoicing page](/countries/germany/e-invoicing/) prints each requirement in full.
+
+## The tax, payroll and accounting obligations that shape the build
+
+**VAT.** The standard rate is 19 percent and the reduced rate is 7 percent (section 12 UStG). A 0 percent rate applies to certain solar installations. From 1 January 2026 food served in restaurants and catering moved from 19 percent to the 7 percent rate under the Steueraenderungsgesetz 2025. Drinks stay at 19 percent. It also covers bakeries, butchers, food retail, catering and canteens in schools, kindergartens and hospitals. If you are configuring a hospitality or food client, that split between food and drink is now a tax mapping on the product, not a footnote.
+
+**Filing.** Preliminary VAT returns, the Umsatzsteuer-Voranmeldung, are due by the 10th day after the end of each period and must be transmitted electronically in the officially prescribed dataset. The period is the calendar month if the previous year's tax was more than 9,000 euro, otherwise the calendar quarter. The tax office can waive preliminary returns if the previous year's tax was 2,000 euro or less. Under the small business rule in section 19 UStG, no VAT is charged if total turnover did not exceed 25,000 euro in the previous calendar year and does not exceed 100,000 euro in the current year.
+
+**Payroll.** The 2026 social insurance contribution rates are pension 18.6 percent, unemployment 2.6 percent, health 14.6 percent general rate plus the fund's own supplementary rate, and long-term care 3.6 percent. Each is split evenly between employer and employee. Employees without children pay an extra 0.6 percent on care insurance, giving 4.2 percent. As an example of the supplementary rate, TK charges 2.69 percent in 2026, shared 1.345 percent each side.
+
+The 2026 contribution ceilings from the Sozialversicherungsrechengroessen-Verordnung 2026: general pension insurance 8,450 euro a month or 101,400 euro a year; miners' pension insurance 10,400 euro a month or 124,800 euro a year; health insurance earnings limits of 77,400 euro a year and 69,750 euro a year (5,812.50 a month); and a Bezugsgroesse of 3,955 euro a month or 47,460 euro a year. Multiple ceilings, per branch of insurance, is exactly the shape of rule that generic payroll builds get wrong.
+
+**Accounting.** E-Bilanz under section 5b EStG requires that the balance sheet and the profit and loss account, including uncondensed account listings and the fixed asset schedule, are transmitted to the tax authority electronically in the officially prescribed dataset. Exemption is only possible on hardship grounds. Invoices issued and received must be kept for 8 years, counted from the end of the calendar year in which the invoice was issued, under section 14b UStG.
+
+German bookkeeping runs on the DATEV charts SKR03 and SKR04. Odoo supports both, installs SKR03 by default, and only lets you switch package before the first accounting entry exists. That single sentence is a go-live blocker in disguise: the chart decision has to be made and made correctly before anybody posts a test invoice into the production database.
+
+Odoo's German package ships the DATEV export in two parts, DATEV ATCH for documents and DATEV DATA for journal entries, which is how the books reach the Steuerberater. It also ships the Balance Sheet, Profit and Loss, Umsatzsteuervoranmeldung tax report, EC Sales List and Intrastat, plus GoBD traceability with creator, creation date, modification date and modifying user on every record, and the point of sale technical security system with DSFinV-K export. On e-invoicing, Odoo carries XRechnung CIUS and Peppol BIS Billing 3.0 among the standard formats, acts as its own Peppol access point and SMP, and Germany is on the eligible list.
+
+## What is not in Odoo for the German market
+
+**ELSTER filing.** Odoo produces the Umsatzsteuervoranmeldung report but does not transmit it to ELSTER. Third-party export modules exist. Say this out loud in the first meeting, because clients hear "Odoo does the VAT report" and assume the filing.
+
+**Leitweg-ID for federal B2G invoices.** Handled by a third-party module rather than the standard localization. If the client sells to federal contracting authorities, that field is mandatory and it is not in the base install.
+
+**E-Bilanz under section 5b EStG.** Not in Odoo. It stays with the tax adviser's software.
+
+**ZUGFeRD profile coverage and inbound reading of supplier e-invoices into vendor bills.** Confirm per project rather than assuming. This is the item most worth testing with real supplier files during the prototype phase, because ZUGFeRD is a family of profiles rather than one format.
+
+**Payroll.** Germany does not appear on Odoo's payroll localization list, which covers Australia, Belgium, Egypt, Hong Kong, India, Jordan, Kenya, Mexico, Saudi Arabia, Turkiye, UAE and the United States. The rates and ceilings above are therefore a configuration or build exercise, or a separate payroll tool posting a journal into Odoo. A third-party German payroll module, `l10n_de_lohn_payroll` from Pokutsoft, is listed on the apps store. Our own [country-agnostic payroll engine](/products/wt-hrms-payroll/) is built for exactly this situation, with a rule engine and a dry-run preview so a parallel run can be proved rather than hoped about.
+
+Now the rails. Of the 19 German payment methods worth naming, 7 are not native to Odoo 19, and 4 of those have no module at all: girocard, PAYONE, Unzer and Computop. The girocard one surprises people. It is Germany's own debit scheme, run by EURO Kartensysteme, but it is a shop counter scheme, not an online one: since giropay closed there is no girocard ecommerce route, Odoo 19 ships no girocard method, and any online acceptance would be a custom build. PAYONE, Unzer and Computop are all German gateways frequently already installed at mid-sized German retailers, which means they come up in almost every migration conversation and each returns zero Odoo 19 modules on the apps store.
+
+On the carrier side, 10 of 14 are not native. Note two specifics. Odoo's own documentation says its native DHL connector covers DHL Express only and that other DHL services are not supported, so DHL Paket, the German domestic parcel arm most consumer deliveries actually run on, needs a paid module. And with DPD and GLS, the free Cognisance module is only free at the module level: its carrier features require a paid Cognisance Bridge subscription. Treat that carrier as reached through a paid aggregator when you price it.
+
+## Local integrations against what it takes in Odoo
+
+| Integration | What it is | Route in Odoo 19 |
+| --- | --- | --- |
+| SEPA Lastschrift | Direct debit | In Odoo, plus Stripe, Adyen and Mollie |
+| Vorkasse (bank transfer prepayment) | Bank transfer | In Odoo as Wire Transfer |
+| Klarna | BNPL, three variants | In Odoo |
+| Ratepay | Local invoice and instalments | In Odoo, DE, AT, NL, CH |
+| PayPal, Stripe, Adyen, Mollie | Global gateways | In Odoo |
+| Amazon Pay | Wallet | In Odoo |
+| Kauf auf Rechnung (open invoice) | Pay after delivery | Community module |
+| Novalnet | German PSP | Community module |
+| Wero | Account-to-account wallet | Paid connector, through a gateway |
+| girocard | Domestic debit scheme | Custom build for online |
+| PAYONE | German PSP | Custom build |
+| Unzer | German PSP | Custom build |
+| Computop | German gateway | Custom build |
+| DHL Express, UPS, FedEx | Global express | In Odoo |
+| Sendcloud | Aggregator | In Odoo, paid subscription required |
+| DHL Paket | Domestic parcel | Paid connector |
+| Deutsche Post | Letters and Warenpost | Paid connector |
+| Hermes Germany | Last mile and PaketShops | Paid connector |
+| DPD Germany, GLS Germany | Domestic express | Paid connector, Bridge plan behind the free module |
+| shipcloud | German multi-carrier platform | Paid connector plus subscription |
+| trans-o-flex | Temperature controlled express | Paid connector |
+| Dachser | Groupage and contract logistics | Community module, 18.0 only, plan the port |
+| DSV (formerly DB Schenker) | Freight and groupage | Community module |
+
+The Dachser row is the kind of detail that decides a timeline. OCA maintains a free `delivery_dachser` module on the 18.0 branch with no 19.0 version in the repository yet, so if you are going live on 19 that is a port, and a port is work.
+
+## Pre-kickoff checklist
+
+- **The chart decision, made first.** SKR03 or SKR04, in writing, before any accounting entry exists in the production database. Odoo will not let you switch afterwards.
+- **Your Steuerberater in the room.** They own the DATEV handover, the E-Bilanz and the ELSTER submission. Their file expectations decide your export configuration.
+- **Real supplier e-invoices.** A handful of actual XRechnung and ZUGFeRD files from your biggest suppliers, to test inbound reading during the prototype rather than after go-live.
+- **Leitweg-IDs** for every federal contracting authority you invoice, if you sell B2G.
+- **VAT filing period.** Monthly or quarterly, based on the previous year's tax, and whether any waiver applies.
+- **Product tax mapping for food and drink** if you are in hospitality, retail food or catering, given the 1 January 2026 change.
+- **Payroll boundary.** Which system runs payroll, and the exact journal you expect back.
+- **Bank formats.** Your CAMT.053 or equivalent statement files, so reconciliation is proven early. Our [bank statement import module](/products/wt-bank-statement-import/) covers OFX, QIF, CAMT.053 and CSV where the standard route falls short.
+- **Payment and carrier contracts.** Which gateway and which carriers you are already on, because an existing PAYONE or Computop contract turns a configuration item into a build.
+- **A go-live date** away from your period close and away from the VAT filing day on the 10th.
+
+## The rollout, kept short
+
+1. **Discovery and process mapping.** Per function, recording exceptions rather than the happy path. Ends with a process map, a numbered gap list and the module list.
+2. **Solution design and gap resolution.** Each gap dispositioned as configure, customise, change the process, or leave out of scope, each with a number. The chart of accounts decision lands here.
+3. **Configuration and prototype.** A working system with a real slice of your data, including the inbound e-invoice test.
+4. **Data migration and reconciliation.** Clean in the extract, load in dependency order, reconcile control totals and sign them off with whoever closes your books.
+5. **Training, UAT and cutover.** Scripted testing by the people who will use the system daily, then a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, then administrator handover.
+
+The German insertion is a DATEV dry run: produce a full export, send it to the Steuerberater, and have them confirm it loads before cutover. Delivery detail sits on our [German implementation page](/services/odoo-implementation/germany/).
+
+## Questions we actually get asked
+
+**We only receive PDFs from suppliers today. Are we already breaking the rules?**
+Receiving structured e-invoices has been an obligation since 1 January 2025. A supplier who still sends PDF is relying on the transition rules on their side, but your side has to be able to accept a structured invoice when one arrives. Test it during the prototype with real files.
+
+**Do we have to issue XRechnung, or is ZUGFeRD enough?**
+Both formats satisfy the B2B requirement. The stricter case is federal B2G, where XRechnung is the format the receiving platform expects, so a supplier selling to federal buyers has less latitude than one selling business to business.
+
+**Can Odoo file to ELSTER?**
+No. It produces the Umsatzsteuervoranmeldung report but does not transmit it. Third-party export modules exist. Same answer for E-Bilanz under section 5b EStG, which stays with the tax adviser's software.
+
+**We already run PAYONE. Can Odoo keep it?**
+Not without a build. The Odoo apps store returns no PAYONE connector for Odoo 19. The two honest options are budgeting a custom build or moving the merchant to a provider Odoo ships, and that decision belongs in design, not in UAT.
+
+**Why is girocard a problem when everyone in Germany has one?**
+Because it is a shop counter scheme rather than an online one. Since giropay closed there is no girocard ecommerce route, and Odoo 19 ships no girocard method. Online acceptance would be a custom build.
+
+**How do we get a number for all this?**
+Work through the [Germany country page](/countries/germany/) for the full obligation set, then the [cost page](/countries/germany/cost/), which is where the custom-build rows in the table above turn into a quote.

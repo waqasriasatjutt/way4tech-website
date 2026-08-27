@@ -1,0 +1,140 @@
+---
+title: "Odoo implementation in the United States: no mandate, 45 sales tax regimes, and where the budget goes"
+description: "There is no US B2B e-invoicing mandate. What decides a US Odoo build is sales tax across up to 45 state regimes, nexus thresholds that keep moving, the 1099 changes for tax year 2026, and the payment and carrier integrations Odoo 19 does not ship."
+date: 2026-08-24
+tags: ["united-states", "odoo implementation", "sales tax", "compliance"]
+---
+
+The United States is the market where an imported ERP proposal's compliance paragraph is closest to empty and the real compliance work is largest. No VAT, no clearance platform, no mandated ledger export. Instead: sales tax across up to 45 state regimes with local jurisdictions underneath them, and a registration test that moves every year. The full obligation set sits on our [United States country page](/countries/united-states/).
+
+## What the US market requires of the system
+
+There is no US federal or nationwide B2B e-invoicing mandate as of 22 August 2026, and no VAT to drive one. Read that twice if your proposal was written in Europe, because the e-invoicing line item in it has nothing behind it here.
+
+The only compulsory piece is federal procurement. OMB Memorandum M-15-19, issued 17 July 2015, directed agencies to move to electronic invoicing by the end of FY 2018, and many now require vendors to bill through the Invoice Processing Platform, run by the US Department of the Treasury.
+
+Who it binds: no US business is obliged to e-invoice its private-sector customers. Suppliers selling to federal agencies must submit invoices through whatever electronic solution the agency adopted, commonly Treasury's IPP.
+
+What the memo technically requires:
+
+- Three routes for agencies by the end of FY 2018: migrating to a designated Federal Shared Service Provider and adopting its e-invoicing solution, using an OMB-approved e-invoicing solution, or ceasing investment in new e-invoicing solutions.
+- The memo defines electronic invoicing as payment requests managed as structured data elements exchanged through electronic workflow, with minimal manual interaction, and directs solution providers to integrate with the Integrated Award Environment including SAM, and to expose web services or APIs.
+- In practice, a federal vendor keys or uploads invoices into IPP and matches on its SAM registration. There is no Odoo connector for this, so it is a parallel manual step. Put that in the scope document rather than discovering it in month four.
+
+Alongside that sits the DBNAlliance Exchange Framework, a voluntary industry network running a four-corner exchange for B2B e-invoices and e-documents. Joining is an onboarding process, and it recently launched a mass adoption API. Treat it as a customer-driven requirement, meaning a large buyer asks for it, rather than a legal one. Nothing is mandatory for domestic B2B: adoption is market-driven because the US has no VAT and no transaction-level tax reporting requirement. The current position is tracked on our [United States e-invoicing page](/countries/united-states/e-invoicing/).
+
+## The tax, payroll and accounting obligations that shape the build
+
+**Sales tax is the whole compliance load.** There is no federal sales tax and no VAT. Forty-five states levy a state-level sales tax; Alaska, Delaware, Montana, New Hampshire and Oregon do not. California has the highest state-level rate at 7.25 percent. Thirty-eight states allow local sales taxes on top, including Alaska which has no statewide tax, and local rates can rival or exceed state rates. The tax on a sales line is therefore a function of the destination jurisdiction, not a setting on the company.
+
+**Nexus decides where you register.** Sales tax registration is driven by economic nexus after South Dakota v. Wayfair. The most common test is 100,000 dollars in sales or 200 separate transactions in the current or previous calendar year, but six different threshold patterns exist across states, including 250,000 and 500,000 dollar variants with different measurement periods.
+
+And the tests keep moving. States are dropping the 200-transaction test: as of 1 August 2026, 17 states had eliminated it, including Illinois effective 1 January 2026 and Kentucky effective 1 August 2026. Any nexus logic hard-coded in an ERP needs a review schedule, not a one-time setup.
+
+**1099 reporting changes for tax year 2026.** The reporting threshold for Forms 1099-NEC and 1099-MISC rises from 600 dollars to 2,000 dollars, effective for tax year 2026, and will be inflation-adjusted from 2027. That changes which vendors an ERP has to flag, so a vendor flag copied from last year's list is wrong. On Form 1099-K, the One Big Beautiful Bill retroactively reinstated the pre-American Rescue Plan threshold: third party settlement organisations are not required to file unless gross reportable payments to a payee exceed 20,000 dollars and the number of transactions exceeds 200. Separately, filers of 10 or more information returns in a calendar year must file them electronically, which for most clients means all of them.
+
+**Payroll.** FICA is Social Security at 6.2 percent on the employer and 6.2 percent on the employee, 12.4 percent combined, and Medicare at 1.45 percent each side, 2.9 percent combined. An Additional Medicare Tax of 0.9 percent applies to employee wages above 200,000 dollars a year, withheld by the employer with no employer match, which is the rule generic payroll setups get wrong because it is one-sided. The Social Security wage base limit is 184,500 dollars for 2026, and there is no wage base limit for Medicare.
+
+FUTA is 6.0 percent on the first 7,000 dollars of wages per employee, reduced by a credit of up to 5.4 percent when Form 940 is filed, giving a common net rate of 0.6 percent. Credit reduction states are announced by the Department of Labor after the 10 November deadline each year, so the effective rate is not knowable at the start of the year in every state. Federal tax deposits must be made by electronic funds transfer, monthly or semi-weekly by liability, and FUTA deposits are only required when quarterly tax exceeds 500 dollars.
+
+The reporting set is Form 941 quarterly for most employers, Form 943 for agricultural employers, Form 944 annually if the IRS notifies you, Form 945 for nonpayroll withholding, Form 940 annually for FUTA, and Form W-2 with Form W-3 to the Social Security Administration by 31 January.
+
+**Accounting.** The FASB sets GAAP for nongovernmental entities and the FASB Accounting Standards Codification has been the single official source of authoritative US GAAP since 15 September 2009. There is no statutory chart of accounts imposed by the government, no SAF-T equivalent and no mandated ledger export file. So the `l10n_us` module's GAAP-oriented chart is a starting template, not a legal requirement. Odoo structures it around seven categories: Receivable, Payable, Equity, Assets, Liability, Income and Expenses. You can and often should restructure it to match the client's reporting. The audit-file question that dominates European Odoo projects does not exist here.
+
+## What is not in Odoo for the US market
+
+What ships is a decent list: `l10n_us` and `l10n_us_reports` for the chart and US financial statement reports, `l10n_us_check_printing` for the three pre-printed check positions, top, middle and bottom, `l10n_us_payment_nacha` for NACHA file export to the bank, `l10n_us_1099` for 1099 data prepared for third-party e-filing, `account_avatax` for Avalara AvaTax rate lookup, jurisdiction assignment and product taxability, and `l10n_us_hr_payroll` with `l10n_us_hr_payroll_account`.
+
+The gaps are specific, and four of the five are about tax rather than ledgers.
+
+**Sales tax without AvaTax.** Odoo's native tax engine will not track economic nexus, jurisdiction boundaries or product taxability across 45 states with local add-ons. The decision is buy AvaTax or accept manual rate maintenance, and it belongs before the project starts, not during UAT. This one choice moves a US budget more than any other.
+
+**Nexus monitoring.** Nothing in Odoo tells you that you crossed a state's threshold, and thresholds keep moving as states drop the 200-transaction test. That is a reporting build or a subscription.
+
+**Sales tax return filing.** Odoo prepares data. The return goes through Avalara or a filing service.
+
+**Payroll tax filing and deposits.** Odoo produces payslips and journal entries. Forms 941, 940, W-2 and W-3, EFTPS deposits, state withholding registrations and SUTA are not in the box. Most US Odoo clients keep their existing payroll bureau and use `l10n_us_hr_payroll_account` for the postings, with `l10n_us_hr_payroll_adp` exporting work entries where ADP is that bureau.
+
+**Federal government invoicing.** There is no IPP connector and no DBNAlliance connector in Odoo, and Odoo's Peppol support does not list the United States as an eligible country. Federal vendors submit into IPP separately.
+
+Then the integrations. Of the 20 payment rails worth naming, 7 are not native to Odoo 19: Venmo, Square, Braintree, Checkout.com, NMI, Sezzle and the FedNow Service. Five have paid connectors on the apps store. Two do not. Sezzle's only Odoo module stops at 14.0, so Odoo 19 needs a build or a route through an acquirer that already carries it. FedNow, the Federal Reserve's instant payment service, shows up in US B2B collections rather than at web checkout, so in Odoo it lands as a bank transfer you reconcile, and our data marks that assessment unconfirmed. Amazon Pay is flagged unconfirmed too, so check it before you promise it.
+
+Two native items are worth calling out because they cost nothing to switch on. Discover is a US card network that plain international card setups sometimes decline, and Odoo 19 turns it on by default with Stripe, Adyen, Authorize.Net, Worldline, Buckaroo and Nuvei. ACH Direct Debit is reachable two native ways, through Authorize.Net which enables it by default and through Stripe which maps it to `us_bank_account` for USD and US customers, which is the cheapest way to collect large B2B invoices instead of eating card interchange.
+
+On carriers, 8 of the 13 worth naming are not native, but the US is unusual: none is a dead end, because EasyPost ships with Odoo 19 and reaches the regionals. OnTrac, Veho and Amazon Shipping have no Odoo module of their own and arrive through EasyPost or ShipStation, so that aggregator account and its fees are a required dependency. GLS US has a paid Odoo 19 connector. The one that catches wholesalers is freight: Odoo ships no LTL support at all, and a paid Odoo 19 connector for Estes Express Lines handles freight booking, rating, bills of lading and tracking from the sales and delivery orders.
+
+US B2B also still settles plenty of invoices by paper check and by wire, so the order sits unpaid until finance reconciles it. Odoo Community can create a bank statement but it cannot read one, which is why our [bank statement import](/products/wt-bank-statement-import/) for OFX, QIF, CAMT.053 and CSV goes into most Community projects here.
+
+## Local integrations against what it takes in Odoo
+
+| Integration | What it is | Route in Odoo 19 |
+| --- | --- | --- |
+| Stripe, Adyen, PayPal | Global gateways | In Odoo |
+| Authorize.Net | Local gateway | In Odoo, ACH on by default |
+| ACH Direct Debit | Bank direct debit | In Odoo, via Authorize.Net or Stripe |
+| Cash App Pay | Mobile wallet | In Odoo, through Stripe |
+| Apple Pay and Google Pay | Mobile wallet | In Odoo, Stripe express checkout |
+| Discover | Domestic card scheme | In Odoo, on by default |
+| Affirm, Klarna, Afterpay | BNPL | In Odoo, through Stripe |
+| Amazon Pay | Global wallet | In Odoo, unconfirmed in our data |
+| Wire transfer and check | Bank transfer | In Odoo, offline method |
+| Venmo | Mobile wallet | Paid connector, through Braintree |
+| Square | Local gateway | Paid connector |
+| Braintree | Local gateway | Paid connector |
+| Checkout.com | Global gateway | Paid connector |
+| NMI | Local gateway | Paid connector, card and eCheck ACH |
+| Sezzle | BNPL | Custom build |
+| FedNow Service | Instant bank transfer | Custom build, reconciled as a bank transfer |
+| USPS | National post | In Odoo, USPS business account required |
+| UPS, FedEx, DHL Express | Express networks | In Odoo |
+| EasyPost | Aggregator | In Odoo, EasyPost account required |
+| OnTrac | Last mile | Paid connector, through an aggregator |
+| Veho | Last mile | Paid connector, through EasyPost |
+| Amazon Shipping | Last mile | Paid connector, through EasyPost |
+| GLS US | Domestic express | Paid connector |
+| ShipStation, Shippo, ShipEngine | Aggregators | Paid connector plus subscription |
+| Estes Express Lines | LTL freight | Paid connector |
+
+Read the right-hand column as budget lines. Every paid connector row carries a licence and often a platform subscription behind it, and every aggregator row carries a per-parcel fee. The [United States cost page](/countries/united-states/cost/) shows how those land in a quote.
+
+## Pre-kickoff checklist
+
+- **Your state registration list**, with the effective date of each registration and who filed it.
+- **A sales tax decision.** AvaTax or manual rate maintenance, taken by a named person with a budget, before configuration starts.
+- **Twelve months of sales by ship-to state**, so nexus exposure is measured rather than guessed.
+- **Your vendor list with 1099 status**, remembering the 1099-NEC and 1099-MISC threshold moves to 2,000 dollars for tax year 2026.
+- **The payroll decision.** Which bureau runs deposits and filings, and who owns the journal that lands in Odoo.
+- **Your merchant account as it stands today**, because keeping an existing gateway often decides whether an item is configuration or a purchase.
+- **Carrier account numbers and API credentials**, plus an aggregator account if regional carriers are in the mix.
+- **Whether you sell to federal agencies**, since IPP submission stays outside Odoo and needs an owner.
+- **Chart of accounts and opening balances**, signed off by whoever closes your books.
+
+## The rollout, kept short
+
+This part is the commodity, and it runs the same here as anywhere.
+
+1. **Discovery and process mapping.** Walkthroughs per function, recording the exceptions rather than the happy path. Ends with a process map, a numbered gap list and the module list.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a cost. Ends with a signed scope.
+3. **Configuration and prototype.** A working system holding a representative slice of your data, including the awkward products rather than the simple ones.
+4. **Data migration and reconciliation.** Clean in the extract, load in dependency order, reconcile control totals and sign them off.
+5. **Training, UAT and cutover.** Scripted testing run by the people who will use the system daily, then a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover.
+
+Two US-specific insertions. Prove a tax calculation against a real multi-jurisdiction address set during the prototype, not during UAT. And test the NACHA file with the bank rather than against its written specification, because banks reject files for reasons their own documentation does not mention. Delivery detail is on our [United States implementation page](/services/odoo-implementation/united-states/).
+
+## Questions we actually get asked
+
+**Do we need to do anything about e-invoicing?**
+Not unless you sell to the federal government or a large buyer asks you to join the DBNAlliance network. There is no US federal or nationwide B2B mandate, and no VAT to drive one. Federal vendors should budget for IPP submission as a manual step outside Odoo.
+
+**Can we skip AvaTax and just configure taxes?**
+You can, and it is the right call for a single-state business with a simple product set. It stops being the right call once you have destination-based tax across several states with local add-ons, because Odoo's native tax engine will not track nexus, jurisdiction boundaries or product taxability. Decide before configuration; retrofitting costs more.
+
+**Does Odoo run US payroll?**
+It runs payroll calculation. `l10n_us_hr_payroll` gives you rules, contracts, allowances, deductions and payslips, and `l10n_us_hr_payroll_account` posts them. It does not file Forms 941, 940, W-2 or W-3, make EFTPS deposits, or handle state withholding registrations and SUTA. Most clients keep their bureau and post the journal into Odoo.
+
+**How do we know when we have nexus in a new state?**
+Nothing in Odoo tells you. The common test is 100,000 dollars in sales or 200 separate transactions in the current or previous calendar year, but six threshold patterns exist and 17 states had dropped the transaction count as of 1 August 2026. Buy a nexus monitoring service, or build the report and put a quarterly review in someone's calendar.
+
+**Our regional carrier has no Odoo module. What now?**
+It almost certainly comes through EasyPost, which ships with Odoo 19 and lists carriers such as Veho, or through ShipStation. The Odoo connector is free; the aggregator account and its per-parcel fees are the real cost. Pallets are the exception: Odoo ships no LTL support at all, so freight means the paid Estes Express Lines connector or a build.

@@ -1,0 +1,118 @@
+---
+title: "Odoo implementation in Kuwait: the 5% retention is the project, not the tax code"
+description: "Kuwait has no e-invoicing mandate and no VAT. What it does have is a 5% contract retention tied to tax clearance certificates, three-decimal currency, and a localization that stops at the chart of accounts."
+date: 2026-08-21
+tags: ["kuwait", "localization", "implementation"]
+---
+
+Kuwait breaks the pattern most Gulf ERP proposals are written to. There is no VAT to configure and no e-invoicing platform to integrate with, so the compliance line in a generic quote is close to empty. Meanwhile the two things that will genuinely bend your Odoo build, a 5% retention on every contract payment and a currency with three decimal places, do not appear in that quote at all. The data behind this is on our [Kuwait localization page](/countries/kuwait/).
+
+## E-invoicing: nothing, and how to tell when that changes
+
+Kuwait has no e-invoicing scheme. Tax administration sits with the Ministry of Finance Department of Inspection and Tax Claims. Our country data records Kuwait as one of two GCC states with nothing in force: Saudi Arabia, the UAE and Oman all have binding mandates or fixed dates, and Qatar has an approved draft law, while Kuwait and Bahrain have neither. That whole assessment carries no primary confirmation in our sources, so treat it as our read rather than a citation, and re-check before you make a board decision on it.
+
+Nobody is bound today. There is no Kuwaiti e-invoicing obligation, and invoicing follows ordinary commercial and tax record-keeping rules. What does bite is the 5% contract retention and tax clearance certificate process, and the requirement to keep accounting records in Kuwait available for inspection.
+
+The watch item, not a deadline: Kuwait signed the GCC Unified VAT Agreement but has not enacted VAT. Across the GCC, e-invoicing has followed VAT rather than preceded it, so a Kuwaiti VAT law is the signal to watch. And a practical filter for vendor claims: if someone quotes you a Kuwait e-invoicing deadline, ask them for the gazette reference. There is not one. We track the status on our [Kuwait e-invoicing page](/countries/kuwait/e-invoicing/).
+
+## The obligations that actually shape the build
+
+**No VAT.** PwC's Kuwait summary, reviewed 22 July 2026, states the GCC framework agreement is under discussion in Parliament while the draft law is under preparation by the government. Nothing is enacted. **No excise tax either:** PwC states plainly, "There are no excise taxes in Kuwait." Proposals on tobacco, sweetened drinks and luxury goods have not been legislated. Customs duty is the GCC common tariff at 5% on the CIF invoice price, with exceptions, and higher rates on tobacco.
+
+**Corporate income tax is a flat 15%** and applies only to foreign corporate bodies carrying on business or trade in Kuwait. Companies wholly owned by Kuwaiti or other GCC nationals pay no corporate income tax. On top of that sit three separate profit-based levies on Kuwaiti shareholding companies: Zakat at 1% of net profits on all public and closed Kuwaiti shareholding companies, KFAS at 1% of net profits on Kuwaiti shareholding companies, and National Labour Support Tax at 2.5% of net annual profits on companies listed on the Kuwait Stock Exchange. Each has its own base, so they are three calculations, not one, and a single "tax provision" account will not survive an audit of them.
+
+**The retention is the headline item.** Kuwait imposes no withholding tax. Instead all public bodies and private entities must retain 5% of the contract, agreement or transaction value, or of each payment to any incorporated body, until a tax clearance certificate is produced. The final payment must be no less than 5% of the total contract value. This is a cash and AP process, not a tax code: your ERP has to hold, track and release retentions against certificates. If you take one thing from this page, take that sentence into your scope document, because it is a build with its own data model, its own ageing report and its own release approval, and no Odoo module ships it.
+
+**Payroll.** Social insurance with the Public Institution for Social Security applies to Kuwaiti nationals only. Employer contribution is 11.5% of monthly salary up to a KWD 2,750 per month ceiling. Employee contribution is 8% up to the same KWD 2,750 ceiling, plus a further 2.5% up to a KWD 1,500 ceiling. The two employee ceilings are different, which is where payroll configurations usually go wrong.
+
+Employers with five or more employees, outside certain exempt industries, must pay salaries into employees' accounts with local financial institutions, which is the basis of Kuwait's wage protection reporting to the Public Authority for Manpower. Regulations introduced in 2025 require employers to submit and keep updated their records of employees' daily working hours through an electronic platform, so if you are running attendance in Odoo, that data now has a statutory destination.
+
+Two payroll points are unconfirmed in our data and should be checked before you configure them. First, that end of service indemnity is a statutory entitlement under Private Sector Labour Law No. 6 of 2010, payable on termination in full without deducting employer social security contributions, with an accrual rate that differs between the first years of service and later years, so it needs a per-employee accrual rather than a flat percentage. Second, that Kuwaitization applies, with the Public Authority for Manpower setting national employment quotas for the private sector by sector and enforcing them through work permit renewals, making headcount by nationality a reportable figure rather than just an HR field. Both are plausible and both are unverified; get them confirmed by counsel.
+
+**Accounting.** IFRS as issued by the IASB is required, and not only for listed companies. The IFRS Foundation jurisdiction profile states IFRS is required for all listed companies, financial institutions and other companies falling under the Kuwait Commercial Companies Law, on the basis of Ministerial Decree No. 18 of 1990 as amended by Decree No. 101 of 2008. Dual reporting with a local GAAP is not permitted. Accounting records must be maintained in Kuwait and available for inspection; records can be in English and may be held in a computerised system, which matters when you decide where the database is hosted and in what language accounts are named.
+
+**Three decimals.** The Kuwaiti dinar has three decimal places. Odoo core already ships KWD with rounding 0.001, so the currency itself is right out of the box, but product prices, unit prices, tax rounding and any price list or import mapping must be set to three decimals or you will book rounding differences on every line. That is a one-line setting and a hundred-line consequence.
+
+## What is not in Odoo for this market
+
+The localization is two modules. l10n_kw describes itself as the base module to manage the accounting chart for Kuwait and lists exactly one activated feature: chart of accounts. It auto-installs with the Accounting app when the company country is Kuwait, and pulls in l10n_gcc_invoice, which adds Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills.
+
+The custom list, from our country data:
+
+- **Almost all of it.** l10n_kw is a chart of accounts and nothing more. There is no Kuwait tax engine to configure because there is no VAT and no excise.
+- **The 5% contract retention and tax clearance certificate cycle.** Holding 5% of each payment, tracking it per contract and releasing it against a certificate is an AP and AR process build with its own reporting.
+- **The four-instalment tax payment schedule** on the 15th of the fourth, sixth, ninth and twelfth months after year end, plus the three-months-and-15-days return deadline.
+- **Three-decimal discipline** beyond the currency record: product prices, unit prices, tax computation and rounding, and any import or price list mapping.
+- **DMTT reporting** for in-scope multinational groups. Nothing in Odoo produces GloBE-ready data.
+
+Payroll is not on that list only because Kuwait was never on Odoo's payroll localization list to begin with. Of the GCC, only the United Arab Emirates and Saudi Arabia are covered.
+
+On payments, nineteen rails matter and four ship with Odoo 19: Amazon Payment Services, cash on delivery, the Wire Transfer method, and Stripe. Stripe is native in the sense that Odoo ships the connector, but Kuwait is not on Stripe's list of countries where a business can open an account, so a Kuwait registered company cannot collect in dinar through it. Of the fifteen that are not native, one, MyFatoorah, has a free Odoo 19 provider module, eleven need a paid connector and three are a build.
+
+KNET decides the checkout. It is the debit scheme every Kuwaiti bank issues on, processed in Kuwaiti dinar, and Checkout.com puts it at nearly 80 percent of online transactions in Kuwait. A Kuwaiti checkout without KNET is not really a Kuwaiti checkout. Worth knowing too: Ottu is used in Kuwait to sit in front of a bank gateway and split KNET and credit card into separate acquirers, because KNET and card settlement behave differently, and that split shows up in your bank reconciliation design.
+
+On couriers, eleven matter and three are native: DHL Express, FedEx and UPS. Aramex, SMSA Express, Naqel Express, Shipa Delivery and iMile need paid connectors, and our own [Gulf and South Asia shipping carriers connector](/products/) covers Aramex, SMSA and Naqel with rates, waybills, labels, cancellation and tracking. Kuwait Post, Posta Plus and OCS Worldwide have nothing on the apps store, so they are builds or they stay manual.
+
+## Local rails against what they take in Odoo
+
+| Local rail or courier | What it is | What it takes in Odoo |
+| --- | --- | --- |
+| KNET | Domestic card scheme | Paid connector |
+| WAMD | Instant bank transfer | Custom build |
+| Amazon Payment Services | Global gateway | In Odoo |
+| Tap Payments | Local gateway | Paid connector |
+| MyFatoorah | Local gateway | Community module |
+| UPayments | Local gateway | Paid connector |
+| Hesabe | Local gateway | Paid connector |
+| Ottu | Local gateway | Paid connector |
+| NBK Online Payment Gateway | Local gateway | Custom build |
+| Checkout.com | Global gateway | Paid connector |
+| Tabby, Tamara | BNPL | Paid connector |
+| Deema | BNPL | Custom build |
+| Cash on delivery, bank wire transfer | Local settlement | In Odoo |
+| Kuwait Post | National post | Custom build |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| Aramex | Regional express | Paid connector |
+| SMSA Express | Domestic express | Paid connector |
+| Naqel Express | Domestic express | Paid connector |
+| Shipa Delivery | Last mile | Paid connector |
+| iMile | Last mile | Paid connector |
+| Posta Plus | Domestic express | Custom build |
+| OCS Worldwide | Global express | Custom build |
+
+## Pre-kickoff checklist
+
+1. **Your open contracts with retentions held against them**, per counterparty, with the amount and the certificate status. This is the single largest piece of Kuwait-specific build and it needs real data to design against.
+2. **A named owner for tax clearance certificates**, since the retention releases against them.
+3. **Your ownership split.** Corporate income tax applies only to foreign corporate bodies, and the Zakat, KFAS and National Labour Support Tax levies each have their own base.
+4. **A decision on three decimals**, confirmed across product prices, unit prices, tax rounding and every import file you plan to load.
+5. **Nationality on every employee record**, because social insurance applies to Kuwaiti nationals only and the two employee ceilings differ.
+6. **Where the database will be hosted**, given that accounting records must be maintained in Kuwait and available for inspection.
+7. **Your acquirer, with KNET confirmed**, and a decision on whether KNET and card settle to separate acquirers.
+8. **Your attendance position.** Daily working hours now have an electronic reporting destination, so decide whether Odoo is the system of record for them.
+
+## The rollout itself is the commodity part
+
+[Six phases](/services/odoo-implementation/kuwait/), unchanged from any other market. Discovery and process mapping produces a written process map and a numbered gap list. Solution design gives every gap one of four dispositions, configure, customise, change the process, or leave out, each with a cost, and that signed list is the scope. Configuration and prototype puts a working system holding a real sample of your data in front of your team, with weekly demos against the gap list. Data migration loads partners, products, balances and then open documents, and ends in control totals signed off by whoever closes your books. Training, UAT and cutover ends in a go or no-go call against agreed criteria. Hypercare stabilises the system and hands over the administrator role.
+
+The Kuwaiti weight lands in solution design, where the retention cycle gets specified, and in configuration, where three decimals get proven end to end. Ranges are on our [Kuwait cost page](/countries/kuwait/cost/).
+
+## Questions we actually get asked
+
+**Do we need to prepare for Kuwaiti e-invoicing?**
+Not against a specification, because there is not one. Keep invoice data structured and watch for a VAT law, since across the GCC e-invoicing has followed VAT rather than preceded it. If a vendor quotes you a deadline, ask for the gazette reference.
+
+**What does the Kuwait localization actually include?**
+A chart of accounts, plus Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills through l10n_gcc_invoice. That is the whole of it.
+
+**How do we handle the 5% retention in Odoo?**
+As a build. It has to hold 5% of each payment, track it per contract and release it against a tax clearance certificate, with the final payment no less than 5% of the total contract value. Design it as its own object with its own ageing and approval, not as a manual journal entry someone remembers to reverse.
+
+**Is the three-decimal thing really a problem?**
+Only if it is missed. KWD ships in Odoo core with rounding 0.001, so the currency is correct by default. The failures come from product prices, unit prices, tax computation and imported price lists left at two decimals, and they show up as a few fils per line that nobody can reconcile at the end of the quarter.
+
+**Is there a Kuwaiti payroll module?**
+Not from Odoo. Of the GCC, only the UAE and Saudi Arabia have official payroll localizations. PIFSS contributions with their two different ceilings, end of service indemnity accrual and wage protection reporting are a build or a paid module.
+
+**Our checkout takes Visa and Mastercard. Is that a problem?**
+Yes. KNET is the scheme every Kuwaiti bank issues on and Checkout.com puts it at nearly 80 percent of online transactions in Kuwait. Get KNET live at your gateway before launch.

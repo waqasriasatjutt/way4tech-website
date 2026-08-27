@@ -1,0 +1,148 @@
+---
+title: "Odoo implementation in Turkey: e-Fatura, the özel entegratör question, and why hosting is a compliance decision"
+description: "What a Turkish Odoo build has to satisfy: e-Fatura and e-Arşiv through GİB, the private integrator your client is already contracted to, e-Defter, the archiving rule that constrains hosting, and the couriers with no native connector."
+date: 2026-08-23
+tags: ["turkey", "e-fatura", "e-invoicing", "implementation"]
+---
+
+There is one question that decides more of a Turkish Odoo budget than any other, and it takes thirty seconds to ask: which özel entegratör is the client already contracted to? Odoo's Turkish e-document path runs through Nilvera. If the client is on Logo, Uyumsoft, QNB eFinans, İzibiz or Sovos, none of that is in Odoo. Ask it in the first call, before anyone estimates anything.
+
+## What GİB requires before an invoice is valid
+
+The schemes are e-Fatura (e-Invoice) and e-Arşiv (e-Archive), part of GİB's e-Belge (e-Document) family. The authority is Gelir İdaresi Başkanlığı (GİB), the Turkish Revenue Administration.
+
+Turkiye has run mandatory e-invoicing for years and the threshold rolls forward every year. Taxpayers with 2025 gross sales of TRY 3 million or more were required to be on e-Fatura by 1 July 2026, a deadline that has now passed. The rule is standing rather than one-off, so the next annual transition date applies to whoever crosses the threshold next. It binds taxpayers above the gross sales thresholds plus named sectors including fuel and e-commerce.
+
+The split matters more than the threshold. e-Fatura applies when both parties are registered in the system, and everything else goes out as e-Arşiv. In practice a Turkish company of any size issues no paper invoices, so a project that scopes only e-Fatura has scoped half the document flow.
+
+What it technically requires:
+
+- **Centralised continuous transaction control.** e-Fatura documents route through GİB infrastructure, either the GİB portal or a licensed özel entegratör (private integrator). This is not a file you drop on a portal once a month.
+- **UBL-TR 2.1 XML.**
+- **A mandatory electronic signature.** Companies sign with a mali mühür (financial seal) certificate; documents from New Generation payment recording devices (YN ÖKC) are signed with the device's fiscal certificate.
+- **e-Arşiv for everything outside the e-Fatura mailbox system**, including B2C and export, reported to GİB rather than exchanged.
+- **Archiving: 5 years under tax law and 10 years under commercial law.** Archiving outside Türkiye is not permitted.
+- **The rest of the family scoped separately**: e-İrsaliye (dispatch note), e-SMM (professional fee receipt), e-Müstahsil Makbuzu, e-Bilet and e-Defter for ledgers.
+
+Two of those have consequences beyond the invoice. The archiving rule is a hosting constraint: check where the Odoo database, filestore and attachments physically sit before signing anything, because it can rule out a default cloud region. And GİB moved to the New Central Application on 14 December 2024, so any integration notes written before 2025 are out of date. If a proposal quotes pre-2025 documentation, it has not been checked. The [Turkey e-invoicing page](/countries/turkey/e-invoicing/) carries the requirement set on its own.
+
+## The obligations that shape the ledger
+
+### Tax
+
+VAT (KDV) is the indirect tax. The standard rate is 20%. Reduced rates are 10% for List No. II items such as basic foodstuffs, textiles and books, and 1% for List No. I items such as raw cotton and dried hazelnuts. VAT returns are filed monthly with the relevant tax office.
+
+Stamp tax is the line most non-Turkish teams miss entirely. It applies to documents at rates between 0.189% and 0.948%, and salary payments are taxed at 0.759% of the gross amount. That is why it shows up in payroll runs and not just in contract administration, and it means a Turkish payslip has three statutory deductions rather than two.
+
+The corporate income tax return is due on the 30th day of the fourth month following the fiscal year end, 30 April for calendar-year filers, with payment on the same date. Advance corporate tax is quarterly, due on the 17th day of the second month following each quarter. Returns stay open to inspection until the end of a five-year statute of limitations. Companies may have returns attested by a Sworn Fiscal Advisor, and companies without that attestation are prioritised for inspection. That is worth raising with a client who is weighing how much rigour to put into the ledger structure.
+
+### Payroll
+
+Turkiye has an official Odoo payroll localization, so the engine exists. Social security is administered by SGK, and as of 1 January 2026 the employee pays 14% social security plus 1% unemployment insurance, calculated on monthly earnings between TRY 33,030.00 and a ceiling of TRY 297,270.00. Stamp tax of 0.759% is withheld on gross salary payments on top.
+
+Three points are unconfirmed in our sources and should be checked before the first live run. The employer is reported to pay 20.75% social security plus 2% unemployment insurance, with reductions available in some cases, 16.75% under certain conditions and 5% for manufacturing, and the state adding 1% to unemployment insurance. Severance (kıdem tazminatı) is reported as 30 days of the employee's last gross pay for each full year of service, payable once the employee has at least one full year of uninterrupted service and capped by a statutory ceiling, with contract clauses that reduce or waive it void. Foreign nationals covered by their home country's social security can be exempt from Turkish contributions for up to three months, longer under a bilateral treaty, and anyone without foreign cover pays in full.
+
+### Accounting
+
+e-Defter is GİB's electronic ledger system and it is a separate obligation from e-Fatura. It covers the yevmiye defteri (journal), büyük defter (general ledger) and envanter defteri (inventory ledger). Ledger files and their berat files are uploaded to GİB, either monthly or per provisional tax period, and GİB has extended deadlines by circular more than once, so build against the current circular rather than last year's calendar.
+
+Odoo ships the Turkish chart of accounts, taxes, financial reports and fiscal positions in l10n_tr, with Türkiye-specific tax and profit and loss reporting in l10n_tr_reports. Books and records must stay retrievable for 5 years under tax law and 10 years under commercial law, and cannot be archived outside Türkiye.
+
+One structural note: the Tekdüzen Hesap Planı (Uniform Chart of Accounts) is the standard account structure used across Turkish businesses, and the Public Oversight Authority (KGK) put a separate chart of accounts aligned to financial reporting standards into force on 30 July 2024, sitting alongside it. That last point is unconfirmed at the primary level, so confirm which structure the client's accountant expects before the chart is loaded, because changing it after the ledger has entries in it is painful.
+
+## What is not in Odoo for Turkey
+
+Odoo ships a long Turkish module list: **l10n_tr**, **l10n_tr_reports**, **l10n_tr_nilvera**, **l10n_tr_nilvera_einvoice** and its extension for additional invoice types, **l10n_tr_nilvera_edispatch**, **l10n_tr_hr_payroll** and **l10n_tr_hr_payroll_account**. Out of the box that covers the chart of accounts, taxes, reports and fiscal positions; e-Fatura and e-Arşiv through Nilvera with GİB-compliant XML generation, transmission and document plus status synchronisation back into Odoo; invoice scenarios for basic, public sector (kamu) and export, covering sales, withholding (tevkifat), export-registered (ihraç kayıtlı) and tax-exempt (istisna) cases; e-İrsaliye dispatch note generation and upload; and e-Defter output.
+
+That is a strong localization. The six gaps Odoo's own list names are where the money goes:
+
+1. **The Nilvera lock-in.** The whole e-document path is tied to Nilvera as the özel entegratör. If the client is already contracted to Logo, Uyumsoft, QNB eFinans, İzibiz or Sovos, either migrate them to Nilvera or budget a connector. This is the single biggest scoping question on a Turkish project.
+2. **Only four document types are covered**: e-Fatura, e-Arşiv, e-İrsaliye and e-Defter. e-SMM, e-Müstahsil Makbuzu, e-Bilet and YN ÖKC device integration are not, so professional services firms, agricultural buyers and ticketing businesses need extra work.
+3. **Hosting.** Archiving outside Türkiye is not permitted, so where the database, filestore and attachments sit is a compliance decision.
+4. **Master data cleanup.** VKN/TCKN, tax office and Mersis are mandatory on partners and are almost always incomplete in the data being migrated. Plan it as its own workstream.
+5. **No Turkish courier ships natively.** Budget a paid connector per carrier, or a free community multi-carrier module that you have actually tested.
+6. **Domestic gateways beyond iyzico.** PayTR has a community module; anything else is a build.
+
+Item 4 is the one that quietly eats a fortnight. VKN and TCKN are not optional fields you can fill in later, because an invoice without them does not clear. [Import / Export Power Tools](/products/wt-import-export/) is what we use for that pass: reusable import and export profiles that save the model, mapping and filters, CSV, XLSX and JSON, upsert matching on any field rather than the external ID alone, find-or-create for related records, and an error log you can hand back to the client rather than a failed job.
+
+On the numbers: of the **17 payment methods** on our Turkey page, **only 5 are classified In Odoo**, and two of those five are unusable here. Stripe's own list of supported business locations does not include Türkiye, so a Turkish-registered company cannot open an account. PayPal's own Turkish page states it stopped operating in Turkey in June 2016. What actually works out of the box is **iyzico**, which Odoo 19 ships as a payment provider covering Turkey, the built-in Wire Transfer provider for Havale and EFT, and Cash on Delivery for kapida odeme. **PayTR** has a free iFrame payment provider module for Odoo 19. **Troy**, Turkey's own card scheme run by BKM, is reached through a Turkish acquirer rather than directly, as are Visa and Mastercard. **Craftgate**, **Sipay** and **Param** need paid modules, and **Moka United**, **FAST**, **Hepsipay**, **Paycell** and **ininal** are custom builds.
+
+Card instalments deserve their own line. Splitting a card payment over monthly instalments is normal in Turkey, and shoppers compare stores by how many instalments each offers on which bank programme, across Bonus, World, Maximum, Axess, CardFinans, Paraf, Advantage, Bankkart and Saglam Kart. Odoo core has no instalment concept at checkout at all, so it comes from the gateway module you install, not from Odoo. A Turkish e-commerce project that treats the gateway as interchangeable has misunderstood what it is buying.
+
+Couriers: of the **13 carriers**, **only 3 are In Odoo** and all three are global express, DHL Express, FedEx and UPS. **PTT Kargo**, **Yurtici Kargo**, **Aras Kargo**, **MNG Kargo**, **Surat Kargo**, **HepsiJET**, **Trendyol Express**, **Kolay Gelsin** and **Sendeo** all need paid Odoo 19 modules, and **ShipEntegra** is a custom build. One consolidation note: Kolay Gelsin and Sendeo have merged under the Kolay Gelsin name and both brands still appear in integration lists, so check which account the client actually holds.
+
+## Local integrations against what it takes in Odoo
+
+| Local integration | What it is | What it takes in Odoo |
+|---|---|---|
+| iyzico | local gateway | In Odoo |
+| Havale and EFT | bank transfer | In Odoo, wire transfer provider |
+| Cash on delivery (kapida odeme) | cash on delivery | In Odoo |
+| PayTR | local gateway | Community module |
+| Troy | domestic card scheme | Paid connector, via a Turkish acquirer |
+| Visa and Mastercard | card acceptance | Paid connector, via the virtual POS |
+| Card instalments (taksit) | card installments | Paid connector, from the gateway module |
+| Craftgate | payment orchestration | Paid connector |
+| Sipay | local gateway | Paid connector |
+| Param | local gateway | Paid connector |
+| Moka United | local gateway | Custom build |
+| FAST | instant bank transfer | Custom build |
+| Hepsipay | BNPL | Custom build |
+| Paycell, ininal | wallet and prepaid | Custom build |
+| DHL Express, FedEx, UPS | global express | In Odoo |
+| PTT Kargo | national post | Paid connector |
+| Yurtici Kargo | domestic express | Paid connector |
+| Aras Kargo | domestic express | Paid connector |
+| MNG Kargo | domestic express | Paid connector |
+| Surat Kargo | domestic express | Paid connector |
+| HepsiJET | last mile | Paid connector |
+| Trendyol Express | last mile | Paid connector |
+| Kolay Gelsin and Sendeo | domestic express | Paid connector, one module covers both |
+| ShipEntegra | aggregator | Custom build |
+
+## Before kickoff: what you need ready
+
+- The name of your current özel entegratör, and your contract end date. This is the first question and it changes the estimate more than anything else on this list.
+- Your mali mühür certificate, and confirmation of who holds it.
+- Confirmation of which e-Belge types you actually issue: e-Fatura, e-Arşiv, e-İrsaliye, e-SMM, e-Müstahsil Makbuzu, e-Bilet, and whether you run YN ÖKC devices.
+- A hosting decision that keeps the database, filestore and attachments inside Türkiye.
+- Your partner master with VKN or TCKN, tax office and Mersis against each record, or an owner and a deadline for completing it.
+- Which chart of accounts your accountant expects, the Tekdüzen Hesap Planı or the KGK structure in force from 30 July 2024.
+- Your 2025 gross sales figure, so the e-Fatura threshold position is not in doubt.
+- Your virtual POS contracts and the bank instalment programmes you offer, because the instalment behaviour comes from the gateway module.
+- Opening balances signed off by whoever closes your books, and a named decision maker per function.
+
+## The rollout sequence
+
+Short, because this part is identical everywhere.
+
+1. **Discovery and process mapping.** A written process map, a numbered gap list and the module list that follows.
+2. **Solution design and gap resolution.** Each gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a number.
+3. **Configuration and prototype.** A working system holding a real sample of your data, demoed weekly against the process map.
+4. **Data migration and reconciliation.** Clean in the extract, never after loading, and sign off control totals against the old system.
+5. **Training, UAT and cutover.** Scripted testing by daily users, a cutover runbook with a rollback point, and a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover, and a phase two backlog.
+
+For Turkey, the integrator decision belongs in phase 1 and the master data cleanup starts there too, running in parallel rather than waiting for phase 4. The [Odoo implementation in Turkey](/services/odoo-implementation/turkey/) page has the full sequence, and the [Turkey cost page](/countries/turkey/cost/) covers what drives the number.
+
+## Questions we get asked
+
+**We already use Logo for e-Fatura. Can Odoo just connect to it?**
+Not out of the box. Odoo's Turkish e-document modules are built around Nilvera as the özel entegratör. The options are migrating the e-document flow to Nilvera or budgeting a connector to your current integrator. Both are legitimate; what is not legitimate is finding out in month three.
+
+**Do we need both e-Fatura and e-Arşiv?**
+Almost certainly. e-Fatura applies when both parties are registered in the system, and everything else, including B2C and export, goes out as e-Arşiv. A Turkish company of any size issues no paper invoices, so scope both.
+
+**Can we host Odoo on a cloud region outside Turkey?**
+Archiving outside Türkiye is not permitted, and records must stay retrievable for 5 years under tax law and 10 years under commercial law. Treat the hosting region as a compliance decision and confirm where the database, filestore and attachments physically sit.
+
+**Is e-Defter included?**
+e-Defter output is among the native features. What is not automatic is the calendar: ledger and berat files go to GİB monthly or per provisional tax period, GİB has extended deadlines by circular more than once, so check the current circular rather than assuming last year's dates.
+
+**Which Turkish courier can we use on day one?**
+None natively. DHL Express, FedEx and UPS ship with Odoo 19 and cover export lanes, but every domestic carrier, PTT Kargo, Yurtici, Aras, MNG, Surat, HepsiJET, Trendyol Express, Kolay Gelsin and Sendeo, needs a paid Odoo 19 module. Budget one connector per carrier you actually ship with, and test it before you promise a label.
+
+**We sell professional services and issue e-SMM. Is that covered?**
+No. The Odoo modules cover e-Fatura, e-Arşiv, e-İrsaliye and e-Defter. e-SMM, e-Müstahsil Makbuzu, e-Bilet and YN ÖKC device integration are outside them, so a professional services firm should price that as extra work rather than assume the localization reaches it.
+
+The full statutory picture for this market, with payments, shipping and payroll broken out separately, sits on the [Turkey country page](/countries/turkey/).

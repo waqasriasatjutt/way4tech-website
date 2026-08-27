@@ -1,0 +1,131 @@
+---
+title: "Odoo implementation in Canada: 13 tax positions, Interac, and the payroll that is not in the box"
+description: "What a Canadian Odoo build has to satisfy: no e-invoicing mandate but a Quebec WEB-SRM regime, GST, HST, QST and PST by province, Regulation 105 withholding, and the payroll, Interac and Canada Post gaps Odoo 19 does not fill."
+date: 2026-08-25
+tags: ["canada", "odoo implementation", "gst-hst", "payroll"]
+---
+
+Canada looks like an easy localization until you price it. There is no e-invoicing mandate to integrate with, which removes the item that dominates a European build, and then two things nobody put in the quote take its place: Odoo ships no Canadian payroll at all, and the country's own payment network has no connector. Start with the obligations, then the gaps.
+
+## What the Canadian market requires of the system
+
+Canada has no B2B or B2C e-invoicing mandate as of 22 August 2026, and a PDF invoice is still legally fine. Nothing structured is required for ordinary domestic trade: no XML, no clearance, no real-time reporting, no QR code and no accredited intermediary.
+
+E-invoicing only bites in two places.
+
+**Federal procurement.** Suppliers to the federal government exchange e-invoices in UBL format, over the Peppol network, which was introduced in Canada in 2018. This is a buyer-driven requirement: it applies where the buying department requires electronic invoices, not by statute across the market. One detail matters technically. Canada is not on the Peppol Authority list, so there is no domestic Peppol governance body and no Canadian identifier scheme to register with. If a vendor tells you they will register you with the Canadian Peppol Authority, there is not one.
+
+**Quebec restaurants.** Revenu Quebec runs a sales recording regime with real teeth. Quebec restaurants, bars, caterers and food trucks must run a certified sales recording system feeding the WEB-SRM cloud. New businesses registered after 1 November 2023 had to use WEB-SRM immediately, and established businesses had until 31 May 2025 to move off a physical SRM. If your client operates hospitality in Quebec, this is not an integration line item, it is a gating requirement on the POS choice.
+
+The record-keeping rule sits underneath both. Records supporting a GST/HST position must be archived for 6 years from the end of the fiscal year, and the system must preserve confidentiality, integrity and availability. Archiving abroad is allowed with conditions, which is the sentence to read before you pick a hosting region. Status is tracked on our [Canada e-invoicing page](/countries/canada/e-invoicing/).
+
+## The tax, payroll and accounting obligations that shape the build
+
+**Sales tax is provincial, and it is the first configuration decision.** GST is 5 percent. In HST provinces a single combined tax applies instead: 13 percent in Ontario, 15 percent in New Brunswick, Newfoundland and Labrador and Prince Edward Island, and 14 percent in Nova Scotia. Quebec charges QST at 9.975 percent on top of the 5 percent GST. British Columbia and Manitoba charge 7 percent PST, Saskatchewan 6 percent. Alberta and the three territories have no retail sales tax. An Odoo setup therefore needs province-driven fiscal positions, not one tax.
+
+**Registration and filing.** The GST/HST registration threshold is CAD 30,000 of sales to Canadian consumers annually. Filing frequency follows annual taxable revenue: annual up to CAD 1.5 million, quarterly from CAD 1.5 million to CAD 6 million, and monthly above CAD 6 million. Monthly and quarterly returns are due one month after period end, annual returns three months after fiscal year end. A client crossing CAD 6 million mid-year changes filing rhythm, so the close calendar you design in month two may not be the one they need in month ten.
+
+**Regulation 105.** This is the one that gets missed on vendor bills. Regulation 105 requires 15 percent withholding on fees, commissions and other service payments to a non-resident for work performed in Canada, unless a waiver is obtained beforehand. If your client uses overseas contractors on Canadian work, that has to be modelled on the bill, with the waiver status held somewhere a person will actually look.
+
+**Payroll numbers.** For 2026 the maximum employee CPP contribution is CAD 4,646.45. Quebec runs its own QPP with a maximum of CAD 4,895.30. Self-employed pay double, up to CAD 9,292.90, or CAD 9,790.60 in Quebec. Employment Insurance for 2026 has a maximum employee premium of CAD 1,123.07 outside Quebec and CAD 895.70 in Quebec, where the Quebec Parental Insurance Plan adds up to CAD 442.90 for employees.
+
+The structural point matters more than the numbers. CPP contributions comprise a base amount, an enhanced amount for all participants, and an additional amount for higher earners. A payroll engine needs two earnings ceilings, not one, and has to split the deductible and credit-eligible portions. Any payroll tool that models CPP as a single percentage to a single ceiling is wrong.
+
+Two payroll items in our data are recorded as unconfirmed and should be checked before you configure against them: that a Record of Employment must be issued within five calendar days of a qualifying interruption of earnings and filed through Service Canada's ROE Web, and that bulk payment and direct deposit files use the Payments Canada CPA005 record format. Odoo does generate CPA005; what is unverified is that it is the format your bank expects. The ROE timing is worth confirming first, because it is short.
+
+**Accounting.** Records supporting a GST/HST position must be kept for 6 years from the end of the fiscal year, with integrity and availability preserved. Two further points are recorded as unconfirmed in our data and are worth verifying with the client's accountant rather than asserting: that corporations file their balance sheet and income statement with the T2 return using CRA General Index of Financial Information codes on schedules 100 and 125, and that there is no government-mandated chart of accounts and no SAF-T style audit file export. If the GIFI point holds, the practical consequence is large: design the chart of accounts with a GIFI mapping from day one or the year-end becomes a manual re-coding exercise.
+
+## What is not in Odoo for the Canadian market
+
+The Canadian localization is three modules: `l10n_ca`, `l10n_ca_reports` and `l10n_ca_check_printing`. What you get is genuinely useful. A Canadian chart of accounts. Sales and purchase taxes with provincial variation, plus 13 provincial and territorial fiscal positions covering AB, BC, MB, NB, NL, NS, NT, NU, ON, PE, QC, SK and YT, and an International one, so the right GST, HST, PST or QST combination is applied by customer province. Cheque printing in three North American pre-printed layouts, top, middle and bottom. CPA005 EFT file generation. Balance sheet, profit and loss and cash flow statement reports.
+
+Then four gaps, and the first is the whole HR budget.
+
+**Payroll, all of it.** Canada does not appear in Odoo 19's list of supported payroll localizations. CPP and the second additional CPP tier, EI, federal and provincial tax tables, T4 and T4A slips and the ROE need a third-party app from the Odoo apps store or a custom build. This is the single largest line in a Canadian Odoo quote that clients do not expect, because the accounting localization is good enough that they assume payroll came with it. Our own [country-agnostic payroll engine](/products/wt-hrms-payroll/) exists for exactly this shape of problem: a market with real statutory rules and no official localization.
+
+**GIFI.** The Canadian localization documentation does not mention GIFI codes, so the mapping from your chart of accounts to schedules 100 and 125 is your job.
+
+**Interac.** No Odoo payment provider ships for Interac Debit or Interac e-Transfer, so account-to-account collection and reconciliation is a build. Interac Debit is Canada's own debit network and what most Canadian shoppers reach for at checkout instead of a credit card, so a store that only accepts Visa and Mastercard will lose baskets to it. Interac e-Transfer moves money between Canadian bank accounts using an email address or mobile number, and Canadian businesses use it for both invoices and customer payments. Most merchants take it as an offline method against Odoo's built-in Wire Transfer and reconcile by hand, which is workable at low volume and painful above it. Odoo Community cannot even read a bank statement file, so a [statement import](/products/wt-bank-statement-import/) is usually the first thing that goes in to make that reconciliation survivable.
+
+**Quebec WEB-SRM.** No Odoo module is documented for the certified sales recording system, so a Quebec restaurant or bar POS deployment needs a certified integration built and attested.
+
+On payments, 10 of the 16 rails worth naming are not native to Odoo 19, and 6 of those are a build rather than a purchase: Interac e-Transfer, Interac Direct through the Konek platform, Helcim, Affirm, Sezzle and the Real-Time Rail. Two notes. Interac Direct is the first real pay-by-bank checkout button in Canada and no Odoo connector exists for it yet. Payments Canada's Real-Time Rail is scheduled to launch in Q4 2026 and is in industry solution assurance testing with participants, so it is not live: plan checkouts around Interac and card rails today and treat RTR as a later phase.
+
+The shortest native path is worth naming. Nuvei is headquartered in Montreal, offers Canada Bank Transfer with Interac alongside card acquiring, and ships with Odoo 19 out of the box, which makes it the shortest route to Interac reach for a Canadian Odoo store. Be careful with the opposite case: Authorize.Net ships natively and Canadian merchants often inherit it from an existing US processing relationship, but its ACH support is USA only, so it does not solve Canadian bank debits. Our data marks that last point unconfirmed, along with Moneris, Helcim, Affirm, Apple Pay and Google Pay.
+
+On carriers, 10 of the 14 worth naming are not native, and the headline is that Canada Post is one of them. The national postal operator, the default carrier for consumer parcels and the one that reaches addresses no courier wants to serve, has no Odoo 19 connector. You either buy one from the apps store or reach it through EasyPost, which is the only aggregator Odoo 19 ships for North America and is how a Canadian store also reaches Canpar and UniUni without a per-carrier connector. The EasyPost connector is free; the EasyPost account and its fees are a required dependency. Four carriers have no route at all and are builds: Loomis Express, Stallion Express, Chit Chats and Intelcom, which trades as Dragonfly outside Quebec, runs close to 500,000 parcels a day across Canada and is Amazon's main Canadian last-mile partner.
+
+## Local integrations against what it takes in Odoo
+
+| Integration | What it is | Route in Odoo 19 |
+| --- | --- | --- |
+| Nuvei | Global gateway, Interac reach | In Odoo |
+| Stripe, PayPal | Global gateways | In Odoo |
+| Authorize.Net | Global gateway | In Odoo, ACH is USA only |
+| Apple Pay and Google Pay | Mobile wallet | In Odoo, through Stripe |
+| Bank transfer and EFT | Bank transfer | In Odoo, offline method |
+| Interac Debit | Domestic card scheme | Paid connector, through an acquirer |
+| Moneris | Local gateway | Paid connector |
+| Square | Local gateway | Paid connector |
+| Afterpay | BNPL | Paid connector |
+| Interac e-Transfer | Instant bank transfer | Custom build |
+| Interac Direct via Konek | Instant bank transfer | Custom build |
+| Helcim | Local gateway | Custom build |
+| Affirm, formerly PayBright | BNPL | Custom build |
+| Sezzle | BNPL | Custom build |
+| Real-Time Rail | Instant bank transfer | Custom build, not live yet |
+| UPS, FedEx, DHL Express | Global express | In Odoo |
+| EasyPost | Aggregator | In Odoo, EasyPost account required |
+| Canada Post | National post | Paid connector or EasyPost |
+| Purolator | Domestic express | Paid connector |
+| Canpar Express | Domestic express | Paid connector, through EasyPost |
+| GLS Canada, formerly Dicom | Domestic express | Paid connector, through a reseller |
+| UniUni | Last mile | Paid connector, through EasyPost |
+| FlagShip | Aggregator | Paid connector plus account |
+| Loomis Express | Domestic express | Custom build |
+| Stallion Express | Aggregator | Custom build |
+| Chit Chats | Aggregator | Custom build |
+| Intelcom, trading as Dragonfly | Last mile | Custom build |
+
+Read the right-hand column as budget lines. The [Canada cost page](/countries/canada/cost/) sets out how they land in a quote.
+
+## Pre-kickoff checklist
+
+- **Your GST/HST number, filing frequency and next filing date**, plus whether you are near the CAD 1.5 million or CAD 6 million band change.
+- **Every province you sell into and ship from**, because that decides which of the 13 fiscal positions you configure and test.
+- **Your Quebec position.** QST registration if you sell there, and whether any part of the business is a restaurant, bar, caterer or food truck.
+- **The payroll decision**, in writing, before kickoff. Which tool runs CPP, EI, tax tables, T4s and the ROE, and who owns the journal that lands in Odoo.
+- **Your non-resident contractors**, with Regulation 105 waiver status per vendor.
+- **Your GIFI mapping** if your accountant already has one, since retrofitting it after go-live is a re-coding exercise.
+- **How customers actually pay you today**, split between card, Interac Debit, Interac e-Transfer and EFT, with monthly volumes.
+- **Carrier accounts and API credentials**, plus an EasyPost, FlagShip or Stallion account if you use one.
+- **Where the database will be hosted**, given the 6-year retention rule and the conditions on archiving abroad.
+- **Chart of accounts and opening balances**, signed off by whoever closes your books.
+
+## The rollout, kept short
+
+1. **Discovery and process mapping.** Walkthroughs per function, recording the exceptions rather than the happy path. Ends with a process map, a numbered gap list and the module list.
+2. **Solution design and gap resolution.** Every gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a cost. Ends with a signed scope.
+3. **Configuration and prototype.** A working system holding a representative slice of your data, including the awkward products rather than the simple ones.
+4. **Data migration and reconciliation.** Clean in the extract, load in dependency order, reconcile control totals and sign them off.
+5. **Training, UAT and cutover.** Scripted testing by the people who will use the system daily, then a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover.
+
+The Canadian weight lands in solution design, where the payroll route and the Interac route get decided, and in configuration, where the fiscal positions get proven with a real order into each province you sell to. Delivery detail is on our [Canada implementation page](/services/odoo-implementation/canada/).
+
+## Questions we actually get asked
+
+**Do we have to do anything about e-invoicing?**
+Not for ordinary trade. There is no B2B or B2C mandate and a PDF invoice is still legally fine. It only matters if you supply the federal government, where invoices are exchanged in UBL over Peppol, or if you run hospitality in Quebec, where WEB-SRM applies.
+
+**Does Odoo do Canadian payroll?**
+No. Canada is not in Odoo 19's list of supported payroll localizations. CPP with its second additional tier, EI, federal and provincial tax tables, T4 and T4A slips and the ROE all need an apps store module or a build. Budget for it at scoping, because it is the item most often discovered late.
+
+**Why is Canada Post not built in?**
+Odoo ships a small carrier set and Canada Post is not in it. The practical answers are a paid apps store connector, or EasyPost, which ships with Odoo 19 and also reaches Canpar and UniUni. Either way there is a subscription behind it.
+
+**How do we accept Interac?**
+Interac Debit online comes through an acquirer such as Moneris, or through Nuvei, which ships with Odoo 19 and offers Canada Bank Transfer with Interac. Interac e-Transfer has no Odoo provider at all, so most merchants take it as an offline payment against the built-in Wire Transfer method and reconcile it, which is why statement import usually goes in at the same time.
+
+**We run a restaurant in Montreal. Does that change the POS decision?**
+Yes, before anything else. Quebec restaurants, bars, caterers and food trucks must run a certified sales recording system feeding WEB-SRM, and no Odoo module is documented for it. That means a certified integration built and attested, and it belongs in the scope on day one rather than in phase two. The full obligation set is on the [Canada country page](/countries/canada/).

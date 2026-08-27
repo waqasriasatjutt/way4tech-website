@@ -1,0 +1,101 @@
+---
+title: "Odoo 18 vs Odoo 19: upgrade now or wait"
+description: "We will not sell you a feature-by-feature diff we have not verified. What we can source is which version ships the localization or payment provider you need, and a test for whether your upgrade is urgent or deferrable."
+date: 2026-08-26
+tags: ["migration", "upgrade", "odoo"]
+---
+
+Most articles with this title are a feature list with no citation behind it. We are not going to write one, because we have not published a verified release-by-release comparison of Odoo 18 and Odoo 19, and inventing one would make the rest of this site worth less.
+
+What we do hold is per-market data on what ships where, checked against primary sources, and a migration practice built on reading the code before quoting a date. That is enough to answer the question people are actually asking, which is not "what changed" but "does this cost me anything to defer".
+
+## Start here: upgrading with no reason is cost with no return
+
+You do not have to upgrade every year, and most teams should not. There are three durable reasons to move and one bad one.
+
+| Trigger | Verdict |
+|---|---|
+| Security support has ended, or is ending, on your current version | Urgent |
+| A third-party module you need exists on the target and has no successor on yours | Urgent |
+| Custom code is getting expensive to maintain against an old base | Urgent, and the upgrade is the cheapest moment to delete some of it |
+| A localization or payment provider you need ships in the target and not in yours | Urgent, if it is on a compliance clock |
+| The target version has a feature you have confirmed in the release notes and will use | Real, once confirmed |
+| "We should be current" | Deferrable |
+| A feature somebody described to you in a sales call | Deferrable until you have checked it yourself |
+
+That table is the whole decision. Everything below is how to fill it in for your own instance.
+
+## The version question is really a module question
+
+The newest version is not automatically the right target. What matters is whether your third-party modules exist there, and how long you want before the next upgrade.
+
+This is the single most common reason an upgrade stalls after it has started. A module you paid for four versions ago has no successor, nobody checked before the project was scoped, and now the choice is to rewrite it, replace the process it supports, or stay put. That check belongs in the assessment, before a date is quoted.
+
+For reference on our own side: our module catalogue holds 139 modules and every one of them is built at 19.0, and our [migration service](/services/odoo-migration/) is described as covering Odoo 10 through 18 to the latest version. So if your custom stack is ours, the target is settled. If it is not, the assessment has to read every module you have and grade the porting effort per module.
+
+## Where the version genuinely decides something
+
+Localization is the area where "which version" stops being a preference. A few things we can state from our own country research, all of which are Odoo 19 facts:
+
+- The Oman accounting localization, l10n_om, ships in Odoo 19 core and auto-installs with the Accounting app, along with l10n_om_reports and l10n_gcc_invoice.
+- The Bahrain accounting localization, l10n_bh, ships in Odoo 19 core and auto-installs with Accounting.
+- For France, Odoo completed the DGFiP registration and is an approved platform, shipping l10n_fr_pdp to send and receive, plus l10n_fr_pdp_pos for POS e-reporting. The French mandate is live from 1 September 2026.
+- Amazon Payment Services ships as a payment provider in Odoo 19, which is what makes mada and STC Pay reachable on a Saudi account without buying a connector.
+- Odoo 19 turns Discover on by default with Stripe, Adyen, Authorize.Net, Worldline, Buckaroo and Nuvei.
+
+Whether each of those also shipped in your current version is a per-item check against your own instance, and it is a five-minute check. Open the apps list and search for the technical name. That is more reliable than any comparison table, including one written by us.
+
+The honest inverse also matters, because it stops an upgrade being sold as a fix for something it will not fix. Odoo 19 ships no girocard method, so online girocard acceptance in Germany is a custom build regardless of version. For Australia, Odoo can generate Peppol XML for a partner on the network, but its documented Peppol formats are BIS Billing 3.0, XRechnung CIUS and NLCIUS, and PINT A-NZ Billing, the format the Australian mandate uses, is not among them. Confirm the format before committing. Upgrading does not make that requirement disappear. See [Australia e-invoicing](/countries/australia/e-invoicing/) and [France e-invoicing](/countries/france/e-invoicing/) for the sourced detail.
+
+## Where we are not certain, said plainly
+
+Three things we will not assert.
+
+We will not tell you that a named feature is new in 19 unless we have the release note in front of us. Vendors move things between editions and between versions, and a claim that was true last year quietly stops being true.
+
+We will not tell you your custom modules will port cleanly. Code that extends standard behaviour ports quickly. Code that replaces standard behaviour, or that was written as edits to core, is expensive at every version. Which of yours is which is a reading exercise, not a guess, and it is the first deliverable of an assessment.
+
+And we will not tell you a localization behaves identically after an upgrade. Accounting and payroll setup has to be re-validated after any version change. For Australian payroll specifically, payday super has been live since 1 July 2026 and the Odoo 19 Australian documentation we reviewed does not describe the seven business day fund receipt window or the qualifying earnings base, so confirm your version handles both before go-live rather than assuming it does. That is the level of certainty available, and pretending to more of it is how upgrades go wrong.
+
+## How to answer the question for your own instance
+
+Run the assessment before you argue about the target version. It produces a written assessment with per-module effort, the modules with no path forward, and a recommended target version, and it is a small fixed piece of work whose findings carry into the upgrade quote.
+
+The work inside it:
+
+- Inventory every installed module: standard, third-party and custom, with the source of each.
+- Check which third-party modules exist for the target version and which have no successor.
+- Read the custom modules and grade the porting effort per module.
+- Size the database, the attachments and the volume of open documents.
+- Identify features that changed behaviour between your version and the target.
+
+That last line is where the version comparison actually belongs. Not in a blog post, in a document about your instance.
+
+## The decision that rides along
+
+If you are considering a change of edition, doing it in the same project is usually cheaper than doing it later, but it enlarges the testing scope. That is a deliberate call, not a detail, and it is worth making with the [Community and Enterprise comparison](/odoo-community/) open in front of you rather than at the end of a long upgrade meeting.
+
+Same for custom code. Some custom modules exist because the version you are on lacked a feature the target version now has as standard. An upgrade is the cheapest moment to delete them, and that decision belongs to the business, not to the developers.
+
+## If you decide to go
+
+The mechanics are not negotiable, whatever versions are involved. Convert a copy, not production. Fix data issues at source in the live system so the next conversion is cleaner. Let your team run real processes end to end on the converted copy. Compare key reports side by side against the old system for the same period, because a report can run without error and still return a different number, and finance will find it at the first close. Retest every integration during validation rather than on go-live day. Rehearse until the conversion is boring and you have measured the window. Keep the pre-conversion backup as the rollback point, and make sure it is one you have already restored: a backup with a green tick proves the job ran, not that the file is usable. [Cloud Backup Pro](/products/wt-db-backup-cloud/) exists for that half of the problem.
+
+If your instance is old enough that nobody remembers what is installed, start with a [health audit](/services/odoo-audit/) instead. It is read-only, and every finding carries a severity and an effort, which is what an upgrade budget is built from.
+
+## FAQs
+
+**Should we go to Odoo 19 now?**
+If security support on your current version is ending, if a module you need has no successor where you are, or if a compliance deadline in your market depends on something the target ships, yes. If none of those is true, the upgrade is a cost with no return and it can wait for a reason.
+
+**Do we have to upgrade every year?**
+No, and most teams should not. The reasons to move are security support on your current version, a third-party module you need, or custom code that is getting expensive to maintain against an old base.
+
+**Can you tell us exactly what changed between 18 and 19?**
+Not from us, not without a citation. What we will do is inventory your instance, identify features that changed behaviour between your version and the target, and put that in writing about your database rather than in general.
+
+**What about our customisations?**
+Graded per module in the assessment. Code that extends standard behaviour ports quickly. Code that replaces standard behaviour, or that was written as edits to core, is expensive at every version, and we tell you which of yours is which before you commit.
+
+**Will we lose data?**
+No. Conversions run on copies, the original is untouched until cutover, and a full pre-conversion backup is the rollback point. What does happen is that data which was already inconsistent becomes visible, because conversion is stricter than daily use.

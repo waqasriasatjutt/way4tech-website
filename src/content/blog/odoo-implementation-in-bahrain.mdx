@@ -1,0 +1,119 @@
+---
+title: "Odoo implementation in Bahrain: no e-invoicing mandate, and WPS 2.0 anyway"
+description: "Bahrain has 10% VAT, no e-invoicing obligation, and an Enhanced Wage Protection System that ended manual salary payments. What the market requires of the system, and the eleven of fourteen couriers Odoo does not cover."
+date: 2026-08-23
+tags: ["bahrain", "payroll", "implementation"]
+---
+
+Bahrain is easy to underprice. There is no e-invoicing mandate to build for, the VAT setup is modelled in the shipped localization, and the country has no general corporate income tax. Then payroll arrives, and payroll in Bahrain now runs through a government platform with named roles and a prescribed file, none of which Odoo ships. That inversion, light on tax and heavy on HR, is the thing to get right in scoping. The data behind this is on our [Bahrain localization page](/countries/bahrain/).
+
+## E-invoicing: groundwork, tenders, and no obligation
+
+There is no named scheme. The National Bureau for Revenue has run tenders for an e-invoicing central platform but has not launched or named one. There is no e-invoicing mandate in Bahrain as of 22 August 2026, for B2G, B2B or B2C: no law, technical specification, platform or go-live date has been published.
+
+Nobody is bound. All VAT-registered businesses still issue conventional tax invoices under the VAT Law. Since 16 November 2023 an invoice may be issued in electronic form without prior NBR approval, but that is permission, not an obligation, and a PDF still counts as a valid invoice. Read that carefully before you accept a proposal that treats "electronic invoicing in Bahrain" as a compliance deliverable.
+
+The groundwork so far, which is what the timeline speculation is built on: a taxpayer invoicing readiness survey in February 2022, an e-invoicing tender in July 2022, a request for proposal for an e-invoicing central platform in June 2023, and a further tender for a nationwide B2B system in February 2025. Market expectation is a centralised clearance model phased by turnover, with structured XML or JSON. That is expectation, not a published rule, and an earlier January 2024 target lapsed without a mandate.
+
+The design instruction that follows is worth putting in the scope document: keep invoice data structured and exportable, and avoid hard-coding numbering or archiving choices that would be painful to change when a specification lands. We track the position on our [Bahrain e-invoicing page](/countries/bahrain/e-invoicing/).
+
+## Tax, payroll and accounting that shape the build
+
+**VAT is 10%.** The rate rose from 5% to 10% on 1 January 2022. Registration is mandatory at BHD 37,500 of annual taxable revenue and voluntary at BHD 18,750. Our data records, unconfirmed, that return frequency depends on size, monthly for taxpayers with annual taxable supplies above BHD 3 million and quarterly for those at or below BHD 3 million, with smaller taxpayers able to ask the NBR to move to monthly filing. Confirm the frequency that applies to you with the NBR rather than assuming it from turnover.
+
+**There is no general corporate income tax in Bahrain.** Oil and gas businesses are taxed at 46% of net profits. A Domestic Minimum Top-up Tax of 15% applies to multinational groups with global consolidated revenue of at least EUR 750 million in at least two of the four preceding fiscal years, for financial years beginning on or after 1 January 2025. Purely domestic businesses are out of scope. For in-scope DMTT groups the calendar is specific: registration with the NBR within 120 days of the start of the transition year, advance payments within 60 days after each quarter end, the return within 15 months of the fiscal year end, and calculation documentation kept for five years after the fiscal year end.
+
+**Payroll is where the work is.** Social insurance is administered by the Social Insurance Organisation. For Bahraini employees the total is 26%: 18% employer and 8% employee. For expatriate employees the total is 4%: 3% employer and 1% employee. The employer withholds and remits monthly. Nationals of other GCC states working in Bahrain are covered under their home country's social insurance rules, so payroll needs a nationality-driven contribution rule, not a simple local or expatriate switch. That distinction is where the nationality field stops being an HR nicety and becomes payroll logic.
+
+End of service for expatriate workers moved to a monthly SIO contribution from 1 March 2024 under Edict 109 of 2023. The employer pays 4.2% of monthly wage for the first three years of service and 8.4% thereafter, electronically through the SIO portal, and the SIO issues separate monthly invoices for non-GCC workers. The employee claims the accrued benefit from the SIO at termination, not from the employer. Service before 1 March 2024 stays the employer's liability under the old rules, which means your system has to carry two regimes for the same employee at the same time: a legacy accrued liability frozen at 1 March 2024 and a monthly contribution after it.
+
+The Enhanced Wage Protection System, WPS 2.0, became operational in early 2026 after an LMRA announcement on 21 October 2025. All private sector salaries must run through the LMRA WPS portal. Direct bank transfers and manual payments are no longer permitted. Domestic workers are out of scope. Under WPS 2.0 each employer must appoint a Wages Responsible Person plus up to five authorised maker and checker roles, upload a monthly payroll file in the prescribed WPS format, and supply explanations and supporting documents for any non-payment or partial payment. Payments run through banks and payment service providers licensed by the Central Bank of Bahrain and integrated with the WPS platform.
+
+That is not a file export. It is a monthly control process with named people, an approval chain and an exception narrative, and it needs to be designed as one.
+
+**Accounting.** IFRS as issued by the IASB is required for all domestic public companies and is applied without modification, on the basis of the Commercial Companies Law (Decree Law 21 of 2001), which requires financial statements prepared according to international accounting standards. The IFRS for SMEs standard is permitted but not required, and most SMEs apply full IFRS because there is no local GAAP in Bahrain. Odoo's Bahrain localization ships two tax report layouts, a full VAT report and a simplified one, so the return format is already modelled rather than needing to be built from the ledger. Arabic alongside English on invoices is handled by l10n_gcc_invoice, which l10n_bh depends on.
+
+## What is not in Odoo for this market
+
+l10n_bh ships in Odoo 19 core from Odoo S.A. and auto-installs with Accounting. It gives you a chart of accounts, taxes, the two tax report layouts, fiscal positions, Bahraini governorates as country state records, and Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills through l10n_gcc_invoice.
+
+Expect less polish than the better-documented localizations. Bahrain has no dedicated fiscal localization page in the Odoo 19 documentation, unlike Oman, Saudi Arabia and the UAE, and the module manifest is the only official description of what it does. That is a planning fact: budget time to verify behaviour rather than read it.
+
+The rest:
+
+- **Payroll, entirely.** There is no Odoo payroll localization for Bahrain. Of the GCC, only the United Arab Emirates and Saudi Arabia are covered. SIO contributions at the Bahraini and expatriate rates, the nationality-driven GCC rule, and the 4.2% and 8.4% expatriate end of service remittance all have to be built or bought.
+- **WPS 2.0 file generation for the LMRA portal.** A paid third-party module exists on the apps store, but the Wages Responsible Person workflow, the maker and checker roles, and the non-payment explanation fields are process work around the file, not just a file export.
+- **Domestic Minimum Top-up Tax computation**, the 120-day registration, quarterly advance payments and the 15-month return, for in-scope multinational groups.
+- **Bahrainisation quota tracking**, and reconciling headcount against the WPS data the LMRA now uses.
+- **Monthly versus quarterly VAT return frequency** and the switch between them as turnover crosses BHD 3 million.
+
+On payments, twenty rails matter in Bahrain and three ship with Odoo 19: BENEFIT, Amazon Payment Services and cash on delivery. Seventeen do not. One, MyFatoorah, has a free Odoo 19 provider module. Six need a paid connector: BenefitPay, Tap Payments, PayTabs, HyperPay, Tamara and Apple Pay through whichever gateway carries it. Ten are a build, and that list is unusually long because Bahrain's acquiring market is domestic: Fawri+, Fawateer, CrediMax, MaxWallet, EazyPay, Arab Financial Services, SADAD Bahrain, Payment International Enterprise, Beyon Money and stc pay Bahrain.
+
+Two of those matter more than the rest. Fawri+ moves money between Bahraini bank accounts in seconds, 24 hours a day, and the Central Bank of Bahrain raised the daily limit to BD 3,000 with effect from 21 July 2025, which makes it the normal way a B2B buyer settles an invoice the same day. Fawateer is Bahrain's electronic bill presentment and payment service, run on the BENEFIT EFTS rails, and it matters for subscription and utility style billing. Neither has an Odoo connector.
+
+On couriers, fourteen matter and three are native: DHL Express, FedEx and UPS. Aramex Bahrain, SMSA Express and Naqel Express need paid connectors, and our own [Gulf and South Asia shipping carriers connector](/products/) covers exactly those three with rates, waybills, labels, cancellation and tracking. Eight are a build: Bahrain Post, Posta Plus, J&T Express Bahrain, Wasel Delivery, Jahez, Ninja, OCS Bahrain and LBC Express Bahrain. Eleven of fourteen outside the native list is the highest ratio in the Gulf, and it is a direct consequence of how local the Bahraini last mile is.
+
+## Local rails against what they take in Odoo
+
+| Local rail or courier | What it is | What it takes in Odoo |
+| --- | --- | --- |
+| BENEFIT | Domestic card scheme | In Odoo |
+| BenefitPay | Mobile wallet | Paid connector |
+| Fawri+ | Instant bank transfer | Custom build |
+| Fawateer | Instant bank transfer | Custom build |
+| CrediMax | Local acquirer | Custom build |
+| EazyPay | Local acquirer | Custom build |
+| Arab Financial Services | Local gateway | Custom build |
+| Payment International Enterprise | Local acquirer | Custom build |
+| Amazon Payment Services | Regional gateway | In Odoo |
+| Tap Payments | Regional gateway | Paid connector |
+| MyFatoorah | Regional gateway | Community module |
+| PayTabs | Regional gateway | Paid connector |
+| Tamara | BNPL | Paid connector |
+| Beyon Money, stc pay Bahrain | Mobile wallet | Custom build |
+| Apple Pay | Mobile wallet | Paid connector |
+| Cash on delivery | Cash on delivery | In Odoo |
+| Bahrain Post | National post | Custom build |
+| Aramex Bahrain | Domestic express | Paid connector |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| SMSA Express | Domestic express | Paid connector |
+| Naqel Express | Domestic express | Paid connector |
+| Posta Plus, J&T Express Bahrain, OCS Bahrain | Domestic express | Custom build |
+| Wasel Delivery, Jahez, Ninja | Last mile | Custom build |
+
+## Pre-kickoff checklist
+
+1. **Your VAT return frequency in writing**, since the BHD 3 million threshold and the option to request monthly filing both change the close calendar.
+2. **Nationality on every employee record**, split three ways: Bahraini, other GCC, and everyone else. The GCC rule sends contributions to the home country's scheme.
+3. **Your 1 March 2024 end of service position.** The frozen legacy liability per expatriate employee, and the monthly 4.2% or 8.4% band each one is now in.
+4. **Your WPS 2.0 roles.** A named Wages Responsible Person, plus the maker and checker list, and the bank or payment service provider that is integrated with the WPS platform.
+5. **A prescribed-format WPS file sample** from that provider, plus your process for supplying explanations and supporting documents on non-payment or partial payment.
+6. **DMTT scope answered yes or no.** If yes, the transition year start date, because registration is due within 120 days of it.
+7. **Your acquirer, with BENEFIT confirmed**, and a decision on BenefitPay and Fawri+.
+8. **Your courier list**, split into DHL, FedEx and UPS on one side and everything else on the other. In Bahrain, everything else is most of it.
+
+## The rollout itself is the commodity part
+
+[Six phases](/services/odoo-implementation/bahrain/). Discovery and process mapping produces a written process map and a numbered gap list. Solution design turns each gap into configure, customise, change the process, or leave out, each priced, and that signed list is the scope. Configuration and prototype puts a working system holding a real sample of your data in front of the team, with weekly demos against the gap list. Data migration loads partners, products, balances and then open documents, and ends in control totals signed off by whoever closes your books. Training, UAT and cutover ends in a go or no-go call against agreed criteria. Hypercare stabilises and hands over.
+
+In Bahrain the heavy phase is training and UAT, because WPS 2.0 puts named people into a monthly control process and they have to run it before you depend on them running it. A parallel payroll run is the only proof that counts. Ranges are on our [Bahrain cost page](/countries/bahrain/cost/).
+
+## Questions we actually get asked
+
+**Do we need e-invoicing in Bahrain?**
+No. There is no mandate for B2G, B2B or B2C, and no law, specification, platform or go-live date has been published. Since 16 November 2023 you may issue an invoice electronically without prior NBR approval, and a PDF still counts as a valid invoice.
+
+**Should we build for the expected clearance model now?**
+No. Market expectation is a centralised clearance model phased by turnover with structured XML or JSON, but that is expectation, not a published rule, and an earlier January 2024 target lapsed without a mandate. Keep invoice data structured and exportable and wait for a specification.
+
+**Is Bahraini payroll available as a module?**
+Not from Odoo. Of the GCC, only the UAE and Saudi Arabia have official payroll localizations. SIO contributions, the nationality-driven GCC rule and the expatriate end of service remittance are all a build or a paid module.
+
+**Can we still pay salaries by bank transfer?**
+No. Under WPS 2.0 all private sector salaries must run through the LMRA WPS portal, and direct bank transfers and manual payments are no longer permitted. Domestic workers are out of scope.
+
+**How do we handle end of service for expatriates who started before 2024?**
+Two regimes at once. Service before 1 March 2024 stays the employer's liability under the old rules, and from that date the employer pays 4.2% of monthly wage for the first three years of service and 8.4% thereafter through the SIO portal, with the employee claiming the accrued benefit from the SIO rather than from you.
+
+**Why is so much of the shipping custom here?**
+Because the Bahraini last mile is local. Of fourteen carriers, three are native, three have paid connectors, and the remaining eight, including Bahrain Post, have nothing on the Odoo apps store. Decide early which of them are in phase one, because each one is a build.

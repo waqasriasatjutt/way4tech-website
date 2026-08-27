@@ -1,0 +1,122 @@
+---
+title: "Odoo implementation in Qatar: no VAT, no e-invoicing spec, and a chart of accounts"
+description: "Qatar's e-invoicing law is an approved draft with nothing in force, l10n_qa is a chart of accounts and nothing more, and Dhareeba has no Odoo integration. What that means for scope, cost and sequencing."
+date: 2026-08-20
+tags: ["qatar", "localization", "implementation"]
+---
+
+Qatar is the market where a generic ERP pitch does the most damage, because the things a Gulf buyer expects to be handled are the things that are not. There is no VAT to configure. There is no e-invoicing specification to build against. The Odoo localization is a chart of accounts. What is left is a set of Qatari-specific processes that live entirely outside the box, and pricing a project here means pricing those. The source data is on our [Qatar localization page](/countries/qatar/).
+
+## E-invoicing: an approved draft, and nothing in force
+
+There is no branded scheme name, unlike Saudi Fatoora or Egypt's e-invoice portal. The authority would be the General Tax Authority (GTA), with the Ministry of Finance, and existing tax filings already run through the GTA's Dhareeba portal.
+
+Qatar's Cabinet approved a draft e-invoicing law and its executive regulations on 6 May 2026. Nothing is in force: no scope, no technical specification and no start date have been published as of 22 August 2026. Nobody is bound yet. The draft law gives the GTA power to require e-invoicing for named taxpayers and transaction types, but those categories have not been published. Do not plan a build against a scope that does not exist.
+
+What is knowable today is thin and worth stating precisely. KPMG's read of the approved draft is that it will set rules for issuing, storing and transmitting e-invoices and related credit and debit notes, and create a database for GTA oversight. No format, no clearance-versus-reporting decision, no QR rule, no signature or seal rule, and no accredited service provider list have been published. Anyone quoting these today is guessing.
+
+What is real today: tax returns, withholding tax statements and contract notifications must be filed electronically in Dhareeba, and financial statements filed with the tax return must be in Arabic. That is the compliance surface your Odoo build actually has to serve. We keep the running status on our [Qatar e-invoicing page](/countries/qatar/e-invoicing/).
+
+The design instruction that follows is simple and worth writing into the scope document: keep invoice data structured and exportable, and avoid hard-coding numbering or archiving choices that would be expensive to unpick when a specification lands.
+
+## The obligations that actually shape the build
+
+**There is no VAT and no sales tax.** PwC's Qatar summary, reviewed 26 February 2026, states plainly: "Currently, Qatar imposes no VAT or sales tax on operations in Qatar." A GCC-framework VAT at 5% is anticipated but has not been enacted. So there is no Qatari tax engine to configure, and any quote with a VAT configuration line in it was written for a different country.
+
+**Excise tax has applied since 1 January 2019:** tobacco products 100%, energy drinks 100%, special purpose goods including alcohol and pork 100%, carbonated drinks 50%. Customs duty is 5% on goods originating outside the GCC, with higher rates on items such as tobacco.
+
+**Corporate income tax is 10%** on the foreign-owned share of taxable income. Entities wholly owned by Qatari nationals and by GCC nationals resident in Qatar are exempt. Oil and gas operations are taxed at 35%. The return is due within four months of the end of the accounting period, and since 1 November 2020 all returns and other submissions, including withholding tax and contract notifications, must be filed through Dhareeba.
+
+**Withholding tax is a single 5% rate** on payments to non-residents without a permanent establishment in Qatar, covering interest, royalties, technical fees, commissions, brokerage and other service payments used or benefited from in Qatar. Tax withheld must be remitted to the GTA by the 16th day of the following month, and monthly WHT statements are filed in Dhareeba. Dividends are not subject to WHT. A monthly deadline attached to your vendor payments is a process, and Odoo does not ship it for Qatar.
+
+**Payroll.** Social insurance is payable only for Qatari nationals. Expatriate staff, who are the bulk of most private sector headcounts, carry no social insurance contribution. Our data records, unconfirmed, that under Social Insurance Law No. 1 of 2022 contributions to the General Retirement and Social Insurance Authority (GRSIA) rose to 14% employer and 7% employee for Qatari nationals, from the previous 10% and 5%, covering Qatari nationals aged 18 and over in permanent employment. Confirm those rates with your payroll adviser before configuring them.
+
+Law No. 17 of 2020 sets a minimum basic wage of QAR 1,000 per month for private sector employees and domestic workers, plus QAR 500 accommodation allowance and QAR 300 food allowance, giving QAR 1,800 unless the employer provides accommodation or food directly. The standard working week is 48 hours at a maximum of 8 hours per day, reduced by two hours during Ramadan, and employees are entitled to an end of service gratuity based on length of service and final basic salary.
+
+The Wage Protection System requires private sector wages to be paid in Qatari riyals into employee accounts at financial institutions in Qatar, with a Salary Information File submitted through the employer's bank to the Ministry of Labour. Our data describes the SIF as a delimited text file with a fixed field order and a mandatory header carrying establishment number, pay month and year, total amount and transaction count, and notes that Odoo has no native SIF export while paid apps store modules generate it as RFC 4180 CSV. That description is recorded as unconfirmed, so validate the current layout with the employer's bank rather than trusting any module's sample file.
+
+**Accounting.** IFRS is required for listed companies, on the basis of Commercial Law No. 5 of 2002 requiring internationally approved accounting principles, with the Qatar Financial Markets Authority rulebooks defining that as IFRS. Audited financial statements must be submitted with the tax return if any one of these applies: capital exceeds QAR 200,000, total income exceeds QAR 500,000, or the head office is outside Qatar. For taxable years starting on or after 1 January 2020, financial statements must be submitted in Arabic. Plan for a bilingual chart of accounts and Arabic report layouts, not an English-only book that gets translated by hand each year.
+
+## What is not in Odoo for this market
+
+The Odoo side is two modules. l10n_qa describes itself as the base module to manage the accounting chart for Qatar and lists exactly one activated feature: chart of accounts. It auto-installs with the Accounting app when the company country is Qatar, and pulls in l10n_gcc_invoice, which adds Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills. QAR is configured with 2 decimal places in Odoo core, so no currency rounding work is needed.
+
+Everything past the chart of accounts is yours to build:
+
+- **Withholding tax at 5%**, the 16th-of-month remittance and the monthly Dhareeba WHT statement.
+- **Contract notification tracking:** catching every signed contract and reporting it in Dhareeba within 30 days, with a QAR 10,000 penalty for each miss. This is the item most often discovered after go-live, and it is a workflow, not a report.
+- **Payroll, entirely.** Qatar is not in Odoo's payroll localization list. GRSIA contributions for Qatari nationals, end of service gratuity accrual and the WPS Salary Information File all need paid apps store modules or a custom build.
+- **E-invoicing.** No Odoo module exists because no Qatar specification exists. Any vendor selling you a Qatar e-invoicing module today is selling you a guess.
+- **Arabic financial statements for the tax return**, which means bilingual account names and Arabic report layouts, not a one-off translation.
+- **Dhareeba filing.** There is no Odoo integration, so filing stays manual unless you build an export.
+
+On payments, nineteen rails matter in Qatar and four ship with Odoo 19: Amazon Payment Services, cash on delivery, the Wire Transfer method, and Stripe. Stripe is in that list only in the sense that Odoo ships the connector: Qatar is not on Stripe's list of countries where a business can open an account, so a Qatar registered company cannot collect in riyal through it. Of the fifteen that are not native, one, MyFatoorah, has a free Odoo 19 provider module, eight need a paid connector, and six are a build.
+
+The one that decides your checkout is NAPS. It is the debit network Qatari banks issue on, and QPay is the national e-commerce gateway that processes it under Qatar Central Bank. Tap Payments states NAPS carries over 70 percent of online transactions in Qatar, so an Odoo shop taking only Visa and Mastercard turns away most local buyers. Himyan, Qatar Central Bank's own debit card brand, comes the same way, by asking your acquirer to enable it rather than by adding a provider in Odoo.
+
+On couriers, eleven matter and three are native: DHL Express, FedEx and UPS. Aramex, SMSA Express and Naqel Express need paid connectors, and our own [Gulf and South Asia shipping carriers connector](/products/) covers exactly those three with rates, waybills, labels, cancellation and tracking. Qatar Post, Posta Plus, Snoonu, Milaha and Qatar Airways Cargo have nothing on the apps store, so they are builds or they stay manual.
+
+## Local rails against what they take in Odoo
+
+| Local rail or courier | What it is | What it takes in Odoo |
+| --- | --- | --- |
+| NAPS (via QPay) | Domestic card scheme | Paid connector |
+| Himyan | Domestic card scheme | Paid connector |
+| Fawran | Instant bank transfer | Custom build |
+| Amazon Payment Services | Global gateway | In Odoo |
+| Tap Payments | Local gateway | Paid connector |
+| MyFatoorah | Local gateway | Community module |
+| SADAD Payment Solutions (Qatar) | Local gateway | Paid connector |
+| Dibsy | Local gateway | Paid connector |
+| SkipCash | Local gateway | Paid connector |
+| Noqoody | Local gateway | Custom build |
+| Doha Bank Internet Payment Gateway | Local gateway | Custom build |
+| Ooredoo Money | Mobile wallet | Custom build |
+| Qatar Mobile Payment (QMP) | Mobile wallet | Custom build |
+| PayLater | BNPL | Custom build |
+| Cash on delivery, bank wire transfer | Local settlement | In Odoo |
+| Qatar Post | National post | Custom build |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| Aramex | Regional express | Paid connector |
+| SMSA Express | Domestic express | Paid connector |
+| Naqel Express | Domestic express | Paid connector |
+| Posta Plus | Regional express | Custom build |
+| Snoonu | Last mile | Custom build |
+| Milaha | Freight forwarding | Custom build |
+
+## Pre-kickoff checklist
+
+1. **Your Dhareeba access**, and the named person who files there today. Everything statutory routes through that portal and nothing in Odoo reaches it.
+2. **A contract register.** Every signed contract has a 30-day notification obligation with a QAR 10,000 penalty per miss. Bring the current list, however it is kept.
+3. **Your ownership split**, Qatari and resident GCC against foreign, because corporate income tax falls on the foreign-owned share.
+4. **A decision on Arabic.** Account names, invoice layouts and the statements filed with the tax return. Decide bilingual now, not at year end.
+5. **Your bank's current SIF layout**, in writing, from the bank rather than from a module vendor.
+6. **Nationality on every employee record**, since social insurance applies only to Qatari nationals.
+7. **Your acquirer, with NAPS and Himyan confirmed as enabled.**
+8. **A written position on e-invoicing:** nothing is in force, and the project will keep invoice data structured and exportable rather than build against an unpublished specification.
+
+## The rollout itself is the commodity part
+
+[Six phases](/services/odoo-implementation/qatar/). Discovery and process mapping produces a written process map and a numbered gap list. Solution design turns each gap into configure, customise, change the process, or leave out, each priced, and that signed list is the scope. Configuration and prototype runs pilot transactions end to end on a slice of your own data. Data migration loads partners, products, balances and open documents in that order and ends in signed control totals. Training, UAT and cutover ends in a go or no-go call against agreed criteria. Hypercare stabilises and hands over.
+
+In Qatar the phases are short and the gap list is long, which is the opposite of what most buyers expect. Ranges are on our [Qatar cost page](/countries/qatar/cost/).
+
+## Questions we actually get asked
+
+**Should we buy a Qatar e-invoicing module now?**
+No. No Odoo module exists because no Qatar specification exists. Keep invoice data structured and exportable, and revisit when the GTA publishes scope and format.
+
+**What does l10n_qa actually give us?**
+A chart of accounts. The manifest lists exactly one activated feature. It pulls in l10n_gcc_invoice, which adds Arabic as a secondary language on invoices, credit notes, debit notes, vendor bills and refund bills. That is the whole localization.
+
+**No VAT means a cheaper project, right?**
+Cheaper in one line and more expensive in several. There is no tax engine to configure, but withholding tax at 5% with a 16th-of-month remittance, contract notifications in Dhareeba, Arabic financial statements and all of payroll are custom because none of them ship.
+
+**Can we file from Odoo?**
+No. Dhareeba has no Odoo integration. Filing stays manual unless you build an export, and an export is a reasonable thing to scope once the monthly rhythm is known.
+
+**Is Qatari payroll available as a module?**
+Not from Odoo. Qatar is not in the payroll localization list. GRSIA contributions, end of service gratuity accrual and the WPS Salary Information File come from paid apps store modules or a build, and the SIF layout should be confirmed with the employer's bank.
+
+**Our shop takes Visa and Mastercard. Is that enough?**
+Not for local buyers. NAPS is the debit network Qatari banks issue on, and Tap Payments states it carries over 70 percent of online transactions in Qatar. Get NAPS and Himyan enabled at your acquirer before launch, not after the first month of thin conversion.

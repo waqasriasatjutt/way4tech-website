@@ -3,7 +3,10 @@ import Base from '~/layouts/Base.astro';
 import { SITE, SERVICES, COUNTRIES } from '~/data/site';
 import { SERVICE_DETAIL } from '~/data/services-detail';
 import { COUNTRY_DETAIL, SUPPORT_LABEL } from '~/data/country-detail';
-import type { CountryProvider, OdooSupport } from '~/data/country-detail';
+/* Country matching, the provider filters and the support badge palette are shared
+   with /countries/[slug].astro and live in ~/utils/country. Imports are visible
+   inside getStaticPaths; page consts are not. */
+import { countryIndexOf, native, nonNative, plainNameOf, supportClassCross } from '~/utils/country';
 
 /*
  * Service crossed with market: /services/<service>/<country>/
@@ -53,7 +56,7 @@ const { service, country } = Astro.props;
 const detail = SERVICE_DETAIL[service.slug];
 const cd = COUNTRY_DETAIL[country.slug];
 
-const plainName = country.title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
+const plainName = plainNameOf(country.title);
 const pageUrl = `${SITE.url}/services/${service.slug}/${country.slug}/`;
 const contactHref = `/contact/?service=${encodeURIComponent(service.title)}&country=${encodeURIComponent(country.title)}&source=services/${service.slug}/${country.slug}`;
 
@@ -74,11 +77,6 @@ const metaDescription = `${heading}. ${detail?.lede || service.tagline}`.slice(0
 /* ── What makes this service harder or cheaper in THIS market ───────
    Read off the country's own verified data. Nothing is asserted here that
    the country pages do not already carry. */
-const nonNative = (list: CountryProvider[] | undefined): CountryProvider[] =>
-  (list || []).filter(p => p.support !== 'native');
-const native = (list: CountryProvider[] | undefined): CountryProvider[] =>
-  (list || []).filter(p => p.support === 'native');
-
 const payNonNative = nonNative(cd?.payments);
 const shipNonNative = nonNative(cd?.shipping);
 const payNative = native(cd?.payments);
@@ -123,7 +121,7 @@ const provides = (detail?.clientProvides || []).slice(0, 6);
 /* Sibling services in the same market, and the same service in nearby markets. */
 const CROSSED_SLUGS = ['odoo-implementation', 'odoo-customization', 'hire-odoo-developer', 'odoo-migration', 'odoo-support', 'odoo-integration'];
 const siblings = SERVICES.filter(s => CROSSED_SLUGS.includes(s.slug) && s.slug !== service.slug).slice(0, 5);
-const cIdx = Math.max(0, COUNTRIES.findIndex(c => c.slug === country.slug));
+const cIdx = countryIndexOf(country.slug);
 const otherMarkets = COUNTRIES.filter(c => c.slug !== country.slug && COUNTRY_DETAIL[c.slug])
   .slice(cIdx % 6)
   .slice(0, 6);
@@ -171,12 +169,9 @@ const schema = [
     : []),
 ];
 
-const supportClass = (s: OdooSupport): string => {
-  if (s === 'native') return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
-  if (s === 'oca_or_community') return 'bg-ink-100 text-ink-700 ring-ink-200';
-  if (s === 'third_party_paid') return 'bg-amber-50 text-amber-800 ring-amber-200';
-  return 'bg-rose-50 text-rose-800 ring-rose-200';
-};
+/* supportClassCross is imported. This route's palette sits three tokens off the
+   one the country pages use, so it has its own export rather than a silent
+   restyle here. */
 ---
 
 <Base title={heading} description={metaDescription} structuredData={schema}>
@@ -258,7 +253,7 @@ const supportClass = (s: OdooSupport): string => {
                     <div class="flex items-start justify-between gap-3">
                       <span class="font-semibold text-ink-900">{p.name}</span>
                       {p.verified && (
-                        <span class={`inline-flex flex-none items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${supportClass(p.support)}`}>
+                        <span class={`inline-flex flex-none items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${supportClassCross(p.support)}`}>
                           {SUPPORT_LABEL[p.support]}
                         </span>
                       )}
@@ -346,7 +341,7 @@ const supportClass = (s: OdooSupport): string => {
               <ul class="mt-4 space-y-2">
                 {otherMarkets.map(c => (
                   <li>
-                    <a class="text-sm text-ink-700 hover:text-brand-600" href={`/services/${service.slug}/${c.slug}/`}>{c.flag} {c.title.replace(/\s*\([^)]*\)\s*/, ' ').trim()}</a>
+                    <a class="text-sm text-ink-700 hover:text-brand-600" href={`/services/${service.slug}/${c.slug}/`}>{c.flag} {plainNameOf(c.title)}</a>
                   </li>
                 ))}
               </ul>

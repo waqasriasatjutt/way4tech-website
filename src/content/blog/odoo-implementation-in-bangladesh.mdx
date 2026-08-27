@@ -1,0 +1,138 @@
+---
+title: "Odoo implementation in Bangladesh: no e-invoicing mandate, and what that actually changes"
+description: "Bangladesh has no clearance e-invoicing scheme. What it does have is Mushak 6.3, EFD/SDC devices in named sectors, and an l10n_bd module that stops at a tax report. Here is what that leaves you to build."
+date: 2026-08-20
+tags: ["bangladesh", "vat", "implementation", "localization"]
+---
+
+Most ERP articles about Bangladesh assume the country works like its neighbours and describe an e-invoicing mandate. There is not one. As of 22 August 2026 Bangladesh has no clearance or reporting e-invoicing mandate at all, and knowing that changes the shape of the project: the money goes into the VAT challan, the return, the withholding matrix and payroll, none of which Odoo covers here.
+
+## What the National Board of Revenue actually requires
+
+There is no national e-invoicing scheme. The live obligations are the **Mushak 6.3 VAT challan (মূসক ৬.৩)** and, in named sectors, **EFD/SDC point-of-sale reporting**. The authority is the National Board of Revenue (NBR), জাতীয় রাজস্ব বোর্ড.
+
+A VAT-registered seller issues a Mushak 6.3 challan on paper or from its own software. The only real-time reporting to NBR runs through EFD/SDC hardware in sectors NBR has named one by one. Every VAT-registered business must issue Mushak 6.3 for taxable supplies, while EFD/SDC installation is imposed sector by sector, most recently on VAT-eligible hotels and restaurants located on highways, announced by NBR in early March 2025.
+
+What that means technically:
+
+- **Mushak 6.3 challan** showing buyer and seller details, description, quantity, unit price, total value and VAT.
+- **No XML or JSON schema, no digital signature or seal, no clearance step, no accredited intermediary, no NBR-assigned document ID.** Nothing in a Gulf or Indian e-invoicing playbook applies.
+- **EFD/SDC devices in mandated sectors** push point-of-sale data to NBR. This is device-level reporting, not ERP-to-authority integration, so an Odoo build does not replace the device and cannot be sold as if it does.
+- **Mushak 9.1 VAT return** filed through the NBR VAT online portal. Manual return filing is completely dispensed with from 1 July 2026.
+- **An NBR reform panel recommended e-invoicing for VAT in February 2025.** Nothing has been enacted, so treat any e-invoicing roadmap as unfunded planning rather than a deadline to build against.
+
+The practical consequence is worth stating plainly. Because there is no clearance step, nothing external gates your invoice, which removes the biggest integration risk in the region. In exchange, the correctness of the challan, the register behind it and the return that follows are entirely your problem, and Odoo's Bangladesh localization does not carry any of them. The [Bangladesh e-invoicing page](/countries/bangladesh/e-invoicing/) sets out the position in full.
+
+## The obligations that shape the ledger
+
+### Tax
+
+The standard VAT rate is 15%. Reduced rates of 1.5%, 2%, 2.4%, 4.5%, 5%, 7.5% and 10% apply to specified goods and services under the Second Schedule of the VAT and SD Act 2012. That is seven reduced rates, not one, and product-level rate mapping is a real workstream rather than a checkbox.
+
+Supplementary Duty applies to Third Schedule goods and services from 10% to 67%, and in certain cases up to 500%. It is payable only at the first stage of supply, which means the ERP has to model it separately from VAT rather than as another tax line on every sale. Getting this wrong is expensive in both directions: charged where it should not be, or missed where it should.
+
+The VAT return is Mushak 9.1, filed monthly and due within 15 days of the end of the tax period, with government, semi-government and autonomous bodies, banks, insurers and anyone filing a nil return getting up to 20 days. That deadline detail is unconfirmed in our sources and should be checked against the current NBR position before it goes into a project calendar.
+
+Withholding runs on two tracks and both hit supplier bills. VAT deducted at source applies where specified withholding entities deduct VAT on certain service procurements at 2% to 15% depending on the service, and it has to be posted against the supplier bill rather than netted off later. Income tax withholding on local payments is 5% on manufacturing, process, conversion, construction and engineering work, while withholding on supplies of goods is not a single rate at all: it runs from 0.5% to 10% depending on the goods, so it has to be mapped per product category. A purchase flow built without that mapping produces wrong payments from week one.
+
+### Payroll
+
+There is no general contributory state social insurance for private sector employees. Employees, including foreign nationals, contribute 7% to 8% of salary to a provident fund and the employer matches it. Gratuity is payable on termination of employment, so the payroll model needs an accrual rather than just a period cost.
+
+The item most often missed is the worker funds. Companies in scope must pay 5% of net profit under section 232 of the Bangladesh Labour Act 2006, split 80:10:10 between the Workers Profit Participation Fund, the Welfare Fund and the Bangladesh Workers Welfare Foundation Fund. A company is in scope if it has paid-up capital of Taka 1 crore or permanent assets of Taka 2 crore on the last day of its accounting year, and the contribution is due within nine months of the year end. That position, and the position that employers deduct income tax at source from salaries under the NBR slab rates and report through the quarterly withholding return, are both unconfirmed in our sources, so confirm them with the client's own advisers before building rules against them.
+
+### Accounting
+
+Companies whose securities trade in a public market, and other large publicly accountable entities, must use IFRS as adopted in Bangladesh, issued locally as Bangladesh Financial Reporting Standards (BFRS). The Financial Reporting Act 2015 gives the Financial Reporting Council the power to set and issue those standards in conformity with IASB standards.
+
+One local mechanism has no equivalent elsewhere and is worth knowing before an audit season: audit reports signed by ICAB practising members carry a Document Verification Code, a unique code issued by ICAB's Document Verification System that lets a regulator check the report online. BSEC-listed companies, microfinance institutions, NGOs taking donor funding and companies seeking investment registration all need DVC-carrying reports. That point is unconfirmed at the primary level in our sources.
+
+## What is not in Odoo for Bangladesh
+
+Odoo ships exactly one module: **l10n_bd (Bangladesh - Accounting, Odoo S.A., LGPL-3, auto-installed with the Accounting app)**. It gives a Bangladesh chart of accounts, Bangladesh taxes and a Bangladesh tax report. There is no Mushak register, no Mushak 9.1 report and no audit file export in the official module.
+
+That is the shortest localization of any market we publish on, and Odoo's own custom list for Bangladesh names six items to cover the difference:
+
+1. **Mushak 6.3 challan layout, numbering and the 6.1 and 6.2 registers.** Third-party paid modules exist for Odoo 19 but nothing official.
+2. **Mushak 9.1 VAT return preparation** and the online portal submission.
+3. **VAT deducted at source on supplier bills**, and income tax withholding at the many rates that hit purchases.
+4. **EFD/SDC device integration** for mandated retail and hospitality sectors.
+5. **Payroll in full**: provident fund, gratuity accrual, WPPF, NBR income tax slabs and the quarterly withholding return.
+6. **bKash, Nagad, SSLCOMMERZ and aamarPay payment acceptance.**
+
+Two of those deserve emphasis. Item 1 is not a report, it is a document series with its own registers, and it is what an NBR officer asks to see. Item 5 has no localization to build on, so price it as a build or a purchase in the first conversation.
+
+Because l10n_bd stops at a tax report, management reporting is also short in Community. [Dynamic Financial Reports](/products/wt-dynamic-financial-reports/) fills that in with Balance Sheet, Profit and Loss, Cash Flow, Trial Balance with opening balances, General Ledger, Partner Ledger, Aged Receivable and Payable and a Tax Report, with comparison, PDF and Excel. And because a Bangladeshi migration usually arrives as spreadsheets rather than a clean export, [Import / Export Power Tools](/products/wt-import-export/) is worth having for reusable profiles, CSV, XLSX and JSON, and upsert matching on any field rather than the external ID alone.
+
+On the rails, the numbers are stark. Of the **16 payment methods** on our Bangladesh page, **only 3 are classified In Odoo**, and one of those three is unusable: Stripe's own country list does not include Bangladesh, so a Bangladeshi company cannot open an account even though Odoo ships the connector. What genuinely works out of the box is cash on delivery and bank transfer over BEFTN and BD-RTGS through Odoo's built in Wire Transfer provider. Every wallet Bangladeshi shoppers actually hold, **bKash**, **Nagad**, **Rocket (Dutch-Bangla Bank)**, **Upay (UCB Fintech)**, **tap (Trust Axiata Pay)**, **Islami Bank mCash** and **Pathao Pay**, arrives through a paid gateway connector, and **TakaPay (National Card Scheme)** has no Odoo integration of any kind.
+
+Couriers are the same shape. Of the **12 carriers**, **only 3 are In Odoo** and all three are global express: DHL Express, FedEx and UPS. **Pathao Courier**, **Steadfast Courier** and **RedX** are reachable through a paid multi carrier Bangladesh module, which is a required dependency for all three. **eCourier**, **Sundarban Courier Service**, **SA Paribahan**, **Bangladesh Post Office and EMS**, **Delivery Tiger** and **Karatoa Courier Service** have nothing at all, so six of the twelve are custom builds. That matters most for rural reach: Sundarban and Karatoa are exactly the networks that cover small towns the app-based couriers do not.
+
+## Local integrations against what it takes in Odoo
+
+| Local integration | What it is | What it takes in Odoo |
+|---|---|---|
+| Cash on delivery | cash on delivery | In Odoo |
+| BEFTN and BD-RTGS transfer | domestic bank transfer | In Odoo, wire transfer provider |
+| SSLCommerz | local gateway | Paid connector |
+| aamarPay | local gateway | Paid connector |
+| shurjoPay | local gateway | Paid connector |
+| bKash, Nagad, Rocket | mobile wallets | Paid connector, via a gateway |
+| Upay, tap, mCash, Pathao Pay | mobile wallets | Paid connector, via a gateway |
+| NPSB cards (Nexus, Q-Cash) | domestic card schemes | Paid connector, via a gateway |
+| Bank card EMI | installments | Paid connector |
+| TakaPay | domestic card scheme | Custom build |
+| DHL Express, FedEx, UPS | global express | In Odoo |
+| Pathao Courier | domestic express | Paid connector |
+| Steadfast Courier | domestic express | Paid connector |
+| RedX | domestic express | Paid connector |
+| eCourier | domestic express | Custom build |
+| Sundarban Courier Service | domestic express | Custom build |
+| SA Paribahan | domestic express | Custom build |
+| Bangladesh Post Office and EMS | national post | Custom build |
+| Delivery Tiger, Karatoa | domestic express | Custom build |
+
+One gateway usually covers the whole wallet list. SSLCommerz holds a Bangladesh Bank Payment System Operator licence and puts cards, ten mobile wallet brands, internet banking and bank EMI behind one integration, while shurjoPay carries eighteen or more channels across 36 partner banks. Pick the gateway first, then the connector, not the other way round.
+
+## Before kickoff: what you need ready
+
+- Your VAT registration and confirmation of whether any of your sectors has been named for EFD/SDC.
+- Your product list with the VAT rate against each line, including which of the seven reduced rates applies, and which items carry Supplementary Duty.
+- Your withholding matrix per product category, because income tax withholding on supplies of goods runs from 0.5% to 10%.
+- The Mushak 6.3 challan you issue today, plus your 6.1 and 6.2 registers, so the numbering and layout can be built against the real document.
+- Confirmation of whether the company is in scope for the section 232 worker funds, tested on paid-up capital and permanent assets at the last day of your accounting year.
+- Your gateway decision, with the merchant account already opened, because the connector choice follows it.
+- Opening balances signed off by whoever closes your books, and a named decision maker per function.
+- A go-live date clear of the first 15 days of a month, when the Mushak 9.1 is being prepared.
+
+## The rollout sequence
+
+Short, because this part is the same everywhere.
+
+1. **Discovery and process mapping.** A written process map, a numbered gap list and the module list that follows from it.
+2. **Solution design and gap resolution.** Each gap gets one of four dispositions: configure, customise, change the process, or leave out of scope, each with a number.
+3. **Configuration and prototype.** A working system holding a real sample of your data, demoed weekly against the process map.
+4. **Data migration and reconciliation.** Clean in the extract, never after loading, and sign off control totals against the old system.
+5. **Training, UAT and cutover.** Scripted testing by daily users, a cutover runbook with a rollback point, and a go or no-go call against agreed criteria.
+6. **Hypercare and handover.** Daily triage tapering as volume settles, report tuning, administrator handover, and a phase two backlog.
+
+Because there is no clearance dependency here, phase 3 is not gated by an outside party, which is the one scheduling advantage Bangladesh has over its neighbours. Use it on the Mushak register and the withholding mapping. The [Odoo implementation in Bangladesh](/services/odoo-implementation/bangladesh/) page has the full sequence and the [Bangladesh cost page](/countries/bangladesh/cost/) covers what drives the number.
+
+## Questions we get asked
+
+**Is e-invoicing coming to Bangladesh, and should we build for it now?**
+An NBR reform panel recommended e-invoicing for VAT in February 2025 and nothing has been enacted since. Build the Mushak 6.3 document and register properly and you are in a good position if a scheme arrives, because the data is the same. Do not pay today for a schema nobody has published.
+
+**We run an EFD device in our restaurant. Does Odoo replace it?**
+No. EFD/SDC devices push point-of-sale data to NBR directly. That is device-level reporting, not ERP-to-authority integration, so the device stays and the Odoo work is about keeping your own records consistent with what the device reported.
+
+**Does l10n_bd produce the Mushak 9.1?**
+No. l10n_bd gives a chart of accounts, taxes and a tax report. The Mushak 9.1 preparation and the portal submission are outside it, as are the 6.1, 6.2 and 6.3 registers.
+
+**Can we take bKash payments without buying a gateway?**
+Not inside Odoo. bKash, Nagad and the rest reach the checkout through a licensed gateway such as SSLCommerz, aamarPay or shurjoPay, and Odoo needs the connector for that gateway. The upside is that one integration covers the whole wallet list rather than one per wallet.
+
+**What is the biggest cost surprise on a Bangladeshi project?**
+Payroll, usually, because there is no localization to start from and the WPPF calculation sits on net profit rather than on salary. After that, the withholding mapping, because the rate depends on the goods rather than on the vendor.
+
+The full statutory picture for this market, with payments, shipping and payroll broken out separately, sits on the [Bangladesh country page](/countries/bangladesh/).

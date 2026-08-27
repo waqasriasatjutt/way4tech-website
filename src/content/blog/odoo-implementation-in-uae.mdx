@@ -1,0 +1,116 @@
+---
+title: "Odoo implementation in the UAE: the ASP deadline sets your timeline"
+description: "The UAE Electronic Invoicing System puts an Accredited Service Provider between you and the FTA, and Odoo ships no UAE e-invoicing module. What the mandate obliges, what is missing, and how to plan around both."
+date: 2026-08-19
+tags: ["uae", "e-invoicing", "implementation"]
+---
+
+Most UAE Odoo quotes are priced as if compliance were a settings page. It is not. The country has a fixed e-invoicing timetable with a named intermediary you must contract, and the official Odoo localization has nothing for it. That gap, not the module list, is what should drive your plan. The underlying data is on our [UAE localization page](/countries/uae/).
+
+## The UAE Electronic Invoicing System, and the date that is already past
+
+The scheme is the UAE Electronic Invoicing System (EIS), run by the Ministry of Finance with the Federal Tax Authority as the reporting endpoint. The pilot programme started on 1 July 2026 with a selected group of taxpayers. Businesses with annual revenue of AED 50 million or more must appoint an Accredited Service Provider by 30 October 2026, extended from 31 July 2026, and go live on 1 January 2027. That go-live date has not moved. Businesses under AED 50 million revenue appoint an ASP by 31 March 2027 and go live on 1 July 2027. Government entities appoint by 31 March 2027 and go live on 1 October 2027.
+
+It binds all persons conducting business in the UAE, for B2B and B2G transactions, except where a specific exclusion applies. Excluded businesses may still opt in voluntarily. B2C is not in the current scope, which is a genuine relief for retail and a genuine trap for anyone who assumes the same is true of their B2B channel.
+
+What it obliges technically:
+
+- **A Decentralised Continuous Transaction Control and Exchange (DCTCE) 5-corner model:** supplier, supplier's ASP, buyer's ASP, buyer, and the Federal Tax Authority as corner 5.
+- **Structured XML in PINT AE format**, converted to the UAE standard e-invoice XML. PDF, Word, images and scans are not e-invoices.
+- **You must appoint a UAE Accredited Service Provider.** You do not connect to the FTA yourself.
+- **The supplier's ASP reports the Tax Data Document to the FTA** in parallel with delivering the invoice through the buyer's ASP. This is continuous reporting, not the pre-clearance model Saudi Arabia uses, which is a different build.
+- **Exchange runs on OpenPeppol**, so the same rails carry cross-border invoices.
+- The legislation sits in Ministerial Decisions No. 64, No. 243 and No. 244 of 2025, with No. 244 amended in May 2026 to move the ASP appointment deadline.
+
+The practical consequence of the 5-corner model is that a piece of your compliance is a vendor contract. Your ASP selection has its own procurement cycle, its own onboarding queue and its own integration timeline, and none of it is under your control. Start it before the ERP work, not after. More detail is on our [UAE e-invoicing page](/countries/uae/e-invoicing/).
+
+## Tax, payroll and accounting that shape the build
+
+**VAT is 5%.** Mandatory registration at AED 375,000 of taxable supplies, voluntary at AED 187,500. The standard VAT period is quarterly below AED 150 million annual turnover and monthly at AED 150 million or above. The return and any payment must reach the FTA within 28 days of the end of the tax period, filed through EmaraTax.
+
+**Corporate tax is 9%** on taxable income above AED 375,000 and 0% up to it, effective for financial years starting on or after 1 June 2023. A Qualifying Free Zone Person pays 0% on qualifying income and 9% on the rest, which means free zone entities need their income streams separated in the ledger from day one rather than analysed at year end. A Domestic Minimum Top-up Tax of 15% applies to multinational groups with consolidated global revenue above EUR 750 million, for financial years starting on or after 1 January 2025. The corporate tax return is filed electronically no later than nine months after the end of the tax period, and records must be kept for seven years after the end of the tax period. Seven years of records is an archive and attachment retention decision, not only a ledger one.
+
+**Payroll is unusual here.** Non-GCC nationals are not subject to UAE social security. Only UAE and GCC nationals generate pension contributions, so for most private-sector headcount the payroll obligation is end of service gratuity plus WPS, not social insurance. For UAE nationals outside Abu Dhabi the long-standing split is 20% of gross remuneration: 5% employee, 12.5% employer and 2.5% government. Abu Dhabi is 26%, with 15% from the employer and 6% from the government.
+
+The UAE is one of the two GCC countries with an official Odoo payroll localization. l10n_ae_hr_payroll and l10n_ae_hr_payroll_account cover end of service gratuity by tenure band, housing, transport, medical, overtime and annual passage allowances, annual leave encashment, unpaid leave, GPSSA and DIFC DEWS for UAE nationals, and WPS reports. Employee IDs and bank accounts drive the WPS extract, so that data has to be clean before the first run.
+
+One payroll item is unconfirmed rather than settled: our data records that the Wage Protection System was tightened in 2026 by Ministerial Resolution No. 340 of 2026, issued 12 May 2026 and effective 1 June 2026, moving the wage payment point to the first day of the following calendar month with at least 85% of total wages transferred and removing the 15-day grace period that Resolution 598 of 2022 allowed, with non-payment escalating to suspension of work permit services and referral to public prosecution. That one is marked unverified in our source data, so treat it as a point to confirm with your PRO or counsel before you rebuild the payroll calendar around it.
+
+**Accounting.** IFRS is the required accounting standard for corporate tax purposes under Ministerial Decision No. 114 of 2023. A taxable person with revenue not exceeding AED 50 million may apply IFRS for SMEs, and a person with revenue not exceeding AED 3 million may use cash basis accounting. Under Ministerial Decision No. 84 of 2025, effective for financial years starting on or after 1 January 2025, all tax groups must prepare audited special purpose financial statements; the AED 50 million consolidated revenue exemption that tax groups had under Ministerial Decision No. 82 of 2023 is gone. Non-group taxable persons still need audited statements above AED 50 million revenue, and Qualifying Free Zone Persons need them regardless.
+
+## What is not in Odoo for this market
+
+Start with the headline: there is no UAE e-invoicing module in the official Odoo localization and no UAE page in Odoo's e-invoicing documentation. Odoo's own Peppol support sends BIS Billing 3.0, XRechnung CIUS and NLCIUS. PINT AE is not among them. A market with a fixed 1 January 2027 go-live has nothing shipped for it, and that single fact is worth more to your planning than any feature list.
+
+Second, VAT filing stays manual. The l10n_ae_reports VAT return follows the official FTA structure and exports to Excel and PDF, but there is no EmaraTax submission in the localization.
+
+On payments, twenty rails matter in the UAE and six ship with Odoo 19: Amazon Payment Services, Paymob, Stripe, Adyen, PayPal and the Wire Transfer method. Fourteen do not. Three have free or community modules, Jaywan through an N-Genius connector, Network International N-Genius Online itself, and MyFatoorah. Eight need a paid connector, including Checkout.com, Telr, PayTabs, Tap Payments, Ziina, Tabby, Tamara and Apple Pay through whichever gateway carries it. Three are a build: Aani, noon payments and Payit.
+
+The UAE is one of the few Gulf markets where Stripe is genuinely available. Stripe lists the United Arab Emirates among the countries where a business can open an account, unlike Saudi Arabia, and it ships with Odoo 19 with tokenisation, manual capture, partial refunds and express checkout. That does not remove the local rails: Jaywan is the UAE domestic card scheme from Al Etihad Payments, and Aani moves up to AED 50,000 in under ten seconds using a mobile number, email or QR code, across 74 licensed institutions, with no Odoo connector at all.
+
+On couriers, twelve matter and three are native: DHL Express, FedEx and UPS. Aramex, iMile, Quiqup, Shipa Delivery, AJEX and AfterShip need paid connectors. Emirates Post, Zajel and Carriyo are builds. Aramex is worth calling out because it is headquartered in Dubai and is the default courier for a great many UAE stores, and Odoo ships no Aramex connector while the OCA delivery-carrier repository has none either. Our own [Gulf and South Asia shipping carriers connector](/products/) covers Aramex, SMSA Express and Naqel Express with rates, waybills, labels, cancellation and tracking.
+
+## Local rails against what they take in Odoo
+
+| Local rail or courier | What it is | What it takes in Odoo |
+| --- | --- | --- |
+| Jaywan | Domestic card scheme | Community module |
+| Aani | Instant bank transfer | Custom build |
+| Network International (N-Genius Online) | Local gateway and acquirer | Community module |
+| Amazon Payment Services | Regional gateway | In Odoo |
+| Paymob | Regional gateway | In Odoo |
+| Stripe | Global gateway | In Odoo |
+| Adyen | Global gateway | In Odoo |
+| Checkout.com | Global gateway | Paid connector |
+| Telr | Regional gateway | Paid connector |
+| Tap Payments | Regional gateway | Paid connector |
+| Ziina | Local gateway | Paid connector |
+| MyFatoorah | Regional gateway | Community module |
+| noon payments | Local gateway | Custom build |
+| Tabby, Tamara | BNPL | Paid connector |
+| Payit | Mobile wallet | Custom build |
+| Emirates Post | National post | Custom build |
+| Aramex | Domestic and global express | Paid connector |
+| DHL Express, FedEx, UPS | Global express | In Odoo |
+| iMile | Last mile | Paid connector |
+| Quiqup | Last mile | Paid connector |
+| Shipa Delivery | Last mile | Paid connector |
+| Zajel | Domestic express | Custom build |
+| Carriyo | Aggregator | Custom build |
+
+## Pre-kickoff checklist
+
+1. **Your revenue band and the date that follows from it.** AED 50 million or more means an ASP appointed by 30 October 2026 and go-live on 1 January 2027. Below that, 31 March 2027 and 1 July 2027.
+2. **A shortlist of Accredited Service Providers**, with their onboarding lead time in writing. This is a procurement track running in parallel with the ERP work.
+3. **Free zone status confirmed.** Whether you are a Qualifying Free Zone Person changes both the corporate tax treatment and whether audited statements are needed regardless of revenue.
+4. **Your tax group structure**, because all tax groups now need audited special purpose financial statements.
+5. **Employee IDs and bank accounts, cleaned.** They drive the WPS extract.
+6. **A gateway decision.** Stripe is available to UAE businesses, but decide separately whether you need Jaywan, Tabby or Tamara at checkout.
+7. **Your Aramex account details**, and a decision on whether the last-mile operators are in scope for phase one or phase two.
+8. **Seven years of records answered as an archive question:** where attachments live, who can delete them, and what the backup covers.
+
+## The rollout itself is the commodity part
+
+[Six phases](/services/odoo-implementation/uae/), the same six anywhere. Discovery and process mapping produces a written process map and a numbered gap list. Solution design gives every gap one of four dispositions, configure, customise, change the process, or leave out, each with a cost, and that signed list becomes the scope. Configuration and prototype puts a working system in front of you holding a real sample of your data, with weekly demos against the gap list. Data migration loads partners, products, balances and then open documents, and finishes with control totals reconciled against the old system. Training, UAT and cutover ends in a go or no-go call against agreed criteria, not against the calendar. Hypercare stabilises the system and hands over the administrator role.
+
+The UAE weight sits outside those phases, in the ASP contract and in the connector list. Ranges are on our [UAE cost page](/countries/uae/cost/).
+
+## Questions we actually get asked
+
+**Does Odoo do UAE e-invoicing yet?**
+No. There is no UAE e-invoicing module in the official Odoo localization and no UAE page in Odoo's e-invoicing documentation, and Odoo's Peppol support does not send PINT AE. Plan the exchange around your Accredited Service Provider and treat the Odoo side as a mapping and integration build.
+
+**Can we connect to the FTA ourselves and skip the ASP?**
+No. You must appoint a UAE Accredited Service Provider. The FTA is corner 5 in the model, reached by your ASP, not by you.
+
+**Is this the same build as Saudi Arabia?**
+No, and assuming it is will cost you. The UAE model is continuous reporting: the supplier's ASP reports the Tax Data Document to the FTA in parallel with delivering the invoice. Saudi Arabia pre-clears standard tax invoices before they are valid. One holds your invoice, the other does not.
+
+**Does the localization file our VAT return?**
+It prepares it. The VAT return report follows the official FTA structure and exports to Excel and PDF. Submission through EmaraTax stays manual.
+
+**We only sell to consumers. Are we in scope?**
+B2C is not in the current scope. That covers the invoicing obligation, not the rest: VAT registration, filing and corporate tax still apply, and if any part of the business invoices other businesses, that part is in scope.
+
+**How much of the payment and courier setup is native?**
+Six of twenty payment rails and three of twelve couriers. Everything else is a community module, a paid connector or a build, and the paid ones carry a licence that recurs.

@@ -86,7 +86,12 @@ export default defineConfig({
   // trailing slash and the homepage stays https://way4tech.com/.
   trailingSlash: 'always',
   integrations: [
-    tailwind(),
+    // applyBaseStyles is off because src/styles/global.css already declares
+    // @tailwind base/components/utilities itself. Left on, the integration
+    // injects a SECOND sheet with the same content: the build emitted two
+    // stylesheets and every page loaded both, 51.6 KB of render-blocking CSS
+    // whose 639 rules were all present in the other one.
+    tailwind({ applyBaseStyles: false }),
     sitemap({
       // Also stamps <lastmod> on the sitemap-index entries.
       lastmod: BUILD_TIME,

@@ -178,6 +178,11 @@ type Section = { heading: string; bullets: string[] };
 
 const media = product.technical ? MODULE_MEDIA[product.technical] : undefined;
 const heroImg = media?.banner || media?.shots?.[0]?.src || '';
+// Intrinsic size so the browser reserves the box before the image arrives.
+// Falls back to the first screenshot's dimensions when the hero came from
+// there rather than from the banner.
+const heroW = media?.banner ? media?.bannerW : media?.shots?.[0]?.w;
+const heroH = media?.banner ? media?.bannerH : media?.shots?.[0]?.h;
 
 const pageUrl = `${SITE.url}/products/${product.slug}/`;
 const contactHref = `/contact/?product=${encodeURIComponent(product.slug)}&source=products/${product.slug}`;
@@ -239,6 +244,13 @@ const productSchema: Record<string, unknown> = {
   url: pageUrl,
   brand: { '@type': 'Organization', name: SITE.name, url: SITE.url },
 };
+// Google will not show the price/availability rich result for a Product node
+// without an image, so 128 priced modules were ineligible for the one result
+// that actually matters on a paid listing. heroImg is the same banner the page
+// already renders, made absolute because schema needs a resolvable URL.
+if (heroImg) {
+  productSchema.image = [new URL(heroImg, SITE.url).toString()];
+}
 if (typeof product.price === 'number' && product.price > 0) {
   productSchema.offers = {
     '@type': 'Offer',
@@ -335,7 +347,8 @@ const delivery = [
           {heroImg && (
             <figure class="mt-10">
               <img src={heroImg} alt={`${product.name} in Odoo`} loading="lazy" decoding="async"
-                   class="w-full rounded-2xl border border-ink-200 shadow-sm" />
+                   width={heroW} height={heroH}
+                   class="h-auto w-full rounded-2xl border border-ink-200 shadow-sm" />
             </figure>
           )}
 

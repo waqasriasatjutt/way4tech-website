@@ -66,29 +66,29 @@ const schema = [
             <input type="text" name="_hp" tabindex="-1" autocomplete="off" class="absolute left-[-9999px] w-0 h-0 opacity-0" aria-hidden="true" />
             <div class="grid gap-5 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-ink-800">Your name *</label>
-                <input type="text" name="name" required class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <label for="lead-name" class="block text-sm font-medium text-ink-800">Your name *</label>
+                <input type="text" name="name" id="lead-name" required autocomplete="name" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-ink-800">Company</label>
-                <input type="text" name="company" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <label for="lead-company" class="block text-sm font-medium text-ink-800">Company</label>
+                <input type="text" name="company" id="lead-company" autocomplete="organization" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
               </div>
             </div>
 
             <div class="grid gap-5 sm:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-ink-800">Email *</label>
-                <input type="email" name="email" required class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <label for="lead-email" class="block text-sm font-medium text-ink-800">Email *</label>
+                <input type="email" name="email" id="lead-email" required autocomplete="email" inputmode="email" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-ink-800">Phone / WhatsApp</label>
-                <input type="tel" name="phone" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <label for="lead-phone" class="block text-sm font-medium text-ink-800">Phone / WhatsApp</label>
+                <input type="tel" name="phone" id="lead-phone" autocomplete="tel" inputmode="tel" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-ink-800">What do you need? *</label>
-              <select name="service" required class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none bg-white">
+              <label for="lead-service" class="block text-sm font-medium text-ink-800">What do you need? *</label>
+              <select name="service" id="lead-service" required class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none bg-white">
                 <option value="">Select a service</option>
                 <option>New Odoo implementation</option>
                 <option>Custom module / customization</option>
@@ -102,8 +102,8 @@ const schema = [
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-ink-800">Tell us about your project *</label>
-              <textarea name="message" rows="5" required class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none"></textarea>
+              <label for="lead-message" class="block text-sm font-medium text-ink-800">Tell us about your project *</label>
+              <textarea name="message" id="lead-message" rows="5" required class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none"></textarea>
             </div>
 
             <button type="submit" class="btn-primary" id="submitBtn">Send message</button>
@@ -217,11 +217,27 @@ const schema = [
         input.setAttribute('value', value); // survives form.reset()
       };
 
-      // Prefill ?product= / ?service= / ?country= / ?source= from URL, falling back to the
+      // Prefill ?product= / ?country= / ?source= from URL, falling back to the
       // stored first touch. An explicit parameter on this URL always wins.
-      ['product','service','country','source'].forEach(k => {
-        setHidden(k, param(k) || (k === 'service' ? '' : (touch[k] || '')));
+      ['product','country','source'].forEach(k => {
+        setHidden(k, param(k) || touch[k] || '');
       });
+
+      // `service` is a real <select> the visitor can see and change, so it is
+      // preselected rather than shadowed. setHidden() looks for an <input> and
+      // would not find the select, so it used to append a SECOND field with the
+      // same name: the form then posted both, and the URL silently beat whatever
+      // the visitor had chosen.
+      const serviceParam = param('service');
+      const serviceField = form.querySelector('select[name="service"]');
+      if (serviceParam && serviceField) {
+        const wanted = serviceParam.trim().toLowerCase();
+        const match = Array.from(serviceField.options).find(
+          o => o.value.trim().toLowerCase() === wanted
+            || o.text.trim().toLowerCase() === wanted
+        );
+        if (match) serviceField.value = match.value;
+      }
       UTM_KEYS.forEach(k => setHidden(k, param(k) || touch[k] || ''));
 
       setHidden('referrer', touch.referrer || (isExternal(document.referrer) ? document.referrer : ''));

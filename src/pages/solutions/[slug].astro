@@ -1,6 +1,7 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { SITE, SOLUTIONS } from '~/data/site';
+import { SITE, SOLUTIONS, INDUSTRIES } from '~/data/site';
+import { INDUSTRY_DETAIL } from '~/data/industries-detail';
 
 export function getStaticPaths() {
   return SOLUTIONS.map(s => ({ params: { slug: s.slug }, props: { sol: s } }));
@@ -8,6 +9,19 @@ export function getStaticPaths() {
 
 const { sol } = Astro.props;
 const related = SOLUTIONS.filter(s => s.slug !== sol.slug).slice(0, 6);
+
+// 25 of the 37 solution slugs also exist under /industries/, where the page
+// carries roughly 1,300 words against this one's 180. Two self-canonical URLs
+// answering the same query split their own signals and let the thin one win by
+// accident, so the deep page is declared canonical and this one becomes a
+// navigational entry point that passes its authority along.
+// The industries route only publishes slugs that have written detail, so the
+// twin must be confirmed present in BOTH lists or this would point a canonical
+// at a URL that was never built.
+const twinExists =
+  INDUSTRIES.some((i: any) => i.slug === sol.slug) &&
+  Boolean(INDUSTRY_DETAIL[sol.slug]);
+const canonical = twinExists ? `${SITE.url}/industries/${sol.slug}/` : undefined;
 
 const schema = [
   {
@@ -32,6 +46,7 @@ const schema = [
 <Base
   title={`Odoo for ${sol.title}`}
   description={`${sol.short} Odoo Partner with 500+ deployments across 18 countries.`}
+  canonical={canonical}
   structuredData={schema}
 >
   <section class="bg-odoo-gradient text-white">

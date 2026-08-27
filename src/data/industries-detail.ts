@@ -69,7 +69,7 @@ export type IndustryDetail = {
   faqs: IndustryFaq[];
 };
 
-export const INDUSTRY_DETAIL: Record<string, IndustryDetail> = {
+const CORE_INDUSTRIES: Record<string, IndustryDetail> = {
   /* ───────────── RETAIL & POS ───────────── */
   'retail-stores': {
     h1: 'Odoo rollouts for retail chains',
@@ -755,4 +755,18 @@ export const INDUSTRY_DETAIL: Record<string, IndustryDetail> = {
       },
     ],
   },
+};
+
+/* The 17 verticals added in August 2026 live in their own files, one per group, so that
+   several people can write them at once without fighting over a single 1,300-line record.
+   Each is backed by a module already on sale in modules-catalog.ts. */
+import { SERVICES_INDUSTRIES } from '~/data/industries/services';
+import { TRADE_INDUSTRIES } from '~/data/industries/trade';
+import { PROFESSIONAL_INDUSTRIES } from '~/data/industries/professional';
+
+export const INDUSTRY_DETAIL: Record<string, IndustryDetail> = {
+  ...CORE_INDUSTRIES,
+  ...SERVICES_INDUSTRIES,
+  ...TRADE_INDUSTRIES,
+  ...PROFESSIONAL_INDUSTRIES,
 };

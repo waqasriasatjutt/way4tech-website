@@ -27,6 +27,166 @@ export interface StoreModule {
 }
 
 export const MODULE_CATALOG: Record<string, StoreModule> = {
+ "w4t-garage-management": {
+  "technical": "w4t_garage_management",
+  "name": "Auto Repair Garage & Workshop Management",
+  "summary": "Garage and workshop ERP - job cards from estimate to invoice, vehicle records with VIN and odometer history, red amber green inspection sheets, flat rate labour against clocked time, parts off stock, roadworthiness tests, service reminders on mileage or months, courtesy cars and gross profit split between labour and parts.",
+  "intro": [
+   "Written for an independent garage, a franchise workshop or a fleet workshop. Runs on Odoo Community with Accounting and Inventory."
+  ],
+  "sections": [
+   {
+    "heading": "The job card is the spine",
+    "bullets": [
+     "Estimate, customer approval, work in progress, quality check, ready, invoiced. Nothing skips a step and the illegal moves are refused with a message that says what to do instead",
+     "The customer authorises an amount, not just a job. Work cannot start on a job card worth more than the figure they signed for, so the awkward call happens before the spanner comes out, not after",
+     "A printed job card with the authorisation wording and a signature box, which is what you hand across the counter before the vehicle goes on the ramp",
+     "Complaint, diagnosis and work done kept as three separate pieces of text, because that is how a warranty claim and a comeback are argued"
+    ]
+   },
+   {
+    "heading": "The vehicle, not just the customer",
+    "bullets": [
+     "VIN, plate, make, model, year, engine code and size, fuel, transmission, drive, colour, kerb weight and tyre size",
+     "Odometer history as its own record, one reading per visit, and a reading that goes backwards is refused unless somebody marks it a correction",
+     "One customer, several vehicles. One vehicle, a full history of every job, every inspection and every certificate",
+     "Key and immobiliser codes are held on the vehicle behind a group, not written on the job sheet"
+    ]
+   },
+   {
+    "heading": "The inspection sheet is what sells the work",
+    "bullets": [
+     "A check sheet per template: service, pre test, vehicle health check, sale preparation",
+     "Red, amber or green per item, with a measurement and a note. A red or amber item is refused without one, because \"brakes: amber\" on its own sells nothing",
+     "Each advisory carries the operation it needs and what that operation costs at your labour rate",
+     "The customer accepts the items they want and those become labour lines on the open job in one click",
+     "Upsell value, accepted value and conversion rate per inspection, per technician and per month"
+    ]
+   },
+   {
+    "heading": "Labour, time and recovery",
+    "bullets": [
+     "Labour is priced at flat rate hours from your own operation list, times the workshop hourly rate, with a discount and tax per line",
+     "Technicians clock on and clock off against the job and, where it matters, against the individual operation",
+     "Efficiency is sold hours over clocked hours, per operation, per job and per technician. Recovery is sold hours against attended hours",
+     "A technician can only be clocked on to one thing at a time, which is what makes the numbers mean anything"
+    ]
+   },
+   {
+    "heading": "Parts off the shelf",
+    "bullets": [
+     "Parts come off the job card as a delivery from the workshop stock location, so the shelf and the accounts agree",
+     "Availability shown per line before the job starts, so nobody strips a car for a part that is on back order",
+     "Supplier reference and parts warranty months held on the line, and the warranty end date is what tells you whether a comeback is a claim"
+    ]
+   },
+   {
+    "heading": "Warranty and comebacks",
+    "bullets": [
+     "A warranty job carries its reason: manufacturer, parts supplier, our own workmanship, goodwill or a policy",
+     "A comeback is raised from the original job, keeps the link, and carries its own reason code",
+     "Rework is therefore visible as a number rather than as a feeling, split by reason and by technician"
+    ]
+   },
+   {
+    "heading": "Reminders that fire on whichever comes first",
+    "bullets": [
+     "A reminder carries a due date and a due odometer. It fires on whichever arrives first, which is how servicing actually works",
+     "Intervals come from the operation where the operation has one, for example a cambelt every five years or one hundred thousand kilometres, and from the company default otherwise",
+     "Passing the quality check rolls the reminder forward from the reading taken on the day"
+    ]
+   },
+   {
+    "heading": "Roadworthiness and the regulator",
+    "bullets": [
+     "A test record per certificate: MOT, ITV, Fahes, TUV, contro tecnico and the rest, with the scheme named on the record",
+     "Test date, expiry, result, certificate number, tester and the odometer at test, with advisories and defects kept apart",
+     "Only a tester with a licence number on file can be named on a certificate",
+     "A daily job emails the owners whose certificate expires inside the window you set"
+    ]
+   }
+  ],
+  "category": "Services/Automotive",
+  "version": "19.0.1.0.0",
+  "price": 299.0,
+  "currency": "USD",
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/w4t_garage_management/",
+  "published": true
+ },
+ "w4t-pharmacy-management": {
+  "technical": "w4t_pharmacy_management",
+  "name": "Pharmacy & Drug Store Management",
+  "summary": "Retail pharmacy ERP - batch and expiry tracking on stock lots, FEFO dispensing, allergy and interaction checking, controlled drug register, generic substitution, insurance claims with co-pay split, near-expiry write-offs and margin per dispense.",
+  "intro": [
+   "Written for a retail chemist, a chain of drug stores, a clinic dispensary or a hospital outpatient pharmacy. Runs on Odoo Community with Inventory and Accounting."
+  ],
+  "sections": [
+   {
+    "heading": "The medicine master",
+    "bullets": [
+     "A medicine is a product with the things a pharmacist actually needs on it: generic name, strength, dosage form, the active molecules it contains, its therapeutic class with an ATC code, its controlled schedule, whether it is prescription only, and how it has to be stored. Reorder minimum and maximum sit on the same record, so the suggested purchase list writes itself."
+    ]
+   },
+   {
+    "heading": "Batches and expiry",
+    "bullets": [
+     "Every intake is a batch: batch number, expiry date, quantity, unit cost and the branch holding it. A confirmed batch is backed by a stock lot, so the batch number a regulator asks about resolves to a real traceable record in Inventory rather than a note in a spreadsheet.",
+     "Dispensing pulls first expiry first out. If one batch cannot cover the quantity, the line splits across batches and each split keeps its own batch number on the label and in the register. A batch with less shelf life left than the branch allows is not offered at all."
+    ]
+   },
+   {
+    "heading": "The safety check",
+    "bullets": [
+     "Before anything leaves the counter the dispense is checked against the patient record and refused with the reason written out:",
+     "The patient's recorded allergies, matched on the active molecule rather than the brand name, so a penicillin allergy stops a co-amoxiclav as well",
+     "Interactions between everything on this dispense and everything the patient is already taking as chronic medication, graded minor through contraindicated. Major and contraindicated stop the dispense. Moderate and minor have to be acknowledged with a reason that is kept on the record",
+     "Pregnancy category D and X against a patient recorded as pregnant",
+     "Prescription-only medicine with no prescriber on the record, if the company has turned that requirement on",
+     "Controlled medicine with no prescription at all, which is refused whatever the settings say",
+     "A pharmacist whose licence has expired, or a branch whose controlled licence has expired",
+     "More than the prescription authorised, and more than the counter limit for an over the counter sale"
+    ]
+   },
+   {
+    "heading": "Controlled drugs",
+    "bullets": [
+     "Narcotics, psychotropics, controlled medicines and precursors each have their own schedule on the medicine. Every controlled line lands in the controlled drug register: date, patient, prescriber, medicine, schedule, quantity, batch number, the pharmacist who dispensed it, the second pharmacist who witnessed it, and the balance left in that batch afterwards. The register is a searchable list you can group by schedule, medicine, pharmacist or month, and it is the screen an inspector asks to see."
+    ]
+   },
+   {
+    "heading": "Generic substitution",
+    "bullets": [
+     "Suggest a cheaper generic with the same molecules, the same strength and the same form, in stock now, and show what the swap saves. Molecules flagged as narrow therapeutic index are never suggested, and a prescription line marked no substitution is left alone. When a swap happens the record keeps what was prescribed as well as what was handed over."
+    ]
+   },
+   {
+    "heading": "Insurance",
+    "bullets": [
+     "A policy per patient with the insurer, member number, plan category, validity dates, co-pay percentage and annual limit. Dispensing splits the money between the insurer and the patient, applies the insurer's tariff discount, and leaves uninsurable items entirely on the patient. Claims carry an e-claim reference built from the company prefix, an approval code, the approved amount and, when the payer refuses, a rejection reason from the list a Gulf pharmacy sees most: not covered, policy expired, limit exceeded, no pre-approval, duplicate, invalid member, missing prescription, price above tariff.",
+     "Approving a claim writes the settled split back onto the dispense and draws the approved amount down against the policy's annual limit, so the next claim knows what is left."
+    ]
+   },
+   {
+    "heading": "Expiry and write-off",
+    "bullets": [
+     "Two lists that a pharmacy has to work every week: stock expiring inside the warning window, and stock already expired. Both carry the money, not just the count, because the number that matters is the value sitting on the shelf that will not sell. Expired stock goes onto a write-off with a reason, an approver and a witness, and prints as a destruction certificate with every batch number on it."
+    ]
+   },
+   {
+    "heading": "Money",
+    "bullets": [
+     "Cost is taken from the batch, not from an average, so the margin on a dispense is the margin on those specific boxes. The insurer's tariff discount comes off before the margin is worked out, which is the number that tells you whether an insurance contract is worth having. Branch level figures show the value expiring inside ninety days alongside the month's margin.",
+     "Requires Odoo 19 Community with Inventory and Accounting."
+    ]
+   }
+  ],
+  "category": "Services/Pharmacy",
+  "version": "19.0.1.0.0",
+  "price": 299.0,
+  "currency": "USD",
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/w4t_pharmacy_management/",
+  "published": true
+ },
  "way4tech-enterprise-theme": {
   "technical": "way4tech_enterprise_theme",
   "name": "Enterprise Theme (Community)",
@@ -91,8 +251,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 89.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_account_asset/",
+  "published": true
  },
  "wt-accounting-dashboard": {
   "technical": "wt_accounting_dashboard",
@@ -194,8 +354,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_agriculture_farm/",
+  "published": true
  },
  "wt-ai-assistant": {
   "technical": "wt_ai_assistant",
@@ -299,8 +459,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 79.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_appointment_booking/",
+  "published": true
  },
  "wt-approval-workflow": {
   "technical": "wt_approval_workflow",
@@ -535,8 +695,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 79.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_bank_statement_import/",
+  "published": true
  },
  "wt-barcode-scanner-offline": {
   "technical": "wt_barcode_scanner_offline",
@@ -640,8 +800,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 149.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_barcode_warehouse/",
+  "published": true
  },
  "wt-budget-control": {
   "technical": "wt_budget_control",
@@ -695,8 +855,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 99.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_budget_control/",
+  "published": true
  },
  "wt-car-wash-pos": {
   "technical": "wt_car_wash_pos",
@@ -821,8 +981,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_coworking_space/",
+  "published": true
  },
  "wt-crm-dashboard": {
   "technical": "wt_crm_dashboard",
@@ -1066,8 +1226,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 129.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_delivery_carrier_connector/",
+  "published": true
  },
  "wt-dental-clinic-pos": {
   "technical": "wt_dental_clinic_pos",
@@ -1156,8 +1316,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 69.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_documents_dms/",
+  "published": true
  },
  "wt-duplicate-partner": {
   "technical": "wt_duplicate_partner",
@@ -1381,8 +1541,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_equipment_rental/",
+  "published": true
  },
  "wt-event-management": {
   "technical": "wt_event_management",
@@ -1473,8 +1633,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_event_management/",
+  "published": true
  },
  "wt-facility-management": {
   "technical": "wt_facility_management",
@@ -1538,8 +1698,61 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 349.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_facility_management/",
+  "published": true
+ },
+ "wt-fbr-digital-invoicing": {
+  "technical": "wt_fbr_digital_invoicing",
+  "name": "FBR Digital Invoicing Pakistan | FBR E-Invoicing Integration | Sales Tax Invoice, QR Code & IRN | Odoo 19 Community",
+  "summary": "Send sales tax invoices to the FBR Digital Invoicing system in real time, get the FBR invoice number and QR code back, and print them on the invoice. Sandbox and production.",
+  "intro": [
+   "Posts your sales tax invoices to the Federal Board of Revenue Digital Invoicing system as you validate them, stores the FBR invoice number that comes back, and prints it on the invoice with the required QR code.",
+   "Built against PRAL's published specification for the DI API."
+  ],
+  "sections": [
+   {
+    "heading": "What it does",
+    "bullets": [
+     "Posts an invoice to FBR the moment it is validated, or on a schedule, or by hand, whichever you prefer",
+     "Stores the FBR invoice number and the timestamp FBR returns",
+     "Prints the FBR invoice number and a QR code on the invoice, at the size the specification requires",
+     "Keeps every request and every reply, so you can show an auditor exactly what was sent and when",
+     "Translates FBR error codes into plain instructions, rather than showing a code and leaving you to look it up"
+    ]
+   },
+   {
+    "heading": "Sandbox first",
+    "bullets": [
+     "Switch between sandbox and production with one setting",
+     "The sandbox scenario is selectable per invoice, so you can work through the test cases FBR requires before going live",
+     "A connection test tells you whether your token works before you post anything real"
+    ]
+   },
+   {
+    "heading": "Set-up in one place",
+    "bullets": [
+     "Your seller registration, business name, province and address",
+     "The security token PRAL issued you",
+     "Reference data pulled straight from FBR: provinces, units of measure, HS codes, sale types and their rates, SRO schedules and items",
+     "HS code, unit and sale type on the product, so an invoice is complete without anyone thinking about it"
+    ]
+   },
+   {
+    "heading": "When something goes wrong",
+    "bullets": [
+     "A failed post is queued and retried rather than lost",
+     "The invoice tells you plainly whether it is not sent, queued, accepted or rejected",
+     "Rejections show the FBR error code, what it means, and what to change",
+     "Requires the Accounting app. Works on Odoo 19 Community and Enterprise."
+    ]
+   }
+  ],
+  "category": "Accounting/Localizations",
+  "version": "19.0.1.0.0",
+  "price": 249.0,
+  "currency": "USD",
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_fbr_digital_invoicing/",
+  "published": true
  },
  "wt-freight-forwarding": {
   "technical": "wt_freight_forwarding",
@@ -1596,8 +1809,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 399.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_freight_forwarding/",
+  "published": true
  },
  "wt-fuel-station": {
   "technical": "wt_fuel_station",
@@ -1657,8 +1870,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_fuel_station/",
+  "published": true
  },
  "wt-gantt-view": {
   "technical": "wt_gantt_view",
@@ -1717,93 +1930,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 199.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
- },
- "wt-garage-management": {
-  "technical": "wt_garage_management",
-  "name": "Auto Repair Garage & Workshop Management",
-  "summary": "Garage and workshop ERP - job cards from estimate to invoice, vehicle records with VIN and odometer history, red amber green inspection sheets, flat rate labour against clocked time, parts off stock, roadworthiness tests, service reminders on mileage or months, courtesy cars and gross profit split between labour and parts.",
-  "intro": [
-   "Written for an independent garage, a franchise workshop or a fleet workshop. Runs on Odoo Community with Accounting and Inventory."
-  ],
-  "sections": [
-   {
-    "heading": "The job card is the spine",
-    "bullets": [
-     "Estimate, customer approval, work in progress, quality check, ready, invoiced. Nothing skips a step and the illegal moves are refused with a message that says what to do instead",
-     "The customer authorises an amount, not just a job. Work cannot start on a job card worth more than the figure they signed for, so the awkward call happens before the spanner comes out, not after",
-     "A printed job card with the authorisation wording and a signature box, which is what you hand across the counter before the vehicle goes on the ramp",
-     "Complaint, diagnosis and work done kept as three separate pieces of text, because that is how a warranty claim and a comeback are argued"
-    ]
-   },
-   {
-    "heading": "The vehicle, not just the customer",
-    "bullets": [
-     "VIN, plate, make, model, year, engine code and size, fuel, transmission, drive, colour, kerb weight and tyre size",
-     "Odometer history as its own record, one reading per visit, and a reading that goes backwards is refused unless somebody marks it a correction",
-     "One customer, several vehicles. One vehicle, a full history of every job, every inspection and every certificate",
-     "Key and immobiliser codes are held on the vehicle behind a group, not written on the job sheet"
-    ]
-   },
-   {
-    "heading": "The inspection sheet is what sells the work",
-    "bullets": [
-     "A check sheet per template: service, pre test, vehicle health check, sale preparation",
-     "Red, amber or green per item, with a measurement and a note. A red or amber item is refused without one, because \"brakes: amber\" on its own sells nothing",
-     "Each advisory carries the operation it needs and what that operation costs at your labour rate",
-     "The customer accepts the items they want and those become labour lines on the open job in one click",
-     "Upsell value, accepted value and conversion rate per inspection, per technician and per month"
-    ]
-   },
-   {
-    "heading": "Labour, time and recovery",
-    "bullets": [
-     "Labour is priced at flat rate hours from your own operation list, times the workshop hourly rate, with a discount and tax per line",
-     "Technicians clock on and clock off against the job and, where it matters, against the individual operation",
-     "Efficiency is sold hours over clocked hours, per operation, per job and per technician. Recovery is sold hours against attended hours",
-     "A technician can only be clocked on to one thing at a time, which is what makes the numbers mean anything"
-    ]
-   },
-   {
-    "heading": "Parts off the shelf",
-    "bullets": [
-     "Parts come off the job card as a delivery from the workshop stock location, so the shelf and the accounts agree",
-     "Availability shown per line before the job starts, so nobody strips a car for a part that is on back order",
-     "Supplier reference and parts warranty months held on the line, and the warranty end date is what tells you whether a comeback is a claim"
-    ]
-   },
-   {
-    "heading": "Warranty and comebacks",
-    "bullets": [
-     "A warranty job carries its reason: manufacturer, parts supplier, our own workmanship, goodwill or a policy",
-     "A comeback is raised from the original job, keeps the link, and carries its own reason code",
-     "Rework is therefore visible as a number rather than as a feeling, split by reason and by technician"
-    ]
-   },
-   {
-    "heading": "Reminders that fire on whichever comes first",
-    "bullets": [
-     "A reminder carries a due date and a due odometer. It fires on whichever arrives first, which is how servicing actually works",
-     "Intervals come from the operation where the operation has one, for example a cambelt every five years or one hundred thousand kilometres, and from the company default otherwise",
-     "Passing the quality check rolls the reminder forward from the reading taken on the day"
-    ]
-   },
-   {
-    "heading": "Roadworthiness and the regulator",
-    "bullets": [
-     "A test record per certificate: MOT, ITV, Fahes, TUV, contro tecnico and the rest, with the scheme named on the record",
-     "Test date, expiry, result, certificate number, tester and the odometer at test, with advisories and defects kept apart",
-     "Only a tester with a licence number on file can be named on a certificate",
-     "A daily job emails the owners whose certificate expires inside the window you set"
-    ]
-   }
-  ],
-  "category": "Services/Automotive",
-  "version": "19.0.1.0.0",
-  "price": 299.0,
-  "currency": "USD",
-  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_garage_management/",
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_gantt_view/",
   "published": true
  },
  "wt-grid-view": {
@@ -1871,8 +1998,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 69.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_grid_view/",
+  "published": true
  },
  "wt-gym-management": {
   "technical": "wt_gym_management",
@@ -1931,8 +2058,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_gym_management/",
+  "published": true
  },
  "wt-helpdesk": {
   "technical": "wt_helpdesk",
@@ -1984,8 +2111,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 49.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_helpdesk/",
+  "published": true
  },
  "wt-hospital-management": {
   "technical": "wt_hospital_management",
@@ -2069,8 +2196,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 900.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_hospital_management_premium/",
+  "published": true
  },
  "wt-hospital-management-ultimate": {
   "technical": "wt_hospital_management_ultimate",
@@ -2188,8 +2315,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 129.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_hr_referral_program/",
+  "published": true
  },
  "wt-hrms-advances": {
   "technical": "wt_hrms_advances",
@@ -2659,8 +2786,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_insurance_broker/",
+  "published": true
  },
  "wt-inventory-dashboard": {
   "technical": "wt_inventory_dashboard",
@@ -2767,8 +2894,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_jewelry_management/",
+  "published": true
  },
  "wt-late-payment-reminder": {
   "technical": "wt_late_payment_reminder",
@@ -2857,8 +2984,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 199.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_laundry_management/",
+  "published": true
  },
  "wt-legal-practice": {
   "technical": "wt_legal_practice",
@@ -2952,8 +3079,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_legal_practice/",
+  "published": true
  },
  "wt-map-view": {
   "technical": "wt_map_view",
@@ -3006,8 +3133,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 89.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_map_view/",
+  "published": true
  },
  "wt-marketing-automation": {
   "technical": "wt_marketing_automation",
@@ -3068,8 +3195,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 129.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_marketing_automation/",
+  "published": true
  },
  "wt-odoo-pos-delivery": {
   "technical": "wt_odoo_pos_delivery",
@@ -3151,80 +3278,6 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_partner_auto_ref/",
   "published": true
  },
- "wt-pharmacy-management": {
-  "technical": "wt_pharmacy_management",
-  "name": "Pharmacy & Drug Store Management",
-  "summary": "Retail pharmacy ERP - batch and expiry tracking on stock lots, FEFO dispensing, allergy and interaction checking, controlled drug register, generic substitution, insurance claims with co-pay split, near-expiry write-offs and margin per dispense.",
-  "intro": [
-   "Written for a retail chemist, a chain of drug stores, a clinic dispensary or a hospital outpatient pharmacy. Runs on Odoo Community with Inventory and Accounting."
-  ],
-  "sections": [
-   {
-    "heading": "The medicine master",
-    "bullets": [
-     "A medicine is a product with the things a pharmacist actually needs on it: generic name, strength, dosage form, the active molecules it contains, its therapeutic class with an ATC code, its controlled schedule, whether it is prescription only, and how it has to be stored. Reorder minimum and maximum sit on the same record, so the suggested purchase list writes itself."
-    ]
-   },
-   {
-    "heading": "Batches and expiry",
-    "bullets": [
-     "Every intake is a batch: batch number, expiry date, quantity, unit cost and the branch holding it. A confirmed batch is backed by a stock lot, so the batch number a regulator asks about resolves to a real traceable record in Inventory rather than a note in a spreadsheet.",
-     "Dispensing pulls first expiry first out. If one batch cannot cover the quantity, the line splits across batches and each split keeps its own batch number on the label and in the register. A batch with less shelf life left than the branch allows is not offered at all."
-    ]
-   },
-   {
-    "heading": "The safety check",
-    "bullets": [
-     "Before anything leaves the counter the dispense is checked against the patient record and refused with the reason written out:",
-     "The patient's recorded allergies, matched on the active molecule rather than the brand name, so a penicillin allergy stops a co-amoxiclav as well",
-     "Interactions between everything on this dispense and everything the patient is already taking as chronic medication, graded minor through contraindicated. Major and contraindicated stop the dispense. Moderate and minor have to be acknowledged with a reason that is kept on the record",
-     "Pregnancy category D and X against a patient recorded as pregnant",
-     "Prescription-only medicine with no prescriber on the record, if the company has turned that requirement on",
-     "Controlled medicine with no prescription at all, which is refused whatever the settings say",
-     "A pharmacist whose licence has expired, or a branch whose controlled licence has expired",
-     "More than the prescription authorised, and more than the counter limit for an over the counter sale"
-    ]
-   },
-   {
-    "heading": "Controlled drugs",
-    "bullets": [
-     "Narcotics, psychotropics, controlled medicines and precursors each have their own schedule on the medicine. Every controlled line lands in the controlled drug register: date, patient, prescriber, medicine, schedule, quantity, batch number, the pharmacist who dispensed it, the second pharmacist who witnessed it, and the balance left in that batch afterwards. The register is a searchable list you can group by schedule, medicine, pharmacist or month, and it is the screen an inspector asks to see."
-    ]
-   },
-   {
-    "heading": "Generic substitution",
-    "bullets": [
-     "Suggest a cheaper generic with the same molecules, the same strength and the same form, in stock now, and show what the swap saves. Molecules flagged as narrow therapeutic index are never suggested, and a prescription line marked no substitution is left alone. When a swap happens the record keeps what was prescribed as well as what was handed over."
-    ]
-   },
-   {
-    "heading": "Insurance",
-    "bullets": [
-     "A policy per patient with the insurer, member number, plan category, validity dates, co-pay percentage and annual limit. Dispensing splits the money between the insurer and the patient, applies the insurer's tariff discount, and leaves uninsurable items entirely on the patient. Claims carry an e-claim reference built from the company prefix, an approval code, the approved amount and, when the payer refuses, a rejection reason from the list a Gulf pharmacy sees most: not covered, policy expired, limit exceeded, no pre-approval, duplicate, invalid member, missing prescription, price above tariff.",
-     "Approving a claim writes the settled split back onto the dispense and draws the approved amount down against the policy's annual limit, so the next claim knows what is left."
-    ]
-   },
-   {
-    "heading": "Expiry and write-off",
-    "bullets": [
-     "Two lists that a pharmacy has to work every week: stock expiring inside the warning window, and stock already expired. Both carry the money, not just the count, because the number that matters is the value sitting on the shelf that will not sell. Expired stock goes onto a write-off with a reason, an approver and a witness, and prints as a destruction certificate with every batch number on it."
-    ]
-   },
-   {
-    "heading": "Money",
-    "bullets": [
-     "Cost is taken from the batch, not from an average, so the margin on a dispense is the margin on those specific boxes. The insurer's tariff discount comes off before the margin is worked out, which is the number that tells you whether an insurance contract is worth having. Branch level figures show the value expiring inside ninety days alongside the month's margin.",
-     "Requires Odoo 19 Community with Inventory and Accounting."
-    ]
-   }
-  ],
-  "category": "Services/Pharmacy",
-  "version": "19.0.1.0.0",
-  "price": 299.0,
-  "currency": "USD",
-  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_pharmacy_management/",
-  "published": true
- },
  "wt-plm-eco": {
   "technical": "wt_plm_eco",
   "name": "PLM and Engineering Change Orders",
@@ -3295,8 +3348,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 149.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_plm_eco/",
+  "published": true
  },
  "wt-pos-dashboard": {
   "technical": "wt_pos_dashboard",
@@ -3382,8 +3435,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 39.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_pos_kitchen_display/",
+  "published": true
  },
  "wt-pos-saloon": {
   "technical": "wt_pos_saloon",
@@ -3462,8 +3515,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 49.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_pos_table_reservation/",
+  "published": true
  },
  "wt-printing-press": {
   "technical": "wt_printing_press",
@@ -3524,8 +3577,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_printing_press/",
+  "published": true
  },
  "wt-product-auto-sku": {
   "technical": "wt_product_auto_sku",
@@ -3805,8 +3858,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 99.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_rental_management/",
+  "published": true
  },
  "wt-rental-website": {
   "technical": "wt_rental_website",
@@ -3874,8 +3927,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 99.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_rental_website/",
+  "published": true
  },
  "wt-restaurant-management": {
   "technical": "wt_restaurant_management",
@@ -3929,8 +3982,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_restaurant_management/",
+  "published": true
  },
  "wt-salary-package-configurator": {
   "technical": "wt_salary_package_configurator",
@@ -3983,8 +4036,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 199.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_salary_package_configurator/",
+  "published": true
  },
  "wt-sale-dashboard": {
   "technical": "wt_sale_dashboard",
@@ -4192,8 +4245,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_shop_floor/",
+  "published": true
  },
  "wt-shopify-connector": {
   "technical": "wt_shopify_connector",
@@ -4257,8 +4310,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    }
   ],
   "category": "Sales/Commerce",
-  "version": "19.0.5.4.0",
-  "price": 1299.0,
+  "version": "19.0.5.4.1",
+  "price": 98.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_shopify_connector/",
   "published": true
@@ -4365,8 +4418,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 349.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_solar_epc/",
+  "published": true
  },
  "wt-spa-pos": {
   "technical": "wt_spa_pos",
@@ -4793,8 +4846,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 299.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_travel_agency/",
+  "published": true
  },
  "wt-veterinary-management": {
   "technical": "wt_veterinary_management",
@@ -4854,8 +4907,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 249.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_veterinary_management/",
+  "published": true
  },
  "wt-water-delivery": {
   "technical": "wt_water_delivery",
@@ -4942,8 +4995,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "version": "19.0.1.0.0",
   "price": 199.0,
   "currency": "USD",
-  "storeUrl": "",
-  "published": false
+  "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_water_delivery/",
+  "published": true
  },
  "wt-whatsapp-connector": {
   "technical": "wt_whatsapp_connector",

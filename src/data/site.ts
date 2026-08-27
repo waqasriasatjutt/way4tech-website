@@ -1,7 +1,7 @@
 export const SITE = {
   name: 'Way4Tech',
   tagline: 'Odoo ERP that fits your business - not the other way around.',
-  description: 'Global Odoo Gold Partner. 9+ years of Odoo delivery, 500+ deployments, 1000+ custom modules. Implementation, customization, SaaS, and support across 18 countries.',
+  description: 'Global Odoo Partner. 9+ years of Odoo delivery, 500+ deployments, 1000+ custom modules. Implementation, customization, SaaS, and support across 18 countries.',
   url: 'https://way4tech.com',
   email: 'info@way4tech.com',
   alt_email: 'waqasriasatjutt@gmail.com',
@@ -22,7 +22,7 @@ export const STATS = [
 ];
 
 export const HIGHLIGHTS = [
-  { icon: '🏆', title: 'Odoo Gold Partner', desc: 'Certified partner with deep v12 → v19 expertise.' },
+  { icon: '🏆', title: 'Odoo Partner', desc: 'Deep Odoo expertise from v12 through v19.' },
   { icon: '🌍', title: '18 Countries', desc: 'Localized compliance for MENA, EU, North America, APAC.' },
   { icon: '🚀', title: '500+ Go-Lives', desc: 'From 10-seat shops to 2000-user enterprises.' },
   { icon: '🔧', title: '1000+ Modules', desc: 'Library of battle-tested OCA & custom modules.' },
@@ -304,7 +304,7 @@ export const PRICING = [
 
 /* FAQs (SEO) */
 export const FAQS = [
-  { q: 'Are you an Odoo Partner?', a: 'Yes. Way4Tech is an Odoo Gold Partner with certified functional and technical consultants across Odoo v12 through v19.' },
+  { q: 'Are you an Odoo Partner?', a: 'Yes. Way4Tech is an Odoo Partner. Our functional and technical consultants work across Odoo v12 through v19.' },
   { q: 'How long does a typical Odoo implementation take?', a: 'Single-module Starter projects run 3-4 weeks. Multi-module Growth projects run 8-12 weeks. Enterprise multi-country rollouts run 4-9 months with phased go-lives.' },
   { q: 'Do you support Odoo Community or only Enterprise?', a: 'Both. We recommend Community for cost-sensitive teams with technical maturity, Enterprise for teams that want Studio, IoT, MRP II, and full vendor support. We also migrate Community ↔ Enterprise.' },
   { q: 'Do you handle ZATCA Phase 2 e-invoicing in Saudi Arabia?', a: 'Yes. We have production deployments across KSA with ZATCA Phase 2 clearance, QR signing, and archive-ready long-term storage.' },

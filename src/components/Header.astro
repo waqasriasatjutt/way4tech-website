@@ -1,42 +1,77 @@
 ---
 import { SITE, SERVICES, MODULES, SOLUTIONS, COUNTRIES } from '~/data/site';
 
+/*
+ * Header.
+ *
+ * The nav had ten top-level items plus four in the right cluster, which overflowed
+ * and wrapped on anything narrower than about 1400px. Top level is now six, with
+ * everything else grouped: the secondary pages sit under More, and the two language
+ * pages sit under a compact language menu instead of taking a slot each.
+ *
+ * Mega panels are width-clamped to the viewport rather than fixed at 720 or 860px,
+ * and the last one right-aligns so it cannot run off the edge. They open on hover
+ * and on keyboard focus, not hover alone.
+ */
+
 const svcCore = SERVICES.filter(s => s.category === 'Core' || s.category === 'Cloud');
-const svcOther = SERVICES.filter(s => !['Core','Cloud'].includes(s.category));
+const svcOther = SERVICES.filter(s => !['Core', 'Cloud'].includes(s.category));
 
 const modByCat: Record<string, typeof MODULES> = {};
 MODULES.forEach(m => { (modByCat[m.category] ||= []).push(m); });
+const modCats = Object.entries(modByCat);
 
 const solTop = SOLUTIONS.slice(0, 12);
+
 const countryGroups = [
-  { label: 'Gulf & Middle East', items: COUNTRIES.filter(c => ['saudi-arabia','uae','qatar','kuwait','oman','bahrain','egypt','jordan','turkey'].includes(c.slug)) },
-  { label: 'Asia', items: COUNTRIES.filter(c => ['pakistan','india','bangladesh'].includes(c.slug)) },
-  { label: 'Europe', items: COUNTRIES.filter(c => ['united-kingdom','germany','france'].includes(c.slug)) },
-  { label: 'Americas & Oceania', items: COUNTRIES.filter(c => ['united-states','canada','australia'].includes(c.slug)) },
+  { label: 'Gulf & Middle East', items: COUNTRIES.filter(c => ['saudi-arabia', 'uae', 'qatar', 'kuwait', 'oman', 'bahrain', 'egypt', 'jordan', 'turkey'].includes(c.slug)) },
+  { label: 'Asia', items: COUNTRIES.filter(c => ['pakistan', 'india', 'bangladesh'].includes(c.slug)) },
+  { label: 'Europe', items: COUNTRIES.filter(c => ['united-kingdom', 'germany', 'france'].includes(c.slug)) },
+  { label: 'Americas & Oceania', items: COUNTRIES.filter(c => ['united-states', 'canada', 'australia'].includes(c.slug)) },
+];
+
+/* Everything that used to sit in the top row and no longer fits there. Nothing is
+   dropped: a link removed from the bar is a page nothing points at. */
+const more = [
+  { href: '/compare/', label: 'Compare Odoo', desc: 'Odoo against SAP, NetSuite, Zoho and more' },
+  { href: '/odoo-community/', label: 'Odoo Community', desc: 'Community or Enterprise, decided properly' },
+  { href: '/industries/', label: 'Industries', desc: 'How a sector gets Odoo running' },
+  { href: '/integrations/', label: 'Integrations', desc: 'Payments, shipping, eCommerce, BI' },
+  { href: '/pricing/', label: 'Pricing', desc: 'What an Odoo project costs' },
+  { href: '/case-studies/', label: 'Case Studies', desc: 'Client work' },
+  { href: '/blog/', label: 'Blog', desc: 'Guides and implementation notes' },
+  { href: '/resources/', label: 'Resources', desc: 'Downloads and reference' },
+  { href: '/about/', label: 'About', desc: 'Who we are' },
+];
+
+const langs = [
+  { href: '/', label: 'English', native: 'English', code: 'en', dir: 'ltr' },
+  { href: '/ar/', label: 'Arabic', native: 'العربية', code: 'ar', dir: 'rtl' },
+  { href: '/tr/', label: 'Turkish', native: 'Türkçe', code: 'tr', dir: 'ltr' },
 ];
 ---
 <header class="sticky top-0 z-50 border-b border-ink-100 bg-white/90 backdrop-blur-md">
-  <div class="container-site flex h-16 items-center justify-between gap-6">
+  <div class="container-site flex h-16 items-center justify-between gap-3 xl:gap-6">
     <a href="/" class="flex items-center gap-2.5 font-bold text-ink-900 shrink-0" aria-label="Way4Tech Home">
-      <img src="/logo.svg" alt="Way4Tech" width="160" height="38" class="h-9 w-auto" />
+      <img src="/logo.svg" alt="Way4Tech" width="160" height="38" class="h-8 w-auto sm:h-9" />
     </a>
 
-    <nav class="hidden lg:flex items-center gap-1 text-sm font-medium text-ink-700" aria-label="Primary">
-      <!-- SERVICES MEGA -->
+    <nav class="hidden lg:flex items-center gap-0.5 xl:gap-1 text-sm font-medium text-ink-700" aria-label="Primary">
+      <!-- SERVICES -->
       <div class="group relative">
-        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+        <button type="button" aria-haspopup="true" class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">
           Services
           <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
         </button>
-        <div class="mega top-full w-[720px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
-          <div class="grid grid-cols-2 gap-6 p-6">
+        <div class="mega top-full w-[min(92vw,720px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid gap-6 p-6 sm:grid-cols-2">
             <div>
-              <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-3">Core Services</div>
+              <div class="mb-3 text-xs font-bold uppercase tracking-wider text-brand-600">Core Services</div>
               <ul class="space-y-1">
                 {svcCore.map(s => (
                   <li>
                     <a href={`/services/${s.slug}/`} class="flex gap-3 rounded-lg p-2 hover:bg-ink-50">
-                      <span class="text-xl shrink-0">{s.icon}</span>
+                      <span class="shrink-0 text-xl">{s.icon}</span>
                       <span>
                         <span class="block font-semibold text-ink-900">{s.title}</span>
                         <span class="block text-xs text-ink-500">{s.tagline}</span>
@@ -47,12 +82,12 @@ const countryGroups = [
               </ul>
             </div>
             <div>
-              <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-3">Specialized</div>
+              <div class="mb-3 text-xs font-bold uppercase tracking-wider text-brand-600">Specialized</div>
               <ul class="space-y-1">
                 {svcOther.map(s => (
                   <li>
                     <a href={`/services/${s.slug}/`} class="flex gap-3 rounded-lg p-2 hover:bg-ink-50">
-                      <span class="text-xl shrink-0">{s.icon}</span>
+                      <span class="shrink-0 text-xl">{s.icon}</span>
                       <span>
                         <span class="block font-semibold text-ink-900">{s.title}</span>
                         <span class="block text-xs text-ink-500">{s.tagline}</span>
@@ -63,31 +98,31 @@ const countryGroups = [
               </ul>
             </div>
           </div>
-          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
-            <span class="text-ink-600">15 Odoo services, one team.</span>
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-ink-100 bg-ink-50 px-6 py-3 text-sm">
+            <span class="text-ink-600">{SERVICES.length} Odoo services, one team.</span>
             <span class="flex items-center gap-5">
-              <a href="/integrations/" class="font-semibold text-brand-700 hover:text-brand-800">Integrations →</a>
-              <a href="/services/" class="font-semibold text-brand-700 hover:text-brand-800">All services →</a>
+              <a href="/integrations/" class="font-semibold text-brand-700 hover:text-brand-800">Integrations &rarr;</a>
+              <a href="/services/" class="font-semibold text-brand-700 hover:text-brand-800">All services &rarr;</a>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- MODULES MEGA -->
+      <!-- ODOO APPS -->
       <div class="group relative">
-        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+        <button type="button" aria-haspopup="true" class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">
           Odoo Apps
           <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
         </button>
-        <div class="mega top-full w-[860px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
-          <div class="grid grid-cols-4 gap-5 p-6">
-            {Object.entries(modByCat).map(([cat, list]) => (
+        <div class="mega top-full w-[min(94vw,900px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid max-h-[70vh] grid-cols-2 gap-5 overflow-y-auto p-6 sm:grid-cols-3 xl:grid-cols-4">
+            {modCats.map(([cat, list]) => (
               <div>
-                <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">{cat}</div>
+                <div class="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600">{cat}</div>
                 <ul class="space-y-1">
                   {list.map(m => (
                     <li>
-                      <a href={`/modules/${m.slug}/`} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-ink-50 text-ink-700 hover:text-brand-700">
+                      <a href={`/modules/${m.slug}/`} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-ink-700 hover:bg-ink-50 hover:text-brand-700">
                         <span class="text-base">{m.icon}</span>
                         <span>{m.title}</span>
                       </a>
@@ -97,56 +132,56 @@ const countryGroups = [
               </div>
             ))}
           </div>
-          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
-            <span class="text-ink-600">All 25 Odoo ERP modules - one per page.</span>
-            <a href="/modules/" class="font-semibold text-brand-700 hover:text-brand-800">Browse all modules →</a>
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-ink-100 bg-ink-50 px-6 py-3 text-sm">
+            <span class="text-ink-600">All {MODULES.length} Odoo apps, one page each.</span>
+            <a href="/modules/" class="font-semibold text-brand-700 hover:text-brand-800">Browse all apps &rarr;</a>
           </div>
         </div>
       </div>
 
-      <!-- SOLUTIONS MEGA -->
+      <!-- SOLUTIONS -->
       <div class="group relative">
-        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+        <button type="button" aria-haspopup="true" class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">
           Solutions
           <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
         </button>
-        <div class="mega top-full w-[720px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
-          <div class="grid grid-cols-3 gap-4 p-6">
+        <div class="mega top-full w-[min(92vw,720px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
             {solTop.map(s => (
               <a href={`/solutions/${s.slug}/`} class="flex gap-2.5 rounded-lg p-2 hover:bg-ink-50">
-                <span class="text-xl shrink-0">{s.icon}</span>
+                <span class="shrink-0 text-xl">{s.icon}</span>
                 <span>
-                  <span class="block font-semibold text-ink-900 text-sm">{s.title}</span>
-                  <span class="block text-xs text-ink-500 leading-tight mt-0.5">{s.tagline}</span>
+                  <span class="block text-sm font-semibold text-ink-900">{s.title}</span>
+                  <span class="mt-0.5 block text-xs leading-tight text-ink-500">{s.tagline}</span>
                 </span>
               </a>
             ))}
           </div>
-          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
-            <span class="text-ink-600">20 industry-ready Odoo solutions.</span>
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-ink-100 bg-ink-50 px-6 py-3 text-sm">
+            <span class="text-ink-600">{SOLUTIONS.length} industry-ready Odoo solutions.</span>
             <span class="flex items-center gap-5">
-              <a href="/industries/" class="font-semibold text-brand-700 hover:text-brand-800">Industries →</a>
-              <a href="/solutions/" class="font-semibold text-brand-700 hover:text-brand-800">All solutions →</a>
+              <a href="/industries/" class="font-semibold text-brand-700 hover:text-brand-800">Industries &rarr;</a>
+              <a href="/solutions/" class="font-semibold text-brand-700 hover:text-brand-800">All solutions &rarr;</a>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- COUNTRIES MEGA -->
+      <!-- COUNTRIES -->
       <div class="group relative">
-        <button class="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">
+        <button type="button" aria-haspopup="true" class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">
           Countries
           <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
         </button>
-        <div class="mega top-full w-[720px] rounded-2xl border border-ink-100 bg-white shadow-2xl">
-          <div class="grid grid-cols-2 gap-x-8 gap-y-4 p-6">
+        <div class="mega top-full w-[min(92vw,720px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid gap-x-8 gap-y-4 p-6 sm:grid-cols-2">
             {countryGroups.map(g => (
               <div>
-                <div class="text-xs font-bold uppercase tracking-wider text-brand-600 mb-2">{g.label}</div>
+                <div class="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600">{g.label}</div>
                 <ul class="space-y-0.5">
                   {g.items.map(c => (
                     <li>
-                      <a href={`/countries/${c.slug}/`} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-ink-50 text-ink-700 hover:text-brand-700">
+                      <a href={`/countries/${c.slug}/`} class="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-ink-700 hover:bg-ink-50 hover:text-brand-700">
                         <span>{c.flag}</span>
                         <span>{c.title}</span>
                       </a>
@@ -156,55 +191,108 @@ const countryGroups = [
               </div>
             ))}
           </div>
-          <div class="rounded-b-2xl bg-ink-50 px-6 py-3 border-t border-ink-100 flex items-center justify-between text-sm">
-            <span class="text-ink-600">18 countries. Localized Odoo.</span>
-            <a href="/countries/" class="font-semibold text-brand-700 hover:text-brand-800">All countries →</a>
+          <div class="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-ink-100 bg-ink-50 px-6 py-3 text-sm">
+            <span class="text-ink-600">{COUNTRIES.length} countries. Localized Odoo.</span>
+            <a href="/countries/" class="font-semibold text-brand-700 hover:text-brand-800">All countries &rarr;</a>
           </div>
         </div>
       </div>
 
-      <a href="/products/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Our Modules</a>
-      <a href="/compare/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Compare</a>
-      <a href="/odoo-community/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Community</a>
-      <a href="/pricing/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Pricing</a>
-      <a href="/case-studies/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Case Studies</a>
-      <a href="/blog/" class="px-3 py-2 rounded-md hover:bg-ink-50 hover:text-brand-700">Blog</a>
+      <a href="/products/" class="whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">Our Modules</a>
+
+      <!-- MORE, right-aligned so it cannot run off the edge -->
+      <div class="group relative">
+        <button type="button" aria-haspopup="true" class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">
+          More
+          <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+        </button>
+        <div class="mega mega-right top-full w-[min(92vw,440px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <ul class="grid gap-1 p-4 sm:grid-cols-2">
+            {more.map(m => (
+              <li>
+                <a href={m.href} class="block rounded-lg p-2.5 hover:bg-ink-50">
+                  <span class="block text-sm font-semibold text-ink-900">{m.label}</span>
+                  <span class="mt-0.5 block text-xs leading-tight text-ink-500">{m.desc}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </nav>
 
-    <div class="flex items-center gap-2 shrink-0">
-      <a href="/ar/" hreflang="ar" lang="ar" dir="rtl" class="hidden sm:inline-flex btn-ghost text-sm" aria-label="Arabic">العربية</a>
-      <a href="/tr/" hreflang="tr" lang="tr" class="hidden sm:inline-flex btn-ghost text-sm" aria-label="Turkish">Türkçe</a>
-      <a href={SITE.whatsapp} target="_blank" rel="noopener" class="hidden sm:inline-flex btn-ghost text-sm">WhatsApp</a>
-      <a href="/contact/" class="btn-primary text-sm">Get a Quote</a>
-      <button id="mobile-toggle" class="lg:hidden btn-ghost !px-2" aria-label="Open menu">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+      <!-- LANGUAGE, one slot instead of two -->
+      <div class="group relative hidden sm:block">
+        <button type="button" aria-haspopup="true" aria-label="Change language" class="flex items-center gap-1 rounded-md px-2 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50 hover:text-brand-700">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-width="2" d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>
+          <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
+        </button>
+        <div class="mega mega-right top-full w-44 rounded-xl border border-ink-100 bg-white p-1.5 shadow-2xl">
+          {langs.map(l => (
+            <a href={l.href} hreflang={l.code} lang={l.code} dir={l.dir}
+               class="block rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-ink-50 hover:text-brand-700">
+              {l.native}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <a href={SITE.whatsapp} target="_blank" rel="noopener" aria-label="WhatsApp"
+         class="hidden items-center rounded-md px-2 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50 hover:text-brand-700 sm:inline-flex">
+        <svg class="h-5 w-5 xl:hidden" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.6c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5l-.9-2.2c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 00-8.6 15L2 22l5.1-1.3A10 10 0 1012 2z"/></svg>
+        <span class="hidden xl:inline">WhatsApp</span>
+      </a>
+
+      <a href="/contact/" class="btn-primary whitespace-nowrap px-3 text-sm sm:px-4">Get a Quote</a>
+
+      <button id="mobile-toggle" type="button" class="btn-ghost !px-2 lg:hidden" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-nav">
+        <svg id="icon-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <svg id="icon-close" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
   </div>
 
-  <!-- MOBILE NAV -->
-  <nav id="mobile-nav" class="hidden lg:hidden border-t border-ink-100 bg-white">
-    <div class="container-site py-4 space-y-2 text-sm">
-      <a href="/services/" class="block py-2 font-semibold">Services</a>
-      <a href="/modules/" class="block py-2 font-semibold">Odoo Apps</a>
-      <a href="/solutions/" class="block py-2 font-semibold">Solutions</a>
-      <a href="/industries/" class="block py-2 font-semibold">Industries</a>
-      <a href="/countries/" class="block py-2 font-semibold">Countries</a>
-      <a href="/integrations/" class="block py-2 font-semibold">Integrations</a>
-      <a href="/products/" class="block py-2 font-semibold">Our Modules</a>
-      <a href="/compare/" class="block py-2 font-semibold">Compare Odoo</a>
-      <a href="/odoo-community/" class="block py-2 font-semibold">Odoo Community</a>
-      <a href="/pricing/" class="block py-2 font-semibold">Pricing</a>
-      <a href="/case-studies/" class="block py-2 font-semibold">Case Studies</a>
-      <a href="/blog/" class="block py-2 font-semibold">Blog</a>
-      <a href="/contact/" class="block py-2 font-semibold text-brand-700">Contact</a>
-      <a href="/ar/" hreflang="ar" lang="ar" dir="rtl" class="block py-2 font-semibold">العربية</a>
-      <a href="/tr/" hreflang="tr" lang="tr" class="block py-2 font-semibold">Türkçe</a>
+  <!-- MOBILE, scrollable because the list is long -->
+  <nav id="mobile-nav" class="hidden max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-ink-100 bg-white lg:hidden" aria-label="Mobile">
+    <div class="container-site space-y-1 py-4 text-sm">
+      <div class="pt-1 pb-1 text-xs font-bold uppercase tracking-wider text-ink-400">Explore</div>
+      <a href="/services/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Services</a>
+      <a href="/modules/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Odoo Apps</a>
+      <a href="/solutions/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Solutions</a>
+      <a href="/industries/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Industries</a>
+      <a href="/countries/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Countries</a>
+      <a href="/products/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Our Modules</a>
+
+      <div class="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-ink-400">More</div>
+      {more.map(m => (
+        <a href={m.href} class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">{m.label}</a>
+      ))}
+
+      <div class="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-ink-400">Language</div>
+      <div class="flex flex-wrap gap-2 px-2">
+        {langs.map(l => (
+          <a href={l.href} hreflang={l.code} lang={l.code} dir={l.dir}
+             class="rounded-full border border-ink-200 px-3 py-1.5 text-sm hover:border-brand-300 hover:text-brand-700">{l.native}</a>
+        ))}
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-2 border-t border-ink-100 pt-4">
+        <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary justify-center text-sm">WhatsApp</a>
+        <a href="/contact/" class="btn-primary justify-center text-sm">Get a Quote</a>
+      </div>
     </div>
   </nav>
 </header>
 <script>
   const t = document.getElementById('mobile-toggle');
   const n = document.getElementById('mobile-nav');
-  t?.addEventListener('click', () => n?.classList.toggle('hidden'));
+  const open = document.getElementById('icon-open');
+  const close = document.getElementById('icon-close');
+  t?.addEventListener('click', () => {
+    const hidden = n?.classList.toggle('hidden');
+    t.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+    open?.classList.toggle('hidden', !hidden);
+    close?.classList.toggle('hidden', hidden);
+  });
 </script>

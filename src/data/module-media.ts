@@ -10,6 +10,16 @@ export interface ModuleShot { src: string; w: number; h: number }
 export interface ModuleMedia { icon: string; banner: string; shots: ModuleShot[] }
 
 export const MODULE_MEDIA: Record<string, ModuleMedia> = {
+ "w4t_garage_management": {
+  "icon": "/modules/w4t_garage_management/icon.png",
+  "banner": "/modules/w4t_garage_management/banner.jpg",
+  "shots": []
+ },
+ "w4t_pharmacy_management": {
+  "icon": "/modules/w4t_pharmacy_management/icon.png",
+  "banner": "/modules/w4t_pharmacy_management/banner.jpg",
+  "shots": []
+ },
  "way4tech_enterprise_theme": {
   "icon": "/modules/way4tech_enterprise_theme/icon.png",
   "banner": "/modules/way4tech_enterprise_theme/banner.jpg",
@@ -529,11 +539,6 @@ export const MODULE_MEDIA: Record<string, ModuleMedia> = {
    }
   ]
  },
- "wt_garage_management": {
-  "icon": "/modules/wt_garage_management/icon.png",
-  "banner": "/modules/wt_garage_management/banner.jpg",
-  "shots": []
- },
  "wt_grid_view": {
   "icon": "/modules/wt_grid_view/icon.png",
   "banner": "/modules/wt_grid_view/banner.jpg",
@@ -1026,11 +1031,6 @@ export const MODULE_MEDIA: Record<string, ModuleMedia> = {
     "h": 635
    }
   ]
- },
- "wt_pharmacy_management": {
-  "icon": "/modules/wt_pharmacy_management/icon.png",
-  "banner": "/modules/wt_pharmacy_management/banner.jpg",
-  "shots": []
  },
  "wt_plm_eco": {
   "icon": "/modules/wt_plm_eco/icon.png",

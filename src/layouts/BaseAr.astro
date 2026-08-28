@@ -137,9 +137,48 @@ const AR_MARKETS = [
             <a href={enHref} class="btn-ghost text-sm" hreflang="en" lang="en" dir="ltr">English</a>
           )}
           <a href="/contact/" class="btn-primary text-sm">اطلب عرض سعر</a>
+
+          <button id="mobile-toggle" type="button" class="btn-ghost !px-2 lg:hidden"
+                  aria-label="فتح القائمة" aria-expanded="false" aria-controls="mobile-nav">
+            <svg id="icon-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <svg id="icon-close" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
       </div>
+
+      <!--
+        The desktop nav is `hidden lg:flex`, so below 1024px these pages had no
+        navigation at all: a logo, an English link and a quote button. Arabic
+        traffic is overwhelmingly mobile, so anyone landing here from search
+        could reach nothing.
+      -->
+      <nav id="mobile-nav" class="hidden max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-ink-100 bg-white lg:hidden" aria-label="قائمة الجوال">
+        <div class="container-site space-y-1 py-4 text-sm">
+          <a href="/ar/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">كل الأسواق</a>
+          {AR_MARKETS.map((m) => (
+            <a href={`/ar/${m.slug}/`} class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">{m.short}</a>
+          ))}
+          <div class="mt-4 grid grid-cols-2 gap-2 border-t border-ink-100 pt-4">
+            <a href="/contact/" class="btn-primary justify-center text-sm">اطلب عرض سعر</a>
+            {enHref && (
+              <a href={enHref} class="btn-secondary justify-center text-sm" hreflang="en" lang="en" dir="ltr">English</a>
+            )}
+          </div>
+        </div>
+      </nav>
     </header>
+    <script>
+      const t = document.getElementById('mobile-toggle');
+      const n = document.getElementById('mobile-nav');
+      const open = document.getElementById('icon-open');
+      const close = document.getElementById('icon-close');
+      t?.addEventListener('click', () => {
+        const hidden = n?.classList.toggle('hidden');
+        t.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+        open?.classList.toggle('hidden', !hidden);
+        close?.classList.toggle('hidden', hidden);
+      });
+    </script>
 
     <main>
       <slot />

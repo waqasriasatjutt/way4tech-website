@@ -137,9 +137,44 @@ const trContactHref = '/contact/?country=Turkey&source=tr';
             <a href={enHref} class="btn-ghost text-sm" hreflang="en" lang="en">English</a>
           )}
           <a href={trContactHref} class="btn-primary text-sm">Teklif alın</a>
+
+          <button id="mobile-toggle" type="button" class="btn-ghost !px-2 lg:hidden"
+                  aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobile-nav">
+            <svg id="icon-open" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            <svg id="icon-close" class="hidden h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
         </div>
       </div>
+
+      <!-- Same gap as the Arabic layout: the desktop nav is `hidden lg:flex`, so
+           below 1024px there was no navigation on any Turkish page. -->
+      <nav id="mobile-nav" class="hidden max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-ink-100 bg-white lg:hidden" aria-label="Mobil menü">
+        <div class="container-site space-y-1 py-4 text-sm">
+          <a href="/tr/turkey/" class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">Türkiye</a>
+          {navTopics.map((t) => (
+            <a href={`/tr/${t.slug}/`} class="block rounded-lg px-2 py-2.5 font-semibold hover:bg-ink-50">{t.label}</a>
+          ))}
+          <div class="mt-4 grid grid-cols-2 gap-2 border-t border-ink-100 pt-4">
+            <a href={trContactHref} class="btn-primary justify-center text-sm">Teklif alın</a>
+            {enHref && (
+              <a href={enHref} class="btn-secondary justify-center text-sm" hreflang="en" lang="en">English</a>
+            )}
+          </div>
+        </div>
+      </nav>
     </header>
+    <script>
+      const t = document.getElementById('mobile-toggle');
+      const n = document.getElementById('mobile-nav');
+      const open = document.getElementById('icon-open');
+      const close = document.getElementById('icon-close');
+      t?.addEventListener('click', () => {
+        const hidden = n?.classList.toggle('hidden');
+        t.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+        open?.classList.toggle('hidden', !hidden);
+        close?.classList.toggle('hidden', hidden);
+      });
+    </script>
 
     <main>
       <slot />

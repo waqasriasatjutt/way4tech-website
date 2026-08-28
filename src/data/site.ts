@@ -14,6 +14,21 @@ export const SITE = {
   },
 };
 
+/**
+ * WhatsApp deep link carrying the page the visitor is on.
+ *
+ * The bare wa.me link arrived with no context at all, so every enquiry from the
+ * site's most-used channel in the Gulf started with "which page were you on".
+ * Encoded rather than concatenated: paths contain characters wa.me will
+ * otherwise swallow.
+ */
+export function whatsappHref(pathname?: string, subject?: string): string {
+  const where = pathname && pathname !== '/' ? `https://way4tech.com${pathname}` : 'way4tech.com';
+  const what = subject ? ` about ${subject}` : '';
+  const text = `Hello Way4Tech, I would like to talk${what}. I am on ${where}`;
+  return `${SITE.whatsapp}?text=${encodeURIComponent(text)}`;
+}
+
 export const STATS = [
   { value: '9+',     label: 'Years in Odoo' },
   { value: '500+',   label: 'Deployments' },

@@ -1,6 +1,7 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { SITE, COUNTRIES, SERVICES, SOLUTIONS, CASE_STUDIES, PRICING } from '~/data/site';
+import { getCollection } from 'astro:content';
+import { SITE, COUNTRIES, SERVICES, SOLUTIONS, CASE_STUDIES, PRICING, whatsappHref } from '~/data/site';
 import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
 import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
 /* Name aliases, region grouping, theme sniffing, product scoring and the support
@@ -55,6 +56,8 @@ const serviceRank = (slug: string) => {
 };
 const countryServices = [...SERVICES].sort((a, b) => serviceRank(a.slug) - serviceRank(b.slug)).slice(0, 8);
 
+
+
 /* ── Deterministic rotation so the filler tail differs page to page ── */
 const rotIdx = makeRotIdx(countryIndex);
 
@@ -105,6 +108,35 @@ const others = COUNTRIES
    so every block below is guarded rather than assumed. Nothing here
    reaches the structured data. */
 const detail: CountryDetail | undefined = COUNTRY_DETAIL[country.slug];
+
+/* Six services are also built crossed with every market that has detail, at
+   /services/<service>/<country>/. Those pages answer "who does Odoo migration
+   in Turkey", which is the phrase with budget behind it, and until now nothing
+   linked to them: all 126 country pages pointed at the generic service page
+   instead, so 108 URLs sat one click from nowhere. Keep this list in step with
+   CROSSED in services/[slug]/[country].astro. */
+const CROSSED_SERVICES = new Set([
+  'odoo-implementation',
+  'odoo-customization',
+  'hire-odoo-developer',
+  'odoo-migration',
+  'odoo-support',
+  'odoo-integration',
+]);
+/* Each market has a written implementation post, and until now nothing linked
+   to it from here: the 18 posts had two inbound links each and the country hub,
+   the strongest page in the cluster, was not one of them. Resolved against the
+   collection rather than by building the URL, so a missing or drafted post
+   simply renders nothing instead of a dead link. */
+const blogPosts = await getCollection('blog');
+const countryPost = blogPosts.find(
+  (post) => post.slug === `odoo-implementation-in-${country.slug}` && !post.data.draft,
+);
+
+const serviceHref = (slug: string) =>
+  CROSSED_SERVICES.has(slug) && detail
+    ? `/services/${slug}/${country.slug}/`
+    : `/services/${slug}/`;
 
 /* supportClass is imported: colour reads as cost to the buyer, and five pages
    share the same palette. */
@@ -329,6 +361,7 @@ const schema = [
 ];
 
 const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&source=countries/${country.slug}`;
+const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${country.title}`);
 ---
 <Base
   title={`Odoo Partner in ${country.title}: Implementation, Customization, Support`}
@@ -346,6 +379,24 @@ const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&sour
         <p class="lede mt-6 text-ink-200">{country.tagline}</p>
         <div class="mt-6 flex flex-wrap gap-2">
           {country.cities.map((c: string) => <span class="chip !bg-white/10 !text-white">{c}</span>)}
+        </div>
+
+        <!--
+          The first call to action on this page used to sit at roughly 92% depth,
+          below every table and card. These are the highest-priority pages on the
+          site and a visitor who has read the first screen had nothing to act on.
+        -->
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">
+            Talk to an Odoo consultant for {plainName}
+          </a>
+          <!-- btn-secondary is bg-white/text-ink-900. On this dark hero the
+               background has to be cleared too, or white text sits on a white
+               button and the control is invisible. -->
+          <a href={countryWaHref} target="_blank" rel="noopener"
+             class="btn-secondary !border-white/40 !bg-transparent !text-white hover:!bg-white/10 hover:!border-white/60">
+            WhatsApp us
+          </a>
         </div>
       </div>
     </div>
@@ -644,7 +695,7 @@ const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&sour
           <p class="mt-3 text-ink-700">Ordered by what the {plainName} scope above usually needs first.</p>
           <div class="mt-6 grid gap-3 sm:grid-cols-2">
             {countryServices.map(s => (
-              <a href={`/services/${s.slug}/`} class="card group !p-4">
+              <a href={serviceHref(s.slug)} class="card group !p-4">
                 <div class="flex items-center gap-2 text-sm">
                   <span class="text-xl">{s.icon}</span>
                   <span class="font-semibold">{s.title}</span>
@@ -653,6 +704,19 @@ const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&sour
               </a>
             ))}
           </div>
+
+          {countryPost && (
+            <a href={`/blog/${countryPost.slug}/`}
+               class="card group mt-6 flex items-start gap-4 !p-5 hover:border-brand-300">
+              <span class="text-2xl" aria-hidden="true">&#128214;</span>
+              <span>
+                <span class="block text-sm font-semibold text-ink-900 group-hover:text-brand-700">
+                  {countryPost.data.title}
+                </span>
+                <span class="mt-1 block text-xs text-ink-600">{countryPost.data.description}</span>
+              </span>
+            </a>
+          )}
 
           <h2 class="h3 mt-14">Industry builds for {plainName}</h2>
           <p class="mt-3 text-ink-700">

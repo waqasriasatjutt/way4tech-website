@@ -73,3 +73,156 @@
     @apply left-auto right-0 translate-x-0;
   }
 }
+
+/* ---------------------------------------------------------------
+   Arabic and Turkish typography.
+   These lived in <style is:global> blocks inside BaseAr.astro and
+   BaseTr.astro. Astro emitted them as a SECOND global stylesheet, and
+   because global styles are hoisted every one of the 599 pages then
+   loaded both sheets: 51 KB of render-blocking CSS whose 638 rules were
+   all present in the other one. Every selector here is already scoped by
+   dir or lang, so moving them costs nothing and halves the CSS.
+   --------------------------------------------------------------- */
+
+/* global.css sets an Inter-specific feature list and negative heading tracking.
+   Both are wrong for Arabic: the tracking crowds joined letterforms. */
+html[dir='rtl'] {
+  font-feature-settings: normal;
+}
+html[dir='rtl'] body {
+  font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+html[dir='rtl'] h1,
+html[dir='rtl'] h2,
+html[dir='rtl'] h3,
+html[dir='rtl'] h4,
+html[dir='rtl'] h5 {
+  letter-spacing: normal;
+  line-height: 1.45;
+}
+/* Arabic needs more leading than Inter at the same size. */
+html[dir='rtl'] p,
+html[dir='rtl'] li,
+html[dir='rtl'] dd {
+  line-height: 1.95;
+}
+/* Latin runs inside Arabic text: brand names, module codes, currency codes.
+   bdi isolates the bidi run so a trailing full stop stays on the Arabic side. */
+html[dir='rtl'] bdi {
+  font-family: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+}
+html[dir='rtl'] code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Turkish casing is a real trap: uppercasing "i" has to give "İ", and
+   browsers only do that when they know the language. Rather than depend on
+   it, Turkish eyebrows keep their case and get their emphasis from
+   tracking and weight. */
+html[lang='tr'] .eyebrow {
+  text-transform: none;
+  letter-spacing: 0.08em;
+}
+/* global.css tightens heading tracking for English display copy. Turkish
+   words are longer and the diacritics sit close to the cap line, so the
+   negative tracking crowds them. */
+html[lang='tr'] h1,
+html[lang='tr'] h2,
+html[lang='tr'] h3 {
+  letter-spacing: -0.01em;
+}
+html[lang='tr'] code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------
+   Motion system.
+
+   The site had one animate- utility and no keyframes at all, so it read
+   as static. Everything here is opt-in via a data attribute, runs on
+   transform and opacity only so it stays on the compositor, and is
+   revealed by IntersectionObserver rather than a scroll handler.
+
+   Content is visible with no JavaScript: the hidden state is applied by
+   the script, so a crawler or a reader with JS off sees the finished
+   state rather than an empty page. That is the difference between an
+   enhancement and a dependency.
+   --------------------------------------------------------------- */
+
+:root {
+  --motion-fast: 180ms;
+  --motion-normal: 420ms;
+  --motion-slow: 700ms;
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Applied by JS only, so the no-JS state is the visible one. */
+.js-motion [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity var(--motion-normal) var(--motion-ease),
+    transform var(--motion-normal) var(--motion-ease);
+  will-change: opacity, transform;
+}
+.js-motion [data-reveal='left']  { transform: translate3d(-18px, 0, 0); }
+.js-motion [data-reveal='right'] { transform: translate3d(18px, 0, 0); }
+.js-motion [data-reveal='scale'] { transform: scale(0.97); }
+
+.js-motion [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* Children stagger without needing a class per item. */
+.js-motion [data-reveal-group] > * {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition:
+    opacity var(--motion-normal) var(--motion-ease),
+    transform var(--motion-normal) var(--motion-ease);
+}
+.js-motion [data-reveal-group].is-visible > * {
+  opacity: 1;
+  transform: none;
+}
+.js-motion [data-reveal-group].is-visible > *:nth-child(1) { transition-delay: 0ms; }
+.js-motion [data-reveal-group].is-visible > *:nth-child(2) { transition-delay: 60ms; }
+.js-motion [data-reveal-group].is-visible > *:nth-child(3) { transition-delay: 120ms; }
+.js-motion [data-reveal-group].is-visible > *:nth-child(4) { transition-delay: 180ms; }
+.js-motion [data-reveal-group].is-visible > *:nth-child(5) { transition-delay: 240ms; }
+.js-motion [data-reveal-group].is-visible > *:nth-child(6) { transition-delay: 300ms; }
+
+/* Cards lift on pointer, on the compositor, with no layout shift. */
+.card,
+.btn {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { transform: translate3d(0, -3px, 0); }
+  .btn:hover  { transform: translate3d(0, -1px, 0); }
+}
+
+/* Section 95: reduced motion switches the system off without hiding
+   anything or breaking a single interaction. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 1ms;
+    --motion-normal: 1ms;
+    --motion-slow: 1ms;
+  }
+  .js-motion [data-reveal],
+  .js-motion [data-reveal-group] > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .card:hover,
+  .btn:hover { transform: none; }
+}

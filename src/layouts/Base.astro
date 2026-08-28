@@ -18,6 +18,10 @@ export interface Props {
   structuredData?: object | object[];
   noindex?: boolean;
   hreflang?: HreflangAlternate[];
+  /** og:type. Articles get "article" plus their dates; everything else is a page. */
+  ogType?: 'website' | 'article';
+  publishedTime?: string | Date;
+  modifiedTime?: string | Date;
 }
 
 const {
@@ -28,7 +32,17 @@ const {
   structuredData,
   noindex = false,
   hreflang,
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
 } = Astro.props;
+
+// Every page declared og:type="website", so a shared blog post was never
+// treated as an article by anything reading Open Graph.
+const iso = (v?: string | Date) =>
+  v ? (v instanceof Date ? v.toISOString() : new Date(v).toISOString()) : undefined;
+const publishedISO = iso(publishedTime);
+const modifiedISO = iso(modifiedTime) || publishedISO;
 
 // Content authored in Odoo for this path wins. Absent or unreachable: static stands.
 const ov = await portalOverride(Astro.url.pathname);
@@ -134,7 +148,13 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
       </>
     )}
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
+    {ogType === 'article' && publishedISO && (
+      <meta property="article:published_time" content={publishedISO} />
+    )}
+    {ogType === 'article' && modifiedISO && (
+      <meta property="article:modified_time" content={modifiedISO} />
+    )}
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={ov?.ogTitle || pageTitle} />

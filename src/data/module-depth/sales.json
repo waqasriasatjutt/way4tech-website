@@ -1,0 +1,172 @@
+{
+  "metaDescription": "Odoo Sales in practice: pricelist rules, invoicing policy, margin, the Community and Enterprise split, and the country tax traps that break a go-live.",
+  "intro": [
+    "Odoo Sales is a Community app. Quotations, quotation templates, pricelists, the customer portal with accept and sign, and margin on the order line all ship without an Enterprise subscription. The licence question sits above it. Studio, Subscriptions, Field Service and the full Accounting app behind the invoices Sales produces are Enterprise, as are most of the country e-invoicing localizations. Buyers usually discover that split halfway through a demo.",
+    "The app is simple. The projects are not. Almost every difficulty traces back to three decisions made in week one: how prices are derived, whether a line is invoiced on ordered or delivered quantity, and what happens to an order after confirmation. The rest is data. Open orders that are part delivered and part invoiced are the hardest records to move, and deciding what crosses as a live document rather than as accounting history sets the length of the cutover.",
+    "Version matters when you read older advice. From Odoo 17 a confirmed order no longer moves to a separate done state, it carries a locked flag instead, and both Sales and Purchase gained a catalog view for adding products from a grid rather than line by line. Native commission handling is recent, so on Odoo 17 and earlier a commission scheme is an OCA module or a spreadsheet. Guidance written for Odoo 14 or 15 is often not wrong so much as out of date."
+  ],
+  "whoFor": [
+    "Distributors and trading companies running customer specific price agreements, quantity breaks and multiple currencies from one catalogue.",
+    "Project and equipment sellers who quote from a template, revise several times, take a deposit and invoice against progress.",
+    "Service firms billing on ordered quantity, with a signed quotation as the contract and no stock movement involved.",
+    "Companies selling through a sales team and a website at the same time, where the shop and the salesperson have to work off one catalogue, one set of pricelists and one order model.",
+    "Not for retail counter selling, which belongs in Point of Sale where the sale, the payment and the stock move happen in one screen.",
+    "Not for recurring billing books, which need the Enterprise Subscriptions app because a plain sales order has no renewal or recurring invoice cycle."
+  ],
+  "capabilities": [
+    {
+      "title": "Quotation templates and optional products",
+      "body": "A template carries preset lines, section headings, a validity period in days and its own terms. Optional products sit in a separate block the customer can add from the portal, which is how upsell happens without a second document. A default template can be set for the company, and each template can be tied to one company in a multi company database. On any real catalogue this is the difference between a two minute quotation and one rebuilt line by line."
+    },
+    {
+      "title": "Pricelists as rules, not price lists",
+      "body": "Odoo derives a price from rules rather than storing a price per customer. A rule targets a variant, a product, a category or everything, applies from a minimum quantity, runs between two dates, and computes a fixed price, a discount or a formula on the sales price, on cost, or on another pricelist. Cascading onto another pricelist is how a distributor keeps one master list and layers agreements over it. Currency lives on the pricelist. The customer field holding the pricelist is company dependent, so the same partner can carry a different one per company. Rules resolve most specific first, which is what makes badly ordered rule sets unpredictable."
+    },
+    {
+      "title": "Portal acceptance, signature and deposit",
+      "body": "A quotation sent by email gives the customer a portal page where they accept, sign by drawing or typing their name, and pay a deposit if a payment provider is configured. They do this from the link in the email, with no account and no password. That signature and its audit trail are part of Sales and available in Community. The separate Sign app, for routing arbitrary documents to several signers, is Enterprise. Acceptance confirms the order automatically."
+    },
+    {
+      "title": "Invoicing policy and down payments",
+      "body": "Each product carries an invoicing policy of ordered or delivered quantity, and the order line inherits it at the moment the line is created. Ordered means the invoice can be raised as soon as the order is confirmed. Delivered means nothing is invoiceable until the picking is validated, which ties finance to warehouse discipline. Down payments are raised as a percentage or a fixed amount, sit on the order as their own line, and are deducted on the final invoice."
+    },
+    {
+      "title": "Margin on the order, commission above it",
+      "body": "Enabling the margin setting adds cost, margin and margin percentage to the order line and to the order total, and it is Community. It reads the product cost field, so on standard costing it shows whatever was last maintained and on average costing the running average. Commission is a different problem. Native commission plans with targets and payment runs are a recent Enterprise app, so Community projects and older databases use an OCA module or calculate outside Odoo."
+    },
+    {
+      "title": "Amendment, locking and the link to delivery",
+      "body": "A confirmed order stays editable by default. Adding a line creates further delivery demand, and reducing a quantity below what has already shipped is refused. The Lock Confirmed Sales setting removes that freedom company wide, so an order can no longer be edited once confirmed and a change means a new document. Whether confirmation reserves stock is a separate question, and depends on the reservation method on the delivery operation type: at confirmation, a set number of days before the scheduled date, or manual."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Decide the price model before touching pricelists",
+      "body": "Write down how many pricelists genuinely exist. Most companies find three or four real ones plus a habit of ad hoc discounting. Model the real ones as rules with quantity breaks and date windows, and handle the rest as a line discount so the reduction stays visible in reporting. One pricelist per customer becomes impossible to audit and adds rule evaluation to every line on every order."
+    },
+    {
+      "title": "Set tax rounding and tax inclusive prices first",
+      "body": "Choose between rounding tax per line and rounding globally on the company, and decide whether catalogue prices are captured inclusive or exclusive of tax. Both change the total of every order, and both are painful to switch after go live because historic documents stop reconciling. Where prices are quoted inclusive of VAT, check the net figure Odoo derives against what finance expects on a long order carrying several tax rates."
+    },
+    {
+      "title": "Configure fiscal positions rather than tax per order",
+      "body": "Tax on a sales line comes from the product and is then mapped by the fiscal position on the customer. Export, free zone, reverse charge and inter state cases are all fiscal position mappings, and a position can be applied automatically by country or country group. Setting tax by hand on order lines works in a demo and fails in production, because the manual value is lost the moment a salesperson changes the product on that line."
+    },
+    {
+      "title": "Set up the down payment product before finance sees an invoice",
+      "body": "Odoo creates a service product for down payments the first time one is raised, and left alone it takes whatever default income account the chart of accounts gives it. Point it at the account finance actually wants for customer advances, and confirm how tax on the deposit should behave against the taxes on the order it covers. Ten minutes in configuration. A reposting exercise if it surfaces in month two."
+    },
+    {
+      "title": "Decide what a salesperson is allowed to see",
+      "body": "The Sales access level on a user is own documents only, all documents, or administrator, and it is enforced by a record rule rather than by hiding a menu. Own documents only suits a commission driven team and gets in the way of a shared inside sales desk where anyone answers the phone. Settle it before training, because changing it later alters what every salesperson sees in their own list view and generates a support queue on the same morning."
+    },
+    {
+      "title": "Split the migration into live documents and history",
+      "body": "Open quotations and open orders cross over as records because they still have to be delivered and invoiced. Closed history does not. Past trading belongs in the accounts as posted invoices or an opening balance, plus a reporting extract if the sales director needs trend data. Agree that scope in writing with the finance lead. Rebuilding closed orders is the largest hidden cost in a Sales cutover and it changes nothing operationally."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Delivered quantity invoicing without warehouse discipline",
+      "body": "The most common go live crisis is a finance team that cannot invoice anything. Products were set to invoice on delivered quantity, and the warehouse validates pickings in batches at the end of the week or leaves them sitting in the ready state. Nothing is invoiceable until they do. Either the picking process changes or the policy does, and that belongs in design rather than in week one of support."
+    },
+    {
+      "title": "Margins that read one hundred percent",
+      "body": "Margin reads the product cost. On a database imported from a spreadsheet with no cost column, every cost is zero and every margin is the full selling price. The report looks credible enough that nobody questions it for a quarter. Cost has to be loaded during migration and then maintained, through purchase prices feeding average costing or a deliberate standard cost revision cycle with a named owner."
+    },
+    {
+      "title": "No native gate on discounts",
+      "body": "Odoo has no approval workflow that stops a salesperson entering a large discount on an order line. The discount column is also hidden until the discount setting is enabled, which leads teams to type a reduced unit price instead, destroying the reported discount and the margin analysis in one move. A limit needs an automation rule, a Studio approval step on Enterprise, or a short custom constraint."
+    },
+    {
+      "title": "Changing the pricelist does not reprice the order",
+      "body": "Swap the pricelist on a quotation that already has lines and Odoo leaves those lines at the old price. It offers an update prices action instead, and somebody has to press it. Sales teams that copy last year order, change the customer and send it out are quoting an old agreement under a current pricelist. It reads as a pricing bug for months before anyone traces the cause."
+    },
+    {
+      "title": "Multi currency rates taken twice",
+      "body": "A foreign currency order takes the rate on the order date. The invoice takes the rate on the invoice date. Between them the rate moves, and the sales team is asked why the invoice total does not match the order the customer signed. That is correct accounting behaviour rather than a defect, but it has to be explained before go live, with the rate provider and the update frequency agreed with finance."
+    },
+    {
+      "title": "Moving part invoiced orders badly",
+      "body": "An order half delivered and half invoiced is the hardest record to migrate. Bringing across the full ordered quantity invoices the customer twice. Bringing across only the undelivered quantity loses the order value the customer refers to on their purchase order. The workable answer is the remaining quantity on a new order that stores the legacy document number, agreed in advance with the customers who will notice."
+    }
+  ],
+  "worksWith": [
+    "Inventory, for delivery orders, availability and the delivered quantity that drives invoicing",
+    "Invoicing in Community or the full Accounting app in Enterprise, for the invoice and its tax treatment",
+    "CRM, so an opportunity becomes a quotation without rekeying the customer or the expected revenue",
+    "Purchase and Manufacturing, where a confirmed order triggers make to order procurement",
+    "eCommerce, which writes into the same sale order model and shares the same pricelists",
+    "Subscriptions on Enterprise, which attaches a recurring plan and an invoicing cycle to an ordinary sale order",
+    "Payment providers such as Stripe and Adyen, for deposits and portal payment on quotations",
+    "Automation rules in Community and Studio on Enterprise, for discount limits, approval steps and extra quotation fields"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "VAT is 15 percent and ZATCA Phase 2 clearance means a standard B2B invoice is validated on the Fatoora platform before it is legally valid. The quotation is out of scope, the invoice is not, so an order corrected after invoicing is settled by credit note rather than by editing. The tax invoice also has to carry Arabic, which pulls the product descriptions salespeople write and the PDF layout into the sales scope. Enterprise carries the Saudi e-invoicing localization; Community needs a third party connector."
+    },
+    {
+      "country": "uae",
+      "note": "VAT is 5 percent and corporate tax is 9 percent above AED 375,000, with qualifying free zone income at zero. Which legal entity sells is therefore a tax decision rather than an administrative one, so a multi company database needs the correct company defaulted per user and per sales team before the first quotation goes out. Federal e-invoicing runs through accredited service providers on a phased timetable by revenue band, so confirm which phase applies to this taxpayer before fixing an invoice format."
+    },
+    {
+      "country": "india",
+      "note": "The customer state on the order decides whether GST is charged as IGST or as CGST and SGST, so the partner address is a tax field rather than a delivery detail. The Indian localization derives place of supply from it, and the tax on a quotation line changes the moment the address changes, in front of the customer. HSN codes belong on the products before the first invoice, not after. E-invoicing and the IRN apply above INR 50 million turnover, and the e-way bill attaches to the delivery rather than to the order."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing is in force for sales tax registered persons. Goods carry 18 percent federal sales tax, but services are provincial at roughly 15 to 16 percent depending on jurisdiction, so a single national pricelist misprices service lines the moment the customer sits in another province. Section 153 withholding means the customer remits less than the order total, and the rate doubles for anyone off the Active Taxpayers List, so collections need that gap visible against the order rather than discovered at the bank."
+    },
+    {
+      "country": "turkey",
+      "note": "KDV is 20 percent and the document type depends on the buyer. A customer registered for e-Fatura must receive an e-Fatura, and everyone else receives an e-Arsiv. That is a lookup against the GIB register before invoicing, so it belongs as a stored flag on the customer record with a refresh routine, not as something a clerk checks by hand. Odoo ships no native Turkish e-invoicing in either edition, so a connector to a licensed integrator is part of every scope."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Making Tax Digital covers every VAT registered business, and the HMRC submission sits in the Enterprise UK accounting reports, so a Community deployment files through separate bridging software. Registration is compulsory above 90,000 pounds of taxable turnover. There is no general B2B mandate yet, but NHS and central government buyers expect Peppol, and construction sales carry the domestic reverse charge, which is a fiscal position on the customer rather than a tax a salesperson types on the line."
+    },
+    {
+      "country": "germany",
+      "note": "Every business has had to be able to receive structured e-invoices since January 2025, and the window in which a PDF is still acceptable by agreement with the buyer is closing. B2B customers increasingly ask for XRechnung or ZUGFeRD, which means the sales order has to collect the buyer reference those formats demand. Posted documents are corrected rather than edited, retention obligations run for years, and the external tax adviser will expect a DATEV compatible export from the first month."
+    },
+    {
+      "country": "france",
+      "note": "From September 2026 every business subject to French VAT must be able to receive electronic invoices, with large and mid sized companies also issuing from that date and smaller companies a year later. Invoices travel through an accredited partner platform as Factur-X or structured XML, so the outbound channel is a project in its own right. The header data those formats require, starting with the buyer SIREN, is rarely captured on the quotations a sales team writes today."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Do we need Odoo Enterprise to use Sales?",
+      "a": "No. Sales runs on Community. What forces the upgrade is almost always a neighbour rather than Sales itself: Studio, Subscriptions, Field Service, the full Accounting app or a country e-invoicing localization. One point worth knowing before the budget is set, Enterprise is licensed per user across the whole database, so it is a single decision for everybody rather than a per app purchase."
+    },
+    {
+      "q": "Can we put several deliveries on one monthly invoice?",
+      "a": "Yes. Leave the orders confirmed and uninvoiced through the month, then create the invoices from the order list rather than one order at a time. Odoo merges lines from orders sharing the same invoice address, company and currency onto a single draft. The originating order reference stays on each line, so the customer can still reconcile it against their own purchase orders."
+    },
+    {
+      "q": "Can we keep a version history of a revised quotation?",
+      "a": "Not natively. Standard Odoo edits the quotation in place, so there is no revision number and no side by side view of version two against version four. What you do have is the chatter, where each emailed version is stored as an attachment on the message that sent it. Teams that negotiate hard usually either duplicate the quotation and cancel the loser, or add an OCA revision module."
+    },
+    {
+      "q": "How does a customer return flow back to the sales order?",
+      "a": "Through the two documents it touched. Reversing the delivery reduces the delivered quantity on the order line, and a credit note against the invoice reduces the invoiced quantity, which makes that quantity invoiceable again. Do only one of the two and the order quietly disagrees with the ledger, which is where most of these support queries actually start."
+    },
+    {
+      "q": "Is the portal signature legally binding?",
+      "a": "It records a drawn or typed signature against the quotation with a timestamp and an audit trail, which is enough for ordinary commercial acceptance in most markets. Where local law requires a qualified or advanced electronic signature, that is a different legal standard and needs a certified provider rather than the portal acceptance built into Sales. Put that question to your counsel, not to your implementer."
+    },
+    {
+      "q": "Do customers need a login to see their quotations?",
+      "a": "Not for the document you sent them. The emailed link carries an access token that opens that one quotation, and they can view, accept, sign and pay from it with no account. A portal user account is a separate step, and it is what lets them come back later and see their full list of orders, invoices and delivery status without asking anyone in the office."
+    },
+    {
+      "q": "Can we sell something we do not have in stock?",
+      "a": "Yes. Odoo confirms the order and warns on the line when the ordered quantity exceeds what is forecast available at the scheduled date. It does not block the sale. Whether that shortfall then triggers a purchase order or a manufacturing order depends on the route set on the product, which is an Inventory decision that surfaces first as a sales problem."
+    },
+    {
+      "q": "Can we keep our old order numbers?",
+      "a": "The sequence starts where you tell it to, so numbering can continue from the last legacy reference instead of restarting at one. For migrated documents the safer pattern is to let Odoo allocate its own reference and store the legacy number in the customer reference field, which is searchable and prints on the document. Overwriting the Odoo reference on imported records tends to collide with the sequence later."
+    }
+  ]
+}

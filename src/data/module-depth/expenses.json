@@ -1,0 +1,164 @@
+{
+  "metaDescription": "Odoo Expenses implementation: claim capture, approval routing, the employee payable, reimbursement and VAT recovery, plus what Community cannot do.",
+  "intro": [
+    "Odoo Expenses is two records rather than one. The individual claim is an hr.expense, and the report that carries it through submission, approval and posting is an hr.expense.sheet. Almost every problem on an expenses project is a problem with that second record: who owns it, who may approve it, which journal it posts to and which partner ends up in the payable. Get that spine right and the phone part is trivial.",
+    "The app ships in Community, so the claim, the approval and the journal entry cost nothing extra. What sits behind the Enterprise paywall is the part buyers assume is standard: receipt scanning, reimbursement inside a payslip, and any approval chain more elaborate than manager then finance. Knowing which of those you genuinely need settles the edition question before anyone starts counting users.",
+    "Volume is the other thing that gets underestimated. A hundred staff filing two claims a month is 2,400 claims a year, and if every claim goes in on its own report that is 2,400 journal entries, each carrying a tax line, an analytic account and a receipt an auditor may ask to see. Batching a week or a month of claims onto one report is the cheapest lever you have on that number. The design work is making the rest flow through to the ledger without a finance clerk retyping anything, and keeping the balance owed to employees visible on its own."
+  ],
+  "whoFor": [
+    "Companies with field sales, engineers or site staff who spend on their own cards and currently claim on a spreadsheet with receipts stapled to it.",
+    "Professional services firms that need billable travel and subsistence pushed back onto a customer order, at cost or at a marked up rate.",
+    "Groups issuing corporate cards who want the spend coded and reconciled at source instead of landing on finance as a monthly statement.",
+    "Employers in the GCC and South Asia where reimbursement has to move through a banking channel and be evidenced for tax.",
+    "It is not a procurement tool, so recurring supplier spend belongs in Purchase and vendor bills, not in an employee claim.",
+    "It is a poor fit where every claim needs per diem maths by grade and destination, because Odoo has no per diem engine and that becomes development."
+  ],
+  "capabilities": [
+    {
+      "title": "Capture on a phone, and by email",
+      "body": "An employee opens Expenses in a browser on a phone or in the Odoo mobile app, photographs the receipt and files the claim against an expense category. There is also an incoming mail alias. The employee forwards the receipt and Odoo raises a draft expense on their employee record, taking the category reference and the amount from the subject line and keeping the attachment. Reading the figures off the image itself is Enterprise, through expense digitisation, which consumes prepaid credits per document scanned. In Community the employee types the figures."
+    },
+    {
+      "title": "Paid by employee versus paid by company",
+      "body": "Every expense carries a Paid By choice. Employee to reimburse creates a liability to that person and requires their work contact partner to be set, because that partner is what the payable line is written against. Company means the money has already left, usually on a corporate card, so no reimbursement follows and the entry is matched against the bank feed instead. Getting this one field wrong is the most common cause of a wrong balance sheet."
+    },
+    {
+      "title": "Approval that matches the delegation of authority",
+      "body": "The report is submitted by the employee, approved by their manager or by an approver group, then posted by someone with accounting rights. That is two human steps out of the box. Approval limits by amount, a second signature above a threshold, or routing by department are not native. They are built with automation rules on the sheet, or by moving the sanction into the Approvals app, which is Enterprise."
+    },
+    {
+      "title": "Tax, analytic coding and the accounting entry",
+      "body": "An expense category carries the account it debits and the taxes to apply, and Odoo treats the claimed total as tax inclusive, then backs the tax out of it. Each line takes an analytic distribution, so travel lands on the project, department or cost centre it belongs to. Posting the report writes one journal entry through a purchase type journal, with the employee partner or the card account on the credit side."
+    },
+    {
+      "title": "Reimbursement by payment or by payslip",
+      "body": "Once posted, a report can be settled straight from the expense report with Register Payment, which produces an ordinary outbound payment that can go into a bank file. The alternative is to clear it in payroll, which needs the Enterprise payroll app and its expense bridge, so the approved report appears as a payslip line and clears the payable when the payslip posts. Community has no payroll, so payment is the only route."
+    },
+    {
+      "title": "Rebilling to a customer",
+      "body": "An expense category can be set to re-invoice at cost or at sales price. Link the expense to a sale order and the amount appears on that order as a delivered line, ready for the next invoice run. It is how consultancies recover flights and hotels without a second spreadsheet. Watch the tax: what you recharge is normally the net cost plus your own output tax, not the gross figure the employee paid."
+    }
+  ],
+  "setup": [
+    {
+      "title": "The category list is a chart of accounts in disguise",
+      "body": "Expense categories are products with the expensable flag set, and each one points at an account and a tax. The list you agree with finance is what the general ledger will look like for years. Keep it short, because twelve to twenty categories covers most companies. A category with a fixed unit price is also how you carry a mileage rate or a fixed daily allowance, with the employee entering a quantity rather than an amount."
+    },
+    {
+      "title": "Employees, managers and the payable account",
+      "body": "Every claimant needs an employee record with a manager, because the manager is the default approver, and a work contact partner, because the payable posts against it. If everyone sits on the same default payable account, the aged payable shows one number and nobody can see who is owed what. Splitting to a dedicated employee payable account, or one per person, is a short decision that saves a year of reconciliation."
+    },
+    {
+      "title": "Journals and the corporate card question",
+      "body": "Nominate a purchase type journal for expense postings. For company paid claims, decide whether the card is a bank journal with a statement feed or a liability account settled monthly. A feed is better: the posted expense entry becomes the counterpart the statement line reconciles against, and unclaimed card spend shows as an open line rather than vanishing. Without it, card spend gets captured twice, once by the employee and once by the bookkeeper."
+    },
+    {
+      "title": "Mileage and per diem without a mileage module",
+      "body": "Odoo has no distance lookup and no per diem table. The working pattern is a category priced per kilometre or per day where the employee enters the quantity and Odoo computes the amount. Handle a rate change by adding a new category rather than editing the old one, so historic claims keep the rate that applied. If the rate varies by vehicle class, grade or destination, that is several categories or a Studio field plus automation, and it should be scoped as development."
+    },
+    {
+      "title": "Policy first, then permissions",
+      "body": "Write the expense policy before touching the system: what is claimable, what evidence is required, the submission deadline and who approves what. Then map it onto the expense access groups and the approval steps. Most rollouts stall on adoption rather than configuration, so the first month wants a short illustrated guide in the local language and one visible refusal of a non-compliant claim."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Tax computed on a tax inclusive total",
+      "body": "Odoo assumes the amount an employee claims already includes tax, so the tax on the category must be configured as price included. Attach a normally price excluded tax and every claim inflates by the tax rate. The journal entry still balances, so nothing looks broken until a tax return comes out short. Test it on day one with a single receipt you can check by hand, and repeat the test in every company, because tax records are per company."
+    },
+    {
+      "title": "Foreign currency claims and the rate that applies",
+      "body": "A claim in another currency converts at the rate on the expense date, while the reimbursement moves at the rate on the payment date. The difference posts as an exchange gain or loss on the employee payable, which finance teams routinely read as an error. Agree the policy up front, configure the exchange difference accounts, and confirm the rate provider is actually scheduled to update rather than sitting on a rate loaded during the build."
+    },
+    {
+      "title": "Receipts that cannot support an input tax claim",
+      "body": "A photograph of a card slip is not a tax invoice in most VAT regimes. If the document does not show the supplier tax number, the tax amount and, where the regime requires it, a QR code, the tax is not recoverable and the whole amount is a cost. Encode that in the setup: a no tax category for non-compliant receipts, and an approval step that opens the attachment instead of only reading the total."
+    },
+    {
+      "title": "Approved is not paid",
+      "body": "Posted and Paid are different states, and reports sit in Posted while everyone assumes the employee has their money. Someone has to own the payment run. The mirror image is a report that was posted and then paid manually from the bank without being matched back, which leaves the employee payable open indefinitely. Reconcile the payment against the report, not against a free text memo line."
+    },
+    {
+      "title": "Leavers with an open balance",
+      "body": "Archiving an employee does not clear what the company owes them, and it does remove the record from default filters. Final settlement, gratuity and end of service pay are calculated in payroll while unpaid claims sit in accounting, and the two are rarely joined up. Put an open expenses check on the offboarding list, and run an aged payable by employee partner before the last payroll of anyone leaving."
+    }
+  ],
+  "worksWith": [
+    "Odoo Accounting, for the journal entry, the tax lines and the outbound payment",
+    "Odoo HR, which supplies the employee, the manager and the work contact partner",
+    "Odoo Payroll in Enterprise, where reimbursement is settled on the payslip",
+    "Odoo Sales and Project, for costs rebilled to a customer order or costed to a project",
+    "Analytic accounting, so travel lands on a department, project or cost centre",
+    "Odoo Approvals in Enterprise, when spend needs sanctioning before it is incurred",
+    "Bank and corporate card feeds, matched against company paid expenses at reconciliation",
+    "Odoo Documents in Enterprise, where receipts must be retained in a controlled workspace"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Input VAT on an employee receipt is recoverable only against a compliant simplified tax invoice, which since ZATCA Phase 1 must carry the supplier VAT number and a QR code, so a plain card slip is not enough. Reimbursement routed through payroll also has to stay consistent with the salary file you send under the wage protection system, so most companies pay expenses as a separate transfer."
+    },
+    {
+      "country": "uae",
+      "note": "Two rules shape the category list. Input VAT is blocked on entertainment provided to people who are not employees, and under the corporate tax law half of entertainment expenditure is disallowed as a deduction. Entertainment therefore needs its own category, its own account and no recoverable tax, so the year end adjustment is a report rather than an exercise in unpicking a general travel line."
+    },
+    {
+      "country": "pakistan",
+      "note": "Section 21 of the Income Tax Ordinance disallows a deduction where a single expenditure above the prescribed limit was settled in cash instead of through a banking channel, with carve outs for small payments, utilities and travel fares. Reimburse by transfer and keep the evidence on the report. Sales tax on an employee purchase is claimable only where the supplier issued the invoice through FBR digital invoicing."
+    },
+    {
+      "country": "india",
+      "note": "Section 17(5) of the CGST Act blocks input tax credit on food and beverages, club membership and rent a cab unless the employer is obliged by law to provide them, so those need separate categories with no credit. Credit on anything else depends on the supplier reporting the invoice against your GSTIN so it appears in GSTR-2B, which never happens on a receipt raised in an employee's own name."
+    },
+    {
+      "country": "turkey",
+      "note": "Meal and transport allowances are exempt from income tax only up to daily limits that GIB resets each year, so a fixed allowance category needs an annual rate review. KDV recovery generally needs a fatura in the company name, and a retail receipt does not carry the same right. Supplier documents now arrive as e-Fatura or e-Arsiv, so matching them to a claim is a reconciliation task."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Mileage is reimbursed at the HMRC approved rates, 45p a mile for the first 10,000 business miles in a car and 25p after that, so the mileage category is a rate that moves when HMRC does. VAT is reclaimable on the fuel element only, with a fuel receipt behind it. Under Making Tax Digital the figures must reach the VAT return through digital links, not a rekeyed total."
+    },
+    {
+      "country": "germany",
+      "note": "GoBD requires receipts to be kept in an unalterable and auditable form, and scanning the paper away needs a written Verfahrensdokumentation. Invoices up to 250 euro count as Kleinbetragsrechnungen and can support input VAT without the buyer name, which covers most claims. Domestic subsistence is reimbursed tax free at the statutory rates of 28 euro for a full day and 14 euro for an arrival or departure day."
+    },
+    {
+      "country": "france",
+      "note": "Mileage on a personal car is reimbursed against the bareme kilometrique, which varies by fiscal horsepower and annual distance and is republished every year, so a single flat rate per kilometre will be wrong for someone. VAT is not recoverable on employee hotel accommodation and only partly recoverable on fuel for passenger cars, so one combined travel category produces a wrong return. Supplier receipts increasingly arrive as Factur-X."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Expenses in Community, or do we need Enterprise?",
+      "a": "The app itself is in Community, including the claim, the approval, the journal entry and the payment. Enterprise adds four things buyers assume are standard: reading the amounts off a receipt image, settling reimbursement on a payslip, the Approvals app for sanctioning spend before it is incurred, and Studio for extra fields on the claim. Receipt scanning is also an in-app purchase billed per document, so it costs money on top of the subscription. Price the edition against those four items, not against the app."
+    },
+    {
+      "q": "Does every employee need a paid user account to claim?",
+      "a": "To file their own claims, yes. Expenses is a back office app and needs an internal user, so portal access does not reach it. Where a login is not worth paying for, site labour claiming twice a year for example, an approver or an expenses administrator files against the employee record on their behalf. The employee record has to exist either way, because it carries the manager, the payable partner and the analytic default. Only the login is optional."
+    },
+    {
+      "q": "Who can see whose claims?",
+      "a": "A user with no expense group sees only their own reports. Team approver extends that to the employees who report to them, all approver to every report in the company, and administrator adds configuration and the posting rights. The part people miss is the journal entry, which is visible to anyone with accounting access, so nothing is confidential once a report posts. If a category is genuinely sensitive, keep it out of expenses rather than trying to hide it behind groups."
+    },
+    {
+      "q": "How does this behave across multiple companies?",
+      "a": "The expense follows the employee's company, so the journal, the taxes and the payable all come from that company. Anyone claiming against two companies needs an employee record in each. Recharging between the two is an intercompany accounting exercise afterwards, not something the expense report does on your behalf. Tax configuration is per company as well, so a category tested in one is not tested in the other."
+    },
+    {
+      "q": "How do we correct a report that posted against the wrong category?",
+      "a": "Before posting it is cheap. The approver refuses the report with a reason, the employee reads that reason in the chatter and resubmits. After posting the journal entry is in the way, so the accountant resets or reverses that entry first and the report then goes back to draft for correction. If the employee has already been paid, leave the reconciliation alone and post a correcting entry instead. Decide which of those two routes finance owns before go live."
+    },
+    {
+      "q": "Can we give staff a travel advance and settle claims against it?",
+      "a": "Not with a dedicated feature, because standard Odoo has no employee advance model. The working pattern is accounting. Pay the advance as an outbound payment to the employee's work contact partner, which leaves a debit sitting on their account, then reconcile the posted expense report against it so only the balance moves either way. This only stays readable if each employee has their own partner and the payable can be aged by person. On one shared default payable it becomes guesswork inside a quarter."
+    },
+    {
+      "q": "Should we import historic expense claims during a migration?",
+      "a": "Rarely. What matters at cutover is the open balance owed to each employee, loaded as an opening journal entry against the employee payable rather than as hundreds of approved reports. Keep the closed history in the old system or in a reporting extract for retention purposes, and start the live database with a clean list."
+    },
+    {
+      "q": "What reporting comes as standard?",
+      "a": "Expenses has its own analysis view, a pivot and graph over the claims, so spend cuts by employee, category, date and analytic account without anything being built. The money side comes from accounting: the aged payable by employee partner shows what is owed, the tax report shows what was recovered. What does not exist is a per category limit that blocks a claim at entry. Budgets sit in Accounting against accounts and analytic accounts, and they report against actuals rather than stopping anyone spending."
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "metaDescription": "Odoo Time Off in real detail: accrual plans, carry-forward caps, public holiday calendars, approval routing, encashment and what Community leaves out.",
+  "intro": [
+    "The module is hr_holidays and the interface calls it Time Off. It runs on two records: an allocation is the entitlement, a request is the absence taken against it, and the balance is the difference. The hard questions sit on the first record. How it is created, on what schedule it grows, what survives the year end, and who owns the remainder when somebody resigns in March.",
+    "Duration is the second thing to grasp. Odoo measures a request against the employee's working schedule, so weekends, public holidays on that calendar and non-working afternoons drop out. That is right for most of Europe and wrong where the labour law states entitlement in calendar days. The app is fully in Community. Enterprise adds the Gantt Overview, the payroll side that pays or deducts absence, and Studio."
+  ],
+  "whoFor": [
+    "Employers past fifty staff whose leave lives in a spreadsheet with a balance column nobody quite believes.",
+    "Groups in more than one country, where entitlement, the working week and the holiday list differ per entity.",
+    "GCC employers where annual leave, leave salary, the air ticket and end of service read from one service record.",
+    "Field and services businesses that schedule work against people, so absence must reach the planner before the week is committed.",
+    "It is not a rostering tool. Shift patterns belong in Planning; Time Off records absence against them.",
+    "It fits badly where entitlement is set per grade by a collective agreement with monetary day values, which is payroll modelling rather than leave configuration."
+  ],
+  "capabilities": [
+    {
+      "title": "Leave types carry the policy",
+      "body": "Each type is one rule set. It decides whether an allocation is required, whether the unit is a day, a half day or hours, whether a supporting document must be attached, and how far a balance may fall below zero. It also sets approval: none, the employee's approver, a Time Off Officer, or both in sequence. Types are company scoped, so a multi-country database gets a set per entity."
+    },
+    {
+      "title": "Allocations and accrual plans",
+      "body": "An allocation is a fixed grant or is driven by an accrual plan. A plan is built from levels, each with a frequency from daily up to yearly, time gained at the start or end of the period, and a milestone that moves the employee to the next level after a stated period of service. A level can cap the total accrued. A daily job does the arithmetic, so balances move without a month end run."
+    },
+    {
+      "title": "Carry-over, caps and expiry",
+      "body": "Carry-over is set on the accrual level: keep everything, keep up to a stated number of days, or reset to zero, on a carry-over date you choose rather than a fixed 1 January. Expiry is separate. An allocation has a validity period, and an end date on the carried allocation is what stops the balance being usable. Miss it and those days sit there as an unfunded liability."
+    },
+    {
+      "title": "Public holidays, schedules and mandatory days",
+      "body": "Public holidays are entered once and written onto the working schedules they apply to, which is how a UAE entity and a German entity in one database keep different calendars. Schedules handle part time patterns and alternating weeks, and reduced Ramadan hours are a schedule change rather than a leave rule. Mandatory days do the reverse and block requests over a period the business cannot lose."
+    },
+    {
+      "title": "Approval routing and visibility",
+      "body": "Approval follows the Time Off approver named on the employee record, which is not always the reporting manager, plus the Time Off Officer group. A type can name the officers responsible for it, so sick leave routes to HR while annual leave routes to the line. Officers read requests, reasons and attachments across their scope, which is where a medical certificate becomes a confidentiality question."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Write the entitlement matrix before opening Odoo",
+      "body": "One row per leave type, with the unit, the accrual rule, the annual cap, the carry-over limit, the expiry, whether it is paid, whether it can be encashed and who approves it. Distinct rules mean distinct types, so annual leave differing between staff and workers is two types, not one with an exception. That document is the configuration, and agreeing it takes longer than building it."
+    },
+    {
+      "title": "Working schedules come first",
+      "body": "Duration is a function of the calendar, so the calendar must be right before leave data is loaded. Confirm the working week per country, hours per day, part time patterns and any alternating week arrangement, then assign a schedule to every employee. A default forty hour Monday to Friday calendar left on a Gulf entity quietly produces a wrong duration on every request from day one."
+    },
+    {
+      "title": "Opening balances, not history",
+      "body": "At cutover, load one allocation per employee per leave type carrying the residual balance, dated at the switchover, with a validity end date on anything that expires. Reconcile it against the closing report from the old system and have it signed off, because it is the number employees check first. Past requests need not come across; keep them as an extract for the retention period."
+    },
+    {
+      "title": "Accrual start dates and the scheduled job",
+      "body": "An accrual allocation starting in the past computes the intervening periods when the job next runs. Useful for a mid year go live, alarming if nobody expected it. Test on a copy with a joiner, a leaver, a part timer and someone crossing a service milestone before it touches several hundred records. Set the Time Off approver on every employee too, because an empty field stalls requests."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Calendar days against working days",
+      "body": "Several labour codes express annual leave in calendar days and Odoo counts working days from the schedule. Thirty calendar days is not thirty Odoo days, and a thirty day allocation on a five day week is closer to six weeks of absence. Either restate the entitlement in equivalent working days and record why, or scope a development item to compute calendar day duration for that type."
+    },
+    {
+      "title": "The sandwich rule",
+      "body": "Odoo excludes an intervening weekend or public holiday from the middle of a request. Policies in Pakistan, India and parts of the Gulf do the opposite and count days sitting inside a block of leave. There is no setting for it. It is a change to duration computation on the leave type, and meeting it during user testing turns a configuration project into a development one."
+    },
+    {
+      "title": "Public holidays added late",
+      "body": "Adding a holiday does not go back and shorten leave already approved across it, so a late confirmed Eid date leaves employees short of days they believe they hold. Load the year before go live and expect in-year adjustment where dates follow a moon sighting. Watch the company field: a holiday saved with no company applies to every entity in the database."
+    },
+    {
+      "title": "Carry-forward that never dies",
+      "body": "Carry-over moves a balance across the year boundary. It does not expire it. With no validity end date on the carried allocation, unused days accumulate for years and finance accrues a liability nobody can tie back to a policy. Agree the expiry rule at design stage, and produce a balances report at the cut-off date so the accrual has a source that can be audited."
+    },
+    {
+      "title": "Sick leave and who can read it",
+      "body": "A Time Off Officer opens any request in scope, including the reason the employee typed and the certificate attached to it. That is medical information behind a group handed to five people during testing. Restrict the officer group, name responsible officers per leave type so sick leave routes only to HR, and consider a type that requires a document but carries no free text."
+    }
+  ],
+  "worksWith": [
+    "Odoo Employees, which holds the working schedule, the department and the Time Off approver",
+    "Odoo Attendances, where accrued extra hours can be set against a leave type instead of paid",
+    "Odoo Payroll in Enterprise, for unpaid absence, leave salary and the Gulf encashment rules",
+    "Odoo Timesheets, which can post an approved absence as a line on an internal project",
+    "Odoo Planning and Field Service, so approved absence removes the person from the schedule",
+    "Odoo Recruitment and onboarding, since a joiner needs a schedule and a pro-rated allocation on day one"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Article 109 sets annual leave at 21 days, rising to 30 after five years of service, which maps onto an accrual milestone. Leave salary is payable in advance. Eid dates follow the Hijri calendar and are confirmed close to the day, so the holiday list cannot be locked a year ahead. Accrued leave settles with end of service through l10n_sa_hr_payroll."
+    },
+    {
+      "country": "uae",
+      "note": "Federal Decree Law 33 of 2021 grants 30 calendar days of annual leave after a year, not 30 working days, so a plain 30 day allocation on a five day schedule overstates the entitlement badly. Sick leave runs 15 days at full pay, 30 at half and 45 unpaid. The UAE payroll localization already carries leave encashment rules."
+    },
+    {
+      "country": "qatar",
+      "note": "Annual leave is three weeks under five years of service and four weeks beyond, with the balance payable on termination. Qatar has no Odoo payroll localization, so encashment and end of service accrual are a build or a paid app. Reduced Ramadan hours change the working schedule, and therefore the duration Odoo computes for every hour based request."
+    },
+    {
+      "country": "pakistan",
+      "note": "The Factories Act 1934 gives 14 consecutive days after twelve months, and consecutive means holidays inside the block count against it, the sandwich behaviour Odoo will not do unaided. Shop and establishment staff draw casual and sick leave from provincial ordinances that differ between Punjab and Sindh, so entitlement is configured per province, not per company."
+    },
+    {
+      "country": "india",
+      "note": "Odoo ships l10n_in_hr_holidays with an Indian time off set, but entitlement itself is state law. The Factories Act gives one day of earned leave for every twenty days worked with a carry forward ceiling, while each state Shops and Establishments Act fixes its own casual, sick and privilege leave. An employer across four states needs four sets of types."
+    },
+    {
+      "country": "turkey",
+      "note": "Article 53 of Labour Law 4857 scales annual leave with service: 14 days from one to five years, 20 up to fifteen, 26 beyond, with a floor of 20 for workers under 18 or over 50. Entitlement moves on the employment anniversary, not on 1 January, which is what an accrual milestone and a hire date carry-over are for."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Statutory holiday is 5.6 weeks, 28 days on a five day week, and employers may count the eight bank holidays inside that rather than on top. Irregular hours and part year workers accrue at 12.07 per cent of hours worked in each pay period, so they belong on an hours based leave type. Odoo ships no UK payroll localization."
+    },
+    {
+      "country": "germany",
+      "note": "The Bundesurlaubsgesetz minimum is 24 working days on a six day week, so 20 on a five day week, and carry-over into the next year is lawful only in defined cases and normally only to 31 March. Case law requires the employer to warn employees about untaken leave before it lapses. Public holidays differ by Bundesland, so each site needs its own schedule."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Time Off available in Odoo Community?",
+      "a": "Yes, and completely. Leave types, allocations, accrual plans with milestones and carry-over, public holidays, mandatory days, two-level approval and pivot reporting are all in Community. Enterprise adds the Gantt Overview for a team timeline, the payroll integration that pays or deducts the absence, and Studio for extra fields on the request."
+    },
+    {
+      "q": "How does Odoo work out the length of a request?",
+      "a": "From the employee's working schedule, not the calendar. Weekends, public holidays loaded onto that schedule and non-working half days are excluded. Change a schedule and future requests compute differently, while an approved request keeps the figure it was saved with unless someone edits it. This is the most common cause of a disputed balance."
+    },
+    {
+      "q": "Can we cap carry-forward and expire it after three months?",
+      "a": "The cap is native. Each accrual level carries over everything, up to a set number of days, or nothing, on a carry-over date of your choosing. Expiry is separate: put an end date in the validity period of the carried allocation. Together they give the usual policy of ten days carried that must be used by the end of the first quarter."
+    },
+    {
+      "q": "Does Odoo handle leave encashment?",
+      "a": "There is no encashment action in the core app. The UAE payroll localization carries annual leave encashment as a salary rule, and in Saudi Arabia accrued leave settles with end of service. Elsewhere it is a payroll input taken from the residual balance, so what you build is a balances report at a cut-off date that payroll can rely on."
+    },
+    {
+      "q": "Can an employee go into a negative balance?",
+      "a": "Only if the leave type permits it. Each type has a setting to allow a negative balance with a limit on how far below zero it may go, and it is off by default. If you enable it, add a balance check to offboarding, because a negative balance at exit becomes a deduction from the final settlement that someone has to calculate."
+    },
+    {
+      "q": "We need three approval levels. Is that configurable?",
+      "a": "Not as a setting. A leave type is approved by the employee's Time Off approver, by a Time Off Officer, or by both in turn, which gives two human steps. A third level is built with an automation rule on the request, or by requiring sanction in the Approvals app in Enterprise first. Both are routine, but both are work."
+    },
+    {
+      "q": "Do public holidays have to be entered every year?",
+      "a": "Yes. Odoo does not fetch a national holiday list. They are entered in configuration and attached to the working schedules they apply to, one set per country in a multi-entity database. Where dates depend on a moon sighting, plan on adjusting them in-year, and remember a late holiday does not shorten leave already approved across it."
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+{
+  "metaDescription": "Odoo for universities and colleges: what has to be built above Odoo, how registration, credit hours, fee instalments and restricted grant funds really work.",
+  "intro": [
+    "Odoo ships no student information system. There is no programme, no course section, no credit hour, no registration and no transcript in Community or in Enterprise. What Odoo does ship is a sales pipeline, eLearning, Survey, invoicing with staged payment terms, a portal, analytic accounting and HR. A higher education build is those parts plus a student, programme and registration layer sitting on top of them, and that layer is where the cost and the risk sit.",
+    "The difference from a school build is the unit of billing. A school charges an annual fee per child. A university charges a term registration whose value is not settled until add and drop closes, so the fee note depends on a number that keeps moving for two weeks. Every scholarship, refund, arrears report and revenue recognition entry downstream inherits that timing. Get the registration lock right and the finance side becomes ordinary work.",
+    "Community covers CRM, eLearning, Survey with certification, invoicing, instalment payment terms, the portal, analytic distribution, Recruitment, Events, Fleet, Email Marketing and SMS on Odoo credits. Enterprise adds Studio, Documents, Sign, Approvals, Appointments, Helpdesk, Subscriptions, Payroll, deferred revenue, the dynamic accounting reports, follow up levels and WhatsApp. Two of those matter more than the rest here. Tuition billed for a term that straddles two financial periods wants deferred revenue, and fee chasing wants follow up levels."
+  ],
+  "whoFor": [
+    "Private universities and degree awarding colleges where a term registration, not an annual fee, is what produces the amount owed.",
+    "Multi campus groups that want one student number series, one chart of accounts and comparable numbers across campuses that each run their own timetable.",
+    "Institutions with mixed income: tuition, hostel and mess, transport, executive short courses and research grants, each of which has to be reported apart from the others.",
+    "Business schools and professional institutes selling certificate courses alongside a degree, where the same person is a student in one process and a paying customer in the other.",
+    "Not for a K-12 school billing one annual fee per child with a class teacher and a report card, which is a different build and a different page.",
+    "Not for an institution whose ministry mandates a national student registry as the system of record, where Odoo becomes the finance and operations layer feeding it rather than the registry itself."
+  ],
+  "capabilities": [
+    {
+      "title": "Admissions as a pipeline, not an application form",
+      "body": "The enquiry to enrolment funnel runs on CRM stages: enquiry, application received, documents verified, interview, offer, acceptance, registered. A website form creates the lead and keeps the campaign that produced it, so cost per enrolled student becomes a figure rather than a marketing opinion. Application fees are taken online through a payment provider. Document chasing is scheduled activities on the record. Recruitment can be bent into this shape, but it is built around employees, so CRM is the safer base."
+    },
+    {
+      "title": "Programmes, courses and the catalogue year",
+      "body": "None of this ships. A programme holds a study plan, the plan is versioned by catalogue year, a course carries credit hours and prerequisites, and a section is that course offered in one term with a capacity and an instructor. Registration is a record linking student, section and term with a state of registered, dropped or withdrawn. Versioning the plan by catalogue year is the part most builds skip, and it is what stops a curriculum change rewriting the record of students already halfway through."
+    },
+    {
+      "title": "Assessment, grade points and the transcript",
+      "body": "Survey handles objective assessment properly: scored questions, a time limit, randomised selection from a section, a pass mark, limited attempts and a certificate on completion. Coursework weighting, moderation and resits are custom. A grade point average is a computed value over grade points multiplied by credit hours, and the grade scale belongs in a table because institutions revise it. The transcript should print from a frozen result record per term rather than from a live calculation over current data."
+    },
+    {
+      "title": "Fee plans, instalments, scholarships and arrears",
+      "body": "A payment term with several percentage lines produces one invoice with staged due dates, which is exactly what a semester plan is. Fee items are service products priced by programme and cohort through price lists, not duplicated per student. A scholarship is a discount line posted to its own income account so gross tuition and the real discount rate stay visible. Enterprise follow up levels chase arrears by age. Students settle from the portal through the payment provider already live on the website."
+    },
+    {
+      "title": "Research grants and restricted funds",
+      "body": "Analytic plans give more than one axis, so a cost can carry a department and a grant at the same time without a coding scheme improvised from account number prefixes. Vendor bills, expense claims and timesheets all carry the distribution, which is what makes a funder report reproducible instead of rebuilt. Budgets are set per analytic account and read against actuals. Overhead recovery, matched contributions and the rule that restricted money never subsidises general operations are policies you configure, not features you install."
+    },
+    {
+      "title": "eLearning, and the honest answer on Moodle",
+      "body": "eLearning is Community. It publishes courses with sections, video, attachments, quizzes and a certificate, sells them through eCommerce and tracks completion. It is a content platform, not a virtual learning environment: no assignment submission with due dates and late penalties, no weighted grade book, no plagiarism check. Odoo ships no connector to Moodle, Canvas or Blackboard. Where one exists it is built over XML-RPC and REST, usually roster out and results back, matched on the student number rather than the email address."
+    },
+    {
+      "title": "Campus life: hostel, transport, library and alumni",
+      "body": "Bed level hostel inventory does not ship. It is a room and bed model with an allocation per term, a refundable deposit, and a mess plan invoiced as a recurring line on the fee note. Bus routes and stops sit alongside Fleet, with a transport fee that depends on the stop. Library issue and return is a small model of its own rather than Inventory, because a book is a numbered copy, not a quantity. Alumni are contacts carrying graduation year and programme, reachable through Email Marketing and Events."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Settle the student object in the first week",
+      "body": "Contact only, or a contact plus a dedicated student record, decides the portal, the access rules, the imports and every report built afterwards. A contact gives invoicing, a portal login, merge tools and messaging with no extra work. A student record gives the file number, guardian, programme, intake batch and academic standing. Most builds carry both, the contact holding identity and money, the student record holding academic history. Deciding it late means rebuilding security and migration together."
+    },
+    {
+      "title": "Load the catalogue before you load a single student",
+      "body": "Programmes, plan versions, courses, credit values and prerequisites go in first, with the catalogue year on every version, then sections per term, and only then registrations. Loading students first is tempting because that list already exists in a spreadsheet, and it produces registrations pointing at courses that get renumbered a week later. Fix the course code scheme before import. It ends up printed on transcripts and quoted in ministry returns, so it is not a detail you revisit."
+    },
+    {
+      "title": "Migrate three things, not twenty years",
+      "body": "A legacy student system is worth migrating in three slices: identity with the existing student number preserved, one row per student per course per term with the grade as it was recorded, and the financial balance per student. Attendance history, library issues and old correspondence stay in the old database, read only. Balances are reconciled to the legacy trial balance and brought over as one opening journal per campus, so the receivable ledger agrees with the accounts on day one."
+    },
+    {
+      "title": "Build the fee catalogue with price lists, never per student",
+      "body": "Tuition per credit hour, programme fees, hostel, transport, examination and late fees are service products with an income account and an analytic distribution. Differences by cohort, nationality, campus or scholarship band are price lists over the same products. Duplicating products per case produces an income statement nobody can read. Instalments are payment terms with percentage lines and due day offsets, named for the plan a student is actually placed on rather than for the month."
+    },
+    {
+      "title": "Agree the number series and the access rules before go live",
+      "body": "The student number is a sequence with a campus and intake prefix, and it has to be agreed with the registrar before the first import, because reissuing numbers after certificates are printed is not an option. Record rules come next: a student in the portal sees only their own registrations and invoices, an instructor sees only their sections, a head of department sees a department. Testing that with a real portal login belongs in the build, not in the week after."
+    },
+    {
+      "title": "Rehearse the registration week before you trust it",
+      "body": "Add and drop, section capacity, prerequisite checks, waiting lists and the fee recalculation that follows all collide inside the same five days, and it is the busiest hour the system will ever see. Load a real term into a test database and run registration with the real registrars against a real cohort rather than demo data. Concurrency is what fails, not features, and it is cheap to find in a test database and expensive to find in September."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "The transcript that recalculates itself",
+      "body": "A grade point average computed live from the current scale and the current credit value of a course will quietly rewrite the record of a graduate the next time the curriculum changes. Freeze the result for each term as its own record, holding the grade, the grade point and the credit hours as they stood, and print from that. Recalculation stays available as a correction with a reason and an audit trail, which is what an accreditation visit asks to see."
+    },
+    {
+      "title": "Invoicing before add and drop closes",
+      "body": "Raising the fee note at registration and then living through two weeks of course changes produces a credit note for every student who moved a section, and a receivable ledger nobody can reconcile. Either invoice a fixed block fee at registration and settle the credit hour difference in one adjustment after the deadline, or hold invoicing until the deadline and accept a later cash date. Both work. Deciding neither is what creates the mess."
+    },
+    {
+      "title": "Scholarships hidden inside the price",
+      "body": "Giving a sponsored student a cheaper price list makes gross tuition, the discount rate and the total value of awards impossible to read from the accounts. The board eventually asks what scholarships cost, and the answer becomes a manual exercise every time. Post the award as a discount line against a scholarship account and keep the gross fee on the invoice. Donor funded awards then reconcile against the fund that paid for them instead of vanishing into net revenue."
+    },
+    {
+      "title": "Grant money in the general pot",
+      "body": "Reusing the department axis for research funding means nobody can show that a funder paid only for the work that funder commissioned, which is the first thing a grant audit asks for. A second analytic plan for funds costs nothing to configure and is close to impossible to retrofit once two years of bills are posted against a single axis. The same argument applies to endowment income and to any donation given for a stated purpose."
+    },
+    {
+      "title": "Internal user licences for people who only need a portal",
+      "body": "Every faculty member given an internal user is billed as one on Enterprise, and a large teaching body turns that into the biggest line in the running cost. Instructors who enter marks, read a roster and submit results do not need the back office. Build those screens on the portal, keep internal users for registry, finance and administration, and count the seats before the quotation is signed rather than at the first renewal."
+    },
+    {
+      "title": "Student attendance built on the HR attendance app",
+      "body": "Attendance in Odoo belongs to employees. It records a check in and a check out against a working schedule, not a presence mark against a class session on a timetable. Bending it to students breaks as soon as a student attends four sessions in one day, and breaks again when a percentage attendance rule decides exam eligibility. Student attendance is its own record against a session and a roster, with the card or biometric reader feeding it."
+    }
+  ],
+  "worksWith": [
+    "CRM and Website forms, for an enquiry to enrolment funnel with the source attributed to the campaign that produced it",
+    "eLearning and Survey, for course content, scored quizzes and certificates that record a pass mark",
+    "Invoicing and Accounting, with instalment payment terms, analytic plans, a receivable per student and tuition deferred across terms",
+    "Purchase, Inventory and Maintenance, for laboratory consumables, equipment registers and calibration records",
+    "HR, Recruitment and Timesheets, for faculty contracts, teaching load and time charged against a grant",
+    "Studio, Documents, Sign, Approvals and Helpdesk in Enterprise, for the custom models, the student file, offer letters, authority limits and a student services desk",
+    "The payment providers Odoo already ships, among them Stripe, PayPal, Adyen, Mollie and Razorpay, for fee payment from the portal",
+    "Moodle, Canvas or Google Workspace over XML-RPC and REST, matched on the student number rather than the email address"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "A student fee note is a simplified tax invoice under ZATCA Phase 2: a QR code on the document and reporting to Fatoora within twenty four hours, rather than clearance before issue. VAT on private education is 15 percent and the invoice has to carry Arabic. The Saudi e-invoicing localisation is Enterprise only. Staff pay runs through WPS, and Nitaqat makes the faculty mix a reported figure."
+    },
+    {
+      "country": "uae",
+      "note": "Higher education is zero rated only where the institution is government owned or receives more than half its funding from government. Otherwise it is 5 percent, and extras such as uniforms, trips and devices are standard rated regardless, so tax belongs per fee item rather than per invoice. Corporate tax applies above the threshold, staff pay runs through WPS, and e-invoicing moves to a Peppol based model in phases."
+    },
+    {
+      "country": "qatar",
+      "note": "There is no VAT yet, so the fee note is a commercial invoice, but returns and filings run through Dhareeba and the tax card details belong on the company record. Payments to visiting faculty and external examiners abroad attract withholding tax that has to be deducted and remitted, which is a rule on the vendor bill rather than an afterthought at year end. Salaries go through the Wage Protection System."
+    },
+    {
+      "country": "pakistan",
+      "note": "Fee collection is a bank challan world: vouchers paid at branch counters, 1LINK and 1BILL, JazzCash and Easypaisa, none of which Odoo ships. The build imports the bank file and matches on the challan number printed on the fee note. FBR digital invoicing applies to taxable income such as hostel and cafeteria, tax is withheld on vendor and visiting faculty payments, and HEC returns need clean programme and result data."
+    },
+    {
+      "country": "india",
+      "note": "Tuition from an institution awarding a qualification recognised by law is exempt from GST, while hostel, mess, transport and commercial income may not be. Exempt output blocks input credit, so purchase tax coding decides real cost. E-invoicing applies to the taxable side above the turnover threshold. Credits also have to leave the system for the Academic Bank of Credits, and AISHE returns want enrolment data in a fixed shape."
+    },
+    {
+      "country": "egypt",
+      "note": "Every invoice is signed and submitted to the ETA, and each fee item needs a registered code, GS1 or an EGS code applied for on the portal, so the fee catalogue cannot be closed without the tax file. Counter receipts fall under the e-receipt rules. Educational services are largely VAT exempt, which still leaves ancillary income to code correctly. The Egyptian e-invoicing localisation is Enterprise, and documents are Arabic."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Student route sponsor duties shape the design more than tax does. Enrolment, engagement and withdrawal have to be recorded and reported to the Home Office inside ten working days, which makes attendance an audited record, not a courtesy. Education by an eligible body is VAT exempt, so the institution is partly exempt and cannot recover all input VAT, and Making Tax Digital still requires digital links from ledger to return."
+    },
+    {
+      "country": "united-states",
+      "note": "FERPA decides the access rules: who may see a record, what a parent may see without written consent, and what counts as directory information. Aid disbursement, return of Title IV funds and the 1098-T tuition statement all need the fee ledger split by term and by charge type. IPEDS and, for international students, SEVIS reporting read enrolment data. Sales tax touches bookstore and auxiliary sales, not tuition."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Does Odoo have a student information system for universities?",
+      "a": "No. Odoo 17, 18 and 19 hold no programme, course section, credit hour, registration, grade book or transcript in either edition. What exists are the parts one is built from: CRM, eLearning, Survey, invoicing with staged payment terms, the portal, analytic accounting and HR. The academic layer is built on top, with Studio for the simple models and in code where the logic is real."
+    },
+    {
+      "q": "Community or Enterprise for a university?",
+      "a": "Community can carry admissions, eLearning, fees, the portal and analytic accounting. Enterprise adds Studio, Documents, Sign, Appointments, Helpdesk, Payroll, deferred revenue, follow up levels and the dynamic financial reports, plus the country e-invoicing localisations for Saudi Arabia, Egypt and others. Where a regulator mandates e-invoicing the decision is usually already made. Where it does not, the test is how much of the finance office actually runs on the system."
+    },
+    {
+      "q": "Can Odoo replace Moodle or Canvas?",
+      "a": "For self paced content, quizzes and certificates, eLearning does the job and sells courses through eCommerce as well. For a degree programme it does not. There is no assignment submission with due dates and late penalties, no weighted grade book and no plagiarism check. The usual arrangement keeps the virtual learning environment and integrates it: roster out of Odoo, results back, matched on the student number."
+    },
+    {
+      "q": "How are semester fees and instalments handled?",
+      "a": "Fee items are service products priced by programme and cohort through price lists. A payment term with percentage lines and due day offsets turns one invoice into an instalment plan with real due dates, which is what the ageing report and the reminders then work from. Students pay from the portal through a payment provider. Late fees are a separate product so they never distort tuition revenue."
+    },
+    {
+      "q": "How is GPA calculated, and can we print a transcript?",
+      "a": "Grade point average is a computed value over grade points and credit hours, with the grade scale held as data because institutions revise it. The transcript is a QWeb report on institutional letterhead. The design decision that matters is that it prints from a frozen result record per term, so a later curriculum change or a scale revision cannot alter a document already issued to a graduate."
+    },
+    {
+      "q": "Can students, parents and faculty log in without paying for user licences?",
+      "a": "Portal users are free on Enterprise and internal users are billed per user. Students, parents and sponsors belong on the portal, seeing only their own registrations, invoices and documents through record rules. Faculty are the expensive question. If instructors need a roster, mark entry and result submission and nothing else, those screens can be built on the portal instead of buying an internal seat for every teacher."
+    },
+    {
+      "q": "What does migrating from our existing student system involve?",
+      "a": "Three data sets carry the weight: identity with the existing student number preserved, one row per student per course per term with the grade as recorded, and the financial balance per student. Everything else is better left read only in the old database. Balances are reconciled to the legacy trial balance and posted as one opening journal, and transcripts for a sample of graduates are checked line by line before sign off."
+    },
+    {
+      "q": "How do we report on a research grant?",
+      "a": "With a second analytic plan for funds, so a cost carries both a department and a grant. Vendor bills, expense claims and timesheets all carry the distribution, budgets are set per fund, and the funder report becomes a query over analytic lines rather than a spreadsheet rebuilt each quarter. Overhead recovery and the rule that restricted money stays restricted are configuration and policy, not a shipped feature."
+    },
+    {
+      "q": "Can one database run several campuses or colleges?",
+      "a": "Yes. Multi company is available in Community, with a company per legal entity and its own sequences, journals and access rules. Where campuses are sites of one legal entity, keep a single company and separate them on an analytic axis instead, which keeps the student number series and the course catalogue common. Consolidated reporting across separate legal entities is where Enterprise earns its cost."
+    }
+  ]
+}

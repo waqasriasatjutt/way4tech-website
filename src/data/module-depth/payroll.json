@@ -1,0 +1,163 @@
+{
+ "metaDescription": "Odoo Payroll implementation detail: salary rules, dated rate parameters, work entries, WPS and bank files, and the data a mid-year go-live needs.",
+ "intro": [
+  "Payroll in Odoo is an engine, not a country package. The whole system is salary rules: a code, a category, a condition and an amount, evaluated in sequence against an employment record and a set of worked days. That is why one application serves countries with nothing in common legally, and also why two implementations of the same labour law can look nothing alike. The quality of a payroll project is the quality of its rule book.",
+  "The edition question is settled before anything else. Payroll is an Enterprise application. Community has no hr_payroll module, so a Community project either moves to Enterprise, adopts the OCA payroll modules, which are a separate product with their own rule model, or keeps payroll in a dedicated tool and posts a monthly journal entry. Anyone quoting Community payroll without saying which of those three they mean is guessing.",
+  "Official payroll localisations exist for a short list of countries, among them Belgium, France, India, the United Arab Emirates, Saudi Arabia, Egypt, the United States and Australia. Everywhere else the statutory maths is a build. That is not a defect in the product. A localisation gives you rates, standard rules and report layouts, and it still has to be reconciled against your own allowance structure, your leave policy and the file format your bank actually accepts."
+ ],
+ "whoFor": [
+  "Employers of roughly fifty to five thousand staff already running Odoo for finance, who want salary cost landing in the ledger by department without a monthly import.",
+  "Gulf companies carrying wage protection filing, end of service accrual and nationality driven social insurance inside the same monthly run.",
+  "Groups with several legal entities that want one rule book maintained centrally and applied per company.",
+  "Employers whose pay is built from allowances, overtime, shift premiums and deductions rather than one monthly figure.",
+  "It is not for Community only deployments, because the payroll application is Enterprise and the OCA alternative is a different product with a different rule model.",
+  "It is a poor fit where you expect Odoo to file directly with the tax authority, since RTI in the United Kingdom, DSN in France and the German filing channels have no native submission in standard Odoo."
+ ],
+ "capabilities": [
+  {
+   "title": "Salary rules, categories and sequence",
+   "body": "A salary rule carries a code, a category, a sequence number, a condition and an amount. The condition can be always true, a range test on a value, or Python. The amount can be fixed, a percentage of another value, or Python that sets a result variable. Rules are grouped into a structure and structures into a structure type that fixes the pay period. Sequence decides whether the tax rule sees the housing allowance, so it is design, not housekeeping."
+  },
+  {
+   "title": "Dated rule parameters instead of hard coded rates",
+   "body": "Contribution rates, wage ceilings and tax bands change every year and often apply retroactively. Odoo holds them as rule parameters, each carrying a list of values with a start date, so a rule reads the value in force on the payslip period instead of a number typed into code. Recompute a March payslip in October and it uses the March rate. Any rule with a ceiling written into its formula produces wrong figures the following January."
+  },
+  {
+   "title": "Work entries, conflicts and worked days",
+   "body": "Before a payslip exists, Odoo builds work entries from each employee's working schedule, then overlays approved time off, public holidays and, where connected, attendance and overtime. Overlapping or unmapped entries are raised as conflicts, and the batch will not generate cleanly until they are cleared. Those entries become the worked days lines on the payslip, which is where an unpaid absence deduction should come from rather than a figure someone types in."
+  },
+  {
+   "title": "Batches, posting and correction",
+   "body": "Payroll runs as a batch. Generate payslips for a group, compute, review totals, then confirm, which locks the payslips and, with payroll accounting installed, writes the journal entries. A confirmed payslip is not editable. Corrections are made by cancelling and recomputing before payment, or by an offsetting payslip afterwards. That is a reason to name one owner for the review step rather than treating confirmation as a formality."
+  },
+  {
+   "title": "Ledger accounts, cost centres and salary attachments",
+   "body": "Each rule can carry a debit account, a credit account and an analytic account, so gross, every employer contribution and the net payable land in the right accounts and against the right department, project or site. Recurring deductions such as a staff advance, a court order or a loan repayment are held as salary attachments with a total and a per period amount, and they stop by themselves once the total is recovered."
+  },
+  {
+   "title": "Payslip inputs for the amounts that are not rules",
+   "body": "Not every figure belongs in a rule. Odoo defines input types, and each payslip carries an other inputs table where a bonus, a sales commission, a fuel reimbursement or a single month correction is entered as a coded line that a rule then reads by code. The design decision is which amounts are rules and which are inputs. Anything that varies per employee per month and originates outside payroll belongs in an input, loaded in bulk instead of typed, carrying the code the rule expects and not a free text label."
+  }
+ ],
+ "setup": [
+  {
+   "title": "Write the pay element table before touching a rule",
+   "body": "List every pay element: basic, each allowance, each deduction, each employer contribution. For each one, record whether it is taxable, whether it counts toward social insurance, whether it counts toward end of service, and whether it appears in the bank file. That table is the specification and finance signs it. Building rules first and asking those questions later is how a project ends up carrying three different definitions of gross."
+  },
+  {
+   "title": "Wage, basic and derived components",
+   "body": "Odoo holds a single wage figure on the employment record. Most Gulf and South Asian structures need basic, housing and transport separately, because gratuity runs on basic while social insurance runs on a contributory wage that is neither basic nor gross. Either add fields for each component, or derive them by percentage in the rules and accept that the percentage is a policy decision. Never compute gratuity straight from the wage field."
+  },
+  {
+   "title": "Working schedules, the divisor and overtime",
+   "body": "A day rate is a divisor decision. India's central rules convert monthly wages on a twenty six day month, Gulf practice is normally thirty, and some clients want actual calendar days. The divisor lives in your rules and has to agree with the working schedule attached to each employee, or unpaid leave and overtime will contradict each other. Shift patterns, reduced Ramadan hours and night premiums come from that same calendar."
+  },
+  {
+   "title": "The bank file is its own workstream",
+   "body": "Payment files are an accounting feature more than a payroll one. Batch payments and SEPA credit transfer in Odoo Accounting cover European transfers, and the Saudi and UAE payroll localisations produce wage protection output. Everything else is built against a bank specification: fixed field order, a header record carrying establishment number, period and control totals, and a character set that will reject the accented name sitting in your employee master. Ask the bank for the current spec in week one. It is usually tested last and fails first."
+  },
+  {
+   "title": "Two parallel cycles, reconciled per employee",
+   "body": "Run two full months in Odoo alongside the incumbent payroll before switching. Compare per employee and per rule, never on the total, because two systems can agree on the company gross and still disagree on twenty individuals in opposite directions. Sign off the accepted differences in writing. Payroll is the one system where a wrong figure reaches every member of staff on the same morning."
+  }
+ ],
+ "pitfalls": [
+  {
+   "title": "Going live mid year with no year to date figures",
+   "body": "Cumulative taxes do not survive a clean start. PAYE in the United Kingdom, Turkish income tax bands and Indian withholding on projected annual income all depend on what the employee has already been paid this year. Load year to date gross, tax, social insurance and pension per employee, with the original joining date and any non qualifying service, or the first payslip lands people in the wrong bracket and the year end statement never ties out."
+  },
+  {
+   "title": "Treating a localisation as finished payroll",
+   "body": "An official localisation ships contribution rates, standard rules and statutory report layouts. It does not know your allowance names, your overtime policy, your leave encashment formula, or which allowances your labour ministry counts as part of the wage. Plan to extend the shipped structure instead of replacing it, keep your own rules in a separate sequence band, and check each annual rate change in the year it applies instead of assuming it arrived."
+  },
+  {
+   "title": "Payslip data visible to more people than intended",
+   "body": "Payroll sits in the same database as sales and stock. The payroll officer groups control the application, but a manager with generous access, a shared list view, an exported report or an automated email can put salaries in front of the wrong people. Restrict by company and by record rule, test with a genuine line manager login, not an administrator, and check what the portal and the mobile app expose before anyone is invited in."
+  },
+  {
+   "title": "Retroactive pay and the accrual nobody scoped",
+   "body": "Standard payroll ships no general retroactive pay engine. A June approval of an April increment means either an input line you calculate outside the system or a set of recomputed payslips, and that decision belongs in the design, not in the first month it happens. End of service is the same shape of problem. The leaving payment is straightforward. The monthly accrual that keeps the balance sheet honest is a rule someone has to write and account for."
+  },
+  {
+   "title": "A rule book that does not survive the next upgrade",
+   "body": "Payroll is the most heavily customised application in most Odoo estates, and the model underneath it has moved. Odoo 19 reworked how employment terms are stored, holding them as dated versions of the employee record instead of a separate contract document, so anything written against the older structure has to be reviewed before an upgrade and not after it. Three habits decide how expensive that review is. Keep custom rules in their own module with their own sequence band, keep Python inside rules short and free of direct SQL, and hold every rate in a dated parameter. A rule book built that way is retested in a day. One built on hard coded rates and long Python is rewritten."
+  }
+ ],
+ "worksWith": [
+  "Employees, for the department, manager, bank account and employment record every payslip depends on",
+  "Time Off, so approved leave becomes a work entry and an unpaid day becomes a deduction with a trace",
+  "Attendance, where overtime and short hours are paid from the clock and not from a form",
+  "Accounting, for the payroll journal, the salary payable account and the outgoing payment",
+  "Expenses, so an approved reimbursement can be cleared inside the payslip instead of as a second payment",
+  "Recruitment and Sign, for the offer and the signed contract that becomes the employment record",
+  "Biometric hardware such as ZKTeco terminals feeding the attendance log that overtime rules read"
+ ],
+ "regional": [
+  {
+   "country": "saudi-arabia",
+   "note": "GOSI splits by nationality and not by grade. Saudi nationals carry pension and unemployment insurance, non Saudis carry occupational hazard cover at 2% employer only. For Saudi members registered before the July 2024 reform the split is 9.75% employee and 11.75% employer, and the reform phases higher rates in for new entrants, so joining date is a second input to the same rule and a flat nationality test will drift. The l10n_sa_hr_payroll localisation covers contributions, end of service and wage protection output. Every employee needs a valid IBAN before the first run, because a bad record fails the whole file and not just its own row."
+  },
+  {
+   "country": "uae",
+   "note": "Non GCC nationals carry no social insurance, so for most private sector headcount the monthly obligation is end of service gratuity plus wage protection, while UAE and GCC nationals go through GPSSA at rates that depend on when they were registered. The l10n_ae_hr_payroll localisation handles gratuity by tenure band, housing, transport and other allowances, and leave encashment. Wage protection is the operational constraint: the file is submitted through an approved agent, wages are due within fifteen days of the due date, and a late or rejected file restricts new work permits, which is a business problem and not a fine you settle later."
+  },
+  {
+   "country": "qatar",
+   "note": "The Salary Information File is the whole job. It is a delimited file with a fixed field order and a header carrying establishment number, pay month and year, total amount and record count, submitted through your bank under the wage protection system, and it is accepted or rejected as one unit. Statutory deduction maths is light, since social insurance applies only to Qatari nationals, but there is no Odoo payroll localisation, so the structure, the end of service rule and that export are all project work. Budget a test cycle with the bank, not a developer day."
+  },
+  {
+   "country": "bahrain",
+   "note": "Expatriate end of service now accrues as a monthly contribution to the Social Insurance Organisation instead of building up quietly until someone leaves, which changes the payroll run itself. Each month has to produce an SIO line at 4.2% of wage for the first three years of service and 8.4% after that, while service earned before March 2024 stays an employer liability settled on exit. That is two parallel accruals per expatriate employee, on different bases, reported differently, and only one of them is a payslip line. Salaries also run through the LMRA wage protection portal, so the payment file is a compliance artefact."
+  },
+  {
+   "country": "pakistan",
+   "note": "EOBI is the rule generic designs get wrong. It is calculated on the federal minimum wage and not on actual pay, at 5% employer and 1% employee, so a director and a helper contribute the same amount. Provincial social security is separate, registration follows the province, PESSI in Punjab and SESSI in Sindh, and the rates and wage ceilings differ, so a group with plants in both provinces runs two contribution rules driven by the employee's work location. Income tax runs on annual slabs against a 30 June year end, deducted and deposited monthly, with periodic withholding statements to the FBR. Nothing here is shipped, so all of it is yours to maintain at each federal budget."
+  },
+  {
+   "country": "india",
+   "note": "The l10n_in_hr_payroll localisation covers provident fund at 12% on wages capped at INR 15,000, Employees State Insurance on wages up to INR 21,000, state professional tax and the labour welfare fund. Two items still need attention. Withholding runs on projected annual income, so a mid year joiner needs prior employer figures and a declaration of which tax regime they have chosen, and the central rules convert monthly wages on a twenty six day month rather than thirty."
+  },
+  {
+   "country": "turkey",
+   "note": "Turkish payroll has three statutory deductions rather than two: income tax, SGK social security and stamp tax at 0.759% of gross. Income tax is charged on a cumulative annual base, so any mid year migration must carry each employee's cumulative base or the bracket is wrong from the first payslip. Severance is thirty days of final gross pay for each full year of service, subject to the statutory ceiling."
+  },
+  {
+   "country": "united-kingdom",
+   "note": "Standard Odoo does not submit Real Time Information to HMRC, and PAYE requires a Full Payment Submission on or before every payment date. In practice a UK client either runs payroll in recognised software and posts the journal into Odoo, or adds a filing bridge. Automatic enrolment adds 8% of qualifying earnings with at least 3% from the employer, and payrolling of benefits in kind becomes mandatory from April 2027."
+  }
+ ],
+ "faqs": [
+  {
+   "q": "Is Odoo Payroll available in Community?",
+   "a": "No, the payroll application is Enterprise only. The three honest routes are moving to Enterprise, adopting the OCA payroll modules, which are community maintained with a different rule model and no official localisations, or keeping payroll in a specialist product and posting one journal entry a month. One point usually missed in the Enterprise sum: Odoo licensing counts internal users, not employees. A thousand staff paid through the system do not need a thousand licences, the payroll and finance people who log in do."
+  },
+  {
+   "q": "What if Odoo has no localisation for our country?",
+   "a": "The rules are built. That is normal work, not a rescue mission: define the pay elements, write the rules against dated parameters, map the accounts, and produce the bank file to your bank's specification. The unknown is rarely the tax formula. It is the allowance policy, the leave encashment method and the file layout, which is why the specification comes before development."
+  },
+  {
+   "q": "Can Odoo produce a wage protection file?",
+   "a": "The Saudi and UAE payroll localisations produce wage protection output. Qatar, Kuwait, Oman and Bahrain need a file generated against the current bank or authority specification. Design for the failure mode. These files are validated as one unit, so a single malformed IBAN, a name longer than its field or a missing establishment reference rejects the run for everybody, normally on the afternoon of payday. Validate the employee master before generating, and keep the rejection report attached to the payslip batch so the second submission is a correction and not a rebuild."
+  },
+  {
+   "q": "Can we go live in the middle of a tax year?",
+   "a": "Yes, provided you migrate opening balances. That means year to date gross, taxable pay, tax withheld, social insurance, pension and any statutory ceiling already consumed, plus the original joining date for end of service. Without those, cumulative tax systems recalculate from zero and staff see a refund or a shortfall in the first month that nobody can explain."
+  },
+  {
+   "q": "Does Odoo calculate end of service gratuity?",
+   "a": "The UAE and Saudi localisations include end of service by tenure band. Elsewhere it is a rule you write, and the argument is never the tenure table. It is the basis. Gulf gratuity generally runs on basic pay and not on gross, which makes the split between basic, housing and transport a gratuity decision as much as a payroll one. Resignation against termination, unpaid leave, and service transferred from another group company all change the figure too. Settle those in writing before anyone writes the rule."
+  },
+  {
+   "q": "How does payroll reach the general ledger?",
+   "a": "Installing payroll accounting makes payslip confirmation write the journal entry from the accounts held on each salary rule, dated in the payslip period. What deserves design is the month after. Statutory deductions sit in liability accounts until the authority is paid, and those balances should clear to zero on a predictable cycle. Net pay sits in salary payable until the bank statement clears it, and that reconciliation is the evidence the run paid what it computed. A salary payable account that never returns to zero is telling you the rule accounts are wrong, not the bank."
+  },
+  {
+   "q": "Can employees see their own payslips?",
+   "a": "Yes. Staff open their own payslips from their employee record, and the PDF can be delivered electronically instead of printed and handed out. Two things are worth settling before you switch that on. Check that the payslip layout you are publishing carries what your labour authority requires a wage statement to show, since that is prescribed in several of these jurisdictions. Then decide what happens to historical payslips from the outgoing system, because staff will look for them in the first week, and finding nothing there costs more confidence in the new run than a rounding difference ever will."
+  },
+  {
+   "q": "Can one database run payroll for several countries?",
+   "a": "Yes. Structures and rules belong to a company, so a group can hold a Saudi structure, a UAE structure and a built Pakistani structure in one database and pay each entity from its own rule set. Two constraints are worth knowing early. Installing a country's payroll localisation affects the whole database even though its rules apply per company, so rehearse the install order on a copy. And a centrally maintained rule book still needs a named owner per country for the annual rate change, because a dated parameter nobody updates fails silently."
+  }
+ ]
+}

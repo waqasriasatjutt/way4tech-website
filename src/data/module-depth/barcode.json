@@ -1,0 +1,176 @@
+{
+  "metaDescription": "Odoo Barcode implementation guide: Enterprise only, GS1 nomenclature, scan driven receipts and picking, lot capture, scanner choice and Community options.",
+  "intro": [
+    "Odoo Barcode replaces the keyboard for warehouse work. A scan opens the transfer, a scan identifies the product, a scan confirms the location, and the operator validates without typing a quantity. The app is Enterprise only. It runs in a browser on a rugged Android terminal or through the Odoo mobile app using the camera, and it drives receipts, internal transfers, deliveries, batch and wave transfers, and stock counts.",
+    "Almost none of the project work sits in the app. It sits in the barcode strategy underneath: which nomenclature the company uses, whether codes are plain EAN-13 or GS1 strings carrying lot and expiry, whether every location and package has a printed label, and whether the numbers on the shelf match the numbers in the database. Get that wrong and scanning is slower than the paper it replaced.",
+    "The constraint that decides most projects is connectivity. There is no offline mode. The app loads the transfer from the server, calls back for any code it does not already hold, and saves the result before the next operator picks it up, so a dead spot in the racking leaves someone holding a half finished transfer at the far end of an aisle. A wireless survey belongs in the plan ahead of hardware selection, because it decides whether the approach works at all in that building."
+  ],
+  "whoFor": [
+    "Distributors and wholesalers whose pickers work from printed lists and key the quantities in afterwards.",
+    "Manufacturers, food businesses and pharmaceutical distributors that must capture a lot or serial at every movement rather than reconstruct it during a recall.",
+    "Multi-location retail and eCommerce operations where one mispick costs more than the scanner.",
+    "Businesses already on Odoo Enterprise, since the app is absent from Community and a Community warehouse needs an OCA module or a custom scan screen instead.",
+    "Not for a single stockroom with a few hundred items and one person counting it, where paper is genuinely faster.",
+    "Not for a team whose product master has no reliable barcodes yet, because the data cleanup comes first and it is the bigger job."
+  ],
+  "capabilities": [
+    {
+      "title": "Scan-driven receipts, transfers and deliveries",
+      "body": "The app opens on the operation types you allow and processes each transfer line by line. Scanning a product increments the done quantity against the reserved move line. Scanning something never reserved adds an extra line instead of blocking, which keeps the operator moving and leaves the discrepancy visible for a supervisor. Validation is a button or a scan of a printed command barcode, so a gloved hand never has to touch the screen."
+    },
+    {
+      "title": "Barcode nomenclature and GS1 parsing",
+      "body": "A nomenclature is the rule set that tells Odoo what a scanned string means. The default one handles internal codes, EAN-13 and UPC, plus weight and price embedded barcodes from a scale. The GS1 nomenclature reads application identifiers out of a GS1-128 or DataMatrix string: 01 for the GTIN, 10 for the lot, 17 for expiry, 21 for the serial, 00 for an SSCC, 414 for a location. One read can therefore set product, lot, expiry and quantity together."
+    },
+    {
+      "title": "Lot, serial and expiry captured at the scan",
+      "body": "Where tracking is on, the app asks for the lot or serial after the product scan and will not close the line without one. A GS1 label supplies all of it in a single read. Whether an unknown lot may be created or must already exist is set per operation type, and that pair of settings is what stops a receipt inventing lot numbers the supplier never issued while still letting production register new ones."
+    },
+    {
+      "title": "Packages, pallets and container level movement",
+      "body": "With packages enabled, an operator packs scanned goods into a container, labels it, and moves the whole container as one unit thereafter. A single scan of the package then moves everything inside it, which is what makes pallet transfers and cross-dock work at speed. Package types carry dimensions and weight, and putaway rules can route a package by its type rather than by the products inside."
+    },
+    {
+      "title": "Counts and inventory adjustments",
+      "body": "An adjustment runs as a scan of the location followed by every item in it, setting counted against theoretical quantity. Locations carry a count frequency and a next scheduled date, so Odoo nominates what is due instead of shutting the warehouse once a year. The difference posts as a stock move against the inventory adjustment location, so counting rights and the accounting period need agreeing before the first count."
+    },
+    {
+      "title": "Putaway rules deciding where the scanner sends goods",
+      "body": "Putaway rules are what turn a receipt into a directed task. A rule set on a product, a product category or a package type resolves the destination when the item is scanned, and the operator is told which shelf rather than asked. Rules resolve from the most specific match, so a category default can cover the catalogue while a handful of fast movers get their own face locations. This part of the model is in Community; it is the guided screen on top of it that is not."
+    },
+    {
+      "title": "Batch and wave transfers assembled before the walk",
+      "body": "A batch hands several transfers to one operator as a single unit of work. A wave regroups lines across transfers, so one product is collected once for ten orders instead of ten separate trips down the same aisle. Cluster picking is the version that keeps them apart: each order goes into its own package on the trolley, and the scan of the destination package decides which order the item belongs to. All three are Enterprise."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Decide the nomenclature before anything else",
+      "body": "The nomenclature is a company level setting, and changing it later reinterprets every scan in the system, at the till as well as in the warehouse. If suppliers ship GS1 labelled cases, choose GS1, because a GS1 nomenclature still reads a bare GTIN from your own products. The trouble starts with internal codes that happen to begin with the digits of an application identifier and get parsed as something else entirely. Test the existing catalogue against the rule set before you commit to it."
+    },
+    {
+      "title": "Getting barcodes onto the master data",
+      "body": "The barcode field lives on the product variant, not the template. The template form shows it only when there is a single variant, which is why people assume otherwise, so a shirt in four sizes and three colours needs twelve codes. Odoo enforces uniqueness on the variant, which surfaces every duplicate the old spreadsheet was hiding. Locations and packages need labels too, printed from Inventory as PDF sheets or as ZPL. Budget real time for the physical labelling pass across the racking."
+    },
+    {
+      "title": "Operation types and warehouse step count",
+      "body": "Each operation type decides what the scanner asks for: whether new lots may be created, whether existing ones must be used, whether a package is required, whether source and destination locations must both be scanned. A one step receipt is fast but proves nothing about putaway. Two step receipts add an internal transfer the scanner can drive to a shelf. Choose from what you need to prove later, not from how it demos."
+    },
+    {
+      "title": "Hardware, symbology and keyboard layout",
+      "body": "Most deployments use a rugged Android terminal with an integrated imager in keyboard wedge mode, set to send Enter after each scan. Check the symbology first: a 1D laser reads EAN and Code 128 and will never read a GS1 DataMatrix, so pharmaceutical and medical device work needs a 2D imager regardless of budget. A wrong keyboard layout mangles characters, a frequent failure with AZERTY and Arabic input methods, so use a plain English layout and test the full character set including the GS1 group separator."
+    },
+    {
+      "title": "Agree what happens when a scan fails",
+      "body": "Every rollout hits an unreadable label, a pack with no lot printed on it, and a code that resolves to nothing. Decide in advance whether the operator may type the code by hand, whether they can create a lot on the spot, who is allowed to edit a done quantity afterwards, and where the exception is recorded. Warehouses that leave this to the floor end up with one supervisor password shared across the shift, which removes the audit trail the project was bought for."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Assuming Community includes the app",
+      "body": "Barcode is Enterprise. A Community warehouse can attach a scanner to a desktop and use it as keyboard input into ordinary forms, and the OCA publishes a scanning interface in its stock logistics barcode repository, but neither behaves like the Enterprise app and the OCA route needs testing on your version before anyone plans around it. Finding this out after the licensing conversation is an avoidable start."
+    },
+    {
+      "title": "There is no offline mode",
+      "body": "Point of Sale keeps selling when the network drops. Barcode does not. The transfer is loaded from the server and saved back to it, so a cold store, a mezzanine or a canyon of metal racking with no signal becomes a stalled transfer and a repeat count. Survey coverage with the actual device, in the actual aisles, with the racking full rather than empty, before any hardware order is placed."
+    },
+    {
+      "title": "One barcode field per variant",
+      "body": "Odoo holds a single barcode on the variant. Case codes, supplier codes, the legacy system code and a GTIN-14 outer all want somewhere to live, and there is no second field waiting for them. That is an extension or a community module, and it changes how a scan resolves. Establish which labels physically appear on the goods, inner and outer, before assuming one code per item."
+    },
+    {
+      "title": "Barcode data migrated without validation",
+      "body": "Legacy exports arrive with leading zeros stripped by a spreadsheet, check digits missing from EAN-13, and the same code sitting on two products. Odoo rejects the duplicates on import and quietly accepts the malformed ones, which then never scan and get blamed on the hardware. Validate length and check digit before loading, then test scan a physical sample from every product family rather than trusting the file."
+    },
+    {
+      "title": "Scanning bolted onto an unchanged process",
+      "body": "Scanning pays back only when the process changes with it. If pickers still carry paper as a backup, if stock is never reserved before picking, if a supervisor keys corrections afterwards anyway, the terminals add a step and the team routes around them within a fortnight. Agree the new sequence, retrain on it, and measure lines scanned per hour from the first week so the argument later is about numbers."
+    },
+    {
+      "title": "Multi company groups sharing one product catalogue",
+      "body": "The nomenclature is set per company while the product and its single barcode are often shared across all of them. A group where one company receives GS1 labelled imports and another sells the same items under legacy internal codes cannot satisfy both rule sets from one field. Settle that at design time, because the usual workaround is a second code field and custom resolution logic that every later upgrade has to carry."
+    }
+  ],
+  "worksWith": [
+    "Odoo Inventory, which holds the stock moves, locations and putaway rules the app operates on",
+    "Lot and serial tracking, for traceability captured at the scan rather than rebuilt during a recall",
+    "Odoo Manufacturing, where components are consumed and finished goods registered by scan",
+    "Odoo Quality, Enterprise, so a control point interrupts the operator at the moment the item is scanned",
+    "Odoo Point of Sale, which reads the same company nomenclature at the counter",
+    "Odoo Purchase and Sales, which generate the receipts and deliveries the scanner works through",
+    "The IoT Box, Enterprise, where label printers and scales need to be driven directly rather than through the browser",
+    "Carrier and third party warehouse systems, where the barcode is the shared key between them"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "SFDA runs a national drug and medical device track and trace scheme, and packs carry a GS1 DataMatrix holding GTIN, batch, expiry and serial. Because the identifier is unique per pack, those products have to be tracked by serial rather than by lot, which means every single pack is scanned on receipt instead of one scan for the carton. That decision moves the labour estimate for goods in more than any software setting does."
+    },
+    {
+      "country": "uae",
+      "note": "Tatmeen expects aggregation as well as identification: pack inside carton inside pallet, linked parent to child and reported at each handover. In Odoo that hierarchy is carried by packages and their SSCC, so the packing bench becomes the point where the reportable data is created rather than an afterthought. Odoo will hold the structure; transmitting the events to the platform is a connector or a build. Free zone and mainland stock also belong in separate warehouses, not one location tree."
+    },
+    {
+      "country": "pakistan",
+      "note": "The FBR track and trace system applies a unique identification mark at the production line for cement, sugar, fertiliser, tobacco and beverages, reconciled against declared output. That stamp comes from a separate licensed system, so decide early how its identifier maps onto an Odoo lot or serial and which of the two systems creates the number first. Getting that order wrong leaves finished goods that are stamped but unrecorded, or recorded but unstamped."
+    },
+    {
+      "country": "india",
+      "note": "A dispatch is not finished when the last scan is. Goods above the threshold need an e-way bill carrying the vehicle number before the truck leaves, so there is a compulsory pause between validating the delivery and opening the gate. Keep the pick and the gate release as separate steps with separate owners, otherwise the picker stands at the dock waiting on a portal and the picking rate you measure is really a measure of the paperwork."
+    },
+    {
+      "country": "turkey",
+      "note": "Medicines are tracked in the national ITS scheme and medical devices in UTS, with the DataMatrix on each pack carrying GTIN, serial, expiry and batch, notified at every change of ownership. Odoo reads the symbol with the GS1 nomenclature but does not notify either system, so that interface is custom work and needs its own retry and reconciliation handling. The e-Irsaliye despatch note is a separate obligation on the accounting side and does not come off the scanner."
+    },
+    {
+      "country": "egypt",
+      "note": "The Egyptian Tax Authority requires every invoice line to carry an item code, either a GS1 GTIN or an EGS code registered with the authority. That makes the product barcode an accounting dependency rather than a warehouse convenience. The code scanned in the aisle and the code reported on the invoice have to be the same one, so the warehouse cannot quietly renumber a product to suit a label printer."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "NHS suppliers are held to GS1 standards under the eProcurement strategy: a GTIN on the pack, a GLN for the location, and a barcoded despatch advice. Great Britain no longer operates the EU Falsified Medicines Directive decommissioning step while Northern Ireland continues under EU rules, so one operation can be running two pharmaceutical processes out of the same building."
+    },
+    {
+      "country": "germany",
+      "note": "Terminals that record who picked what and how quickly are a co-determination matter. The works council has a say in any system capable of monitoring employee performance, and rolling scanners out without that agreement stops a project after the hardware is bought. GoBD separately expects stock records to be traceable, so an adjustment is corrected by a counter movement rather than by editing the original."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is the Odoo Barcode app available in Community?",
+      "a": "No. It is Enterprise. In Community you can attach a scanner to a workstation and use it as keyboard input into ordinary forms, and the OCA maintains a scanning interface in its stock logistics barcode repository, but the guided flows, cluster picking and the mobile layout are Enterprise only. The stock model underneath, including putaway rules and lot tracking, is in both editions."
+    },
+    {
+      "q": "Do we need dedicated hardware, or will phones do?",
+      "a": "Phones work through the Odoo mobile app using the camera, which is fine for a few dozen scans a day and for a manager spot checking a location. High volume picking needs a device with a real imager and a physical trigger, because camera focus time becomes the bottleneck and gloves make a touchscreen unreliable. Anything that presents itself as a keyboard will connect."
+    },
+    {
+      "q": "Does it work without a network connection?",
+      "a": "No. There is no offline queue, unlike Point of Sale. The transfer comes from the server and has to be saved back to it, so the app depends on wireless coverage across the whole picking area including freezers, mezzanines and outdoor yards. Test that coverage with the racking loaded rather than empty, because full pallets absorb signal that an empty rack reflects."
+    },
+    {
+      "q": "If we switch to the GS1 nomenclature, what happens to our own internal codes?",
+      "a": "A GS1 nomenclature still reads a plain GTIN, so ordinary EAN-13 products keep working. The risk is an internal code that begins with digits matching an application identifier, which is then parsed as GS1 data and resolves to the wrong product or to nothing. Run the existing catalogue against the rule set before switching, and remember the setting is company wide, so the till sees the same change."
+    },
+    {
+      "q": "Who can correct a mistake, and is there a trail?",
+      "a": "Every correction is a stock move with a user and a timestamp behind it, and a count difference posts against the inventory adjustment location rather than rewriting history. The control worth setting up is who may override: give the right to change a validated quantity to a supervisor group rather than to every operator, or the trail records one shared login doing everything."
+    },
+    {
+      "q": "Can two people work the same transfer at once?",
+      "a": "In practice, no. Two operators on one picking contend for the same lines and the second save can undo what the first did. Split the work instead: a batch transfer hands each operator their own set, and a wave splits by product or by zone. This is the usual reason a large delivery run feels slower after go live than it did in testing with one person."
+    },
+    {
+      "q": "Do we need an IoT Box?",
+      "a": "Not for scanning. A USB or Bluetooth scanner in keyboard wedge mode talks straight to the browser and needs nothing else. The IoT Box, which is Enterprise, is for driving label printers, scales and measuring tools directly from Odoo. Without it, labels still print, but as a file the operator sends to the printer through the operating system."
+    },
+    {
+      "q": "Can we print our own barcode labels from Odoo?",
+      "a": "Yes. Product, lot and location labels print from Inventory as PDF sheets in several layouts, and as ZPL where a thermal printer is in use. Labels carrying a lot number or an expiry date can only be produced once the lot exists, which means printing from the receipt or the manufacturing order rather than in advance."
+    },
+    {
+      "q": "How long does a barcode rollout take?",
+      "a": "Software configuration is a matter of days. Labelling the racking, cleaning the product codes and retraining the team set the calendar, and on a warehouse with several thousand variants the master data work runs longer than everything else combined. Sequence it as data, then labels, then a pilot on one operation type, then extend one operation at a time."
+    }
+  ]
+}

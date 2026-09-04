@@ -1,0 +1,168 @@
+{
+  "metaDescription": "Odoo Appraisals in practice: the appraisal plan, 360 feedback via Surveys, goals, skills, the Enterprise licence question and where review projects fail.",
+  "intro": [
+    "The module is hr_appraisal and it is Enterprise only. There is no Appraisals app in Odoo Community, which is the first fact most buyers need and the one most product pages skip. What Community does hold is Surveys, Gamification goals and badges, and Employees with its skills framework, so a review process can be assembled there. It will not look like the Appraisals app and it will need a developer to hold it together.",
+    "An appraisal is one record joining an employee, a manager and a date. It moves from to start, to confirmed once the request goes out, to done when the conversation has happened. Two rich text templates carry the written content, one for the employee and one for the manager, each with a switch that decides whether the other side can read it yet. Goals, skills and a final rating sit alongside. That is the whole data model, and its simplicity is deliberate.",
+    "The practical consequence is that Odoo gives you a well organised conversation with an audit trail, not a scoring engine. There is no weighted competency model, no forced distribution and no nine box grid in the product. If your HR team expects a calculated performance score out of thirty rated behaviours, that arrives through the Survey app with scoring enabled, or through a custom model. Knowing which of those two you are buying decides whether the project runs four weeks or twelve."
+  ],
+  "whoFor": [
+    "Employers of a hundred or more staff who already run reviews in documents and want the dates, the evidence and the outcomes in one place.",
+    "Companies on Odoo Enterprise where Employees, Time Off and Recruitment are already live, so the hierarchy and the hire dates are trustworthy.",
+    "Groups with probation gates, where a review at three or six months has to happen before a contract decision is made.",
+    "Organisations building a skills matrix, since the appraisal is the natural moment to update an employee's skill levels rather than a separate annual exercise.",
+    "It is not for organisations that need a calculated performance score with weighted competencies and a ranked distribution, which is a Survey build or a custom model.",
+    "It is a poor fit on Community without development budget, because the app is not there and rebuilding it honestly costs more than the licences."
+  ],
+  "capabilities": [
+    {
+      "title": "The appraisal plan and automatic scheduling",
+      "body": "Settings holds an appraisal plan expressed in months: the first review a stated period after hiring, then a repeating interval after each completed appraisal. Every employee record carries a next appraisal date that the plan maintains, and a scheduled job creates the records when they fall due. That makes cycles anniversary based by default. A company that reviews everyone in one window each spring overrides those dates in bulk, which works, but it is a decision to make on purpose."
+    },
+    {
+      "title": "Two feedback templates and controlled publication",
+      "body": "The employee form and the manager form are separate rich text templates set once per company. Each appraisal starts as a copy, so amending the template later does not disturb reviews already in progress. Publication is the useful part. Each side can be written privately and released to the other only when the author is ready, which stops the common failure where an employee reads a draft assessment before the meeting and arrives already defensive."
+    },
+    {
+      "title": "360 feedback through the Survey app",
+      "body": "Asking for feedback from colleagues opens a wizard that picks the respondents, sets a deadline and emails a survey link. The questionnaire is an ordinary survey, so it takes any question type Surveys supports, including scored questions and matrices, and the answers come back linked to the appraisal. Respondents do not need an Odoo user account to answer by link, which matters when the reviewers sit outside the department or outside the company."
+    },
+    {
+      "title": "Goals with manual progression",
+      "body": "Goals are their own records, each with an owner, a manager, a deadline, tags and a progress value chosen from a fixed set of steps rather than typed as a free number. They are listed on the appraisal and carry across cycles. Nothing computes them. If a goal is a revenue figure or a ticket count, the number is pulled in with an automation rule, a computed field, or by using Gamification challenges, which do read a value off a model and are in Community."
+    },
+    {
+      "title": "Skills captured at the close",
+      "body": "Where the skills framework on Employees is in use, the appraisal carries a skills view showing what the employee holds today and letting the manager set the level that will be written back when the appraisal is marked done. That is the mechanism that keeps a skills matrix current, because it attaches the update to an event that actually happens. Reporting on skills over time then reflects assessed levels rather than whatever was typed at onboarding."
+    },
+    {
+      "title": "Meetings, private notes and reporting",
+      "body": "The review meeting is booked from the appraisal through Calendar, so the invitation and the record stay together. A private note holds manager and HR commentary that is not part of the published feedback. Reporting is a pivot and graph over appraisals by department, manager, state and rating, which is what a calibration session actually runs on, because Odoo ships no calibration grid of its own."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Fix the cycle model before any record exists",
+      "body": "Decide whether reviews follow each employee's hire anniversary or a single company window, because the two produce very different configurations. The appraisal plan gives you the first behaviour without effort. The second means setting the plan wide, then loading next appraisal dates by import each year. Write the answer down with the probation gates and the mid year checkpoint, because the plan supports one repeating interval, not a sequence of differently named events."
+    },
+    {
+      "title": "Clean the hierarchy and departments first",
+      "body": "Visibility and routing come from the manager field and the department on the employee record, not from a separate appraisal role. A manager sees the appraisals of the people who report to them, so an employee with the wrong manager, or none at all, becomes invisible to the person meant to review them. Reconcile the org chart before the first cycle and treat it afterwards as data that needs a named owner."
+    },
+    {
+      "title": "Split the narrative from the scored part",
+      "body": "Put open questions, achievements and development discussion in the two rich text templates. Put anything that needs a number, a scale or a distribution into a survey with scoring enabled, and use the same survey for self assessment, manager assessment and peer input so the answers compare. Trying to make a rich text template behave like a scored form is the most common cause of a rebuild three months after go live."
+    },
+    {
+      "title": "Load the skills framework early",
+      "body": "Skill types, individual skills and the level scale with its progress percentages have to exist before managers can assess against them. Building that list is an HR exercise, not a configuration task, and a hundred ungrouped skills is worse than twenty grouped ones. Import current levels for existing staff so the first appraisal opens on a starting point rather than an empty tab, then let the reviews maintain it."
+    },
+    {
+      "title": "Migrate outcomes, not archives",
+      "body": "Bring across the last review date, the last rating and any open goals. Attach historical review documents to the employee in Documents, where they stay readable and searchable for the retention period. Importing several years of appraisal records recreates old templates inside a new structure that no longer matches the questions asked, and hands an auditor two differently worded versions of the same conversation."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Every reviewed employee needs an internal user",
+      "body": "Self assessment happens on the appraisal record in the backend. There is no portal form for it, so an employee who is to write their own feedback needs an internal user account, and internal users are what Enterprise charges for. A factory with six hundred staff and forty office users faces a real number here. The usual answer is to run the wider workforce through survey links and keep full appraisal records for the population that already has accounts."
+    },
+    {
+      "title": "One manager field against a matrix organisation",
+      "body": "Odoo recognises a single reporting line. Consultancies, agencies and project driven businesses run dotted lines where the person who knows the work is not the person on the org chart. Granting two managers equal rights on one appraisal means custom record rules. The cheaper answer keeps the line manager as owner and brings the project lead in as a named respondent on the 360 survey, whose answers attach to the same record."
+    },
+    {
+      "title": "360 responses are attributable",
+      "body": "Feedback requests are sent to named people, and the responses come back tied to who answered. Anyone who can open the appraisal can see which colleague wrote what. If HR has promised anonymity, that promise has to be engineered, usually by publishing the survey as an open link and accepting that you can no longer chase non responders. Settle it before the first invitation goes out, not after somebody recognises a phrase."
+    },
+    {
+      "title": "Private notes are disclosable personal data",
+      "body": "Managers write candidly in the private note because the label suggests it is safe. It is an ordinary field on an ordinary record, and appraisal content is personal data about an identified employee under UK and EU data protection law, Saudi PDPL and Turkey's KVKK. A subject access request reaches it. Say that in the manager training, restrict the appraisal officer group tightly, and agree a retention period rather than keeping everything forever."
+    },
+    {
+      "title": "The template is company wide",
+      "body": "There is one employee template and one manager template per company. A different set of questions for engineers, sales staff and shop floor teams cannot be configured as three templates that select themselves. Either the manager edits the body on each appraisal, which nobody does consistently, or the differentiated questions move into separate surveys chosen per job family. Find that during design, because it changes the shape of the whole form."
+    },
+    {
+      "title": "No line from a rating to money",
+      "body": "Odoo does not turn an appraisal outcome into a salary change. There is no merit matrix, no budget pot and no automatic increase. The rise is recorded separately against the employee's salary information, and the route from a completed review to an approved increase is normally a spreadsheet, an Approvals request, or a small custom model. Scope it explicitly, because HR assumes it is part of the app."
+    }
+  ],
+  "worksWith": [
+    "Odoo Employees, which supplies the manager hierarchy, department, job position and the skills framework",
+    "Odoo Surveys, in Community as well as Enterprise, for the 360 questionnaire and any scored assessment",
+    "Odoo Recruitment, so a new hire's first review is scheduled from the actual start date",
+    "Odoo Time Off and Attendances, which give the availability context a review conversation usually needs",
+    "Odoo eLearning, where a development action becomes an assigned course rather than a line in a document",
+    "Odoo Calendar and Documents, for the review meeting and the signed or scanned evidence behind it",
+    "Odoo Payroll and the employee salary record, where an approved increase is entered after the appraisal, not by it",
+    "Odoo Gamification in Community, which computes a goal value from a model field when a manual progress step is not enough"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Probation runs to ninety days and can be extended once in writing to a hundred and eighty, so the appraisal plan should place a formal review inside that window. Arabic is the language of record for employment documents, so forms and evidence need Arabic alongside English, which Odoo handles with right to left rendering. Dismissal for poor performance is defensible only on a documented trail."
+    },
+    {
+      "country": "uae",
+      "note": "Under Federal Decree Law 33 of 2021 probation cannot exceed six months and every contract is fixed term and renewable, so reviews should land before a renewal decision rather than on a calendar anniversary. Emiratisation targets apply to skilled roles in companies above fifty employees, which makes accurate job position and skill data on the employee record a reporting requirement rather than housekeeping."
+    },
+    {
+      "country": "pakistan",
+      "note": "Appraisal cycles usually track the July to June fiscal year, so the default anniversary plan produces increases that miss the budget. The Standing Orders require a written show cause and an inquiry before a permanent worker is dismissed, which means warnings and improvement plans must still be retrievable years later. Provincial rules differ, so Punjab and Sindh entities carry separate assumptions."
+    },
+    {
+      "country": "india",
+      "note": "Increments are effective 1 April with the financial year, so the review window runs January to March and the appraisal plan is set to a fixed company cycle rather than to hire dates. Statutory bonus under the Payment of Bonus Act is a wage obligation for employees inside the ceiling and has nothing to do with performance, so it should never be configured as an appraisal outcome."
+    },
+    {
+      "country": "turkey",
+      "note": "Job security provisions in Labour Law 4857 apply to workplaces with thirty or more employees once an employee has six months of service. A performance based termination needs a valid reason, a written defence from the employee and mandatory mediation before any reinstatement claim, so the appraisal record becomes evidence. KVKK Law 6698 governs the personal data inside it, including where the database is hosted."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "A capability dismissal is judged against the ACAS Code of Practice, so dated objectives, a documented warning and a genuine improvement period matter more than the rating itself, and an unreasonable failure to follow the code can raise a tribunal award by up to a quarter. Appraisal content is personal data under UK GDPR, and a subject access request reaches the manager's private note."
+    },
+    {
+      "country": "germany",
+      "note": "Introducing appraisals is a co-determination matter before it is an IT project. Section 94 of the Works Constitution Act puts personnel questionnaires and general assessment guidelines under works council agreement, and Section 87 covers systems capable of monitoring performance. Budget time for a works agreement that names the fields, the reports and who may read them, and expect the council to review the configuration."
+    },
+    {
+      "country": "france",
+      "note": "The entretien professionnel is required every two years with a summary review every six, and it is a career and training discussion, distinct from the optional annual performance review. Employees on a forfait jours contract need their own annual workload interview. That is two or three appraisal types in Odoo, not one, and the CSE must be informed before an evaluation system is deployed."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Appraisals available in Community?",
+      "a": "No. The app is Enterprise only, and that includes the appraisal plan, the feedback templates, the 360 request and the goals. Community does hold Surveys, Employees with skills, and Gamification goals and badges, so a review process can be built there. It needs a custom model to tie the pieces to an employee and a cycle, and that development usually costs more than the licences it avoids."
+    },
+    {
+      "q": "Do all employees need a paid user account?",
+      "a": "Only the ones who write their own self assessment, because that happens on the appraisal record in the backend and there is no portal version of it. Colleagues invited to give 360 feedback answer a survey by email link and need no account. A common design keeps full appraisals for office and supervisory staff and runs the wider workforce through surveys, with the manager recording the outcome."
+    },
+    {
+      "q": "Can 360 feedback be anonymous?",
+      "a": "Not when it is sent as a personal invitation, which is the standard flow. Responses arrive attached to the respondent and anyone with access to the appraisal can see who said what. Anonymity is achievable by publishing the survey on an open link, at the cost of any way to see who has replied. Decide which of the two you actually want before promising staff anything."
+    },
+    {
+      "q": "Does Odoo support calibration or a nine box grid?",
+      "a": "Not as features. There is a rating on the appraisal and a pivot report across department, manager and state, and a calibration session is run from that report with the meeting booked through Calendar. A true nine box, a forced distribution or a weighted competency score is a Survey build with scoring, a dashboard, or a small custom model. Say so during scoping rather than during user testing."
+    },
+    {
+      "q": "Can a review result trigger a pay increase?",
+      "a": "Not automatically. Odoo records the appraisal and the salary separately, and no rule connects a rating to a percentage. The increase is entered against the employee's salary information and flows into payroll from there. If you need budget pots, manager proposals and an approval chain, that is a defined piece of work, and it is the part of a performance project most often assumed to be standard."
+    },
+    {
+      "q": "Can each department have its own appraisal form?",
+      "a": "The employee and manager templates are set once per company, so not by configuration alone. The workable pattern keeps the templates as the common narrative frame and moves job specific questions into separate surveys, choosing the right survey when feedback is requested. That gives different questions per job family without maintaining several templates that nobody keeps aligned."
+    },
+    {
+      "q": "How do goals and KPIs actually work?",
+      "a": "A goal is a record with a deadline, an owner and a progress value the employee or manager selects from fixed steps. Odoo does not read a sales figure or a ticket count into it. Where a goal is genuinely numeric, either an automation rule writes the progress from the source record, or the target is tracked as a Gamification challenge, which does compute from a model field and is available in Community."
+    },
+    {
+      "q": "What should we bring across from our current review tool?",
+      "a": "The last review date, the last rating and any open goals, so the first Odoo cycle starts from a known position. Historical review forms belong in Documents, attached to the employee and kept for the retention period agreed with legal. Reimporting years of appraisals into templates that ask different questions produces a record reading as if the old conversations never happened the way they did."
+    }
+  ]
+}

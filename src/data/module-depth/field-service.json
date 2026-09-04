@@ -1,0 +1,168 @@
+{
+  "metaDescription": "Odoo Field Service in practice: dispatch and worksheets, van stock that stays accurate, billing a visit, the Enterprise line and country e-invoicing rules.",
+  "intro": [
+    "Odoo Field Service is an Enterprise app built on Project. Every job is a project task inside a project flagged as field service, so the task model, its stages and its timesheet lines are what you are actually configuring. The technician opens that task on a phone, starts a timer, answers a worksheet, adds the parts used and captures a signature on the screen.",
+    "The projects that go badly are rarely the ones with unusual work. They are the ones where dispatch, van stock and billing were treated as three separate problems. Odoo joins all three at the task, so that one record has to carry the customer, the site address, the product sold, the warehouse the parts leave and the analytic account the cost lands on. Get the task right and most of what follows is configuration.",
+    "Two facts shape the budget before anyone opens a demo database. Field Service, Studio, the worksheet layer, the Gantt and map views, Helpdesk and timesheet validation are all Enterprise. And every technician who touches a task is an internal user with a paid seat, because portal accounts are read only. Counting seats honestly in week one avoids an unpleasant conversation in month three."
+  ],
+  "whoFor": [
+    "HVAC, lift, generator and pump service companies where a technician attends a customer site and that visit has to end as an invoice.",
+    "Installers and fit out contractors who sell the job on a quotation and need site hours and materials tracked back against that order.",
+    "Maintenance providers running annual agreements with a fixed number of planned visits plus reactive call outs in between.",
+    "IT, security and medical device integrators whose engineers consume serial tracked stock at customer premises and need to know which unit went where.",
+    "Not for internal plant maintenance on your own assets, which belongs in the Maintenance app, and not for delivery work, which is a stock movement rather than a task.",
+    "A poor fit for crews who spend the day without mobile coverage, because the client needs a live connection to the server for every action."
+  ],
+  "capabilities": [
+    {
+      "title": "Dispatch and the day schedule",
+      "body": "Tasks carry a planned start and end, so the schedule is a Gantt of real durations rather than a list of open jobs. The map view plots tasks from the coordinates on the customer record and stays blank until a MapBox token is saved in the settings. Assignment is manual, or driven by an automation rule you write against the task. Gantt and map are Enterprise views, so any Community equivalent is limited to kanban, list and calendar."
+    },
+    {
+      "title": "Worksheets completed on site",
+      "body": "Each job type gets its own worksheet template, which is the set of questions the technician answers, the readings taken and the photos attached. Templates are configured inside Field Service, and changing the fields on one opens Studio, so editing a worksheet without a developer is an Enterprise capability you are paying for either way. The completed sheet plus the customer signature renders as a PDF on the task and can be emailed. That PDF is what defends a disputed invoice a year later."
+    },
+    {
+      "title": "Time, parts and the cost of a visit",
+      "body": "The timer on the task writes timesheet lines against the employee and the task, and those lines carry the hourly cost from the employee record. Products added to the task move stock out on a linked delivery at their stock valuation, which is what stops the van being a hole in the accounts. A service product with service tracking set to create a task is the link between a quotation line and the job itself, so a sold service and a scheduled visit are the same record from the start."
+    },
+    {
+      "title": "Contracts and repeat visits",
+      "body": "Planned visits run on project task recurrence, where the next occurrence is raised as the current one closes. The contract fee itself is normally invoiced from a subscription on its own cycle, with the visits carrying cost and no separate charge, and extra work found on site quoted from the task. Subscriptions is Enterprise. Keep the fee and the visit cost on one analytic account, or contract margin is a guess."
+    },
+    {
+      "title": "Where the work comes from",
+      "body": "A job starts from a sale order line, from a helpdesk ticket escalated to an onsite intervention, or from a dispatcher creating the task directly. Helpdesk is Enterprise and the intervention setting is per team, so the button does not appear on a ticket until that team has it switched on. However the task arrives, it inherits the customer and the address, and those two decide the tax on the invoice, the pin on the map and where parts get sent ahead of the visit."
+    },
+    {
+      "title": "What you can actually measure",
+      "body": "Reporting comes from task analysis and timesheet analysis, so hours per job, hours per technician, and revenue against cost per task are available with no build. First time fix rate, mean time to attend and repeat visit counts are not standard measures anywhere in the app. If those numbers are going into a board pack, agree a stage convention or a field on the task during design, because they cannot be backfilled from jobs that already closed."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Model the job types before anything else",
+      "body": "Worksheet templates, service products and billing behaviour all hang off the type of job: installation, planned service, breakdown, warranty, survey. Each one deserves its own worksheet template and its own service product with the right invoicing policy. Leave job types until later and you end up with a single generic worksheet nobody completes properly, and no way to separate a warranty callback from chargeable work."
+    },
+    {
+      "title": "Site addresses are not billing addresses",
+      "body": "Most service customers are one billing entity with many sites. Model each site as a child contact of type delivery under the parent, with its own coordinates and access notes. The task points at the site, the invoice points at the parent. This is a common structural error and it is expensive to unpick, because by the time anyone notices, several hundred visits sit against the wrong partner and the per site history is gone."
+    },
+    {
+      "title": "Van stock, and what it really costs you",
+      "body": "Parts on a vehicle are stock in an internal location, and Odoo will not keep that location honest on its own. Stock leaves on the delivery linked to the task, from the warehouse on that order, not from a location tied to the technician. Real van stock therefore means a warehouse per vehicle, with the counting routine that implies, or consuming from the main warehouse and correcting with internal transfers. Decide before go live, because moving to per van locations afterwards means recounting every vehicle."
+    },
+    {
+      "title": "Analytic accounts and hourly cost",
+      "body": "Timesheet lines take their cost from the hourly cost field on the employee, parts take theirs from stock valuation, and both have to land on the same analytic account before job margin means anything. Set the analytic account on the project rather than task by task. Fill in an hourly cost for every technician before go live, including apprentices and subcontracted staff. An employee left at zero makes every job that person touches look profitable."
+    },
+    {
+      "title": "What the data migration actually involves",
+      "body": "Three imports matter: customers with their site hierarchy, the installed equipment list, and open contracts with their remaining visit counts. Historic job records rarely justify importing as tasks, so export them and attach them to the site contact instead. Serial numbers of units already on site are worth importing properly, because the first question a technician asks on arrival is what was fitted here and when."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "There is no offline mode",
+      "body": "Odoo Field Service runs in a browser or the mobile app against a live server. In a basement plant room, a lift shaft or a rural site, the technician cannot open the task, start the timer or capture a signature, and nothing queues locally to sync later. The workaround is a printed job sheet and back office entry, which costs you the on site timestamp. Test signal on your three worst sites during the pilot, not after go live."
+    },
+    {
+      "title": "Odoo does not optimise routes",
+      "body": "There is a map and there is a schedule. There is no engine that sequences twelve jobs into the shortest drive, no travel time estimate between appointments and no automatic reassignment when a morning job overruns. A dispatcher does that work by hand, or you integrate a routing service and keep Odoo as the record. Buyers who expect the routing intelligence of a dedicated field service product are disappointed early."
+    },
+    {
+      "title": "SLA lives in Helpdesk, not in Field Service",
+      "body": "Response and fix time commitments are a Helpdesk feature. Field service tasks have deadlines and stages, but no SLA policy, no automatic escalation and no breach report. If your contracts promise a four hour response, the ticket belongs in Helpdesk and the field task hangs off it. Rebuilding an SLA clock on the task with automation rules is possible, and it becomes a maintenance burden the first time someone renames a stage."
+    },
+    {
+      "title": "The serviced unit has nowhere to live",
+      "body": "A standard field service task records the customer and the site, not the specific machine that was worked on. Maintenance equipment is built for assets you own rather than assets sitting at a customer address, and a serial number tracks stock you shipped rather than a unit installed by somebody else years ago. Service history per unit is a normal contractual requirement in lift, HVAC and medical work, so scope that model at design time instead of meeting it in month two."
+    },
+    {
+      "title": "The mobile app is the web client in a wrapper",
+      "body": "There is no separate native field service app. The phone experience is the responsive web client, which is fine on a current handset and slow on a weak connection. Site photos are the usual complaint. Ten photos per visit across a large team fills the filestore quickly and makes each save painful on mobile data. Agree how many photos a worksheet really needs and resize on upload, or the storage bill and the technician complaints arrive in the same week."
+    },
+    {
+      "title": "Time can still be edited after it has been billed",
+      "body": "Recording hours against a task is base functionality. The grid entry view, the approval workflow and the manager validation that locks a period are Enterprise timesheet features. Without validation in place, nothing stops a technician correcting last month after the invoice went out, and the analytic account quietly stops agreeing with the ledger. Where billable hours are the revenue, turn validation on and give one person the job of approving."
+    }
+  ],
+  "worksWith": [
+    "Project, which supplies the task model, the stages and the recurrence behind planned visits",
+    "Timesheets for hours on the job, Sales for turning those hours and parts into an invoice",
+    "Inventory for parts consumed, serial numbers and a warehouse per van where van stock has to be exact",
+    "Helpdesk, an Enterprise app, for the ticket and the SLA clock sitting above the visit",
+    "Subscriptions, also Enterprise, for the annual maintenance fee and its renewal cycle",
+    "Planning for shift and standby cover, Fleet for the vehicles and their running cost",
+    "Accounting for the invoice, the tax treatment driven by the site address and analytic margin per job",
+    "Sign and Documents where a signed worksheet has to be retained formally rather than left as an email attachment"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA Phase 2 clearance means a standard business to business tax invoice is not a valid document until Fatoora returns it cleared, so a technician cannot hand one over from a site with no connectivity. Simplified invoices to consumers are reported within 24 hours, which keeps residential call outs workable. Each unit that issues invoices onboards with its own cryptographic credentials and keeps its own sequential counter, so letting branches raise their own documents is an onboarding exercise rather than a settings change."
+    },
+    {
+      "country": "uae",
+      "note": "The Electronic Invoicing System reaches large taxpayers from January 2027 through an Accredited Service Provider, with business to consumer sales outside the current scope, so residential work stays simple while facilities management and annual maintenance billing routes through an ASP. A tax invoice has to carry Arabic, which makes the invoice and worksheet layouts a bilingual job rather than a translation afterthought. Technicians paid under the Wage Protection System need clean IBAN and labour card data before the first payroll run."
+    },
+    {
+      "country": "india",
+      "note": "The IRN and the signed QR code are what make a GST invoice valid, so the practical pattern is a worksheet signed on site and the invoice cleared from the back office minutes later. Parts carried to a site in a van are a movement of goods and need matching documentation, with an e-way bill once the consignment value crosses the threshold. Place of supply against the site address decides CGST and SGST or IGST, which is why the site contact, not the head office, belongs on the task."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing is a clearance model. The FBR invoice number and the printed QR code have to be on the document before it is issued, which needs a live call through PRAL or a licensed integrator. Sales tax on services is provincial, administered separately by SRB, PRA, KPRA and BRA, so the same maintenance visit at the same price changes rate and filing depending on which province the site sits in. Registration in more than one province is normal for national service coverage."
+    },
+    {
+      "country": "turkey",
+      "note": "Fiscal records may not be archived outside Turkiye, and that covers worksheet PDFs and site photographs held in the Odoo filestore, so hosting location is a design decision rather than an operations preference. Outbound invoices split by counterparty, e-Fatura where the customer is registered in the system and e-Arsiv where they are not. Parts sent ahead to a site travel on an e-Irsaliye dispatch note, which has to describe the same goods that end up listed on the worksheet."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Making Tax Digital requires digital links from the invoice through to the VAT return, so a field raised invoice cannot be rekeyed into a spreadsheet on the way to HMRC. Submission from Odoo sits in the Enterprise UK localisation, not in Community. Subcontracted engineers on construction and building services work bring the domestic reverse charge for VAT and CIS deductions on labour, both of which need deliberate tax and product setup rather than a fiscal position bolted on late."
+    },
+    {
+      "country": "germany",
+      "note": "GoBD makes a completed worksheet and its attachments part of a record that has to stay unalterable and traceable, with an eight year retention period on invoices. The tax adviser will expect a DATEV export, which lives in the Enterprise German localisation, rather than a folder of PDFs. Businesses have had to be able to receive structured e-invoices since January 2025. Working time recording is a legal obligation, and for a technician travelling between customer sites that travel generally counts as working time."
+    },
+    {
+      "country": "australia",
+      "note": "There is no general business to business e-invoicing mandate, so most service companies can bill on their own terms. Peppol matters where you supply Commonwealth agencies, which have had to be able to receive e-invoices since July 2022, so a government maintenance contract turns access point capability into a contractual item. Technician pay carries Single Touch Payroll Phase 2 reporting, and modern award rules on travel time, on call and overtime allowances have to be built as salary rules rather than left to a payroll officer."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Field Service available in Community?",
+      "a": "No. Field Service is an Enterprise app, and so are Studio, the worksheet layer, the Gantt and map views, Helpdesk and timesheet validation. Community gives you Project, Timesheets, Sales and Inventory, which is enough for a plain job and invoice flow with no structured worksheet and no signature step. If Community is fixed, the OCA field service modules are the realistic route, and they are a different data model with their own upgrade path, so the two are not interchangeable later."
+    },
+    {
+      "q": "Do technicians need paid user accounts?",
+      "a": "Yes. A task is assigned to an internal user, and running the timer, completing a worksheet or adding products all require one. Portal accounts are free but read only. Subcontractors who fill in their own worksheets therefore count as seats, and the usual workaround of having a coordinator key in paper sheets costs you the on site signature and the real timestamp. Seat count is the line people underestimate in the first budget."
+    },
+    {
+      "q": "Can we bill a fixed price per visit instead of time and materials?",
+      "a": "Yes, and the choice sits on the service product rather than on the task. Invoicing on ordered quantities gives a fixed price per visit whatever the hours turn out to be. Invoicing on delivered quantities based on timesheets bills the recorded time. Fixed price does not make the timer pointless, because the hours still post to the analytic account and tell you whether the price was right. Mixing both on one order is normal: a call out fee on one line, time above the included hours on another."
+    },
+    {
+      "q": "Can the technician raise the invoice on site?",
+      "a": "Technically yes. Once the worksheet is signed the task can create the invoice. Whether that is legal depends on the country. Under clearance regimes such as Saudi Arabia, India and Pakistan the document is not valid until the tax authority returns a number, so on site issuance needs connectivity and a working integration. The common compromise is the signed worksheet handed over on site and the cleared invoice emailed shortly after."
+    },
+    {
+      "q": "What can the customer see?",
+      "a": "Portal users are free and see their quotations and invoices. Tasks appear only if the field service project is shared with the portal, and the signed worksheet normally reaches the customer as an email attachment rather than as a record they browse. A facilities manager who wants self service history of every visit across forty sites is a portal development item, not a configuration switch, and it is worth pricing separately when a tender asks for it."
+    },
+    {
+      "q": "Can this run on Odoo Online, or do we need odoo.sh?",
+      "a": "Studio worksheets, automation rules and the standard flow all work on Odoo Online. The moment you need a custom model, a routing or telematics integration, or a country e-invoicing connector outside the standard localisation, you need odoo.sh or your own hosting. Field service projects reach that line more often than most, usually over installed unit history. Deciding after the Online subscription has started means a migration nobody planned for."
+    },
+    {
+      "q": "How do we handle subcontractors who are not employees?",
+      "a": "If they complete worksheets in Odoo they need a user account and an employee record with an hourly cost, which is a seat and a payroll style record for someone you do not employ. If you only need their invoice, keep them off the task and post their cost as a vendor bill against the same analytic account. Job margin still works. The trade off is a thinner visit record, with no timestamps and no signature captured by the person who did the work."
+    },
+    {
+      "q": "How long does an implementation take?",
+      "a": "Scope drives it, not team size. One crew, time and materials, one worksheet template and clean customer data is a matter of weeks. Van stock per vehicle, contract visits, an e-invoicing integration and a payroll link run into months. The item that slips most often is the customer and site hierarchy, because it usually has to be rebuilt from spreadsheets and old job cards rather than exported cleanly from the previous system."
+    }
+  ]
+}

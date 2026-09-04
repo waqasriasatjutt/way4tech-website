@@ -1,0 +1,164 @@
+{
+  "metaDescription": "Odoo POS implementation guide: what offline really covers, session and cash control, hardware, upgrade risk and the fiscal receipt rules per country.",
+  "intro": [
+    "Odoo Point of Sale is a browser application running against the same database as Sales, Inventory and Accounting. There is no separate till database to reconcile at night. A session opens with a counted float, orders are recorded against it, and closing the session posts the accounting entries and the stock moves in one step. That single ledger is the reason to choose it. It is also why one badly configured till becomes visible everywhere else in the business.",
+    "The app itself is in Community. Restaurant floors and tables, order transfers, split bills, loyalty programs, gift cards, promotions and cashier login by PIN are all there without a subscription. Enterprise is what buys the IoT Box, and with it electronic scales, serial receipt printers and most integrated counter terminals, plus Studio and the e-invoicing localisation modules. In several of the markets covered below, it is that last item rather than any till feature that decides the edition.",
+    "Most of the delivery risk sits in three places. Tax on the shelf price and the rounding that follows from it. Cash discipline at open and close, which is a management problem the software only reports on. And the fiscal receipt rule in the country you trade in, which the standard till rarely satisfies on its own. Configuring a shop takes a day or two. Those three things take the rest of the project."
+  ],
+  "whoFor": [
+    "Retail chains running several shops that want one catalogue, one pool of stock and one set of accounts behind every till.",
+    "Restaurants, cafes and quick service outlets needing a floor plan, split bills, kitchen routing and a menu that changes by service.",
+    "Businesses already on Odoo for stock and accounting, where the till is the last system still exporting a nightly file into something else.",
+    "Pharmacies, supermarkets and hardware shops selling by weight, batch or serial, where the counter has to respect the same traceability as the warehouse.",
+    "Not for a single shop with one till and no stock control, where a standalone card terminal with its own app does the job for less money.",
+    "Not for a business whose counter is legally tied to a certified fiscal device, such as a Turkish new generation register, because Odoo does not drive that hardware and the device stays in the loop."
+  ],
+  "capabilities": [
+    {
+      "title": "Sessions, cash control and the accounting posting",
+      "body": "A session is opened by a named user with a counted opening float and closed against a counted drawer. Odoo posts the difference to a cash difference account, so a shortage is visible rather than absorbed. Closing generates the journal entries and validates the stock moves for everything sold in that session. An order with a customer set can be invoiced individually and produces a normal customer invoice. Everything else is summarised into the session entry, and that distinction is what matters for e-invoicing."
+    },
+    {
+      "title": "Offline operation, and what it actually covers",
+      "body": "The till caches its data in the browser and keeps taking cash orders when the connection drops, syncing when it returns. It does not cover everything. Card payments through an integrated terminal need the network, a customer who has never been loaded cannot be looked up, and an order that has not synced exists only in that browser profile. Clearing site data, reimaging the machine or a hard browser reset loses it. The outage procedure belongs in the plan before go live."
+    },
+    {
+      "title": "Restaurant floors, tables and kitchen routing",
+      "body": "Restaurant mode adds floors and a table plan, order transfers between tables, bill splitting by line or by amount, and a tip flow that posts against a tip product. Ordered lines are routed to preparation printers or to a preparation display by product category, so the bar and the grill each see only their own work. A fiscal position switches the tax set between eat in and takeaway on the same product, which avoids maintaining two menus for one kitchen."
+    },
+    {
+      "title": "Loyalty, gift cards, promotions and pricelists",
+      "body": "The loyalty engine covers points cards, discount and promotion rules, coupon codes, physical gift cards and an ewallet balance, and the same programs run on the webshop against the same customer record. Pricelists apply by shop, by customer, by quantity or by date, which is how happy hour and staff pricing are done without editing product prices. Manual discount limits are capped per user, so a cashier cannot clear a basket on their own authority."
+    },
+    {
+      "title": "Multi shop, multi company and one pool of stock",
+      "body": "Each till is a Point of Sale configuration with its own operation type, and that operation type decides which stock location a sale depletes. Shops can share one company and one catalogue, or sit in separate companies with their own charts of accounts and currency. Because the webshop reads the same quantities, a counter sale reduces online availability immediately. That is the whole argument for moving off a standalone till, and it only holds if the locations are set correctly."
+    },
+    {
+      "title": "Scanners, printers and payment terminals",
+      "body": "A USB scanner types straight into the browser with no middleware. A barcode nomenclature rule reads the weight or the price embedded in a label printed by a shop scale, which is how most supermarket counters are actually wired. Epson network receipt printers are driven directly over the network, and the cash drawer opens off the printer kick port. Live scales, serial printers and most integrated card terminals go through the IoT Box, an Enterprise component with its own hardware cost."
+    }
+  ],
+  "setup": [
+    {
+      "title": "One configuration per till, not per shop",
+      "body": "Two cashiers on two machines need two Point of Sale configurations, because a session belongs to one till. Each configuration carries its own operation type and stock location, its own payment methods, its own receipt header and its own journal. A shop with a back office machine for returns and account customers needs a third. Getting this wrong surfaces on the first busy Saturday, when the second machine cannot open a session because the first one already holds it."
+    },
+    {
+      "title": "Tax on the shelf price, and rounding",
+      "body": "Retail prices are quoted including tax, so the product price has to be stored tax inclusive with the tax configured to match, or totals drift by a unit on mixed baskets. Fiscal positions handle eat in against takeaway, zero rated food and export sales without duplicating products. Cash rounding is a separate setting and is not optional where the smallest coin has been withdrawn, or in Kuwait and Bahrain where the currency carries three decimal places."
+    },
+    {
+      "title": "Product data before hardware",
+      "body": "Every sellable line needs the Point of Sale availability flag, a POS category for the till layout, a selling price, a cost and a barcode. Loose and weighed goods need a unit of measure other than units and a nomenclature rule matching the label your scale prints. Set menus, combos and variants have to be decided here rather than improvised at the counter. This is the longest task on the project and the one clients consistently underestimate."
+    },
+    {
+      "title": "Cashiers, PINs and what can be overridden",
+      "body": "Staff log in to the till with a badge or a PIN rather than an Odoo user password, which keeps the audit trail per employee without consuming a user seat for every cashier. Decide before go live who may apply a manual discount, who may reprint a receipt, who may refund without a manager present and who is allowed to close a session. These are access rights and configuration, and they are the first controls an auditor asks to see."
+    },
+    {
+      "title": "Cutover and the first trading week",
+      "body": "Go live on one till in one shop while the old system still runs, with the opening float counted by hand and the drawer reconciled the same night. Load and validate the product master against a hundred real baskets before the doors open, not after. Bring customer and loyalty balances across as opening records rather than as history, because a wrong points balance is what customers complain about. Old receipt detail belongs in a report, not in the live database."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Sessions left open for weeks",
+      "body": "A session posts its accounting entry when it closes. Leave one open across a month end and the revenue lands in the wrong period, the stock moves stay unvalidated and the accountant cannot lock the books. This is a discipline failure rather than a defect, but it is the most common thing found in an Odoo POS database that has run unsupervised, and unwinding it takes a manual close plus a set of corrections nobody budgeted for."
+    },
+    {
+      "title": "Treating offline as a guarantee",
+      "body": "Selling offline works. Recovering from offline is where projects fail. Orders held in one browser are invisible to head office, refunds against them cannot be processed at another till, and a cashier who closes the browser to fix a printer can lose a morning of trade. Set the rule in advance: the till goes cash only during an outage, nobody clears site data, and a named person syncs and closes the session before the machine is touched."
+    },
+    {
+      "title": "Selling stock the shop does not have",
+      "body": "Odoo will let a till sell into negative stock and will carry on doing it quietly. A shop that also trades online then oversells, because the webshop reads the same quantity. The fix is not a warning message. It is the operation type on each configuration pointing at the right location, deliveries booked in on arrival rather than at month end, and a counting cycle the shop genuinely performs instead of one written into a procedure."
+    },
+    {
+      "title": "POS customisations that do not survive an upgrade",
+      "body": "The till is a Javascript application in the browser, not a backend view, so Studio does not reach it and every change is code. Odoo 18 reworked how the Point of Sale loads its data, which is why a custom screen or receipt built against version 16 or 17 does not simply move across. Price every POS customisation with its upgrade cost included, and prefer a fiscal position, a pricelist or a configuration flag wherever the behaviour can be expressed that way."
+    },
+    {
+      "title": "Assuming the session entry satisfies the tax authority",
+      "body": "Uninvoiced counter sales are summarised into one journal entry per session. That is acceptable in some markets and not in others. A regime that wants a per receipt submission, an authority issued invoice number or a signed QR code on the printed slip needs the order invoiced or a Point of Sale specific integration. Establish this before quoting, because it is the difference between installing a localisation module and building against a government API."
+    }
+  ],
+  "worksWith": [
+    "Odoo Inventory, which holds the stock a sale depletes and the counting cycle the shop performs",
+    "Odoo Sales and eCommerce, sharing one catalogue, one pricelist set and one availability figure",
+    "Odoo Accounting, where the session posts its entry and invoiced orders post as customer invoices",
+    "Odoo Loyalty, driving points, coupons, gift cards and ewallet balances across shop and website",
+    "Odoo Employees, so cashiers sign in by badge or PIN and appear on the session audit trail",
+    "Odoo Purchase and replenishment, so each shop reorders against its own location rather than a central guess",
+    "Odoo IoT, the Enterprise route to scales, serial printers and most integrated counter terminals",
+    "Acquirer terminal connectors such as Adyen, Stripe and Viva Wallet, with availability depending on market and edition"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "A counter sale is a simplified tax invoice, which ZATCA reports rather than clears, so the till prints immediately and the record reaches Fatoora within 24 hours carrying a cryptographic stamp and a TLV QR code. The Saudi localisation ships Point of Sale specific e-invoicing modules on Enterprise. Arabic on the receipt is a requirement, not a design preference."
+    },
+    {
+      "country": "uae",
+      "note": "The Electronic Invoicing System covers B2B and B2G only, so shop receipts sit outside the current mandate while the same company's trade invoices come into scope from 2027 through an accredited service provider. The Odoo UAE localisation includes a Point of Sale module for local receipt behaviour. A designated zone shop and a mainland shop are two different VAT positions, not two rows in a list."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing is a clearance model. The till posts JSON to the FBR or PRAL API and waits for a unique invoice number before the receipt is valid, and the printed slip must carry that number, a 7 by 7 millimetre QR code and the software registration number. Tier 1 retailers must integrate their outlets. The l10n_pk module is a chart of accounts, so this is a build."
+    },
+    {
+      "country": "india",
+      "note": "Counter sales to unregistered consumers do not need an IRN, so a shop till usually sits outside e-invoicing while the same company's B2B invoices sit inside it. The dynamic QR obligation on B2C invoices applies above the turnover threshold and is separate work. Each state needs its own GSTIN, so a shop in another state is a branch or a company, not simply another till."
+    },
+    {
+      "country": "turkey",
+      "note": "Retail sales at a counter are recorded on a certified new generation payment recording device, and Odoo does not drive that hardware. The Turkish localisation covers e-Fatura, e-Arsiv, e-Irsaliye and e-Defter, so the invoicing side is served while the customer slip still comes from the certified device. Design the interface between the two before anyone buys tills."
+    },
+    {
+      "country": "egypt",
+      "note": "The e-invoice system and the e-receipt system are two different builds. The official Odoo module covers invoices submitted from a sales journal, not B2C receipts, so Point of Sale e-receipt submission is a paid app or custom work. Signing needs a USB key obtained through the Tax Authority or Egypt Trust, which on a cloud hosted database means a Windows virtual IoT box in the loop."
+    },
+    {
+      "country": "germany",
+      "note": "KassenSichV requires every till transaction to be signed by a technical security element, with the full record set exported in DSFinV-K format for an audit. Odoo covers this through the German localisation using a cloud TSE provider, which is a separate subscription and a running cost per till. GoBD also rules out editing a recorded sale, so a correction is always a counter booking."
+    },
+    {
+      "country": "france",
+      "note": "The anti-fraud rule under article 286 I-3 bis of the tax code requires certified cash software. Odoo ships l10n_fr_pos_cert, which hashes and chains orders so they cannot be altered, and it cannot be uninstalled once sales exist. The mandatory e-invoicing reform adds e-reporting of B2C takings, which Odoo handles through a separate Point of Sale module against its approved platform."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo POS in Community, or does it need Enterprise?",
+      "a": "The Point of Sale app is in Community, including restaurant floors, table plans, split bills, loyalty programs, gift cards and cashier login by PIN. Enterprise buys the IoT Box, and with it scales, serial printers and most integrated card terminals, plus Studio and the e-invoicing localisation modules. In Saudi Arabia, Germany and France it is normally the fiscal module rather than a till feature that decides the edition."
+    },
+    {
+      "q": "Does the offline mode really work?",
+      "a": "It keeps taking cash orders when the network drops, because the till caches its data in the browser. Integrated card payments stop, a customer who was never loaded cannot be found, and unsynced orders live only in that browser profile until connectivity returns. It covers a broadband outage during trading hours. It is not a design for a shop that has no dependable connection at all."
+    },
+    {
+      "q": "Can the till submit directly to ZATCA, FBR or the Egyptian Tax Authority?",
+      "a": "Saudi Arabia is covered by the Odoo localisation on Enterprise, including modules aimed at simplified invoices raised from a till. Pakistan and the Egyptian B2C e-receipt system are not, so both are a paid app or a build. The test is whether the regime wants a submission per receipt. If it does, the summarised session entry will not satisfy it."
+    },
+    {
+      "q": "How many products can one till handle?",
+      "a": "Large catalogues used to make a session slow to open, because the data was loaded up front. Odoo 18 changed how the Point of Sale loads its data and copes with much bigger catalogues, so the version you are on is worth checking before assuming a limit. It is the same change that stops a POS customisation written for 16 or 17 from carrying across untouched."
+    },
+    {
+      "q": "Can I keep my existing hardware?",
+      "a": "USB scanners work directly in the browser. Epson network receipt printers are driven without extra hardware, and the cash drawer opens off the printer kick port. Electronic scales, serial printers and most integrated card terminals need the IoT Box. Check the card terminal first, because the answer depends on your acquirer and your country rather than on Odoo."
+    },
+    {
+      "q": "Do I need a separate database per shop?",
+      "a": "No, and usually you should not. Each shop is one or more Point of Sale configurations inside a single database, with its own stock location, payment methods and receipt layout. Separate databases mean separate stock, separate loyalty and a consolidation exercise every month. Separate legal entities are a multi company setup in the same database, not a second installation."
+    },
+    {
+      "q": "Can the till screen be changed?",
+      "a": "Yes, but not with Studio. The Point of Sale runs as a Javascript application in the browser, so a new button, a custom receipt layout or an altered payment flow is code. This is normal work and it is done often. Price it with the upgrade cost included, because the POS frontend has changed materially between recent versions."
+    },
+    {
+      "q": "How do refunds and exchanges work?",
+      "a": "A refund is raised from the original order, so the return links back to the sale instead of being keyed as a negative line. Stock returns to the shop location and the money goes back on the same payment method or as cash, depending on how the methods are configured. Agree the manager approval rule before go live, because that control is configuration rather than a policy document."
+    }
+  ]
+}

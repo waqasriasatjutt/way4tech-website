@@ -72,6 +72,30 @@ const H1_SHAPE: Record<string, string> = {
 };
 const heading = H1_SHAPE[service.slug] || `${service.title} in ${plainName}`;
 
+/* The cost heading used `service.title.toLowerCase()`, which reads as
+   "What changes the cost of hire odoo developer in Australia" and lower-cases
+   the brand on all 108 pages. Keyed on slug, never on title: two titles contain
+   an ampersand, and one of those is the service's whole identity. The fallback
+   deliberately keeps the title's own casing. */
+const COST_SHAPE: Record<string, string> = {
+  'odoo-implementation': 'an Odoo implementation',
+  'odoo-customization': 'Odoo customization',
+  'odoo-support': 'Odoo support and maintenance',
+  'hire-odoo-developer': 'hiring an Odoo developer',
+  'odoo-integration': 'an Odoo integration',
+  'odoo-migration': 'an Odoo migration or upgrade',
+  'odoo-consultancy': 'Odoo consultancy',
+  'odoo-training': 'Odoo training',
+  'odoo-saas-hosting': 'Odoo SaaS and hosting',
+  'odoo-audit': 'an Odoo health audit',
+  'odoo-localization': 'Odoo localization',
+  'odoo-e-invoicing': 'e-invoicing and clearance',
+  'odoo-payroll-setup': 'a payroll setup',
+  'odoo-pos-deployment': 'a POS deployment',
+  'odoo-ecommerce': 'an Odoo e-commerce build',
+};
+const costSubject = COST_SHAPE[service.slug] || service.title;
+
 const metaDescription = `${heading}. ${detail?.lede || service.tagline}`.slice(0, 300);
 
 /* ── What makes this service harder or cheaper in THIS market ───────
@@ -82,11 +106,35 @@ const shipNonNative = nonNative(cd?.shipping);
 const payNative = native(cd?.payments);
 const shipNative = native(cd?.shipping);
 
+/* `scheme` is prose, not a label, and six of the eighteen markets use it to say
+   there is no scheme at all: "None. Kuwait has no e-invoicing scheme.",
+   "No named scheme yet. ...", "No national e-invoicing scheme. ...". Dropped
+   into the sentence below, Kuwait published "Kuwait runs None. Kuwait has no
+   e-invoicing scheme.. That is configuration and testing work inside the
+   build", doubled full stop and all, on every service page for that market.
+
+   Qatar is the same case in different words: an "Electronic invoicing law
+   (draft)" with no branded scheme, so it is treated as no mandate too. */
+const rawScheme = cd?.einvoicing?.scheme?.trim() || '';
+const hasMandate =
+  Boolean(rawScheme) &&
+  !/^(none|no named|no national)\b/i.test(rawScheme) &&
+  !/\(draft\)/i.test(rawScheme);
+
+/* Even where a mandate exists the value runs to a full clause, so the leading
+   sentence is taken and its trailing stop removed rather than concatenated. */
+const schemeName = rawScheme.split(/\.\s/)[0].replace(/\.$/, '');
+
 const drivers: { label: string; body: string }[] = [];
-if (cd?.einvoicing?.scheme) {
+if (hasMandate) {
   drivers.push({
     label: 'E-invoicing',
-    body: `${plainName} runs ${cd.einvoicing.scheme}. That is configuration and testing work inside the build, not an afterthought, and it is the item most often left out of a quote.`,
+    body: `${plainName} runs ${schemeName}. That is configuration and testing work inside the build, not an afterthought, and it is the item most often left out of a quote.`,
+  });
+} else if (rawScheme) {
+  drivers.push({
+    label: 'E-invoicing',
+    body: `${plainName} has no e-invoicing mandate to clear today. That lowers the build cost now, and it makes the invoicing design worth getting right anyway, because every market on this list that has since mandated one gave businesses months rather than years to comply.`,
   });
 }
 if (payNonNative.length > 0) {
@@ -206,7 +254,7 @@ const schema = [
 
           {drivers.length > 0 && (
             <div>
-              <h2 class="h3">What changes the cost of {service.title.toLowerCase()} in {plainName}</h2>
+              <h2 class="h3">What changes the cost of {costSubject} in {plainName}</h2>
               <p class="mt-3 text-ink-700">
                 The delivery method is the same everywhere. What moves the number is what this market
                 demands of the system, and how much of that Odoo already covers.

@@ -1,0 +1,161 @@
+{
+  "metaDescription": "Odoo Planning in practice: roles, shift templates, Auto Plan, open shifts and portal publishing, plus the Enterprise limits and what the roster will not do.",
+  "intro": [
+    "Odoo Planning builds a shift roster and puts it in front of the people who have to work it. You draw shifts on a Gantt grid grouped by employee, by role or by project, copy the previous week, repeat a pattern forward, then publish. Publishing emails each employee a personal link to their own shifts, and a shift left without a name on it can be published as open for anyone holding that role to claim.",
+    "The record behind the grid is small: a start, an end, a role, an optional employee, a quantity of allocated hours, and a link to a project task or a sales order line when those apps are installed. Everything else is convention that you impose. That is why two Planning rollouts on the same Odoo version can feel like different products, and why the design work sits in the role list and the resource calendars rather than in the app itself.",
+    "Planning is an Odoo Enterprise app with no Community equivalent, and it is neither a timeclock nor a pay engine. A shift records intent. Attendances record what happened. Payroll decides what it cost. Most disappointing Planning projects expected one of the other three from it. The ones that work treat the roster as a cover plan and reconcile it against attendance data every week."
+  ],
+  "whoFor": [
+    "Retail, hospitality, clinics, security and facilities operations where a named role has to be covered at a specific hour, and an unfilled slot is an operational problem before it is a payroll problem.",
+    "Employers with far more hourly staff than Odoo user licences, where the roster has to reach people who will never open the backend.",
+    "Service firms that sell hours and need to know, before the week starts, whether the people exist to deliver what has already been sold.",
+    "Contract operations where a client agreement sets minimum cover and you need a dated, published record of who was rostered against it.",
+    "Not for offices on a fixed weekly schedule, where the working schedule on the employee record already answers the question. Not for production scheduling, which belongs to work centres in Manufacturing. Not for Community only budgets."
+  ],
+  "capabilities": [
+    {
+      "title": "Roles, not job titles",
+      "body": "Assignment runs on planning roles: barista, triage nurse, site supervisor. Each employee carries one default role and a list of others they can cover, and the Gantt groups by role so a gap shows as an empty band rather than a missing name. Auto Plan and open shifts both match on that list and nothing else. Skills recorded in the Employees app are not used for matching, so any capability that has to drive who gets a shift must exist as a role."
+    },
+    {
+      "title": "Building the week without redrawing it",
+      "body": "Shift templates carry a start time, a duration and a role, so placing a standard pattern is two clicks rather than a form. Copying the previous week rebuilds a stable roster in one action. Recurring shifts repeat forward inside a rolling window whose length is a company setting in Planning, not an unlimited series, so a shift twelve months out may simply not exist yet. Auto Plan then fills what is still open against roles, working schedules and approved time off."
+    },
+    {
+      "title": "Publishing, and the gap it creates",
+      "body": "A new shift is draft, and draft means invisible to the employee. Publishing sends the roster out and gives every employee a personal link to their own shifts, so an hourly workforce reads its rota without a paid user licence. The distance between the planner screen and the published version is deliberate, and it is also the single biggest source of disputes: an unpublished correction is a correction nobody has been told about."
+    },
+    {
+      "title": "Open shifts and self assignment",
+      "body": "A shift can carry a role and no employee. Published as open, it is offered to everyone holding that role and can be taken from the portal, which covers most short notice gaps without a phone tree. A separate setting controls whether employees may hand a shift back and how many days before the start they can do it. Behaviour around taking and returning shifts has changed between releases, so test it on the version you are deploying rather than on a demo of a different one."
+    },
+    {
+      "title": "Conflicts and availability, flagged not blocked",
+      "body": "The resource calendar on each employee draws the availability background, and approved leave blocks those hours. Odoo then flags a shift that collides with leave, with another shift or with the employee's own working hours. It flags. It does not refuse the save. Rest periods between shifts, weekly caps and consecutive day limits are not checked at all, so any hard rule you would have to defend to an inspector belongs in a report you run before publication."
+    },
+    {
+      "title": "Allocated hours, part cover and reporting",
+      "body": "A shift computes allocated hours from its start, its end and the employee's calendar, and an allocation percentage lets one person cover a slot partially rather than wholly. Those hours are what the reporting views total, by role, by employee or by project, over any period. With Project and Timesheets installed, planned hours sit beside recorded hours on the same task. With Sales installed, hours sold on a service order line can be scheduled as shifts against that line."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Cut the role list before anything else",
+      "body": "The first workshop usually reduces a proposed list of forty roles to eight or ten. A role answers exactly one question: can this person cover this slot. Two employees doing the same work share a role even where their contracts, grades or pay differ, because pay is not a Planning concern. Every extra role fragments the open shift pool and weakens Auto Plan, since an open shift only ever reaches employees holding that exact role."
+    },
+    {
+      "title": "Working schedules per real pattern, not per company",
+      "body": "Resource calendars drive availability, conflict flags, allocated hours and Auto Plan. One company calendar breaks the moment you have a site on a Friday and Saturday weekend, a split shift operation or a seasonal change of hours. Build one calendar per genuine working pattern, set the time zone on the calendar and on the employee, and load public holidays as global time off so nobody is rostered on a closed day."
+    },
+    {
+      "title": "Finish the employee records before the first publish",
+      "body": "Publication depends on the data most projects leave until last. An employee with no work email receives nothing and never finds out. An employee with the wrong time zone reads correct shifts at the wrong clock time. An employee with no default role is invisible to Auto Plan and to every open shift. Audit those three fields plus the calendar across the whole population before the first publish, not after the first complaint."
+    },
+    {
+      "title": "Decide the publication rhythm and restrict the right",
+      "body": "Publication is the contract with the team, so it needs a stated rule: rosters out by Thursday for the following week, changes inside 48 hours only by the duty manager, open shifts released at publication. Odoo enforces none of that. Decide who holds the publish right, restrict Planning access accordingly before go live, and treat it as part of the design rather than a line in the training deck."
+    },
+    {
+      "title": "Import the existing roster in UTC or not at all",
+      "body": "Historic rosters from a spreadsheet or an older workforce tool import into planning slots, but Odoo stores every datetime in UTC. A file exported in local time loads each shift offset by the time zone difference, quietly, with no error raised. Convert first, load employees, roles and calendars before the shifts, then import a single week and reconcile it against the source before committing to the full load."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Planning treated as attendance evidence",
+      "body": "A published shift is a plan. It does not prove anyone turned up, and on its own it is weak evidence in a labour inspection or a client claim about cover. Where cover is contractual, pair Planning with Attendances so a check in is recorded against the rostered slot, and report the difference weekly. Reconstructing that gap six months later during a dispute is a different and much worse exercise."
+    },
+    {
+      "title": "Expecting cover to be calculated from demand",
+      "body": "Odoo has no demand model. It will not turn a sales forecast, a footfall curve or a ticket volume into required headcount per hour. Planners place shifts by judgement, or copy a week that worked. If required cover has to be computed, that is a report or an external calculation feeding a target the planner works to, and it needs to be scoped and priced as a build rather than assumed to be in the box."
+    },
+    {
+      "title": "Silent changes after publication",
+      "body": "Two different things happen after you publish, and both are quiet. A shift created afterwards stays draft, so nobody sees it at all. A published shift you edit does update on the employee's link, immediately, with no fresh notification to say it moved. The manager who reworks Saturday afternoon and closes the screen has therefore either told nobody or changed somebody's day without a word. Make republication part of the change routine, and when somebody says they were never told, check the published state rather than the Gantt."
+    },
+    {
+      "title": "Copying a week that contained exceptions",
+      "body": "Copying the previous week is the fastest way to build a roster and the fastest way to propagate last week's cover for an absence, a one off event or an overstaffed Saturday. Auto Plan will not undo any of it, because those shifts are assigned and therefore not open. Copy from a known good template week rather than from whatever last week turned into, and scan for shifts sitting on top of approved leave before you publish."
+    },
+    {
+      "title": "No premium, overtime or award logic",
+      "body": "Planning holds hours, not money. It does not know that a shift crossing midnight, falling on a rest day or breaching a weekly cap should be paid differently, and it will not stop you rostering it. Rate interpretation belongs in Payroll or in a country specific rules layer. Buyers who assume the roster prices itself find the gap at the first month end, which is the most expensive moment to find it."
+    }
+  ],
+  "worksWith": [
+    "Employees, which holds the people, their default and secondary roles, and the working schedule every shift is measured against",
+    "Time Off, so approved leave blocks assignment and sits visible behind the Gantt instead of being remembered",
+    "Attendances, for the check in and check out data that turns a plan into a record of what happened",
+    "Project and Timesheets, where a shift attaches to a task and planned hours sit beside recorded hours",
+    "Sales, where hours sold on a service order line can be scheduled as shifts against that line",
+    "Payroll, where the employment contract decides whether work entries come from the working schedule, from attendances or from the roster"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Saudi labour law caps eight hours a day and 48 a week, and cuts Muslim employees to six hours a day through Ramadan, on Hijri dates that move about eleven days each year. That needs a second resource calendar switched on for the period, not a manual redraw of the Gantt. The weekend is Friday and Saturday, which Odoo's default calendar does not assume, and Saudization targets make cover a nationality question Planning does not model at all."
+    },
+    {
+      "country": "uae",
+      "note": "Federal Decree-Law 33 of 2021 recognises part time and temporary work permits, so one person can legitimately sit on two employer rosters and neither Odoo database knows about the other. Ramadan removes two hours from the working day. Private sector weekend patterns still vary by employer after the 2022 public sector move to Saturday and Sunday, so build a working schedule per site rather than one company default."
+    },
+    {
+      "country": "qatar",
+      "note": "Outdoor work is prohibited during a defined midday window from the start of June to the middle of September, so summer rosters for site and facilities crews are built around a blocked band rather than trimmed week by week. Encode it as a seasonal calendar and move employees onto it, because Auto Plan will fill a prohibited hour without hesitation if the calendar says the hour is available."
+    },
+    {
+      "country": "bahrain",
+      "note": "Private sector wages run through the LMRA portal with a named wages responsible person and separate maker and checker roles, so pay approval sits outside Odoo entirely and works from contract data rather than from published shifts. Bahrain also restricts outdoor midday work across July and August, a shorter window than Qatar's, which matters to any group rostering crews in both countries from one database."
+    },
+    {
+      "country": "india",
+      "note": "The Factories Act caps the working day and week and requires a rest interval after a set stretch of hours, while state Shops and Establishments rules add their own limits on top. A group operating across several states therefore needs more than one working schedule and cannot copy one site's pattern to another. Several states restrict night shifts for women or attach conditions such as transport and written consent, which is a rostering rule Odoo will not enforce for you."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "The Working Time Regulations set a 48 hour average week an individual can opt out of in writing, and 11 consecutive hours of daily rest they cannot. Odoo will accept a nine hour gap between two shifts without comment, so that check lives in the resource calendar or in a weekly report run before publication. Keep the signed opt outs somewhere they can be produced, because the roster itself evidences nothing about consent."
+    },
+    {
+      "country": "germany",
+      "note": "The Arbeitszeitgesetz caps the day at eight hours, extendable to ten where the average returns to eight within six months, a rolling check no standard Odoo view performs. Shift start and end times fall under works council co-determination, so roster templates need Betriebsrat agreement before go live rather than after the first publication. The 2022 time recording obligation usually pulls Attendances into scope alongside Planning."
+    },
+    {
+      "country": "france",
+      "note": "The 35 hour week and annualised working time mean a roster is measured against a reference period rather than a single week, so a compliant week can still break the year. Part time contracts carry a contractual minimum and a notice period before the schedule changes, commonly seven days, which makes the date you publish on legally relevant rather than administrative."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Planning available in Community?",
+      "a": "No. Planning is Enterprise, on Odoo Online, Odoo.sh or a self hosted Enterprise licence, and there is no Community substitute. Community teams generally fall back to calendar events or project tasks, which gives them a grid and nothing else: no role matching, no open shifts, no draft and published states, no personal link for staff who hold no user account."
+    },
+    {
+      "q": "What is the difference between Planning, Attendances and Timesheets?",
+      "a": "Planning says who should work when. Attendances records who checked in and out. Timesheets records what the hours were spent on and what is billable. Three apps, three separate records, and none of them stands in for another. The value sits in the reconciliation: rostered against attended tells you whether cover held, attended against timesheeted tells you what the paid hours produced."
+    },
+    {
+      "q": "How do we handle a shift swap between two employees?",
+      "a": "There is no two party swap in Odoo. The supported route is that one employee hands the shift back, it returns to the open pool, and anyone holding the role claims it, who may or may not be the colleague who agreed to take it. Planning has a setting for whether self unassignment is allowed at all, with a deadline in days before the start. If your rule is that two named people agree and a supervisor signs it off, that approval trail is a build, not a configuration."
+    },
+    {
+      "q": "Can Odoo build the roster automatically?",
+      "a": "Auto Plan assigns existing open shifts to employees who hold the role, fall inside their working schedule and are not on approved leave. It is an assignment helper, not an optimiser. It does not create the shifts, size the week, spread unpopular slots fairly across a month or cost the outcome, and it cannot rescue a roster built on a role list nobody cut down."
+    },
+    {
+      "q": "Can rostered shifts feed payroll?",
+      "a": "Only where Payroll is in scope and a payroll localization exists for that country. The employment contract carries the work entry source, which decides whether work entries are generated from the working schedule, from attendances or from Planning, and that choice has to be settled before the first payroll run rather than corrected after it. Without a localization, pay input comes from an attendance export and manual rules."
+    },
+    {
+      "q": "Can we roster people who are not on payroll?",
+      "a": "Only through an employee record. Shifts are assigned to employees, so an agency worker or a subcontractor you roster needs one, though an employee record consumes no user licence and does not commit you to running payroll for them. Archive leavers rather than deleting them, because their past shifts are your record of who was on site."
+    },
+    {
+      "q": "What happens if we change someone's working schedule after shifts are published?",
+      "a": "Published shifts keep the start and end times they were saved with, so nothing moves on its own. What changes is the availability background, the conflict flags and what Auto Plan does next time. That is usually the behaviour you want, but it means a move from full time to part time is not a roster change, and somebody still has to review the weeks already published."
+    },
+    {
+      "q": "Does Planning work across sites in different countries?",
+      "a": "Yes, with care. A shift carries a company, an employee can exist in more than one, and every datetime is stored in UTC and rendered in the reader's time zone. Two managers in different countries see different clock times for the same shift and both are correct. The failure mode is rarely the screen. It is imports, exports and reports written by somebody who assumed the stored value was local time."
+    }
+  ]
+}

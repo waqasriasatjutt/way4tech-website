@@ -1,0 +1,180 @@
+{
+  "metaDescription": "Odoo Accounting: where Community stops and Enterprise begins, the chart of accounts decision you cannot reverse, opening balances and country e-invoicing.",
+  "intro": [
+    "Odoo ships two different products under one name. Community gives you Invoicing: a chart of accounts, journals, taxes, customer invoices, vendor bills, payments and a real double entry ledger behind all of it. The Enterprise Accounting app adds what a finance team actually closes a month with, including bank feed synchronisation, the reconciliation workspace, the dynamic financial reports, fixed assets, deferred entries and consolidation. Most buyers meet that line halfway through a demo.",
+    "The software is rarely what makes these projects hard. Three decisions taken in the first fortnight set the tone: which localisation package is installed, how documents are numbered, and how the opening balance crosses over. The first is close to irreversible, because Odoo refuses to change the chart of accounts package once a single journal entry exists in the company. The other two surface months later as an ageing report nobody trusts.",
+    "The rest of the work belongs to the tax authority, and the shape of it varies more than people expect. Saudi Arabia, India, Egypt and Turkey run clearance or near real time reporting, so an invoice is not final until a government platform or a licensed integrator has accepted the payload. France and Germany run a network model instead, where structured documents in EN 16931 formats move between registered platforms. Both models put master data on the critical path. Missing tax registration numbers, item classification codes and unit of measure codes stop being tidiness problems and start rejecting live invoices in week one."
+  ],
+  "whoFor": [
+    "Groups running several legal entities, currencies or branches that need one ledger and a consolidated view rather than four spreadsheets merged by hand.",
+    "Companies inside a clearance e-invoicing regime, where the ERP has to hold a conversation with the tax authority for every invoice it raises.",
+    "Distributors and manufacturers who want stock valuation, landed cost and cost of goods sold posting from the same system that raises the invoice.",
+    "Services firms billing from timesheets that need a profit and loss per project or per contract, not only per company.",
+    "Not for a company raising twenty invoices a month and handing everything to an external accountant. Community Invoicing plus a periodic export is enough, and the licence saving is real.",
+    "Not for regulated banks or insurers, whose statutory sub ledgers and supervisory returns Odoo does not model and should not be forced to."
+  ],
+  "capabilities": [
+    {
+      "title": "Ledger, journals and posting control",
+      "body": "Every document lands as a journal entry, so sales, purchase, bank, cash and miscellaneous journals are the real structure of the system. Draft entries can be edited, posted ones cannot without leaving a reversal behind, and a credit note is a separate document rather than a silent correction. There are three lock dates: journal entries, tax returns, and one that applies to everyone including advisers. Odoo 18 added a hard lock date that cannot be moved backwards once set, and an audit trail option that records changes made to posted entries."
+    },
+    {
+      "title": "Receivables and collections",
+      "body": "Payment terms carry multiple instalments, an early settlement discount and a due date computed per line, so thirty percent up front with the balance at sixty days is one term rather than two invoices. Partial payments reconcile against the open item and the residual stays visible on the partner ledger. Follow up levels, which chase overdue customers on a schedule with escalating letters and a promised payment date, are Enterprise. Community teams export the aged receivable and chase from a spreadsheet, which is workable until the ledger passes a few hundred open items."
+    },
+    {
+      "title": "Vendor bills and payment runs",
+      "body": "A bill can be checked against the purchase order and the goods receipt before posting, and the purchase bill control policy decides if the bill is raised against ordered or against received quantities. That single setting causes more supplier disputes than any other. Payments group into runs by journal and date, with the outstanding payments account holding the money until the bank line arrives and clears it. Enterprise adds invoice digitisation, which reads a supplier PDF into a draft bill and consumes IAP credits per document."
+    },
+    {
+      "title": "Bank, cash and reconciliation",
+      "body": "Enterprise connects to bank feeds through the supported aggregation providers and drops statement lines into the reconciliation workspace, where matching rules propose the invoice, the partner and any write off. Community reconciles from journal items and imported statement files in CSV, OFX or QIF, which works but costs more clicks per line. Either way the outstanding receipts and outstanding payments accounts have to clear at period end. A balance that keeps growing in those two accounts is the earliest sign reconciliation has quietly stopped."
+    },
+    {
+      "title": "Tax engine, fiscal positions and returns",
+      "body": "Taxes are objects with their own accounts, tax grids and rounding behaviour, not a percentage typed on a line. Fiscal positions swap taxes and accounts automatically based on the customer, which is how reverse charge, export zero rating and free zone treatment get applied without asking a salesperson to remember. The report reads from the grids rather than from the rate, so a tax mapped to the wrong grid gives you books that balance and a return that is wrong. The tax report structure ships with the localisation, but the report viewer and the automated tax closing entry belong to the Enterprise reporting app."
+    },
+    {
+      "title": "Analytic distribution and cost centres",
+      "body": "Odoo 17 replaced analytic tags with analytic plans and a distribution field on the journal item, so one line can be split by percentage across a project, a department and a cost centre at the same time. Distribution models apply a default automatically based on the partner, the product or the account, which is the only way this survives contact with a busy purchase ledger. Analytic entries sit alongside the general ledger rather than inside it, so a cost centre report can never break the trial balance. Design the plans before go live, because retrofitting distribution means editing posted journal items one at a time."
+    },
+    {
+      "title": "Multi-company, multi-currency and close",
+      "body": "One database can hold several companies with their own charts, currencies and document numbering, and the inter company rules raise the mirror document on the other side when one entity sells to another. Foreign currency invoices keep the original amount and the rate at the invoice date, with an unrealised gain and loss adjustment produced at close. Fixed assets with depreciation boards, deferred revenue and expense entries, and consolidation are Enterprise only. An asset register is one of the more common reasons a Community plan turns into an Enterprise one halfway through the build."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Install the localisation before anything else",
+      "body": "The localisation package brings the chart of accounts, the tax codes, the tax report structure and, in some countries, the e-invoicing module. It installs only while the company has no journal entries. Get it wrong and the fix is a new database, not a correction. Read what the package actually contains before committing to a date, because plenty of countries ship a chart of accounts and a tax set with no e-invoicing at all, and that gap is a build rather than a setting."
+    },
+    {
+      "title": "Design numbering before the first invoice",
+      "body": "Odoo derives the next number from the last posted entry in the same journal, so the sequence follows the data rather than a field you can edit later. Decide per legal entity, per branch and per document type whether the series resets annually or monthly, and whether the tax authority requires an unbroken run with no gaps. Changing the format mid year triggers a resequencing prompt that will renumber posted documents if somebody clicks through it without reading."
+    },
+    {
+      "title": "Map taxes to the actual return boxes",
+      "body": "Configuring a fifteen percent tax takes a minute. Mapping it to the grid that feeds the right line of the local return, with separate treatment for imports, exempt supplies and reverse charge, is the actual work. Build the fiscal positions at the same time and attach them to customer and supplier records rather than leaving the choice to whoever raises the order. Then reconcile a full month of output against a manually prepared return before anyone files from Odoo."
+    },
+    {
+      "title": "Load open items, not a trial balance",
+      "body": "Balance sheet accounts come across as one opening journal entry per company and per currency. Receivables and payables have to arrive as individual open invoices and bills carrying their original dates, currencies and rates, so ageing and reconciliation work from day one. A lump sum in the receivable account leaves the first customer payment with nothing to match against. Fixed assets load at cost with accumulated depreciation to date, never with a fresh useful life."
+    },
+    {
+      "title": "Settle inventory valuation with operations first",
+      "body": "The costing method, standard, average or FIFO, and the choice between manual and automated valuation decide whether stock movements touch the ledger at all. Changing costing method after transactions exist generates revaluation entries somebody then has to explain to an auditor. The Anglo Saxon setting separately decides whether cost of goods sold posts at delivery through an interim account or at invoice, which moves gross margin between months in every report the board reads."
+    },
+    {
+      "title": "Bank feeds, statement import and matching rules",
+      "body": "Connect the bank in a test company first and look at what actually arrives, because feed quality varies by institution far more than by country and some supply nothing beyond a date, an amount and a narrative. Where no feed exists, agree the statement file format with the bank in writing before go live. Then build matching rules for the lines that repeat every week: bank charges, card settlement batches, payroll transfers and standing collections from the largest customers."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "The chart of accounts nobody can change later",
+      "body": "Teams copy the legacy chart account by account, then discover the localisation chart was the one wired to the tax report and the statutory layouts. Because the package locks after the first journal entry, the correction is a rebuild. Start from the country chart, extend it with the analytic plans and the few extra codes the business genuinely needs, and resist the request to reproduce a numbering scheme somebody invented in a different system fifteen years ago."
+    },
+    {
+      "title": "Opening balances that cannot be reconciled",
+      "body": "The most common migration shortcut is a single receivable balance and a single payable balance in the opening entry. It ties out to the trial balance, so it passes review, and then the first customer payment arrives with nothing to match. Ageing is blank, collections stall, and somebody rebuilds the sub ledger by hand during month one. Load open items individually, in original currency, and reconcile the total back to the opening entry before go live."
+    },
+    {
+      "title": "Rounding differences against the customer purchase order",
+      "body": "Odoo rounds tax per line or globally on the document, and the choice is a company level setting. Pick the wrong one and invoices differ from the customer purchase order by a cent or two, which sounds harmless until a large buyer rejects them automatically. In clearance countries the same mismatch is refused by the tax platform. Fix it during configuration and test with real quantities and awkward decimals, not with round numbers."
+    },
+    {
+      "title": "Treating e-invoicing as a go live day switch",
+      "body": "Clearance platforms validate content, not intent. Tax registration numbers, buyer identifiers, item classification codes, unit of measure codes and address fields all have to be correct on every partner and product before the first submission. That is a data cleanup exercise across the master files, usually the largest single task in the plan, and it cannot start in the week of go live. Rehearse against the authority test environment with real records rather than demo data."
+    },
+    {
+      "title": "Currency rates that stopped updating in testing",
+      "body": "Multi-currency gets switched on, three rates are typed in during configuration, and nobody touches the table again. Every foreign invoice after that posts at a stale rate, the unrealised gain and loss adjustment is meaningless, and the difference lands wherever the setup wizard put it. Turn on automatic rate updates from a provider your auditor will accept, confirm the scheduled action is actually running on the live database, and check the rate date convention matches how your accountants have always translated balances."
+    },
+    {
+      "title": "No owner for the lock date",
+      "body": "Odoo accepts a back dated entry into a period the accountant considers closed unless a lock date says otherwise. On live systems this is how a filed return stops matching the ledger. Assign the lock date to a named person, move it as a step in the close checklist, and understand before you set it that the hard lock date introduced in Odoo 18 cannot be rolled back. Decide who may post into a previous period while you are still in testing."
+    }
+  ],
+  "worksWith": [
+    "Sales and Subscriptions, where the invoicing policy on the product decides whether revenue posts on order or on delivery",
+    "Purchase and Inventory, for matching the vendor bill against the purchase order and the goods receipt before it posts",
+    "Inventory valuation, where the Anglo Saxon setting decides whether cost of goods sold posts at delivery or at invoice",
+    "Expenses, turning employee claims into payable documents settled inside the same payment run",
+    "Payroll, an Enterprise app, which posts one salary journal entry per period rather than a stack of individual bills",
+    "Project and Timesheets, through analytic distribution, for a profit and loss per job instead of only per company",
+    "Payment providers such as Stripe, Adyen, Razorpay and Mollie, which register the payment against the invoice and then need their payouts reconciled to the bank line",
+    "Documents and invoice digitisation in Enterprise, which turns a supplier PDF into a draft bill using IAP credits"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA Phase 2 is clearance for standard tax invoices and reporting within twenty four hours for simplified ones. Odoo covers it in the Saudi e-invoicing module, which builds the XML, the QR code and the cryptographic stamp and stores the ZATCA response on the invoice. Onboarding runs per solution unit: a compliance certificate first, then a production one, repeated for every branch or device registered. Waves are notified roughly six months ahead and the specification is versioned, so budget for retesting after each Odoo upgrade."
+    },
+    {
+      "country": "uae",
+      "note": "The UAE localisation gives a chart of accounts at five percent VAT with zero rated, exempt, import and reverse charge treatments, plus a VAT report laid out the way the FTA expects. There is no EmaraTax submission, so filing stays a transcription job. The national e-invoicing programme uses a five corner model with accredited service providers, which standard Odoo does not ship, so treat that as a connector project with its own timeline. Corporate tax at nine percent above AED 375,000 needs its own account mapping, and free zone customers depend entirely on the fiscal position being right."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing is a clearance model. Invoice data goes to the FBR system through PRAL or a licensed integrator as JSON, and the returned FBR invoice number with a seven by seven millimetre QR code has to print on the document. Odoo ships a Pakistani chart of accounts and a sales tax setup and nothing beyond that, so the integration, the token handling and the retry queue for rejected submissions are all build work. Provincial sales tax on services adds a second set of tax codes the standard package does not carry."
+    },
+    {
+      "country": "india",
+      "note": "The Indian localisation covers GST with GSTR-1, GSTR-2B and GSTR-3B, e-invoicing with IRN and signed QR code, and e-way bills raised from sales documents and delivery orders. Two things bite. The connection runs through a GST Suvidha Provider, so obtaining and testing those credentials is a project task with its own lead time. And the reporting window that applies to larger taxpayers means Odoo will happily post a back dated invoice that the portal then refuses to register."
+    },
+    {
+      "country": "turkey",
+      "note": "A document goes out as e-Fatura when the buyer is registered in the system and as e-Arsiv when it is not, and a company inside scope issues no paper invoices at all. Odoo routes documents through Nilvera as the private integrator, producing the XML and syncing status back onto the invoice record. The turnover threshold that pulls companies into scope is revised most years, so a business outside it today can be inside it at the next announcement, and the incoming purchase invoice side needs configuring as carefully as the outgoing one."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "There is no B2B mandate. The live obligation is Making Tax Digital for VAT, filed from compatible software, and the UK reporting module that talks to the HMRC API is part of Enterprise, so a Community deployment needs bridging software or a manual return. Selling to the public sector is a separate matter, because contracting authorities have to be able to receive EN 16931 invoices and NHS suppliers are expected to exchange over Peppol. Making Tax Digital for Income Tax began phasing in during April 2026."
+    },
+    {
+      "country": "germany",
+      "note": "German books run on the DATEV charts SKR03 or SKR04. Odoo supports both and installs SKR03 by default, and the package cannot be swapped once an entry exists, so this is a week one conversation with the Steuerberater rather than a later refinement. Since January 2025 every German business has had to be able to receive a structured e-invoice, and Odoo reads and writes the EN 16931 formats, XRechnung and the Factur-X style hybrid. Issuing becomes mandatory in stages from 2027. The DATEV export, split into documents and journal entries, sits in the Enterprise reports."
+    },
+    {
+      "country": "france",
+      "note": "French companies are required to be able to receive electronic invoices, with the obligation to issue phased by company size through 2026 and 2027. Exchange runs between registered partner platforms rather than through one government portal, so decide which platform you will transmit through, because that choice sits beside the ERP rather than inside it. Odoo generates Factur-X and UBL and supports Chorus Pro for public sector customers. What delays go lives is master data: a valid SIREN on every business partner, and delivery addresses recorded separately where they differ from the billing address."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "What actually changes if we move from Community to Enterprise?",
+      "a": "Community posts a full double entry ledger with taxes, journals, invoices, bills and payments, and plenty of companies run it that way for years. Enterprise adds bank feed synchronisation, the reconciliation workspace, the dynamic financial reports, fixed assets, deferred entries, follow up levels, the tax closing entry and consolidation. The database upgrades in place, so it is not a reimplementation. In practice the move is forced by one of three things: an asset register, a close that has to be repeatable every month, or a statutory report that exists only in the Enterprise localisation."
+    },
+    {
+      "q": "Who needs a paid user in Odoo?",
+      "a": "Enterprise is priced per internal user across the whole database rather than per application, so you cannot buy Accounting for the finance team and leave the rest of the company out. Portal users, meaning customers and suppliers viewing their own documents through the website, are free. That changes the arithmetic on approvals: an expense claim or a timesheet sign off from somebody who logs in twice a month still costs a full seat, which is worth modelling before you size the subscription."
+    },
+    {
+      "q": "Can we change the chart of accounts after go live?",
+      "a": "You can add, rename and deactivate individual accounts whenever you like. You cannot change the installed localisation package once a journal entry exists in that company. The restriction is deliberate, because the package wires the tax report and the statutory layouts to specific account codes. If the wrong package went in, the practical route is a new database, so verify the choice before anybody raises a test invoice that then gets posted."
+    },
+    {
+      "q": "Can we keep our existing invoice numbers?",
+      "a": "Historic numbers come across as a reference on the migrated document, which is what you want for audit trails and customer queries. Live numbering is a separate question. Odoo builds the next number from the last posted entry in the journal, so you can start a new series at any value by setting the first entry manually and then leaving it alone. What does not work is running two overlapping series in one journal, or reusing a number the tax authority has already accepted."
+    },
+    {
+      "q": "How much history should we migrate?",
+      "a": "Open items always: unpaid customer invoices, unpaid supplier bills, unreconciled bank lines, and the asset register with depreciation to date. Closed history usually not. Reloading three years of posted invoices as live documents creates numbering conflicts and tax report noise for data nobody will ever transact against. Keep the legacy system readable for the retention period and load prior year comparatives as summarised journal entries instead."
+    },
+    {
+      "q": "Does Odoo handle our country e-invoicing natively?",
+      "a": "It varies by country and it changes every year. Saudi Arabia, India, Egypt and Turkey have working integrations in the standard localisations. France, Germany and the wider EN 16931 world are covered for the document formats themselves. The UAE, Oman, Qatar, Kuwait and Pakistan have nothing in standard Odoo, so a mandate there means a connector. Check the specific module and the version it targets before committing to a date, because a chart of accounts for a country tells you nothing about its e-invoicing support."
+    },
+    {
+      "q": "Should each legal entity be a separate database?",
+      "a": "One database with several companies is the default answer when entities share customers, products or staff, because inter company documents, consolidated reporting and shared master data all work out of the box. Separate databases make sense when the entities are unrelated, when data residency rules force it, or when one has to stay on a different Odoo version. Multi company brings record rule complexity, so plan access rights and default company behaviour early rather than after the first mispost."
+    },
+    {
+      "q": "Can we go live mid year rather than at year end?",
+      "a": "Yes, and it is common. The opening balance is taken at the close of the last completed period rather than at a fiscal year boundary. Year to date comparatives load as summarised monthly journal entries so the profit and loss reads correctly for the full year. A mid year cutover also keeps the annual close and the migration out of the same fortnight, which matters more than the tidiness of a January start."
+    },
+    {
+      "q": "Should we run Odoo in parallel with the old system?",
+      "a": "Run one month in parallel if the finance team can staff it, and no longer. Parallel running catches tax mapping and rounding errors that no test script finds, because it compares real transactions rather than invented ones. Beyond a month it costs more than it discovers, and the double keying makes both sets of books drift apart. Agree in advance which reports have to reconcile and what variance you will accept before signing off."
+    }
+  ]
+}

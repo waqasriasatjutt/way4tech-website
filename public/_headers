@@ -1,0 +1,20 @@
+# Cloudflare Pages response headers.
+#
+# The site answers on three hostnames: the apex, www, and the Pages project's own
+# way4tech-website.pages.dev. All three returned 200 with index,follow, so the
+# preview host is a complete, indexable copy of the production site competing
+# with it for the same brand queries.
+#
+# The rule below is scoped to the absolute preview URL on purpose. A bare /*
+# would apply to every host and would noindex the real site. After deploying,
+# confirm both of these:
+#   curl -sSI https://way4tech-website.pages.dev/ | grep -i x-robots-tag  -> noindex
+#   curl -sSI https://way4tech.com/ | grep -i x-robots-tag                -> nothing
+#
+# This cannot live in robots.txt: that file is served byte-identical on all
+# three hostnames, so a Disallow there would block the apex too.
+#
+# www is NOT handled here. Redirecting it to the apex has to be a Redirect Rule
+# in the Cloudflare dashboard, as public/_redirects already notes.
+https://way4tech-website.pages.dev/*
+  X-Robots-Tag: noindex, nofollow

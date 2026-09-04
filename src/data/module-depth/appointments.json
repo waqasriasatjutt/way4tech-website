@@ -1,0 +1,164 @@
+{
+ "metaDescription": "Odoo Appointments in practice: why it is Enterprise only, how slots are generated, users versus resources and the licence bill, deposits and sync traps.",
+ "intro": [
+  "Odoo Appointments publishes a booking page, checks each proposed time against the calendars your staff already work in, and writes a confirmed calendar event when a customer takes a slot. That event is an ordinary meeting record, so Calendar, CRM, Sales and Employees all see the same booking. Reception stops being the availability engine, and the appointment arrives with the contact, the reason for the visit and, if you configure it, the money already taken.",
+  "The licence position comes first, because it decides the whole design. Calendar is Community and free. Appointments, the public booking page built on top of Calendar, is Enterprise only. A Community database can record meetings and sync them with Google or Outlook, but it cannot publish bookable slots without a third-party module or an external tool writing meetings into Odoo. Any staff member a customer can pick by name is an internal user, and Enterprise is priced per internal user.",
+  "Most of the effort sits outside the booking form: the weekly availability grid behind each appointment type, the calendar sync that stops a private lunch being sold as a consultation, the product and tax behind a deposit, and the questions asked at the point of booking. Get those wrong and the page looks perfectly correct while the diary fills with slots nobody can honour."
+ ],
+ "whoFor": [
+  "Clinics, dental practices and physiotherapy rooms where the diary is the business and the practitioner list changes every few months.",
+  "Salons, spas and aesthetics businesses that want a deposit taken at booking rather than a no-show chased afterwards.",
+  "Professional services firms publishing a discovery call link that should also raise or advance a CRM opportunity.",
+  "Workshops, service centres and testing labs booking a bay, a lift, a machine or a room rather than a named person.",
+  "Not for contact centres, where hundreds of agents, skills-based routing and shrinkage targets need a dedicated workforce management tool.",
+  "Not for gyms and studios selling class passes or memberships, where the product is a recurring entitlement and a roster of attendees, not a slot with one person."
+ ],
+ "capabilities": [
+  {
+   "title": "Appointment types carry the rules, not the calendar",
+   "body": "Each type has its own duration, its own public page, its own staff or resources and its own price. A minimum notice in hours keeps bookings out of the next twenty minutes. A horizon in days stops the diary being filled eleven months ahead. The type also decides how the customer meets the schedule: pick the person first and then a time, pick a time and then a person, or let Odoo assign whoever is free. A type is in person with a location, or online, where Odoo puts a video call link on the event. This is how a fifteen minute follow-up, a ninety minute assessment and a free introductory call live on one calendar with different prices, different staff and different pages."
+  },
+  {
+   "title": "Availability is a weekly grid, then Odoo subtracts",
+   "body": "This is the part most buyers get wrong. Slots do not come from an employee working schedule. Each appointment type holds its own availability lines, weekday plus a start and end time, repeated every week, and each line can be restricted to particular staff or particular resources. Odoo cuts that grid into slots of the type duration, then removes anything already occupied in the calendars it can read. The engine is subtractive, so the default answer is yes: whatever it cannot see stays on sale. There is also a one-off variant where a user picks specific times and shares them by link for a single meeting, which is the right tool for a board date and the wrong tool for a clinic."
+  },
+  {
+   "title": "Booking a person or booking a thing",
+   "body": "A type is scheduled against named users, so the customer chooses a practitioner, or against resources such as rooms, chairs, bays, tables and machines. Resources carry a capacity, so one slot in a room that seats eight can absorb several bookings until that capacity is used up, and resources have their own calendar where closures and maintenance are entered. Resources are not users, so they cost no licence. That single choice usually moves the annual bill more than anything else on the project."
+  },
+  {
+   "title": "Questions asked at the point of booking",
+   "body": "Every type carries its own question list, with single line text, long text, dropdown, radio and checkbox answers stored against the booking. Reason for visit, insurer, vehicle registration, referring doctor and preferred language are questions, not custom fields, so adding one is configuration and needs no developer. The answers travel with the calendar event, so whoever takes the appointment reads them without opening a second screen. Keep the list short. Every extra required question costs completed bookings, and a public form is the wrong place for clinical detail."
+  },
+  {
+   "title": "Payment at the point of booking",
+   "body": "A type can demand payment before it confirms. That needs a product carrying the price and the correct tax for that service in that country, plus a payment provider already live on the website, the same providers eCommerce uses. It is the practical answer to no-shows in salons and private clinics, and it changes the economics of an evening slot. Refunds are not automatic and there is no partial forfeit rule, so a cancelled paid booking is a credit note raised by a person under a written policy."
+  },
+  {
+   "title": "Reminders, rescheduling and shareable links",
+   "body": "The confirmation carries links that let the customer reschedule or cancel without phoning, and that window can be closed a set number of hours before the appointment so nobody drops a Monday slot on Sunday night. Reminders are calendar alarms at the offsets you choose, by email or SMS, with SMS drawing on Odoo IAP credits that have to be topped up. Each type has a stable public URL, which is what goes in an email signature, a reception QR code or a paid ad, and what lets you tell which channel actually produced bookings."
+  }
+ ],
+ "setup": [
+  {
+   "title": "Settle users or resources before anything else",
+   "body": "This is a licence decision dressed up as a preference. Named bookable staff are internal Odoo users on a per user Enterprise price, so twelve therapists is twelve licences every year. Rooms, chairs, bays and machines are resources and add nothing to the bill. Plenty of businesses can book the room and capture the practitioner as a booking question, which is a legitimate model rather than a workaround. Decide on day one, because switching later means rebuilding every type, every availability line and every published link."
+  },
+  {
+   "title": "Build the availability grid per site and shift, then fix timezones",
+   "body": "One company-wide pattern almost never survives contact with a second branch, a late night, a Saturday clinic or a part time contract. Model each real pattern as its own type or its own restricted availability lines. Then handle time properly: every bookable user needs a timezone set on their user record, the appointment type carries its own timezone, and the public page converts everything into the visitor's timezone. One wrong value produces a page that looks entirely correct and books an hour out."
+  },
+  {
+   "title": "Connect Google or Microsoft, then prove the direction",
+   "body": "Sync is configured once with credentials registered in Google Cloud or Microsoft Azure, after which each user connects their own account. Nobody can do that step for them, so plan for the staff member who never clicks the button and whose slots are therefore sold twice. It runs both ways but not instantly, because it works on a schedule and when somebody opens the Calendar app. Decide which system is the master diary, write that down, and set the minimum booking notice wide enough to cover the lag."
+  },
+  {
+   "title": "Wire the money before publishing the page",
+   "body": "A paid booking needs the product, the right tax treatment for that service in that country, a live payment provider, and a decision about what the customer receives: a tax invoice at booking, a receipt, or nothing until they attend. Under a clearance or near real time e-invoicing regime that answer is not a preference. Test the abandoned payment path as well as the successful one, and check what the slot does while a payment is pending, because that is where the awkward support calls come from."
+  },
+  {
+   "title": "Rewrite the confirmation and reminder emails",
+   "body": "The default templates work and say almost nothing. They are also the only thing most customers read about the visit, so they need the address, parking, what to bring, the cancellation window and a phone number that a human answers. Translate them into every language the page is published in. Reminder timing is a business rule, not a default: a dental clinic wants twenty four hours, an on-site survey wants three days, and a high value consultation wants both."
+  }
+ ],
+ "pitfalls": [
+  {
+   "title": "The engine only knows what is in a calendar it can read",
+   "body": "Odoo offers any slot that nothing blocks. A dentist keeping a private list on paper, an owner blocking time in a personal Google account nobody connected, or a room closed for repainting with no leave entered on its resource calendar all produce double bookings in week one. Audit what is really in each calendar for the month ahead before go live. The fix is sync plus one agreed place where staff block time, which is change management rather than configuration."
+  },
+  {
+   "title": "Timezones and daylight saving surface as no-shows",
+   "body": "A user with no timezone on the record falls back to a default and the entire grid shifts. Clock changes move it twice a year, and a group with sites in two zones where only one observes daylight saving carries a moving offset for months. Test with a browser set to the customer's timezone, not the consultant's, and test either side of a clock change rather than only on the day you happen to configure it."
+  },
+  {
+   "title": "Taking money at booking creates an accounting queue",
+   "body": "Deposits stop most no-shows and hand finance a stream of exceptions: cancellations inside the window, duplicate payments, customers who pay and then rebook. None of that reverses itself, so somebody raises the credit note, and under an e-invoicing mandate that document has to be filed correctly too. Publish the policy on the booking page, give reception a written procedure, and agree who owns the exception queue before the page goes live rather than in month two."
+  },
+  {
+   "title": "Booking questions quietly become a health record",
+   "body": "Reason for visit, symptoms, medication and insurer are special category data in the UK and the EU and sensitive nearly everywhere else. Collected through a public page, they sit in a database that support staff, implementers and anyone with backend access can read. Ask only what is needed to schedule the visit, set a retention rule and enforce it, and keep clinical detail in the clinical system where the access controls belong."
+  },
+  {
+   "title": "One page for a business that is really several",
+   "body": "A group with four branches, three languages and separate price lists starts with one appointment type and ends with twenty two, most of them near duplicates created by whoever needed one that afternoon. Agree a naming convention on day one, decide who is allowed to create types, and keep retired ones unpublished rather than deleted so historic bookings still make sense. Without that you get a public list customers cannot navigate and reporting that cannot separate one branch from another."
+  }
+ ],
+ "worksWith": [
+  "Calendar, the event store every booking is written into and every other app reads",
+  "CRM, so a booked discovery call raises or advances an opportunity instead of sitting in a diary",
+  "Sales and Invoicing, for the deposit or consultation fee, the tax on it and the credit note when it is refunded",
+  "Website, and the payment providers already configured there for eCommerce",
+  "Employees and Time Off, where approved leave blocks a slot only if that leave type puts an entry on the calendar",
+  "Google Calendar and Microsoft Outlook, two way, connected by each user for their own account",
+  "SMS and email templates for reminders, with SMS consuming Odoo IAP credits",
+  "Field Service or Helpdesk, when a booking has to become a task or a ticket, which is usually a small automation rather than a setting"
+ ],
+ "regional": [
+  {
+   "country": "saudi-arabia",
+   "note": "A fee taken from a consumer at booking is a simplified tax invoice: it carries a QR code and has to be reported to the ZATCA Fatoora platform within twenty four hours, so booking money cannot sit outside accounting until month end. Ramadan hours shorten the working day and move each year against the Gregorian calendar, so somebody has to edit the availability grid annually rather than assume it holds. Publish in Arabic properly, not as a translation layer bolted onto an English page."
+  },
+  {
+   "country": "uae",
+   "note": "VAT at five per cent applies to most service bookings, and receiving an advance creates the tax point, so a deposit is taxable when it is taken rather than when the customer attends. The federal e-invoicing programme is phased and runs through accredited service providers, so confirm which wave the entity falls into before designing the document flow. The private sector working week has not been uniform since the 2022 change, which is why a multi entity group needs an availability grid per entity."
+  },
+  {
+   "country": "pakistan",
+   "note": "FBR digital invoicing reaches sales tax registered persons, so a clinic or salon collecting at booking is issuing a document that has to reach the FBR system, not a receipt from a book. Odoo ships no Pakistani payment provider, so cards, JazzCash or Easypaisa at the booking step is an integration with a real cost, not a settings checkbox. Where that is not funded, take the booking free and collect at the counter rather than half building it."
+  },
+  {
+   "country": "india",
+   "note": "The tax on the booking product decides the whole design. Healthcare by a clinical establishment is exempt from GST while salon, grooming and cosmetic services are not, so two businesses using an identical page need different products and different accounts. Odoo ships a Razorpay provider, so card and UPI collection at booking is configuration rather than a build, which is the practical difference from most of the region."
+  },
+  {
+   "country": "turkey",
+   "note": "A consumer paying for an appointment normally produces an e-Arsiv document rather than an e-Fatura, because e-Fatura applies where the counterparty is registered on the system as well. The turnover threshold that pulls a business into scope is revised most years and takes effect on an annual transition date, so a growing clinic can cross it mid project. The page needs real Turkish text and local date formatting, since customers abandon an English booking form."
+  },
+  {
+   "country": "united-kingdom",
+   "note": "No B2B e-invoicing mandate is in force, so the pressure is Making Tax Digital: a deposit taken on a booking page has to reach the VAT return through digital links rather than a monthly re-key from a separate scheduling tool. Symptoms, treatment and health questions asked at booking are special category data under UK GDPR, which needs a lawful basis, a retention rule and an answer ready for the subject access request when it arrives."
+  },
+  {
+   "country": "germany",
+   "note": "GoBD expects records to be complete, traceable and unalterable, so a diary that collects money belongs inside the audit trail rather than beside it in a scheduling tool. Most practices file through DATEV, so the appointment product needs the right account and tax key from the very first booking, not a reclassification later. Since January 2025 every German business must at least be able to receive a structured e-invoice."
+  },
+  {
+   "country": "australia",
+   "note": "Medical services are generally GST-free while a beauty, cosmetic or advisory appointment carries ten per cent, so the treatment sits on the booking product and a mixed practice needs more than one. Timezones are the operational trap: a group with sites in Brisbane and Sydney has a one hour offset for part of the year and none for the rest, because Queensland does not observe daylight saving, and the booking page follows the data rather than the assumption."
+  }
+ ],
+ "faqs": [
+  {
+   "q": "Is Appointments available in Odoo Community?",
+   "a": "No. The Appointments app is Enterprise. Community includes Calendar, so meetings, invitations and Google or Outlook sync all work, but there is no public page that shows bookable slots and takes a booking. Community sites either add a third-party module from the Apps store, keep an external booking tool that writes the meeting into Odoo, or take bookings by phone."
+  },
+  {
+   "q": "Does every bookable staff member need a paid user licence?",
+   "a": "If the customer picks a named person, yes. That person is an internal Odoo user and Enterprise is priced per internal user. Resource based scheduling avoids it, because a room, chair, bay or machine is not a user. For a twenty room clinic that difference is the largest single number on the quote, which is why the model gets decided before anything is built."
+  },
+  {
+   "q": "How do phone bookings and walk-ins fit in?",
+   "a": "Reception creates the meeting directly in Calendar and the slot stops being offered, because the engine subtracts existing events. Staff can also open the same booking page and book on the customer's behalf, which keeps the questions and the confirmation email consistent. The failure mode is a phone booking written somewhere that is not a connected calendar, which is what actually causes double bookings."
+  },
+  {
+   "q": "What reporting do we get out of it?",
+   "a": "Booking volume by type, by staff member and by period, from the reporting views over the appointment data. What it does not hand you is revenue, utilisation against paid capacity, or a no-show rate you can manage by. Those come from Sales and Invoicing, or from a small amount of reporting work. Name the numbers you intend to run the business on before go live, not after."
+  },
+  {
+   "q": "Our consultants live in Outlook. Do they have to work in Odoo?",
+   "a": "No. Each person connects their own account once and events move both ways, so a meeting moved in Outlook moves in Odoo. The catch is timing rather than direction: the sync runs on a schedule and when somebody opens the Calendar app, so treat it as minutes of lag and set the minimum booking notice wide enough that a slot cannot be sold inside the gap."
+  },
+  {
+   "q": "Can a customer book a course of ten sessions in one go?",
+   "a": "Not as one transaction. Each booking is a single calendar event and there is no package option that places ten appointments and prices them together. The usual approach is to sell the course as a product in Sales, then book the sessions individually against that order and track the remaining balance there. If packages are the core of the business, price that reconciliation work in."
+  },
+  {
+   "q": "Can the booking page run in Arabic or another language?",
+   "a": "Yes. The page is part of the website, so it uses the same translation and right to left support as the rest of the site. Type names, questions, confirmation emails and reminder texts each need translating separately. An Arabic page that sends an English confirmation is the common half finished version of this, and it is usually the emails that get missed."
+  },
+  {
+   "q": "We already run a booking platform. Can it feed Odoo instead?",
+   "a": "Usually yes, through its API or a webhook that creates the contact and the calendar event in Odoo. Staff keep the front end they know, while contact data and revenue land where the reporting happens. That is the right call when the external tool does something Odoo does not, such as waiting lists, class passes or clinical records, and the wrong call when it is only habit."
+  }
+ ]
+}

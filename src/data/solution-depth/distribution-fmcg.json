@@ -1,0 +1,180 @@
+{
+  "metaDescription": "Odoo for FMCG distribution: van stock, trade schemes, FEFO expiry, credit limits and secondary sales, plus what Community cannot do and the country tax rules.",
+  "intro": [
+    "Odoo ships no van sales application and no route optimiser. Nothing in 17, 18 or 19 holds a journey plan, a beat, an outlet visit or a target per rep. What it does hold is the machinery those things are built from: a warehouse per vehicle, internal transfers for load-out, lots with expiration dates, pricelists with quantity breaks, promotion programs that sit on the sales order, and a point of sale that keeps taking orders when the mobile signal drops. An FMCG build is assembly, not installation.",
+    "The value shows up in two numbers most distributors cannot produce today. The first is cost to serve, which needs vehicle cost, driver time and load-out value tagged to a route rather than pooled in one delivery expense account. The second is stock in the field, meaning the cases sitting on vans and with reps at close of business. Both are outputs of decisions taken during configuration, and neither can be bolted on later without reworking the stock design.",
+    "The edition question has a clear answer here. Community covers multi-warehouse inventory, lots and expiry with FEFO removal, pricelists, discount and loyalty programs on sales orders, point of sale, landed costs, analytic accounting and the customer credit limit warning. Enterprise buys the Barcode app, Studio, Field Service, Planning, the dynamic accounting reports including aged receivable, automated follow-ups and the official mobile app. A distributor scanning cartons at the dock and chasing collections daily normally ends up on Enterprise."
+  ],
+  "whoFor": [
+    "Distributors carrying several principals through one warehouse and one delivery fleet, where each brand wants its own margin and its own stock view.",
+    "Importers holding a local agency, where duty, excise and clearing charges have to sit inside the cost of a case before any margin figure means anything.",
+    "Manufacturers selling through a distributor tier who need sell-out visibility rather than another sell-in report.",
+    "Cash van and pre-sell operations where a vehicle leaves loaded in the morning and is reconciled against cash, returns and damages at night.",
+    "Not for a single-warehouse brand shipping to consumers through couriers, where standard Sales and Inventory already do the job without a distribution layer.",
+    "Not for anyone whose main problem is drive time, because Odoo holds no map, no territory geometry and no route optimisation, and a routing or telematics product stays a separate purchase."
+  ],
+  "capabilities": [
+    {
+      "title": "The van as a stock location",
+      "body": "Each vehicle becomes a warehouse or an internal location, and the morning load-out is an internal transfer from the depot to that location. Stock on a van is then company stock in a place, visible on the same forecast report as the racking. The nightly return is a transfer back, damages are a scrap from the van location, and what is left is the variance a supervisor signs off. This is the single design decision the rest of an FMCG build rests on."
+    },
+    {
+      "title": "Pre-sell and cash van, configured differently",
+      "body": "In pre-sell, the order is taken at the outlet and delivered on the next visit, which is an ordinary sales order with a delivery from the van warehouse. In cash van, the sale happens at the shelf, and a point of sale session tied to that van operation type serves it better, because point of sale carries on working when the signal drops and syncs on return. The Odoo web client does not work offline, and no amount of configuration makes it."
+    },
+    {
+      "title": "Trade schemes, slabs and free goods",
+      "body": "Discount and loyalty programs in Sales cover buy X get Y, a free case above a quantity, a percentage on a product category and coupons issued per outlet, each with its own date window. Volume slabs belong on pricelists as quantity break rules. Free goods have to ride on the order as lines so stock is relieved from the right lot and the cost lands against the outlet that received it. Off-invoice claims settled with a principal later are not modelled by Odoo."
+    },
+    {
+      "title": "Expiry, FEFO and near-expiry stock",
+      "body": "With lots and expiration dates switched on, every lot carries a best before date, a removal date and an alert date, and FEFO removal reserves the oldest saleable lot instead of the nearest pallet. Near-expiry stock is worked by filtering lots on removal date and either pushing it through a scheme or moving it to a quarantine location. The dates have to be captured at receipt, because a lot with no date is not sorted and will ship after fresher stock."
+    },
+    {
+      "title": "Returns, damages and write-off",
+      "body": "A return is a reverse transfer raised against the original delivery, and the credit note is created from the invoice so the two stay linked. Saleable cases go back into stock, damaged and expired cases are scrapped from a dedicated location so the write-off carries a reason and a value. Odoo has no returns authorisation app, so the approval step, the reason list and the recovery claim against the principal are configured work rather than a switch."
+    },
+    {
+      "title": "Credit control and collection",
+      "body": "Every customer can carry a credit limit, and Odoo raises a warning on the sales order once the outstanding balance passes it. It is a warning. Confirming the order, picking the goods and invoicing all still happen. Payment terms with early settlement discounts, deposits and per-outlet terms are standard and work well. Automated dunning through follow-up levels sits in Enterprise, and so does the aged receivable report a collections meeting actually runs on."
+    },
+    {
+      "title": "Route, rep and outlet reporting",
+      "body": "Salesperson, sales team and customer tags carry the rep, the channel and the territory, so coverage, lines per invoice and strike rate per visit come out of pivot views without custom tables. Analytic distribution on fuel, vehicle cost and driver time gives cost per route against the revenue that route produced. Secondary sales, meaning what the distributor sold onward, is not in Odoo and arrives as a scheduled file import or through a portal the distributor keys into."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Settle the unit of measure and the case first",
+      "body": "Odoo converts inside a unit of measure category on a fixed ratio, so a case of twenty four is a unit whose ratio to the piece never changes. That suits most FMCG and fails anything sold by variable weight, because there is no catch weight on a product. Decide the stock keeping unit, whether pricing runs per piece or per case, and how a pack size change from a principal will be handled, before the first product is loaded."
+    },
+    {
+      "title": "Warehouse and route topology",
+      "body": "Fix the number of receipt and delivery steps, the van warehouses and how they are resupplied, and whether a fast line cross-docks from receipt straight onto a vehicle instead of being put away. Storage categories and putaway rules place goods by product category and by lot, which is what keeps a chilled line out of ambient racking. Adding a van later is easy. Moving from one step to three after a year of movements is not."
+    },
+    {
+      "title": "Pricelist and scheme architecture",
+      "body": "Build the layers deliberately: a base price per channel, a customer pricelist above it, then promotion programs for anything with a start and an end date. Schemes belong in programs rather than in permanent pricelist rules, because a rule nobody removes keeps discounting long after the campaign closed. Decide who may key a manual discount on a line and close it to everyone else through access rights, since an open discount field is where distributor margin quietly leaves."
+    },
+    {
+      "title": "Master data and the outlet file",
+      "body": "Outlets are the largest and dirtiest data set in a distribution project. The same shop appears three times under three spellings, and each copy carries a balance. Deduplicate before load, set a parent company on chain accounts so a group statement is possible, and agree the fields that hold channel, territory and visit frequency. Load customers, products and prices first, opening balances second and stock last, on separate days with a reconciliation between each."
+    },
+    {
+      "title": "Landed cost, duty and excise inside the case",
+      "body": "Set the costing method on the product category before the first receipt, because changing it afterwards revalues everything on hand. Landed cost documents push freight, clearing, duty and demurrage onto the receipt so a case carries what it really cost to put on the floor. Excise and sugar levies paid at import behave the same way. Where a principal reimburses part of that spend, the recovery is income against the brand and does not quietly reverse the landed cost."
+    },
+    {
+      "title": "Cut over on a real count, vans included",
+      "body": "Take the count at close of business with every vehicle back at the depot and unloaded, or the opening balance is wrong on day one and no report is believed afterwards. Opening stock needs lot numbers and expiry dates keyed rather than skipped, because FEFO cannot sort lots that have no dates. Open invoices, credit notes and customer balances come in as one journal, and the aged position is agreed with the accountant before go-live."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Free goods booked outside the order",
+      "body": "The most common scheme error is handing out free cases and recording them nowhere, or as a manual stock adjustment three weeks later. Stock is then wrong all month and the scheme has no cost attached to it. Free goods belong on the sales order as lines at zero price, so the delivery relieves the correct lot and the cost of goods lands against the same outlet. Margin per outlet then includes the scheme, which is the number a sales manager needs."
+    },
+    {
+      "title": "A credit limit that stops nothing",
+      "body": "Buyers see the credit limit field and assume the system refuses delivery once an outlet is over. Odoo shows a warning on the order and carries on. If the business rule is that an overdue outlet gets no stock, that is an approval state on the order or a hold on the delivery, with a named role able to release it. Small work, but it has to be scoped and priced rather than discovered during user testing."
+    },
+    {
+      "title": "Van stock nobody reconciles",
+      "body": "Making each vehicle a location is only half the design. Without a signed load-out and a nightly return, the location becomes the place stock goes to disappear. What makes it work is a daily count of the vehicle, scrap postings with a reason code, and a variance report a supervisor closes each morning. Where the same person sells and collects, cash and stock have to reconcile against the same route on the same day."
+    },
+    {
+      "title": "Turning on lot tracking after stock exists",
+      "body": "Tracking by lot and expiry is a product-level setting that Odoo refuses to change while quantities are on hand. Deciding it late means zeroing the stock, changing the setting and putting the stock back with lot numbers, across every affected product. That is a weekend of work and a source of valuation noise for a month. Agree the tracking level per product category at design time, and accept that not every line needs a lot."
+    },
+    {
+      "title": "Expecting the field team to work offline",
+      "body": "The Odoo web client needs a connection. On a route through weak coverage the order screen stalls and reps go back to paper, which ends the project quietly. Point of sale is the only part of standard Odoo that runs a session offline and syncs afterwards, which is why cash van work is usually configured there. Anything else offline means a mobile build against the API, with rules for a price that changed while the device was out."
+    },
+    {
+      "title": "Principal claims handled after the fact",
+      "body": "Distributors recover promotion spend, damage allowances and listing fees from their principals, months later and rarely in full. Odoo has no deduction or claim settlement feature. Left unmodelled, the recovery lands as a stray credit nobody can match to the campaign that earned it. Raise the claim as a receivable against the principal while the scheme is running, then settle it against what is actually recovered, so the shortfall per brand is visible."
+    }
+  ],
+  "worksWith": [
+    "Inventory, for van warehouses, lots and expiry, putaway rules, storage categories and FEFO removal",
+    "Sales with discount and loyalty programs, for schemes, coupons and buy X get Y on the order itself",
+    "Point of Sale, for cash van selling that has to keep working without a signal and sync later",
+    "Purchase, with vendor pricelists and blanket agreements held against each principal",
+    "Accounting, for landed costs, analytic distribution per route and the customer credit limit",
+    "Barcode and Studio in Enterprise, for dock scanning and the short van forms a field team will actually use",
+    "Country e-invoicing connectors, which decide whether an invoice can legally be issued at the shop door",
+    "Third-party routing, telematics and a distributor portal for secondary sales, none of which exist in Odoo"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA Phase 2 clears a standard business invoice through Fatoora before it is valid, while a simplified invoice at the shop door carries a QR code and is reported within 24 hours. A van selling offline still owes that report once it reconnects. Excise on carbonated and energy drinks sits inside the case cost at import, and merchandiser wages run through WPS."
+    },
+    {
+      "country": "uae",
+      "note": "The Commercial Agencies Law makes a registered agency exclusive, so parallel-imported stock of the same brand is a legal question before it is a pricing one. Excise on carbonated, energy and sweetened drinks is embedded in cost at import. Electronic invoicing moves to a Peppol-based model routed through accredited service providers, and corporate tax at nine percent makes brand-level margin worth getting right."
+    },
+    {
+      "country": "pakistan",
+      "note": "Third Schedule items are taxed on the printed retail price rather than on what the distributor actually charges, so sales tax on a case does not follow the invoice value and has to be configured against the retail price. FBR digital invoicing integrates FMCG importers and manufacturers in real time, and advance tax under sections 236G and 236H is collected on sales to distributors, dealers and retailers."
+    },
+    {
+      "country": "india",
+      "note": "A post-sale discount only reduces GST liability where the credit note links back to the original invoice, so quarterly and annual schemes have to stay traceable to the invoices they discount instead of passing as a lump sum. Goods above the value threshold need an e-way bill with the vehicle number in Part B, and it expires by distance, which limits how long a load can sit."
+    },
+    {
+      "country": "turkey",
+      "note": "Goods cannot leave the depot until an e-Irsaliye dispatch note has been issued and accepted through the tax authority channel, so the document belongs inside the loading process rather than after it. Invoicing then splits by counterparty, e-Fatura to a registered business and e-Arsiv to everyone else. Records are expected to be archived inside Turkiye, which decides where hosting is bought."
+    },
+    {
+      "country": "egypt",
+      "note": "Every invoice line needs a registered GS1 or EGS code, so a new pack size or a promotional bundle cannot be sold until its code exists, which turns item coding into a gating task on a large FMCG catalogue. Retail sales report through the e-receipt system. Imported stock clears through Nafeza on an ACID number raised before the vessel sails."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Most food is zero rated while confectionery, crisps and soft drinks are standard rated, so the rating belongs on the product and not on the customer. The Soft Drinks Industry Levy is charged per litre by sugar band on producers and importers and sits in cost rather than VAT. Extended producer responsibility adds packaging weight by material, and Making Tax Digital requires digital links through to the return."
+    },
+    {
+      "country": "france",
+      "note": "The Egalim rules cap promotions on food at 34 percent in value and set a minimum resale price of cost plus ten percent, so a scheme that is ordinary elsewhere can be unlawful here and has to be checked before it is loaded into a promotion program. Electronic invoicing runs through partner platforms on the national timetable, with Factur-X among the accepted formats."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Does Odoo have a van sales module?",
+      "a": "No. There is no journey plan, beat, visit record or van sales app in Odoo 17, 18 or 19. Van selling is configured from parts that do exist: a warehouse per vehicle, internal transfers for load-out and return, a point of sale session for cash van work, and analytic distribution for cost per route. Anything sold to you as an Odoo van sales module is third-party or bespoke code you will end up owning."
+    },
+    {
+      "q": "Can a distribution business run on Odoo Community?",
+      "a": "Much of it. Multi-warehouse inventory, lots and expiry with FEFO, pricelists with quantity breaks, discount and loyalty programs, point of sale, landed costs, analytic accounting and the credit limit warning are all Community. Enterprise adds the Barcode app, Studio, Field Service, Planning, the dynamic accounting reports with aged receivable, follow-ups and the official mobile app. Scanning cases at the dock is usually what decides the edition."
+    },
+    {
+      "q": "How does Odoo plan delivery routes?",
+      "a": "It does not. There is no map, no drive time and no optimisation anywhere in the product. Deliveries are grouped into batch transfers and sequenced by hand, or the day list goes out to a routing or telematics product and the sequence is written back. Treat routing as a separate purchase with its own integration cost, and do not let a demonstration imply otherwise."
+    },
+    {
+      "q": "Can Odoo block a delivery to a customer over their credit limit?",
+      "a": "Not on its own. The credit limit raises a warning on the sales order and nothing more. Confirmation, picking and invoicing all continue. A hard stop is built as an approval state on the order or a hold on the delivery, with a named role able to release it. It is not difficult work, but it has to be scoped in the project rather than assumed to be standard."
+    },
+    {
+      "q": "How are trade schemes and free goods handled?",
+      "a": "Buy X get Y, a percentage on a category, a free case above a quantity and coupons per outlet are all discount and loyalty programs with their own date windows. Volume slabs go on pricelists as quantity break rules. The part that matters is putting free goods on the order as lines, so stock is relieved from the right lot and the scheme cost lands against the outlet that received it."
+    },
+    {
+      "q": "Does Odoo handle expiry dates and FEFO picking?",
+      "a": "Yes, and in Community. Switch on lots and expiration dates, and each lot carries a best before date, a removal date and an alert date. Set FEFO as the removal strategy on the product category or the location, and reservations then take the oldest saleable lot. The dates must be captured at receipt, because a lot with no date is not sorted and will ship after fresher stock."
+    },
+    {
+      "q": "Do we need Enterprise for barcode scanning?",
+      "a": "The Barcode app is Enterprise. On Community a USB scanner behaving as a keyboard can fill a field on a form, but there is no guided scan flow for receipts, picks and internal transfers, and third-party scanning code becomes your responsibility. For a warehouse picking cases at volume the app usually pays for itself, and it is the most common single reason a distributor moves to Enterprise."
+    },
+    {
+      "q": "Can we see what our distributors sell onward?",
+      "a": "Not from Odoo alone, because secondary sales happen in someone else's system. The two workable routes are a scheduled import of a distributor sales file mapped onto your products and outlets, or a portal the distributor keys or uploads into. Both need a product mapping table, since distributor item codes never match yours, and both need somebody chasing the distributors who stop sending."
+    },
+    {
+      "q": "What drives the length of a distribution project?",
+      "a": "Three things. The size and cleanliness of the master data, because outlet and product files are always worse than the first estimate. The number of vans and whether they sell or only deliver, since selling from a vehicle adds cash reconciliation and offline handling. And the country e-invoicing regime, which has to be tested against real documents before go-live rather than during it."
+    }
+  ]
+}

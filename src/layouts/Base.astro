@@ -1,5 +1,5 @@
 ---
-import { SITE } from '~/data/site';
+import { SITE, ANALYTICS } from '~/data/site';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
 import { portalOverride } from '~/lib/portal';
@@ -139,6 +139,13 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
     <meta name="description" content={effDescription} />
     <meta name="robots" content={robots} />
 
+    {ANALYTICS.googleSiteVerification && (
+      <meta name="google-site-verification" content={ANALYTICS.googleSiteVerification} />
+    )}
+    {ANALYTICS.bingSiteVerification && (
+      <meta name="msvalidate.01" content={ANALYTICS.bingSiteVerification} />
+    )}
+
     {alternates.length > 0 && (
       <>
         {alternates.map((alt) => (
@@ -182,6 +189,18 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
     {sdArray.map((sd) => (
       <script type="application/ld+json" set:html={JSON.stringify(sd)} />
     ))}
+
+    {/* Loaded async and last so it cannot block rendering or hurt LCP, which is
+        itself a ranking input. Omitted entirely until a measurement ID exists. */}
+    {ANALYTICS.ga4 && (
+      <>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${ANALYTICS.ga4}`}></script>
+        <script
+          is:inline
+          set:html={`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${ANALYTICS.ga4}')`}
+        />
+      </>
+    )}
   </head>
   <body class="min-h-screen bg-white text-ink-900 antialiased">
     <Header />

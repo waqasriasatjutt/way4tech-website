@@ -89,6 +89,20 @@ const REGION_OF: Record<string, string> = {
 const myRegion = REGION_OF[country.slug] || '';
 const countryIndex = Math.max(0, COUNTRIES.findIndex((c: CountryRec) => c.slug === country.slug));
 
+/* The branded name of the market's e-invoicing regime, where one exists.
+
+   ZATCA, FBR, e-Fatura, JoFotara and the rest appeared seven or more times in
+   the body of these pages and not once in the title, H1 or any H2, so the page
+   was competing for "odoo e-invoicing saudi arabia" while the query people
+   actually type is "zatca odoo". These are the least contested and highest
+   intent queries the site targets.
+
+   Undefined for the eight markets with no branded regime, so their titles come
+   out byte-identical to before. */
+const seoToken = detail?.einvoicing?.seoToken?.trim() || '';
+const tokenSuffix = seoToken ? ` (${seoToken})` : '';
+const tokenPrefix = seoToken ? `${seoToken}: ` : '';
+
 /* Copy per topic. Delivery process only: no rate, scheme, mandate or threshold
    is written here. Every regulatory line on the page comes out of
    country-detail.ts verbatim. */
@@ -107,10 +121,10 @@ interface TopicCopy {
 
 const TOPIC_COPY: Record<TopicKey, TopicCopy> = {
   'e-invoicing': {
-    h1: `Odoo e-invoicing in ${plainName}`,
-    title: `Odoo E-Invoicing in ${country.title}`,
+    h1: seoToken ? `Odoo e-invoicing in ${plainName}: ${seoToken}` : `Odoo e-invoicing in ${plainName}`,
+    title: `Odoo E-Invoicing in ${plainName}${tokenSuffix}`,
     lede: `The ${plainName} e-invoicing picture in full: the scheme, the authority behind it, who it binds, and every requirement we map before a build is quoted.`,
-    meta: `Odoo e-invoicing in ${plainName}: the scheme, who has to comply, and every requirement, with what each one changes in an Odoo build.`,
+    meta: `${tokenPrefix}Odoo e-invoicing in ${plainName}. The scheme, who has to comply, and every requirement, with what each one changes in an Odoo build.`,
     serviceName: `Odoo e-invoicing setup in ${country.title}`,
     serviceType: 'Odoo e-invoicing configuration, integration and support',
     serviceDesc: `Odoo e-invoicing setup, integration and support for businesses in ${plainName}.`,

@@ -1,0 +1,175 @@
+{
+  "metaDescription": "Odoo Repairs implementation: repair orders as stock moves, warranty pricing, customer owned stock, and what the Odoo 17 rewrite means for an upgrade.",
+  "intro": [
+    "Odoo Repairs is a Community app, licensed LGPL, and it was rebuilt in Odoo 17. A repair order is now a set of stock moves against a repair operation type, and the money side has moved off the repair order onto a linked sale order. The separate part and fee lines that older versions carried, and the invoice method on the repair itself, no longer exist. Any guide, demo or proposal that invoices straight from a repair order is describing Odoo 16 or older.",
+    "The projects that go wrong are rarely the ones with difficult repairs. They are the ones where nobody decided who owns the goods sitting on the workshop bench. Odoo Inventory assumes you own what is in your locations, and a customer device received on a normal receipt lands in your on hand quantity and your stock value. Settle the ownership question and the warranty question first. Most of what is left is configuration."
+  ],
+  "whoFor": [
+    "Electronics, appliance and mobile device workshops taking units in over a counter and returning them to the customer.",
+    "Authorised service centres doing warranty work for a manufacturer and recharging it, alongside chargeable out of warranty jobs.",
+    "Machinery, tool and equipment dealers who sell serialised units and then service, overhaul and refurbish the same units.",
+    "Refurbishers who buy back stock, strip it, replace components and resell, where consumed parts must land on the cost of the resold unit.",
+    "It is not for maintaining plant you own, which belongs in the Maintenance app, and not for fixing things at a customer site, which belongs in Field Service.",
+    "It is a weak fit for a workshop that runs on its own board columns, because repair order states are fixed and there is no stage model to extend."
+  ],
+  "capabilities": [
+    {
+      "title": "The repair order after the Odoo 17 rewrite",
+      "body": "The order carries the product to repair, the quantity, its lot or serial number, the customer, a responsible user, a scheduled date, tags, a two level priority, and a repair operation type belonging to a warehouse. Parts sit in a table of stock moves, each typed as Add, Remove or Recycle. Only Add moves ever reach the customer bill. States are New, Confirmed, Under Repair, Repaired and Cancelled. The order prints as a PDF that doubles as a job sheet, and nothing is invoiced from this record."
+    },
+    {
+      "title": "Quoting before the work starts",
+      "body": "The repair order raises a quotation, which creates a sale order carrying the Add parts and any labour products. The customer approves, the repair proceeds, then that sale order is invoiced. Labour is a service product line, because the fee lines that used to sit on the repair order were removed. Sales is not an optional extra to budget for. The Repairs app declares sale_management as a dependency, so installing one installs the other, and both are Community."
+    },
+    {
+      "title": "Selling a repair as a product",
+      "body": "The flow also runs the other way. A product, storable or service, carries a Create Repair flag, and confirming a sale order that contains it creates the repair order automatically, already linked back to the order line. That is how a fixed price service, a bench diagnostic or a refurbishment SKU gets sold from a quotation or the webshop. One quirk to design around: for a serial tracked product, a quantity of three creates three separate repair orders rather than one order for three units."
+    },
+    {
+      "title": "Warranty against chargeable",
+      "body": "The repair order has an Under Warranty flag. When it is set, the sale order lines created from that repair are priced at zero, so the job produces a document and no revenue, while the cost still posts through stock valuation. That is what makes a warranty cost figure possible at all. Two things to know. The flag is a whole order decision, set by a person, with no entitlement check behind it. And the zero price is applied as each sale order line is created, so ticking the flag after those lines exist does not reprice them."
+    },
+    {
+      "title": "Parts, stock and what leaves the shelf",
+      "body": "Every part is a real stock move from a real location, so reservation, forecasting and valuation behave as they do everywhere else in Inventory. The order carries an availability state and a flag for parts running late, which is the closest thing to a waiting for parts view. Serialised spares ask for a serial number on the move. A component taken out of the unit is either returned to a location or sent to a recycle location. Consumption posts to your stock accounts according to whether the company runs Anglo-Saxon or Continental accounting."
+    },
+    {
+      "title": "The unit coming in and going back out",
+      "body": "A repair order has a Return field that links it to the return picking that brought the unit in, so the inbound leg is documented against the original delivery. The outbound leg is not. Sending the unit back is a delivery you raise yourself, and nothing on the repair order will chase you for it. Odoo ships no RMA app, so a return is either a reverse transfer from the original delivery or a plain receipt where you never sold the unit in the first place."
+    },
+    {
+      "title": "History against a serial number",
+      "body": "Per unit history is better than most people expect. A lot or serial record carries its own repair counters, so you can open the repairs still to do on that unit, the repairs already completed, and separately the repair orders that consumed that serial as a spare part. Combined with the traceability report, that answers what was done to this machine and what went into it. What is missing is anything customer facing: no portal view and no printable service history document."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Decide who owns the goods in your building",
+      "body": "The customer device is not your stock. Switch on Consignment in the Inventory settings to get an owner field on receipts and quants, then receive each unit against the customer as owner so it stays out of your valuation. Skip this and every month end shows inventory you do not own and cannot sell. This one decision separates a clean repairs build from an argument with the auditor."
+    },
+    {
+      "title": "Operation types, and where the workshop physically is",
+      "body": "Each warehouse holds one repair operation type, and that record is where the geography is decided. It carries four default locations rather than the usual two: a source and a destination for the unit being repaired, and a separate source and destination for components. Point the unit destination at a workshop location that exists on the map, so a job waiting on a back ordered part is somewhere physical rather than in a state nobody can see. A bench location per technician is worth the effort where small spares walk off shelves."
+    },
+    {
+      "title": "Products, spares and a labour catalogue",
+      "body": "The things you repair need product records, with serial tracking on anything a customer will later ask you about. Spares are storable products with a real cost, not a generic miscellaneous line. Labour is a set of priced service products, so a diagnostic, a bench hour, a minimum charge and a rush fee, rather than one hourly rate. Those products are what quotations are built from and what margin reporting groups by, and the ones that should raise a job on sale get the Create Repair flag."
+    },
+    {
+      "title": "What the data migration actually involves",
+      "body": "Three imports matter: customers, the installed base as lot and serial records against the right products, and open jobs as draft repair orders. Warranty expiry is not a standard field, so it has to exist before the import runs rather than after. Historic job history rarely earns its place as repair orders. Export it, attach the documents to the serial or the customer, and keep the old system readable for a year."
+    },
+    {
+      "title": "Upgrading from Odoo 16 or earlier",
+      "body": "Repair lines, repair fees and the invoice method on the repair order were all removed in 17. Old repairs do not map onto the new model line for line, and the invoicing history ends up somewhere else. Anything that read those tables, so a job costing report, a BI extract or a portal integration, has to be rewritten against stock moves and sale order lines. Close open repairs on the old version before cutover so nothing has to be rebuilt by hand, and run the upgrade of historic repair data on a copy of the live database before anyone commits to a date."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Repair states are fixed",
+      "body": "New, Confirmed, Under Repair, Repaired and Cancelled. There is no stage model, so awaiting parts, awaiting customer approval and ready for collection are not columns you can add. Those are exactly the columns a workshop runs on. What you do get is tags, an urgent priority and a late parts flag, which carry a saved filter each and cover perhaps half the need. Beyond that it is a custom stage field. Decide that in design, not after the team has spent a fortnight on a board with three columns."
+    },
+    {
+      "title": "Warranty is a checkbox, not an entitlement check",
+      "body": "Odoo holds no warranty period on a product or a serial, no lookup back to the original sale and no expiry calculation. The expiration date that can appear on a lot belongs to the Expiration Dates setting and is a shelf life control for perishable goods, not a warranty term. A person at the counter decides, and the zero pricing follows that decision. Where warranty leakage costs real money, add a warranty end date to the serial, computed from the delivery date, and an automation rule that sets or blocks the flag."
+    },
+    {
+      "title": "Customer owned units inflating your balance sheet",
+      "body": "A device received on an ordinary receipt increases on hand quantity and stock value for goods you do not own. At a hundred units a month the drift becomes visible fast, and it is painful to unwind after a year. Consignment ownership solves it properly. Receiving against a product that is not inventory tracked also keeps the accounts clean, at the cost of serial traceability. Choose deliberately, because changing approach later means restating stock."
+    },
+    {
+      "title": "No labour time is captured on the repair order",
+      "body": "There is no timer and no timesheet line on a repair order. Hours are a quantity somebody types onto a sale order line after the job is done. If technician utilisation or true job cost matters, run a project task beside the repair order and timesheet against that, or accept that the hours are an estimate dressed as data. Utilisation is the report every repair business asks for around month three."
+    },
+    {
+      "title": "A scheduled date is not a capacity plan",
+      "body": "The repair order has one date and one responsible user. There is no bench, no work centre, no duration and no load view, so a workshop with twelve technicians cannot see who is full next Tuesday. Manufacturing solves that with work centres and repairs deliberately does not use them. The Enterprise Planning app schedules people rather than repair orders, so joining the two is custom work. Sequencing by hand is fine at ten jobs a day and falls apart at fifty."
+    },
+    {
+      "title": "The customer cannot see their repair",
+      "body": "The portal exposes quotations, sale orders and invoices. Repair order status is not published to it, so a customer asking whether the unit is ready gets a phone call. High counter volume makes that a real cost. The options are a custom portal page, or status emails and SMS driven by automation rules on the repair order state. Budget for one of them rather than discovering it at go live."
+    }
+  ],
+  "worksWith": [
+    "Inventory, for parts, serial numbers, the return that brings the unit in and the delivery that sends it back",
+    "Sales, which installs with Repairs as a dependency and carries the quotation, the approval and the invoice",
+    "Purchase, for spare parts sourcing and reordering rules on fast moving components",
+    "Accounting, for stock valuation entries and, in Enterprise, the country e-invoicing connectors",
+    "Project and Timesheets, both Community, when technician hours have to be costed against a job",
+    "Helpdesk in Enterprise, where an agent raises the repair from a customer ticket",
+    "Field Service in Enterprise, when the fix happens at the customer site rather than the bench",
+    "Maintenance, for machines you own, which is a different app from repairs you sell"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA Phase 2 splits repair billing in two. A standard invoice to a business customer has to be cleared through Fatoora before it is valid, so the unit cannot be handed over against a written slip and the counter depends on an API being up. Consumer counter work is a simplified invoice, stamped locally and reported within 24 hours, which keeps the queue moving. Both carry Arabic and a QR code. Integration waves keep stepping down by revenue, so confirm which wave your turnover puts you in rather than assuming a small workshop is out of scope."
+    },
+    {
+      "country": "uae",
+      "note": "Electronic invoicing runs through an Accredited Service Provider rather than a direct link to the tax authority, so the Odoo side is an integration to that provider and picking the provider is a procurement decision before it is a technical one. The published phasing starts with the largest taxpayers and brings the rest in behind them, and B2C sits outside the current scope, so a walk in counter stays simple. The piece worth designing early is warranty work recharged to an overseas manufacturer, which is a cross border service invoice with its own tax treatment."
+    },
+    {
+      "country": "india",
+      "note": "Sending a customer machine out to a specialist and getting it back is job work. It moves on a delivery challan under rule 55 with an e-way bill above the state threshold, in both directions, which is two more documents for every subcontracted repair. A repair invoice also mixes goods and services, so parts carry HSN codes and labour carries SAC codes, often at different rates on one document. Above INR 50 million of turnover that invoice needs an IRN and a signed QR code back from the portal before it reaches the customer."
+    },
+    {
+      "country": "pakistan",
+      "note": "One repair invoice can straddle two tax authorities. Spare parts are federal sales tax to the FBR, while the repair service is provincial, so SRB in Sindh, PRA in Punjab, KPRA in Khyber Pakhtunkhwa or BRA in Balochistan. That is two registrations, two returns and a tax mapping in Odoo that splits the same document by line type, which is the part most templates get wrong. FBR digital invoicing then sits on top as a clearance step, with the invoice number and QR code coming back from PRAL or a licensed integrator before you can issue."
+    },
+    {
+      "country": "turkey",
+      "note": "A device travelling to the workshop and back needs an e-Irsaliye dispatch note in each direction, so the delivery you raise after the repair is a compliance document rather than housekeeping. Billing then splits by counterparty: e-Fatura where the customer is registered in the system, e-Arsiv for everyone else, which at a counter means checking the register before printing. Archived e-documents have to remain in Turkiye, so hosting is settled by the compliance rule and not by preference."
+    },
+    {
+      "country": "egypt",
+      "note": "The ETA portal wants every line item coded, against a GS1 GTIN or an EGS code you register yourself, so a spare parts catalogue has to be mapped before the first invoice will clear and a miscellaneous parts line simply will not pass. Invoices are signed with a CAdES-BES seal held on an HSM or a USB token, so the certificate has to be reachable from wherever invoices are issued, which shapes whether billing can run from a branch counter at all. Consumer repair counters fall under the separate e-receipt system."
+    },
+    {
+      "country": "germany",
+      "note": "Two years of statutory liability for defects is not billable work, and it is a different thing again from a commercial warranty or a paid service contract. All three have to be distinguishable on the order, because the entitlement and the accounting differ. GoBD requires the job card, the photos and the handover signature to stay unalterable and traceable for the retention period, which is an attachment and archiving policy rather than a plugin. Since January 2025 every German business has had to be able to receive a structured e-invoice, so parts suppliers can send XRechnung or ZUGFeRD today, with the obligation to issue phasing in from 2027."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "There is no B2B e-invoicing mandate, but Making Tax Digital requires an unbroken digital link from the repair invoice through to the VAT return, so job totals cannot be rekeyed through a spreadsheet along the way. HMRC submission from Odoo lives in the UK localisation on Enterprise rather than Community, and for a workshop of any size that single point often decides the edition. NHS trusts procure over Peppol, so servicing medical equipment under an NHS contract makes access point capability a contractual matter rather than a preference."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Repairs a Community or an Enterprise app?",
+      "a": "Repairs is Community and LGPL licensed, so repair orders, part moves, the warranty flag and the link into Sales cost nothing in licence terms. What surrounds it often is not. Helpdesk, Field Service, Studio, Barcode and the country e-invoicing connectors are Enterprise. Price the workflow rather than the app, because a Community repairs build that then needs ticket intake and a clearance connector is an Enterprise build with extra steps."
+    },
+    {
+      "q": "What changed in Odoo 17 and does it affect an upgrade?",
+      "a": "The repair order was rebuilt on stock moves. The separate part and fee lines went, the invoice method that let you bill from the repair itself went, and charging moved onto a linked sale order. For a new build that is simply how it works. For an upgrade it matters, because historic repairs carry data with nowhere identical to land, and any report, BI extract or integration that read repair lines or repair fees has to be rewritten against stock moves."
+    },
+    {
+      "q": "Can one job be part warranty and part chargeable?",
+      "a": "Not on one repair order, because the flag covers the whole order. The clean pattern is two repair orders, one covered and one chargeable, hung off a single sale order so the customer still receives one document. A sale order can carry several repair orders, but only where the repairs were created from that order, since raising a quotation from a repair always creates a fresh sale order. The alternative is one chargeable order with the covered lines discounted to zero and the reason recorded against them."
+    },
+    {
+      "q": "Can we recharge warranty work to the manufacturer?",
+      "a": "Yes, as two documents rather than one. The customer job runs under the warranty flag at zero, and the recharge is a separate sale order to the manufacturer carrying the parts and the agreed labour rate. Odoo has no claim model, no claim number and no reconciliation between the two, so the link is a field you add or a reference somebody types. Where the manufacturer pays on their own cycle, that recharge then ages in receivables like any other customer balance."
+    },
+    {
+      "q": "Do we need Sales installed just to run repairs?",
+      "a": "You do not get a choice. Repairs declares Sales as a dependency, so installing one brings the other, and since Odoo 17 the quotation, the customer approval and the invoice all live on the sale order created from the repair. Both apps are Community, so this costs nothing in licensing. The only flow that ignores Sales entirely is internal refurbishment, where nobody is billed and repair orders plus stock moves are the whole story."
+    },
+    {
+      "q": "We already have a year of customer units in our stock value. How do we unwind it?",
+      "a": "Fix the flow first, then the history, or the work gets done twice. Turn on Consignment and route every new intake through an owner so the problem stops growing that same week. The units already counted come out through an inventory adjustment against a dedicated location, posted as one movement with the valuation correction agreed with your accountant in advance rather than dribbled quietly across months. Expect to reconcile serial by serial, because that is the only way to tell a customer unit from your own."
+    },
+    {
+      "q": "Can customers book a repair from our website?",
+      "a": "Not from the Repairs app itself, which has no website intake. The nearest standard route is to sell a diagnostic or fixed price repair product carrying the Create Repair flag, so a webshop order or an accepted quotation raises the repair order on confirmation. The other common patterns are a website form that creates a lead, or a Helpdesk ticket on Enterprise that an agent turns into a repair. Intake is the easy half. Telling the customer their unit is ready is the part that needs building."
+    },
+    {
+      "q": "What reporting comes out of the box?",
+      "a": "Less than most buyers assume. You get the repair order list with the usual filters, grouping and pivots, margin and revenue on the sale orders, stock valuation on parts consumed, and per serial repair counts on the lot record. There is no turnaround time report, no first time fix rate and no technician utilisation, because the underlying timestamps and hours are not all captured. Each of those is a stored computed field plus a view, which is a small job scoped at the start and an awkward one bolted on later."
+    },
+    {
+      "q": "How long does a repairs implementation take?",
+      "a": "A single counter with one warehouse, one repair operation type, a spares catalogue and a quotation flow is a matter of weeks. What adds months is predictable: consignment ownership across several branches, manufacturer warranty recharge, a clearance e-invoicing integration that has to be certified before go live, and an installed base import. Serial number data quality moves the date more than configuration ever does, because a unit whose serial does not exist in Odoo cannot be repaired against."
+    }
+  ]
+}

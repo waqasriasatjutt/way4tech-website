@@ -1,0 +1,164 @@
+{
+  "metaDescription": "Odoo Email Marketing in practice: the blacklist versus per list opt out, DKIM and bounce routing, A/B tests, and why double opt in has to be built.",
+  "intro": [
+    "Odoo Email Marketing is the mass_mailing app, and it ships in Community. The drag and drop builder, A/B testing, link tracking with UTM, the blacklist and per recipient statistics cost nothing beyond the server that sends the mail. The reason to run campaigns here rather than in a separate tool is the audience. A mailing can target any Odoo model behind a filter, so the recipients are a live query on your own database instead of a CSV somebody exported last quarter.",
+    "The builder is not where these projects fail. Deliverability and consent are. Odoo will send fifty thousand messages from a domain with no DKIM record and no DMARC policy, and the only symptom is a delivery rate that quietly falls as the large mailbox providers start filing you under spam. Bounce routing, the blacklist, and the suppression list carried across from the previous tool are the parts that decide whether a campaign arrives at all.",
+    "The edition line is worth knowing before a budget is signed. Email Marketing and SMS Marketing are both Community. Marketing Automation, which is where multi step drips, branching on behaviour and timed follow ups live, is Enterprise and a separate app. Standard Odoo also has no double opt in and stores no proof of consent, so a German, Turkish or French list needs work that no demo will ever show you."
+  ],
+  "whoFor": [
+    "Companies already running Odoo CRM, Sales or eCommerce, where the audience for a campaign is a filter over live records rather than an export.",
+    "B2B teams sending a handful of campaigns a month who care more about a click landing on the lead than about template variety.",
+    "Event and training businesses mailing registrants, where the list is the registration record and never has to be synchronised anywhere.",
+    "Teams leaving a small Mailchimp or Brevo account, where the subscription fee has grown larger than the value of the features being given up.",
+    "Not for teams that need behavioural drip sequences, unless they are on Enterprise, because that is Marketing Automation and not this app.",
+    "Not for senders pushing several million messages a month, where a dedicated provider with warmed IP pools and a deliverability desk earns its fee."
+  ],
+  "capabilities": [
+    {
+      "title": "Recipients are a filter, not a static list",
+      "body": "A mailing targets either a mailing list or any Odoo model, so a campaign can go to leads in one stage, customers who bought a specific product, or registrants of one event, all defined as a domain over live records. Useful filters can be saved as favourites and reused. The domain is evaluated when the mailing is sent rather than when it is written, so a scheduled campaign picks up records created in between. That is the largest practical difference from an external tool holding a copy of your contacts."
+    },
+    {
+      "title": "The blacklist and the per list opt out are two different things",
+      "body": "Opting out of a mailing list sets a flag on the subscription record for that list only, and the address still receives campaigns sent to other lists or built on a model. The blacklist is a separate model keyed on the email address itself, database wide, and it suppresses every mass mailing regardless of source. Unsubscribe pages expose both. Confusing the two is the usual reason somebody complains that they unsubscribed twice and still got the newsletter."
+    },
+    {
+      "title": "A/B testing with an explicit winner rule",
+      "body": "Enable A/B testing on a mailing and Odoo sends each version to a percentage of the audience, holding the remainder back. You pick the criterion for the winner, opens, clicks or replies, and with the CRM and Sales bridge modules installed, leads, quotations or revenue, then send the winner manually or let Odoo do it on a date. Keep the variants to one changed element, usually the subject line, because two changes at once produce a result you cannot attribute. Below a few thousand recipients the split rarely reaches significance."
+    },
+    {
+      "title": "What the statistics actually measure",
+      "body": "Each recipient produces a trace record carrying sent, opened, clicked, replied, bounced or cancelled. Opens are counted by a tracking pixel, so they depend on images loading. Clicks are counted by rewriting links through the tracker, which also attaches the UTM source, medium and campaign, and that is what carries attribution back to the lead in CRM. Because a click is a real action and an open is not, click through and reply rate are the numbers worth putting in a board pack."
+    },
+    {
+      "title": "Templates, placeholders and the preview line",
+      "body": "The editor is the same block based builder as the website, with themes to start from, a mobile preview, and a test send to your own address. Placeholders resolve per recipient against the record the mailing is built on, so a first name or a product name comes from the database rather than from an imported column. The preview text field sets the line most inboxes show after the subject. Leave it empty and the client shows the first words of the template instead."
+    },
+    {
+      "title": "SMS on the same audiences",
+      "body": "SMS Marketing is Community and reuses the same recipient logic, so an SMS campaign is defined against the same models and filters as an email one. It sends through Odoo credits bought in advance rather than over SMTP, and it keeps its own phone blacklist, separate from the email one. An address unsubscribing from email therefore does not stop the SMS, which is a point to settle with legal before either channel goes live."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Fix DNS before the first campaign, not after",
+      "body": "Publish an SPF record covering whatever actually sends, add the DKIM record for your sending platform, then a DMARC policy. Start DMARC on none while you read the reports, then move to quarantine. Gmail and Yahoo have required DMARC, one click unsubscribe headers and a spam complaint rate under 0.3 percent from bulk senders since 2024, so check whether your Odoo version emits the List Unsubscribe headers and add them if it does not. Send bulk from a subdomain so a bad campaign cannot damage the domain your invoices leave from."
+    },
+    {
+      "title": "Give bounces and replies somewhere to land",
+      "body": "Odoo tags outgoing mass mail with a bounce address so rejections come back to the database, get written onto the trace and counted on the contact. On a self hosted server that means an incoming mail server fetching the bounce and catchall aliases, and it is routinely forgotten, which leaves every campaign reporting zero bounces on a list that is a third dead. Decide separately where replies go, since a mailing can reply to a monitored mailbox or back into the record."
+    },
+    {
+      "title": "The send is a queue, not a button",
+      "body": "Sending queues the messages and the Mass Mailing: Process queue scheduled action drains them in batches, with the batch size held in a system parameter. A large campaign leaves over minutes or hours, and the pace is set by the cron interval and your outgoing server rather than by the moment somebody clicked. Odoo Online also applies a daily outgoing limit tied to the plan. Work the real ceiling out during scoping, because a 200,000 message campaign on a hosted plan is a conversation about mail servers."
+    },
+    {
+      "title": "Build the audience where the data already is",
+      "body": "Resist creating mailing lists that duplicate what Contacts, CRM or eCommerce already knows. Lists suit genuine subscriptions such as a newsletter somebody asked for. Everything else is better as a saved filter over the operational model, because it never drifts and nobody has to remember to sync it. Where you do import a list, bring in the email, the name and the source of consent, and put the source in a field you added rather than in a tag nobody maintains."
+    },
+    {
+      "title": "Decide what unsubscribe actually does",
+      "body": "The unsubscribe link takes the recipient to a page where they can leave the list, manage other subscriptions, or blacklist the address entirely. For a mailing built on a model rather than a list there is no subscription to leave, so unsubscribing blacklists. Agree the wording with whoever owns the brand, because that page is the last thing an unhappy recipient reads, and a page offering a pause or a lower frequency keeps addresses that a single confirm button loses."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "There is no double opt in",
+      "body": "The newsletter block and popup on an Odoo website subscribe a visitor the moment they submit, with no confirmation email and no stored evidence of when consent was given. In most of Europe the sender has to prove consent, and a row in a list is not proof. The fix is a confirmation step and a logged timestamp, built as custom work or taken from a community module and then tested properly. Budget it at the start rather than discovering it during a legal review."
+    },
+    {
+      "title": "The blacklist is by address and outlives the contact",
+      "body": "Deleting a mailing contact does not remove the blacklist entry, which is deliberate, because the suppression has to survive a reimport of the same list. It also means removing a blacklist row to help one complaining customer starts mail flowing to them again. The blacklist carries no company either, which matters in a group running several brands from one database. Blacklisting also does not stop transactional mail, so a customer who unsubscribes still gets their order confirmation."
+    },
+    {
+      "title": "Two audience models, one duplicate problem",
+      "body": "Mailing contacts and ordinary contacts are separate models. A campaign to a list uses one, a campaign to customers uses the other, and the same person can sit in both under two spellings of the same address. Statistics then double count and somebody receives the campaign twice. The blacklist is what unifies them, since it matches on the address, so normalise case and whitespace on import and mail one audience per campaign rather than both."
+    },
+    {
+      "title": "Open rate stopped being a metric in 2021",
+      "body": "Apple Mail Privacy Protection preloads the tracking pixel for users who enabled it, and other clients proxy images the same way, so a share of your opens are machines. Reported open rates rose across the industry without anybody reading more email. Judge campaigns on clicks, replies and the revenue attributed through UTM. An A/B test set to pick its winner on opens is picking on noise, so set that criterion to clicks instead."
+    },
+    {
+      "title": "One bad import costs the domain, not just the campaign",
+      "body": "A purchased list, or a five year old export nobody has mailed since, produces hard bounces and spam complaints in the first hour, and the reputation damage attaches to the sending domain rather than to the campaign. Send to the most recently engaged segment first, watch the bounce rate, and grow the volume over a week or two. Where a list has genuinely gone cold, a small reconfirmation campaign costs less than the six weeks it takes to recover a burnt domain."
+    },
+    {
+      "title": "What does not come out of the old tool",
+      "body": "Subscribers export cleanly from Mailchimp or Brevo. Unsubscribes, hard bounces and spam complaints usually sit in a separate suppression export, and teams import the first file and forget the second, which mails everybody who already opted out. Load the suppression list into the Odoo blacklist before the first send. Historic campaign statistics do not transfer at all, so export or screenshot the reports you need while the old account is still open."
+    }
+  ],
+  "worksWith": [
+    "CRM, where a campaign click is attributed to the lead through the UTM source, medium and campaign",
+    "eCommerce, for segments built from real order history rather than from a tag somebody maintains",
+    "Events, so a mailing reaches the registrations of one event without a list existing at all",
+    "Website, whose newsletter block and popup subscribe visitors straight into a mailing list",
+    "Marketing Automation on Enterprise, when one campaign has to become a timed, branching sequence",
+    "SMS Marketing in Community, for a second channel on the same recipient filters, billed in prepaid credits rather than sent over SMTP",
+    "Subscriptions and Sales, for renewal and win back campaigns filtered on the order data itself",
+    "Any SMTP relay you already pay for, since the app sends over a standard outgoing mail server"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Arabic campaigns are built right to left in the template itself, because the mailing editor does not flip a left to right block for you and the direction has to be set on the body. Arabic web fonts survive very few inboxes, so headline type usually ends up as an image with the words carried in the alt text. The working week runs Sunday to Thursday, which puts the useful send window on Sunday and Monday rather than where a European schedule would place it."
+    },
+    {
+      "country": "uae",
+      "note": "The TDRA policy on unsolicited electronic communications expects the sender to be identifiable and every message to carry a working opt out, which means the blacklist rather than a per list flag, since a per list opt out leaves the address reachable from any other mailing. Scheduled sends are stored in UTC and shown in the user timezone, so check the timezone on the account that scheduled the campaign before trusting a 09:00 slot."
+    },
+    {
+      "country": "egypt",
+      "note": "Personal Data Protection Law 151 of 2020 treats electronic direct marketing as a licensed activity, requires the sender to be identified and an opt out offered, and expects records of who was mailed and when. The trace records answer the last part without extra work. The licence is not a configuration step, and the Data Protection Centre that issues it has been slow to stand up, so confirm the current position before a launch date is promised."
+    },
+    {
+      "country": "turkey",
+      "note": "Commercial electronic messages fall under Law 6563 and IYS, the national message management system, which records consent per channel, so an email consent does not authorise the SMS step. Consent you collect yourself has to be uploaded within three business days. Recipients can also withdraw inside IYS without ever touching your unsubscribe link, and that withdrawal does not reach the Odoo blacklist on its own. Turkish characters in subject lines need the encoding checked or they arrive broken."
+    },
+    {
+      "country": "india",
+      "note": "There is no email specific anti spam statute here, so the practical constraints are the DPDP Act and the mailbox providers rather than a regulator. The consent notice has to be available in English or any of the twenty two Eighth Schedule languages, and withdrawal has to be as easy as the original opt in, which is a process somebody owns rather than a setting. Consumer lists are dominated by free mailbox providers, so Gmail decides delivery long before any local rule does."
+    },
+    {
+      "country": "germany",
+      "note": "Section 7 of the UWG makes unsolicited commercial email an unreasonable nuisance and puts the burden of proving consent on the sender, which is why competitors, not only regulators, send warning letters over it. What matters in Odoo is what you store: the confirmation timestamp, the address as submitted, the page it came from and the wording shown at the time. Keep the confirmation mail free of any offer. The tracking pixel needs its own consent under the TDDDG."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "PECR regulation 22 decides your list. Marketing email needs prior consent unless the soft opt in applies, where the address was collected during a sale or negotiation for a similar product and an opt out has been offered in every message since. The trap in B2B is that sole traders and unincorporated partnerships count as individual subscribers, so a bought list of small business addresses does not sit inside the business to business exception."
+    },
+    {
+      "country": "united-states",
+      "note": "CAN SPAM classifies each message by its primary purpose, so a shipping notice carrying a promotion is treated as commercial mail and inherits the same obligations, which matters where marketing edits transactional templates. Penalties are assessed per message rather than per campaign. In practice the gate on a consumer list since 2024 is Gmail and Yahoo rather than the statute, and they enforce by filtering, not by a fine."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Email Marketing included in Odoo Community?",
+      "a": "Yes, and it is the same code in both editions. The builder, mailing lists, A/B testing, the blacklist, link tracking and the campaign reports are all Community, as is SMS Marketing. Marketing Automation is the Enterprise app, and it is what adds multi step sequences, waits and branching on what a recipient did. Social Marketing is Enterprise as well."
+    },
+    {
+      "q": "Do we pay Odoo per contact or per email?",
+      "a": "No. There is no per contact or per message charge for email, so the running cost of a campaign is your own outgoing mail server or relay, and Enterprise is priced per internal user rather than per subscriber. SMS is the exception and runs on prepaid credits. For a team leaving a tool priced on list size, that difference is usually the whole business case, and unlike the old bill it does not grow as the list does."
+    },
+    {
+      "q": "Can we send through Amazon SES, SendGrid or a similar relay?",
+      "a": "Yes. Add it as an outgoing mail server and Odoo sends over standard SMTP. Two details decide whether it behaves. Where several servers exist a mailing can be pinned to one, which is how bulk stays off the server carrying invoices. And where the relay accepts only one authenticated sender, Odoo checks the from address against that server's from filter and, on a mismatch, rewrites the from to your configured default and puts the original in reply to. That rewrite is the usual reason a campaign arrives from an address nobody chose."
+    },
+    {
+      "q": "Does Odoo support double opt in?",
+      "a": "Not in the standard product, and the gap is wider than the confirmation email. A working flow needs a tokenised link and a controller to receive it, a field holding the confirmation date and the source, and the mailings themselves filtered on confirmed records, because adding a field changes nothing while campaigns still target the whole list. Addresses collected before the change need their own decision: reconfirm them, or keep them in a separate segment. Scope it as development."
+    },
+    {
+      "q": "We run several brands from one database. Does that work?",
+      "a": "Partly. From Odoo 17 the catchall, bounce and default from addresses sit on an alias domain record, so each company can send and receive on its own domain with its own outgoing server and templates. The blacklist is the exception. It is keyed on the email address with no company on it, so one unsubscribe suppresses that address for every brand in the database. Where the brands have genuinely separate audiences and separate consent, separate databases are the honest answer."
+    },
+    {
+      "q": "Our campaign went to spam. Where do we start?",
+      "a": "Start with what sent means. A trace marked sent records that your outgoing server accepted the message, not that it reached an inbox, so Odoo will report a clean campaign that nobody received. Read the DMARC aggregate reports for alignment failures, check the sending domain in the postmaster tools the large providers publish, and confirm the message carried a working unsubscribe header. Then look at the content: image only templates, link shorteners and a from name that does not match the domain all cost you."
+    },
+    {
+      "q": "We also mail Canada and Australia. Does anything change?",
+      "a": "Both are stricter than the United States. CASL in Canada needs express or implied consent, evidence of it, and an unsubscribe mechanism that stays live for sixty days after the message. The Australian Spam Act requires consent, sender identification and unsubscribes honoured within five business days. Odoo handles the unsubscribe mechanics but records nothing about how consent was obtained, which is the part you build and keep."
+    }
+  ]
+}

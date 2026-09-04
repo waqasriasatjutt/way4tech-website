@@ -1,9 +1,9 @@
 {
- "metaDescription": "Odoo HR implementation detail: employee master data, contracts, org chart, onboarding plans, what Community includes, and the GCC and EU compliance catch.",
+ "metaDescription": "Odoo HR in practice: employee versus user, contracts and wage components, onboarding plans, access rights, and where Community stops and Enterprise starts.",
  "intro": [
   "Odoo HR is the record every other HR app reads. Time Off checks the working schedule on the employee, Attendance matches a badge to it, Timesheets cost hours against it, Payroll reads the contract attached to it, and Expenses raise a liability against the person behind it. Nothing else in the suite behaves until that record is right, which is why an HR rollout is mostly a data exercise and only partly a configuration one.",
-  "The app is Community. Employees, departments, job positions, the org chart, skills, resume lines, contracts and the departure workflow ship at no licence cost, as do Time Off, Attendance, Timesheets and Recruitment. Payroll, Appraisals, Documents, Sign, Approvals and Planning are Enterprise. That line matters because the features buyers picture when they say HRMS sit on both sides of it, and the edition question is settled by whether a payslip has to come out of Odoo rather than by the size of the directory.",
-  "Odoo also separates the employee from the user. Somebody can exist as an employee, be paid, book leave and appear on the org chart without ever logging in, and that person costs nothing in licence terms. Only people who work in the backend consume a user. Getting that split wrong is the fastest way to quote a project at several times its real subscription cost."
+  "The app itself is Community. Employees, departments, job positions, the org chart, skills, resume lines, contracts and the departure workflow ship at no licence cost, as do Time Off, Attendance, Timesheets and Recruitment. Payroll, Appraisals, Documents, Sign, Approvals and Planning are Enterprise. The features buyers picture when they say HRMS sit on both sides of that line, so the edition question is settled by whether a payslip has to come out of Odoo, not by the size of the directory.",
+  "Odoo also separates the employee from the user. A person can hold an employee record, a contract and a payslip without ever logging in, and that person costs nothing in licence terms. Only people who work in the backend consume a user. Getting that split wrong is the fastest way to quote a project at several times its real subscription cost."
  ],
  "whoFor": [
   "Companies of fifty staff and up who keep the employee list in a spreadsheet and find during an audit that three copies of it disagree.",
@@ -11,20 +11,20 @@
   "GCC employers tracking iqama, Emirates ID, QID, labour card and passport expiry against a real person rather than a folder on a shared drive.",
   "Service businesses whose cost, capacity and utilisation reporting depends on the employee record being accurate.",
   "It is not a standalone HRMS purchase, because the two things most buyers ask for first, payslips and appraisals, are separate Enterprise apps.",
-  "It is a weak fit where confidentiality has to work field by field inside HR, since Odoo restricts personal data to the HR Officer group as one block."
+  "It is a weak fit where confidentiality has to work field by field inside HR, since Odoo treats personal data as one block behind the HR Officer group."
  ],
  "capabilities": [
   {
    "title": "The employee record, stored twice",
-   "body": "Odoo keeps each person in two forms. The full record holds identification numbers, private address, bank account, marital status, dependants and visa data, and only the HR Officer and HR Administrator groups can read it. A public version carries work email, phone, department, manager and job title, and that is what a colleague sees in the directory or on a task. The split explains why the list looks empty of personal data to most users, and why an import has to run as an HR user."
+   "body": "Odoo keeps each person in two forms. The full record holds identification numbers, private address, bank account, marital status, dependants and visa data, and it is read by the HR Officer and HR Administrator groups and by the person themselves on their own profile. A public version carries work email, phone, department, manager and job title, and that is what a colleague sees in the directory or on a task. The split explains why the list looks empty of personal data to most users, why a report built on the public model cannot group by nationality, and why an import of those fields has to run as an HR user."
   },
   {
    "title": "Departments, jobs and the manager tree",
-   "body": "Departments carry a parent department and a manager, so the structure is a tree rather than a flat list. Job positions are separate records holding expected headcount, which is what Recruitment opens a vacancy against. The manager field on the employee draws the org chart and, more importantly, routes approvals in Time Off, Timesheets and Expenses. An employee with no manager is not a cosmetic gap, it is a request that reaches nobody."
+   "body": "Departments carry a parent department and a manager, so the structure is a tree rather than a flat list. Job positions are separate records holding expected headcount, which is what Recruitment opens a vacancy against. The manager field on the employee draws the org chart, but approvals do not all follow it. Time Off, Timesheets and Expenses each add their own approver field on the employee record, seeded from the manager and editable afterwards. A reorganisation that updates only the manager leaves three stale approvers behind it, and the requests keep landing with someone who no longer runs the team."
   },
   {
    "title": "Contracts, wage and salary structure",
-   "body": "A contract holds the start and end date, the wage, the working schedule and the salary structure type, and it is the contract rather than the employee that payroll reads. Contracts are dated, so a raise is a new contract and the history stays intact. A scheduled job moves a contract to expired once its end date passes and raises an activity for the responsible user, which is how fixed term populations in the Gulf get warning instead of a surprise."
+   "body": "A contract holds the start date, the end date, the probation end date, the wage, the working schedule and the salary structure type, and payroll reads the contract rather than the employee. Contracts are dated, so a raise is a new record and the history stays readable. A scheduled action moves a contract to expired once its end date passes and raises an activity for the HR responsible named on it, which is how fixed term populations in the Gulf get a warning instead of a surprise. The probation date is only stored and nothing chases it, so probation reviews need an activity or a filtered list of their own. Odoo 19 reorganised this area so employment terms are held as dated versions of the employee record rather than as a separate contract document, so confirm which release you are on before writing reports or integrations against it."
   },
   {
    "title": "Skills, resume lines and certifications",
@@ -32,37 +32,37 @@
   },
   {
    "title": "Onboarding and offboarding as activity plans",
-   "body": "Odoo builds checklists as scheduled activities rather than as a task list. You define a plan once, listing each step and the role it belongs to, then launch it from the employee record and every step lands as a dated activity in the right person inbox. Offboarding runs the same way, ending in a departure wizard that records the reason and date and archives the employee instead of deleting them, so payslips, timesheets and attendance history stay readable."
+   "body": "Odoo builds these checklists as scheduled activities rather than as a task list. You define a plan once, listing each step and the role it belongs to, then launch it from the employee record and every step lands as a dated activity in the right person inbox. Offboarding ends in a departure wizard that records the reason and date and archives the employee instead of deleting them. Its options also close the running contract and cancel time off already booked after the leaving date, which is the part teams forget and then find in the leave balances."
   },
   {
    "title": "Documents, identity data and expiry",
-   "body": "Every employee record has a chatter, so contracts, ID scans and signed policies can be attached with no extra licence. That is storage, not document management. Retention rules, folder level access, tagging and asking an employee to upload a missing file come from the Documents app, which is Enterprise. Visa number, work permit number and their expiry dates are native fields on the employee, and a Gulf compliance report is built from those."
+   "body": "Every employee record has a chatter, so contracts, ID scans and signed policies can be attached with no extra licence. That is storage, not document management. Retention rules, folder level access, tagging and asking an employee to upload a missing file come from the Documents app, which is Enterprise. Visa number, work permit number and their expiry dates are native fields on the employee, and a scheduled action raises an activity as a work permit approaches its expiry. Nothing watches the visa expiry field sitting next to it, and there is no native field at all for passport, iqama or professional licence expiry. Each of those is a date you add, a filter and an activity somebody owns."
   },
   {
    "title": "Headcount and cost reporting",
-   "body": "The employee list is an ordinary Odoo model, so headcount by department, by job, by nationality or by contract end date is a filter and a grouping rather than a report to build. Hourly cost sits on the employee and feeds timesheet cost and project margin. Anything needing point in time headcount, joiners and leavers, or turnover percentage depends on the departure date being populated, which is the real reason the departure wizard matters."
+   "body": "The employee list is an ordinary Odoo model, so for an HR user headcount by department, by job, by nationality or by contract end date is a filter and a grouping rather than a report to build. Hourly cost sits on the employee and feeds timesheet cost and project margin. Anything needing point in time headcount, joiners and leavers, or turnover percentage depends on the departure date being populated, which is the real reason the departure wizard matters."
   }
  ],
  "setup": [
   {
    "title": "Working schedules before anything else",
-   "body": "The working schedule on an employee is a resource calendar, and it decides how a leave request converts into days, when attendance becomes overtime and what capacity Planning assumes. The shipped default is forty hours, Monday to Friday. In Saudi Arabia, the UAE, Qatar and Kuwait the week runs Sunday to Thursday, and Ramadan hours are a separate calendar again. Build the calendars first, because changing one later does not recalculate allocations already granted."
+   "body": "The working schedule on an employee is a resource calendar, and it decides how a leave request converts into days, when attendance becomes overtime and what capacity Planning assumes. The shipped default is forty hours, Monday to Friday. In Saudi Arabia, Qatar and Kuwait the week normally runs Sunday to Thursday. The UAE moved the public sector to Monday through Friday with a half day on Friday in 2022 and much of the private sector followed, so the UAE week is a question to ask rather than a default to inherit. Reduced Ramadan hours are a further calendar, applied for the month and reverted after it. Build the calendars before the employees, because a schedule changed later does not recompute allocations already granted against the old one."
   },
   {
    "title": "Splitting basic pay from allowances",
-   "body": "The contract carries one wage figure. Across the Gulf, end of service is calculated on basic salary only, and housing, transport, medical and other allowances are excluded. Qatar goes further and defines the statutory minimum as components rather than a total. So the contract needs a field per component and salary rules that read them, which is Enterprise payroll configuration or a small custom module. Decide it before importing contracts rather than reimporting all of them later."
+   "body": "The contract carries one wage figure. Across the Gulf, end of service is calculated on basic salary only, and housing, transport, medical and other allowances are excluded. Qatar goes further and defines the statutory minimum as components rather than a total. So the record needs a field per component and salary rules that read them, which is Enterprise payroll configuration or a small custom module. Decide it before importing contracts rather than reimporting all of them later."
   },
   {
    "title": "Access rights, and what a line manager sees",
-   "body": "There are two HR groups. Officer reads and edits personal data, Administrator adds configuration on top. Odoo gives no field level restriction inside that, so an Officer who can see a passport number can also see a salary. Limiting an Officer to one department or one company is a record rule written during implementation, not a checkbox. A line manager in no HR group sees the public record plus the requests of people reporting to them."
+   "body": "There are two HR groups. Officer reads and edits personal data, Administrator adds configuration on top. Odoo gives no field level restriction inside either, so an Officer who can see a passport number can also see a bank account. Limiting an Officer to one department or one company is a record rule written during implementation, not a checkbox, and it is the most common piece of custom security work on an HR project. A line manager in no HR group sees the public record plus the requests of the people reporting to them, which is usually the right answer and costs nothing to configure."
   },
   {
    "title": "Importing the existing employee list",
-   "body": "Import in two passes. The first creates every employee with no manager, the second sets the manager, because that field points at a record which may not exist yet on the first pass. Keep the legacy employee number in the file and map it to the badge ID or a reference field, since attendance hardware, bank files and every old report still speak that number. Run the import as an HR user or the personal fields are refused."
+   "body": "Import in two passes. The first creates every employee with no manager, the second sets the manager, because that field points at a record which may not exist yet on the first pass. Map the legacy employee number to the badge ID field, since attendance hardware, bank files and every old report still speak that number, and set the kiosk PIN in the same pass if people will check in at a shared screen. Run the import as an HR user or the personal fields are refused."
   },
   {
    "title": "Service dates and opening leave balances",
-   "body": "Two figures never arrive on their own. Length of service for gratuity runs from the original joining date, which is usually earlier than the first contract created in Odoo, so a historical contract or a dedicated field has to carry it. Opening leave balances are not a number typed on the employee, they are allocation records, so each person needs one allocation per leave type with the carried forward figure and a clear cut off date."
+   "body": "Two figures never arrive on their own. Length of service for gratuity runs from the original joining date, which is usually earlier than the first contract created in Odoo, so a historical record or a dedicated field has to carry it. Opening leave balances are allocation records rather than a number typed on the employee, so each person needs one allocation per leave type carrying the balance they brought with them. An accrual plan then runs forward from the start date on its own allocation, so back dating a plan to manufacture last year produces a figure nobody can reconcile against the old system. Carry the opening balance as a plain allocation and let accrual start at go live."
   },
   {
    "title": "Wiring onboarding to the apps that do the work",
@@ -71,8 +71,8 @@
  ],
  "pitfalls": [
   {
-   "title": "Counting employees as users",
-   "body": "Odoo bills internal users, not headcount. A plant with four hundred staff and twelve people who work in the backend is twelve users. Someone who only badges in at a shared kiosk, appears on a roster or is paid in a batch never needs a login at all. Budgets get inflated by a factor of ten because the employee list and the user list were treated as the same thing, and the correction is a licensing conversation rather than a technical one."
+   "title": "Counting employees as users, and leavers who keep a login",
+   "body": "Odoo bills internal users, not headcount. A plant with four hundred staff and twelve people who ever open Odoo is twelve users, and projects get quoted at ten times their real subscription because the employee list and the user list were read as the same thing. The same confusion runs the other way after go live. Archiving an employee through the departure wizard does not deactivate the linked login, so a leaver keeps an active user, keeps consuming a seat and keeps their access until somebody archives the user in Settings as well. Put both steps in the leaver checklist and reconcile the two lists on a schedule."
   },
   {
    "title": "Deleting leavers instead of archiving them",
@@ -80,15 +80,15 @@
   },
   {
    "title": "One working calendar for the whole company",
-   "body": "Shift crews, part timers, a Ramadan schedule and a head office team do not share a working schedule, yet most first configurations give everyone the default. It surfaces later as leave deducted in the wrong quantity, overtime that never appears and a capacity plan that is confidently wrong. Allocations already issued are not recalculated when the calendar changes, so the correction becomes a data fix stacked on top of a configuration fix."
+   "body": "Shift crews, part timers, a Ramadan schedule and a head office team do not share a working schedule, yet most first configurations give everyone the default. A part timer on a forty hour calendar has a half day of leave deducted as a full day, and the overtime attendance is meant to surface never appears because the reference hours are wrong. The schedule is also held in two places, on the employee and on the contract, and the running contract is what drives the employee, so a calendar corrected on the employee alone can be quietly put back. Correct it on the contract, then check a sample of leave requests and attendance lines rather than trusting the field."
   },
   {
    "title": "Treating the chatter as a document vault",
    "body": "Attachments on an employee record have no expiry, no folder permissions, no retention period and no way to request the missing item from the employee. For passport scans under the GDPR, the Saudi personal data protection law or Turkish KVKK, that is a compliance gap rather than an inconvenience. Either license Documents, or limit what gets attached and keep identity scans in a system that can evidence who opened them."
   },
   {
-   "title": "Assuming a localisation exists for your country",
-   "body": "The HR app is country agnostic. The country specific content, gratuity rules, statutory contributions and payslip layouts, lives in the payroll localisation, and Odoo ships official ones for roughly a dozen countries. Saudi Arabia, the UAE, India, Jordan, Turkiye, Australia and the United States are covered. Pakistan, Qatar, Kuwait, Oman, Bahrain, Bangladesh, the United Kingdom, Germany, France and Canada are not, so those rules are a build or a bought module."
+   "title": "Assuming a payroll localisation exists for your country",
+   "body": "The HR app is country agnostic. Gratuity rules, statutory contributions and payslip layouts live in the payroll localisation, which is Enterprise and covers a specific list of countries, Belgium, France, the United States, India, Australia, the UAE and Saudi Arabia among them. There is none for Pakistan and none for the United Kingdom. The list changes release to release, so open the Apps list on the exact version you are installing and search the country name before anyone promises payslips."
   },
   {
    "title": "Nobody owns the org chart",
@@ -97,84 +97,84 @@
  ],
  "worksWith": [
   "Time Off, which reads the working schedule and the manager from the employee record to compute balances and route approvals.",
-  "Attendance, including ZKTeco and similar biometric readers, matched to the badge ID held on the employee.",
-  "Payroll, Enterprise only, which reads the contract rather than the employee for wage, schedule and salary structure.",
+  "Attendance, in the backend or as a shared kiosk where the badge ID and PIN on the employee replace a login.",
+  "Biometric and card readers such as ZKTeco, which are not native and reach Odoo through a connector module that matches each device record to the badge ID.",
+  "Payroll, Enterprise only, which takes wage, working schedule and salary structure from the contract rather than from the employee record.",
   "Recruitment, which converts a hired applicant into an employee and carries the application history across.",
   "Timesheets and Project, where the hourly cost on the employee drives project margin and utilisation.",
-  "Expenses, which pays a claim to the employee bank account or reimburses it through a payslip.",
-  "Fleet and Maintenance, for the vehicle and the equipment issued to a person on their first day.",
-  "LDAP or OAuth single sign on, so the minority who do log in use the corporate directory rather than a second password."
+  "Expenses, which pays a claim to the employee bank account, or reimburses it inside a payslip once Payroll is licensed.",
+  "Fleet and Maintenance, for the vehicle and the equipment issued to a person on their first day."
  ],
  "regional": [
   {
    "country": "saudi-arabia",
-   "note": "Employment contracts are authenticated in Qiwa, so what Odoo holds has to agree with what the ministry holds, job title and wage included. Iqama and passport expiry belong on the employee with a renewal activity, and Nitaqat banding depends on nationality and job data being correct. The Saudi payroll localisation covers GOSI by nationality and end of service, but the WPS extract fails on a bad IBAN."
+   "note": "Employment contracts are authenticated in Qiwa, so what Odoo holds has to agree with what the ministry holds, job title and wage included. Nitaqat banding depends on nationality and job data being correct, which makes two ordinary fields on the employee a compliance input. The Saudi payroll localisation handles GOSI at the separate Saudi and expatriate rates and end of service, and iqama and passport expiry belong on the employee with a renewal activity behind them."
   },
   {
    "country": "uae",
-   "note": "Contracts are fixed term, so an end date and a renewal cycle are mandatory data. Gratuity is computed on basic pay alone, so the package has to be split into basic, housing and transport on the contract. Ministerial Resolution 340 of 2026 moved payment to the first day of the following month with at least 85 percent transferred, so the WPS file cannot wait on late master data."
+   "note": "Unlimited contracts were abolished in 2022, so an end date and a renewal cycle are mandatory data rather than optional fields, and a contract nobody renewed is a compliance problem before it is a data problem. Gratuity runs at 21 days of basic pay for each of the first five years of service and 30 days for each year after that, which is why the package has to be split into basic, housing and transport before the first payroll run and not after it. Salaries are paid through the Wage Protection System, and that file is built from the labour card number, the IBAN and the bank routing code, so a bank detail nobody validated at import becomes a rejected batch on payday."
   },
   {
    "country": "qatar",
-   "note": "The statutory minimum is defined as components, QAR 1,000 basic plus QAR 500 accommodation and QAR 300 food unless the employer provides them directly, so one wage figure on the contract is not enough. QID expiry governs work eligibility. There is no Qatar payroll localisation and no native Salary Information File export, so the WPS file is a bought module or a build against the bank layout."
+   "note": "The statutory minimum wage is defined as components, QAR 1,000 basic plus QAR 500 for accommodation and QAR 300 for food unless the employer provides them directly, so one wage figure on a contract cannot express compliance. End of service is a minimum of three weeks of basic pay for each year of service once the first year is complete, a different formula from the UAE and different again from Bahrain, so a gratuity rule copied from a neighbouring country is wrong here. Payroll localisation coverage for Qatar is thin, so budget for the Wage Protection System file to be built or bought, and check the Apps list on your release before assuming otherwise."
   },
   {
    "country": "bahrain",
-   "note": "Since 1 March 2024 end of service for expatriate workers accrues as a monthly contribution to the Social Insurance Organisation, 4.2 percent of wage for the first three years and 8.4 percent after. Service before that date remains the employer liability, so every employee needs a continuous service date and a split at that boundary. WPS 2.0 through the LMRA portal makes the payroll file the only permitted route."
+   "note": "Since 1 March 2024 end of service for expatriate workers accrues as a monthly contribution to the Social Insurance Organisation, 4.2 percent of wage for the first three years of service and 8.4 percent after. Service before that date remains an employer liability, so every employee needs a continuous service date and the calculation needs a split at that boundary. Terminal gratuity logic copied from a neighbouring country produces the wrong number here."
   },
   {
    "country": "india",
-   "note": "Statutory identifiers carry the load: UAN and PF member ID, ESIC number where the wage threshold applies, PAN and Aadhaar. Professional tax is levied per state, so the work location on an employee is a tax input, not merely an address. Under the labour codes in force since November 2025, fixed term staff qualify for gratuity after one year, which turns contract type into a field that costs money."
+   "note": "Statutory identifiers carry the load: UAN and PF member ID, ESIC number where the wage threshold applies, PAN and Aadhaar. Professional tax is levied per state, so the work location on an employee is a tax input rather than an address. Under the labour codes brought into force in November 2025, fixed term staff qualify for gratuity after one year, which turns contract type from an administrative label into a field that costs money."
   },
   {
    "country": "pakistan",
-   "note": "There is no Odoo payroll localisation, so salary tax slabs, EOBI and provincial social security are built on the project and maintained at each budget. EOBI is calculated on the federal minimum wage rather than actual salary, which generic builds get wrong. Registration is with PESSI in Punjab or SESSI in Sindh, so the province of the work location has to sit on the employee record, not just the city."
+   "note": "There is no Odoo payroll localisation, so salary tax slabs, EOBI and provincial social security are built on the project and revisited at each budget. EOBI is calculated on the federal minimum wage rather than on actual salary, which generic builds get wrong and then have to unwind. Registration is with PESSI in Punjab or SESSI in Sindh, so the work location record has to carry the province and not only the city."
   },
   {
    "country": "united-kingdom",
-   "note": "Odoo ships no UK payroll localisation and the documented route is an integration with an external payroll product, so real time information submissions and auto enrolment assessment happen outside the HR record. What stays in Odoo is the data those systems need: national insurance number, address, starter declaration, and right to work evidence with its own expiry date for anyone holding a share code."
+   "note": "Odoo ships no UK payroll localisation, so real time information submissions to HMRC and pension auto enrolment assessment happen in a separate payroll product that Odoo feeds. What stays in the employee record is the data those systems need: national insurance number, address, starter declaration, and right to work evidence with its own expiry date for anyone holding a share code. Decide early which system is master for a leaver date."
   },
   {
    "country": "germany",
-   "note": "A system able to record working time is subject to co-determination, so the works council agrees the attendance and reporting design before go live rather than after it. The Nachweisgesetz requires the essential terms of employment in writing, so the contract record carries more than a wage and a date. There is no German payroll localisation, and the personal tab needs a documented purpose and retention rule."
+   "note": "A system able to record working time is subject to co-determination, so the works council agrees the attendance and reporting design before go live rather than after it. The Nachweisgesetz requires the essential terms of employment in writing, so the employment record carries more than a wage and a date. Data minimisation also cuts against the habit of attaching everything to the chatter, since each personal field wants a documented purpose and a retention rule."
   }
  ],
  "faqs": [
   {
    "q": "Do we need Odoo Enterprise for HR?",
-   "a": "Not for the directory. Employees, departments, job positions, the org chart, skills, contracts, onboarding plans, Time Off, Attendance, Timesheets and Recruitment are all Community. Payroll, Appraisals, Documents, Sign, Approvals and Planning are Enterprise. If a payslip has to be produced inside Odoo, that means Enterprise or a third party payroll module, and the third party route puts the maintenance on you."
+   "a": "Only if a payslip, an appraisal, a signed document or an approval chain has to live inside Odoo. Nothing in the core set of employee records, absence and time recording needs a licence. Two consequences buyers miss. Odoo Online hosts paid plans only, so a Community build is self hosted or hosted by your partner and the upgrade, backup and restore routine becomes somebody's named job. And the free single app tier, where it is offered, covers one app. Employees plus Time Off is already two, so a directory with leave on it is a paid plan on day one."
   },
   {
    "q": "Does every employee need a paid user licence?",
-   "a": "No. Odoo charges for internal users who log in to the backend. People who are paid, appear on a roster or check in at a shared kiosk need no login. On most manufacturing, retail and construction projects the user count is a small fraction of headcount, so confirm who genuinely needs backend access before sizing the subscription."
+   "a": "No, and the useful question is what a person can do without one. With no login they can be paid, appear on the org chart and the roster, badge in at a shared kiosk using the badge ID and PIN, and send a receipt to the expense email alias. What does need a login is submitting a leave request, filling a timesheet or approving anything, because those are backend screens with no portal equivalent. Count that group, not the headcount."
   },
   {
-   "q": "Can Odoo track visa, iqama and Emirates ID expiry?",
-   "a": "Yes. Work permit number, visa number and their expiry dates are native fields on the employee, and Odoo can raise a scheduled activity for the responsible HR user ahead of the date. What it does not give you out of the box is one renewals view across passports, permits, medical cards and certifications, so most GCC projects add a computed next expiry date and build a list on it."
+   "q": "Odoo has no payroll localisation for our country. What now?",
+   "a": "Three routes, with different owners for the risk. Write the rules on the Enterprise payroll engine, where a salary rule is a Python expression, so it is code someone maintains when a rate moves. Buy a country module from the app store, which is cheap until the vendor stops publishing and the tax tables age quietly. Or keep payroll in a specialist product and let Odoo be master for people, contracts and absence. Choose on who is accountable the month the law changes."
   },
   {
    "q": "Can Odoo calculate end of service gratuity?",
-   "a": "Only through payroll, and only where a rule book exists for the country. Gratuity is a salary rule reading basic pay and continuous service, so it needs the package split into basic and allowances plus a joining date that predates the first Odoo contract. Where Odoo ships no localisation, the rule is written during the project and revisited whenever the law moves."
+   "a": "Through Enterprise payroll, and only as well as the rule someone wrote. Gratuity is a salary rule that reads basic pay and continuous service, and no edition produces it for a country with no payroll localisation. Writing the rule is the easy half. The cases to test before go live are resignation against termination, which changes the entitlement under Saudi law until ten years of service, unpaid leave that interrupts continuous service, a transfer between two companies in the same database, and a rehire after a gap where somebody has to decide whether service restarts."
   },
   {
    "q": "Can a line manager see salaries?",
-   "a": "Not unless you place them in the HR Officer group, and that group is all or nothing across personal data. A manager outside any HR group sees the public employee record, work contact details, department and the requests of their own team. Restricting an Officer to a single department or company is a record rule written during implementation, not a setting somebody switches on."
+   "a": "Not through anything Odoo shows them by default. Wage sits on the contract, a separate model with its own access, so it is not on the form a manager can open. Pay data leaks by four other routes. An export from a list view, a payroll analysis pivot opened to too wide a group, a spreadsheet dropped into an employee chatter where every internal user can read it, and the HR Officer group handed to a line manager so they can maintain one field, which brings passports and bank details with it. Audit those, not the employee form."
   },
   {
-   "q": "What does migrating the old HR data actually involve?",
-   "a": "Four files rather than one. Employees, then managers in a second pass, then contracts carrying the historical joining date, then opening leave balances as allocation records. Add document attachments if those are moving, which is usually the largest part by volume. The identifiers worth keeping are the legacy employee number and the bank account, because attendance hardware and the bank file both depend on them."
+   "q": "How much of the old HR history has to come across?",
+   "a": "Split it into data a live process reads and data people only look at. Service dates, current terms, managers, badge numbers and open leave balances are read by something in Odoo the day after go live, so they have to be right on day one. Past appraisal notes, superseded contracts and old payslip PDFs are reference. They can land as attachments or resume lines a month later and nothing breaks. Attachments are the slowest part of an HR migration by a wide margin and the part carrying a retention question, so decide what genuinely has to move before anyone writes the loader."
   },
   {
    "q": "Can one database run several countries?",
-   "a": "Yes, with one company per legal entity. An employee belongs to a company, so somebody working across two entities is two employee records linked to a single login. Working schedules, leave types, public holidays and salary structures are all set per company. What you get in return is one directory, one org chart and consolidated headcount reporting across the group."
+   "a": "Yes, with one company per legal entity. An employee belongs to a company, so somebody working across two entities is two employee records linked to a single login, and their service dates have to be reconciled by hand. Working schedules, leave types, public holidays and salary structures are all set per company. What you get back is consolidated headcount, a single place to look anyone up, and reporting that crosses the entities without a spreadsheet in the middle."
   },
   {
    "q": "Does Odoo HR work in Arabic?",
-   "a": "Odoo ships Arabic with right to left support, and the interface language follows the user, so an Arabic speaking HR officer and an English speaking finance manager share one database. Field labels added during implementation need translating deliberately, and printed documents in Arabic need a font that renders correctly in the PDF engine, which is worth testing before go live rather than after."
+   "a": "Odoo ships Arabic with right to left support and the interface language follows the user, so an Arabic speaking HR officer and an English speaking finance manager share one database. Two things are on you. Field labels and selection values added during implementation are translated only if somebody translates them, and Arabic in printed PDFs depends on the font in the report layout, so print a payslip and a contract in Arabic during testing rather than in week one of production."
   },
   {
-   "q": "How do we handle onboarding steps owned by other teams?",
-   "a": "Put them in the plan and assign them to the owning role. One activity plan can create items for IT, finance and facilities against the same employee record, so HR sees a single checklist while each team sees only its own item in its own inbox. Steps that need a signed document or an approval sit in separate apps, and both of those are Enterprise."
+   "q": "Someone we archived is rejoining. What happens?",
+   "a": "Reactivate the archived record instead of creating a second one, or service history, past payslips and leave records end up split across two people who are the same person. Clear the departure date, add the new contract, and decide deliberately whether the original joining date stays, because in the Gulf that decides whether service counts as continuous for gratuity. If the rehire arrives through Recruitment, the create employee button on an applicant makes a fresh record, so watch for the duplicate."
   }
  ]
 }

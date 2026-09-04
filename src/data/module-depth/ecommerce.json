@@ -1,78 +1,90 @@
 {
   "metaDescription": "Odoo eCommerce in practice: variant strategy, tax display, payment providers by market, delivery rules, URL migration and what breaks at go live.",
   "intro": [
-    "Odoo eCommerce is a storefront over Sales and Inventory rather than a separate shop system. A basket is a draft sale order. A published product is the same record the buyer and the warehouse already use. Availability on the product page is the same quantity a picking will consume. That is the reason to choose it, and also the reason it exposes every weakness in the catalogue sitting behind it.",
-    "The licence line surprises buyers. Website Builder and eCommerce are Community apps, and that covers variants, pricelists, coupons, gift cards, the payment framework and the customer portal. Enterprise is where Studio, Subscriptions, Rental, Marketing Automation, the Amazon connector and the full Accounting app live. Most online sellers end up buying Enterprise for accounting or for a marketplace feed, not for the shop itself.",
+    "Odoo eCommerce is a storefront over Sales and Inventory rather than a separate shop system. A basket is a draft sale order. A published product is the same record the buyer and the warehouse already use. Availability on the product page is read from real stock, not a synced copy. That is the reason to choose it, and also the reason it exposes every weakness in the catalogue sitting behind it.",
+    "The licence line surprises buyers. Website Builder and eCommerce are Community apps, and that covers variants, pricelists, coupons, gift cards, the payment framework and the customer portal. Enterprise holds Studio, Subscriptions, Rental, Marketing Automation, the Amazon connector, the full Accounting app and most of the country e-invoicing modules. Sellers usually end up on Enterprise for an accounting or tax filing obligation, not for the shop itself.",
     "Project time goes somewhere predictable. Building the catalogue and deciding how variants are generated. Agreeing whether prices show tax and how tax is derived per country. Finding a payment provider that carries the methods the market actually uses. Moving the old URLs so search traffic survives the switch. The theme is the visible part of the work and usually the smallest part of it."
   ],
   "whoFor": [
     "Brands and distributors selling one catalogue to trade accounts at agreed prices and to the public at list price, out of a single stock.",
-    "Retailers already running Odoo Inventory or Point of Sale who want the website reading the same on hand quantity instead of a synced copy.",
+    "Retailers already running Odoo Inventory or Point of Sale who want the website reading the same on hand quantity instead of a nightly export.",
     "Manufacturers with configurable products, where attributes and an extra price per option replace a long list of hand maintained part numbers.",
-    "Wholesalers who need a login only shop, using customer accounts on invitation so prices are visible only to approved buyers.",
-    "Not for multi vendor marketplaces, because Odoo has no seller onboarding, split settlement or commission ledger for independent merchants.",
+    "Wholesalers running an invitation only trade portal, where each account signs in to its own pricelist, payment terms and order history instead of a public price list.",
+    "Not for multi vendor marketplaces. Odoo has no seller onboarding, split settlement or commission ledger for independent merchants, and building one is a product, not a configuration.",
     "Not for a fifty product shop with no ERP behind it, where a hosted platform is cheaper to run and faster to launch."
   ],
   "capabilities": [
     {
       "title": "Variants, options and exclusions",
-      "body": "An attribute can create variants instantly, create them dynamically as they are ordered, or never create them at all. That single choice decides whether a template becomes one record or a thousand. Values carry an extra price, a display type such as a colour swatch, radio button or pill, and exclusion rules that stop impossible combinations existing. Accessory products appear in the cart and alternatives on the product page."
+      "body": "An attribute can create variants instantly, create them dynamically as they are ordered, or never create them at all. That single choice decides whether a template becomes one record or a thousand. Values carry an extra price, a display type such as a colour swatch, radio button or pill, and exclusion rules that stop impossible combinations existing. Optional products are offered when the item is added, accessories appear in the cart, alternatives sit on the product page."
     },
     {
       "title": "Pricelists, currency and tax display",
-      "body": "Pricelists are shared with Sales and resolve as rules on product, category, quantity break and date window. A pricelist holds one currency, can be limited to a country group, and can be offered to the visitor as a selectable choice. A website setting decides whether prices are shown with tax included or excluded, and fiscal positions map the tax itself by customer country."
+      "body": "Pricelists are shared with Sales and resolve as rules on product, category, quantity break and date window. A pricelist holds one currency, can be limited to a country group, and can be offered to the visitor as a selectable choice. A website setting decides whether prices are shown tax included or tax excluded, and fiscal positions derive the tax itself from the customer country rather than from the product."
     },
     {
       "title": "Payment providers and checkout",
-      "body": "Odoo ships providers including Stripe, PayPal, Adyen, Mollie, Razorpay, PayU, Amazon Payment Services, Paymob, Worldline and iyzico, plus offline methods for wire transfer and cash on delivery. Tokenised cards, manual capture and partial refunds depend on the provider rather than on Odoo. Guest checkout, accounts on invitation and express checkout are settings, and every attempt is stored as a payment transaction you can audit."
+      "body": "The standard providers cover Stripe, PayPal, Adyen, Mollie, Razorpay, Authorize.net, Buckaroo, Mercado Pago, Flutterwave, Xendit and Amazon Payment Services, plus offline methods for wire transfer and cash on delivery. Tokenised cards, manual capture, express checkout and partial refunds depend on the provider, not on Odoo. Guest checkout and accounts on invitation are settings. Every attempt is stored as a payment transaction, which is what you audit when an order and a bank line disagree."
     },
     {
       "title": "Delivery methods that price themselves",
-      "body": "A delivery method can be a fixed price, free above an order value, or a rule set computing on weight, volume, price or quantity, with a margin applied to the rate a carrier returns. Odoo ships connectors for a short list of international carriers including DHL Express, FedEx, UPS, bpost, Sendcloud, Easypost, Shiprocket and Starshipit. Domestic couriers outside that list are a paid module or an API build."
+      "body": "A delivery method can be a fixed price, free above an order value, or a rule set computing on weight, volume, price or quantity, with a margin applied to the rate a carrier returns. Odoo ships connectors for a short list of mostly international carriers, among them DHL Express, UPS, FedEx, bpost, Sendcloud, Easypost, Shiprocket and Starshipit. Domestic couriers outside that list mean a paid apps store module or an API build, and that decision belongs in the budget."
     },
     {
       "title": "Promotions, gift cards and cart recovery",
-      "body": "The Loyalty app covers discount programs, promotion codes, coupons, gift cards, points and next order rewards, and the same programs run in Point of Sale, so a card sold online is redeemable in the shop. Abandoned checkout emails go out after a delay you set, but only to a visitor whose email address is already known, which makes early identification part of the design."
+      "body": "The Loyalty app covers discounts, promotion codes, coupons, gift cards, eWallets, loyalty points and next order rewards, and the same programs run in Point of Sale, so a card sold online is redeemable in the shop. Abandoned checkout emails go out after a delay you set, but only to a visitor whose email address is already known. Getting an address early, rather than at the payment step, is therefore a design decision with revenue attached."
     },
     {
       "title": "Content, SEO and several storefronts",
-      "body": "The builder carries the pages, blog and forms around the shop, with a meta title, description and social image per page, an automatic sitemap and editable redirect records. One database can run several websites, each with its own domain, theme, published products and pricelist, and each language gets its own URL prefix. Product URLs stay editable, which is what makes a migration survivable."
+      "body": "The builder carries the pages, blog and forms around the shop, with a meta title, description and social image per page, an automatic sitemap and editable redirect records. One database can run several websites, each with its own domain, theme, published products, pricelist and company, and additional languages are served under their own URL prefix. Product URLs stay editable, which is what makes a migration off another platform survivable."
     }
   ],
   "setup": [
     {
       "title": "Build the catalogue before the theme",
-      "body": "Decide the internal reference scheme, the attribute list and the variant creation mode first, because changing an attribute once variants exist is destructive. Load weights and dimensions at the same time, since delivery pricing depends on them. Set costs, or margin reporting will read the full selling price. Publication is per product and per website, so a bulk import lands unpublished until you say otherwise."
+      "body": "Decide the internal reference scheme, the attribute list and the variant creation mode first, because changing an attribute once variants exist is destructive. Load weights and dimensions at the same time, since delivery pricing depends on them. Set costs, or margin reporting reads the full selling price. Publication is per product and per website, so a bulk import lands unpublished until you say otherwise, which is the safe way round."
     },
     {
       "title": "Settle tax display and rounding on day one",
-      "body": "Choose tax included or tax excluded display, and choose whether tax rounds per line or globally, before a single order exists. Both change every total. A shop quoting VAT inclusive prices derives the net by division, and the cents that fall out are what finance reconciles later. Fiscal positions handle export, free zone and reverse charge cases; setting tax by hand on products does not."
+      "body": "Choose tax included or tax excluded display, and choose whether tax rounds per line or globally, before a single order exists. Both change every total. A shop quoting VAT inclusive prices derives the net by division, and the cents that fall out are what finance reconciles later. Fiscal positions handle export, free zone and reverse charge cases. Overriding the tax by hand on each product does not, and it fails the first time a foreign buyer checks out."
     },
     {
       "title": "Pick the payment provider by market and by hosting",
-      "body": "Work out which local methods your buyers expect, then find out whether Odoo ships that provider, whether a paid apps store connector exists, or whether it is an API build. Check hosting before signing anything: Odoo Online does not run custom modules, so a market whose only route is a third party connector pushes the project onto Odoo.sh or your own server."
+      "body": "Work out which local methods buyers expect, then establish whether Odoo ships that provider, whether a paid apps store connector exists, or whether it is an API build. Check hosting before signing anything. Odoo Online runs no custom modules, so a market whose only route is a third party connector pushes the project onto Odoo.sh or your own server. That is a hosting decision made by the checkout."
+    },
+    {
+      "title": "Decide what the product page is allowed to promise",
+      "body": "Per product you choose whether an out of stock item can still be ordered, and what message replaces the buy button when it cannot. Separately you choose whether a quantity is shown at all, and the threshold below which the page starts saying how few are left. Publishing a live number invites arguments about it on the phone, and it moves every time somebody corrects a count. A stated lead time is usually easier to keep than a live number, and it survives a stock adjustment without embarrassing anyone."
+    },
+    {
+      "title": "Wire the order to invoice path before launch",
+      "body": "Decide whether invoicing is on ordered or delivered quantities, because that governs whether a prepaid web order can be invoiced before it ships. Turn on automatic invoicing if paid orders should produce an invoice without anyone touching them. Trade accounts buying on payment terms need a different path from card buyers. Agree who refunds, from which document, and what the customer sees, before the first return rather than after it."
     },
     {
       "title": "Treat the migration as a search problem",
-      "body": "Products, customers and open orders are the easy part. Passwords do not migrate, so a reset campaign belongs in the launch plan. Every indexed product, category and article URL needs a 301 record loaded before the domain moves, because Odoo builds its own URLs and almost none of them will match. Closed history is better held as posted invoices than as rebuilt web orders."
+      "body": "Products, customers and open orders are the easy part. Passwords never come across, so a reset campaign belongs in the launch plan rather than in the support queue on day two. Closed history is better held as posted invoices than as rebuilt web orders nobody will ever fulfil. The line that is routinely underbudgeted is the URL map, because what a bad migration costs you is search traffic, not data."
     }
   ],
   "pitfalls": [
     {
       "title": "Draft carts flooding the sales pipeline",
-      "body": "Every visitor who adds an item creates a draft sale order. Within weeks the quotation list is thousands of abandoned baskets, and any report that does not filter on state reads them as pipeline. Decide early how carts are identified, how long they are kept and who clears them. The recovery email only reaches visitors who left an email address behind."
+      "body": "The draft order behind every basket takes its number from the sales sequence the moment it is created. Within weeks the quotation list is thousands of abandoned carts and the confirmed order numbers have gaps in them that finance will ask about. Any report that does not filter on state reads those drafts as pipeline. Decide early how long carts are kept, who clears them and whether sales users should see the list at all. It costs nothing to settle in month one and it is a cleanup project by month four."
     },
     {
       "title": "Selling the last unit twice",
-      "body": "Availability shown on the shop is the warehouse quantity. Nothing is held while a basket sits open, and reservation happens only after the order is confirmed, under the rule set on the delivery operation type. Two shoppers can buy the same last unit inside a minute. The answer has to be deliberate: allow out of stock ordering with a stated lead time, or hold a website buffer."
+      "body": "Nothing is held while a basket sits open. Reservation happens after the order is confirmed, under the rule set on the delivery operation type, so two shoppers can buy the same last unit inside a minute. There is no reserve on add to cart, and no sellable buffer sitting under real stock, so the choice is between blocking the sale at zero and taking the order with a stated lead time. Fast moving lines with long replenishment are where that decision costs money."
+    },
+    {
+      "title": "The website is looking at the wrong warehouse",
+      "body": "Availability is computed for the warehouse assigned to that website, not for the company total. A retailer with stock across branches shows the shop warehouse only, and the shortfall surfaces as cancelled orders rather than as an error. If the shop should sell from group stock, that is a replenishment and routing design, not a website setting, and it is cheaper to decide before the catalogue is published."
     },
     {
       "title": "Delivery rules built on weights nobody entered",
-      "body": "Price rules on weight are only as good as the weight field. Catalogues imported from a spreadsheet arrive at zero, so every basket falls into the cheapest bracket and the shop quietly subsidises freight, or the carrier API rejects the request outright. Carrier connectors also want dimensions, a live account and a package type, which tends to surface in the week before launch."
+      "body": "Price rules on weight are only as good as the weight field. Catalogues imported from a spreadsheet arrive at zero, so every basket falls into the cheapest bracket and the shop quietly subsidises freight, or the carrier API rejects the request outright. Connectors also want dimensions, a live account and a package type, which tends to surface in the week before launch when the account is not open yet."
     },
     {
       "title": "Payment states read as order states",
-      "body": "An order paid by wire transfer or cash on delivery is confirmed with no money in the bank, and a transaction left pending leaves the order as a quotation while the customer believes they have bought something. Provider webhooks have to reach the server, so a staging URL left in the provider dashboard breaks confirmation silently. Test refunds and captures before go live."
+      "body": "An order paid by wire transfer or cash on delivery is confirmed with no money in the bank, and a transaction left pending leaves the order as a quotation while the customer believes they have bought something. Provider webhooks have to reach the server, so a staging URL left in the provider dashboard breaks confirmation silently. Test a refund and a failed capture before go live, not after the first dispute."
     },
     {
       "title": "A theme that has to be rebuilt at every upgrade",
@@ -80,73 +92,81 @@
     }
   ],
   "worksWith": [
-    "Sales, since a web order is a sale order on the same pricelists and invoicing policy",
-    "Inventory, for the availability shown on the shop and the picking behind every order",
-    "Invoicing in Community, or the full Accounting app in Enterprise for tax reporting and localisation",
+    "Sales, since a web order is a sale order on the same pricelists, invoicing policy and delivery terms",
+    "Inventory, for the availability shown on the shop, the warehouse behind each website and the picking behind every order",
+    "Invoicing in Community, or the full Accounting app in Enterprise where tax reporting and country e-invoicing modules live",
     "Website Builder, which carries the pages, blog, forms and redirect records around the shop",
-    "Loyalty, for coupons, promotions and gift cards shared with Point of Sale",
+    "Loyalty, for coupons, promotions, gift cards and eWallets shared with Point of Sale",
     "Point of Sale, where store and website sell from one stock and one loyalty balance",
     "Payment providers and delivery carrier connectors, for checkout, live rates and labels",
-    "Marketing Automation, Studio and the Amazon connector on Enterprise, for campaigns, custom fields and marketplace listings"
+    "Studio, Marketing Automation, Subscriptions and the Amazon connector on Enterprise, for custom fields, campaigns, recurring orders and marketplace listings"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "mada is the card most Saudi shoppers carry, so a checkout offering only Visa and Mastercard loses orders. Amazon Payment Services and Paymob ship with Odoo 19; Moyasar and HyperPay need a paid connector. A web sale is a simplified tax invoice under ZATCA Phase 2, carrying a QR code and reported to Fatoora within twenty four hours."
+      "note": "mada is the card most Saudi shoppers carry, so a checkout offering only Visa and Mastercard loses orders. Amazon Payment Services is the regional provider in the standard list, and whether mada is presented depends on the acquiring account behind it rather than on Odoo. Moyasar and HyperPay sit outside that list. A web sale to a consumer is a simplified tax invoice under ZATCA phase two, carrying a QR code and reported within twenty four hours, and the Odoo module that does the reporting is Enterprise. That clock is why paid web orders are usually set to invoice automatically, since a batch somebody remembers to run on Friday is already late."
     },
     {
       "country": "uae",
-      "note": "Stripe accepts UAE businesses and ships with Odoo, while Jaywan cards arrive through an N-Genius connector rather than a scheme specific module. Aramex handles cash on delivery but has no connector in the box. The selling entity is a tax decision, since qualifying free zone income is taxed at zero and other profit at nine percent above AED 375,000."
+      "note": "Tax structure decides more here than the checkout does. Qualifying free zone income is taxed at zero and other profit at nine percent above AED 375,000, so which entity sells online is a finance question asked before the website exists. VAT at five percent with zero rated exports belongs in fiscal positions rather than in per product taxes. Cards clear through a regional acquirer, and the domestic Jaywan scheme arrives with that acquirer rather than as an Odoo module. The other real job is the bilingual storefront. Arabic is a right to left language, so Odoo builds mirrored stylesheets for it, but custom snippets and hard coded alignment need checking page by page, and every product name, description and attribute value is a separate translation somebody has to write."
     },
     {
       "country": "pakistan",
-      "note": "Most baskets are still cash on delivery, so checkout places an order without taking money and the courier remittance is reconciled afterwards. Odoo covers cash on delivery natively, JazzCash needs a paid module and Easypaisa is a build. FBR digital invoicing returns an invoice number and QR code before the invoice reaches the buyer. PostEx, TCS and Leopards have paid connectors."
+      "note": "Most baskets are still cash on delivery, so the checkout confirms an order with no money taken and the real work happens weeks later, matching courier remittances to sale orders. Odoo covers the checkout side of that as an offline payment method. The localisation is a chart of accounts, so FBR digital invoicing is an integration to build or buy. Domestic couriers such as PostEx, TCS and Leopards sit outside the standard connector list, and return to origin rates run high enough that delivered margin, not order margin, is the number worth reporting to the board."
     },
     {
       "country": "india",
-      "note": "UPI and RuPay arrive through the Razorpay or PayU providers Odoo ships, so nothing has to be bought. The delivery state decides whether GST is charged as IGST or as CGST and SGST, which makes the shipping address a tax field rather than a logistics detail. B2C sales sit outside e-invoicing, but goods movement still needs an e-way bill."
+      "note": "Razorpay ships with Odoo and carries UPI, RuPay, netbanking and wallets on one account, so a working checkout needs nothing bought. The place of supply decides whether GST is IGST or CGST plus SGST, which makes the delivery address a tax field rather than a logistics detail, and fiscal positions have to be driven from the state on the shipping address. The e-invoicing and e-way bill modules are Enterprise. Consumer sales sit outside e-invoicing, but the goods movement still needs an e-way bill."
     },
     {
       "country": "turkey",
-      "note": "A sale to a consumer leaves as an e-Arsiv document reported to GIB, while a buyer registered for e-Fatura must receive an e-Fatura, so the checkout has to know which the customer is and hold it on the record. Odoo ships iyzico. Yurtici, Aras and MNG Kargo need paid modules, and instalment options at checkout are a normal Turkish expectation."
+      "note": "A sale to a consumer leaves as an e-Arsiv document, while a buyer registered for e-Fatura must receive an e-Fatura, so the checkout has to capture a tax identity and check it against the registered user list before deciding which document to issue. The Turkish localisation in Odoo is a chart of accounts. No edition ships e-Fatura or e-Arsiv, so GIB reporting goes through a licensed integrator, reached from Odoo by a third party connector or a middleware call. No Turkish acquirer appears in the standard provider list either, and instalments at checkout are an ordinary expectation rather than a promotion."
     },
     {
       "country": "egypt",
-      "note": "Paymob ships with Odoo 19 scoped to Egypt and EGP, which is the shortest route to a working checkout. Cash on delivery still carries a large share of baskets, handled by Bosta, Mylerz or Aramex, none of which have a connector in the box. B2C sales fall under the ETA e-receipt system, separate from B2B clearance and switched on in waves."
+      "note": "The compliance split matters more than the payment page. The Enterprise ETA module addresses the business to business invoice clearance stream, while the consumer e-receipt system is separate and switched on in waves, so confirm which stream your sales fall in before promising anything. Either way the work lands on the catalogue rather than the checkout, because every invoice line has to carry a recognised item code, and that is data entered product by product. Amazon Payment Services covers Egypt in the standard list. Fawry and the local wallets do not, and enough volume still moves cash on delivery that the courier account is part of the design rather than an afterthought."
     },
     {
       "country": "united-kingdom",
-      "note": "Stripe covers cards, Pay by Bank and Klarna on one account and ships with Odoo, so a UK checkout stands up quickly. Royal Mail is not in the box and comes from a paid module built on Click and Drop. VAT registration is compulsory above 90,000 pounds, returns go through Making Tax Digital, and consumer orders carry a fourteen day cancellation right."
+      "note": "Stripe ships with Odoo and the methods shown at checkout follow what is enabled on the Stripe account, so cards, wallets and buy now pay later come from one integration. VAT registration is compulsory above 90,000 pounds and returns go through Making Tax Digital, which in Odoo means the Enterprise accounting reports rather than Community Invoicing. Consumer orders carry a fourteen day cancellation right that starts on delivery. Royal Mail is not in the box and comes from a paid module built on Click and Drop."
     },
     {
       "country": "germany",
-      "note": "Buying on invoice is still an ordinary consumer expectation, so a card only checkout underperforms. Odoo 19 ships Ratepay and Riverty methods restricted to the DACH markets, and SEPA Lastschrift is native. The fourteen day Widerrufsrecht and the unit price rule under the Preisangabenverordnung both change the product page. DHL Paket is not covered by the native DHL Express connector."
+      "note": "Buying on invoice or by direct debit is an ordinary consumer expectation, so a card only checkout underperforms, and both routes reach Odoo through an acquirer such as Mollie or Adyen rather than a dedicated module. SEPA direct debit collection sits in the Enterprise accounting modules. The product page itself is regulated: the Preisangabenverordnung wants a price per unit, which the base unit price fields on the product template produce, and the fourteen day Widerrufsrecht needs its cancellation policy and form reachable from checkout. The native DHL connector is DHL Express, not DHL Paket."
     }
   ],
   "faqs": [
     {
       "q": "Do we need Odoo Enterprise to run an online shop?",
-      "a": "No. Website Builder and eCommerce are Community apps, and that includes variants, pricelists, coupons, gift cards, the payment framework and the customer portal. Enterprise buys Studio, Subscriptions, Rental, Marketing Automation, the Amazon connector and the full Accounting app. Most online sellers end up on Enterprise for accounting and localisation rather than for the shop."
+      "a": "No, the storefront itself runs on Community. What usually pulls a shop onto Enterprise is one of three things: the statutory e-invoicing module for the country it sells in, the full Accounting app because Community ships Invoicing without accounting reports, bank synchronisation or asset handling, or Studio because somebody wants fields and screens changed without a developer. Licensing counts internal users only. Customers, portal accounts and site visitors are never billed, so a shop run by two people in the back office is a two user licence however many buyers it has."
     },
     {
       "q": "Can Odoo replace Shopify or WooCommerce?",
-      "a": "For a catalogue sold from real stock with real accounting behind it, yes, because the order, the picking and the invoice are one chain instead of a nightly sync between two systems. Where the storefront is the whole business and the back office is small, a hosted platform is cheaper to run. The test is how much value sits behind the checkout."
+      "a": "For a catalogue sold from real stock with real accounting behind it, yes, because the order, the picking and the invoice are one chain rather than a nightly sync between two systems that disagree by Monday. Where the storefront is the entire business and the back office is two people and a spreadsheet, the hosted platforms still win on theme choice, checkout apps and never having to run an upgrade. The test is how much of the value sits behind the checkout rather than in front of it."
     },
     {
       "q": "How many product variants is too many?",
-      "a": "Odoo creates one record per combination when an attribute generates variants instantly. Five attributes with four values each is over a thousand variants on a single template, every one with images, barcodes and stock. Set price only attributes to dynamic creation so a variant appears when it is ordered, and use exclusions so impossible combinations are never generated."
+      "a": "The count matters less than what each variant drags behind it. Every generated combination is a stockable record with its own barcode, its own quants and its own line in every inventory report. Five attributes with four values each is over a thousand of those on one template. Attributes that only move the price are better set to dynamic creation, where the record appears the first time somebody orders it. Attributes that are pure presentation can be set to create no variant at all, so the choice is captured on the order line and no new product exists. Exclusion rules then keep the impossible combinations from ever being generated."
+    },
+    {
+      "q": "How do B2B and B2C live on the same website?",
+      "a": "Pricelists give trade accounts their agreed prices and fiscal positions give each buyer the right tax, so the pricing side is configuration. Two things are not. Odoo has no switch that hides prices from anonymous visitors, so a genuinely closed trade catalogue needs an apps store module or a small customisation. And the presentation pulls in opposite directions: trade buyers want tax excluded prices, fast reordering and payment terms, consumers want tax included prices and a card. When those pull far enough apart, the cleaner answer is a second website on the same database, sharing the catalogue and the stock."
     },
     {
       "q": "Can we run several country stores from one database?",
-      "a": "Yes. Several websites can share one database, each with its own domain, theme, published products, pricelist, currency and language. The harder question is companies. If each country invoices from its own legal entity, that is a multi company setup with its own chart of accounts and tax positions, and the website is attached to that company."
+      "a": "Yes, and the storefront side of it is configuration. The harder question is legal entities. If each country invoices from its own company, that is a multi company database with a chart of accounts, tax positions and number sequences per entity, and each site is tied to one of them. Stock is the second question, since one warehouse feeding several countries changes both the delivery rules and the tax treatment. Settle the company and warehouse map first."
     },
     {
       "q": "Will we keep our search rankings after moving to Odoo?",
-      "a": "Only if the redirects are done properly. Odoo builds its own product URLs, so almost nothing matches the old platform. Every indexed product, category and article URL needs a 301 record in place before the domain switches. Meta title, description, social image and the sitemap are handled per page in Odoo, so those carry across."
+      "a": "It depends entirely on the redirect work, and one part of it is easier than people expect. An Odoo product URL is the product name followed by its database id, and the page resolves on the id, so renaming a product later does not break a link that is already indexed. Nothing from the old platform matches, though, so every old URL needs a redirect record in place before the domain moves. Odoo offers 301 permanent, 302 temporary, 404 and a rewrite type, and 301 is the one that carries ranking signals across. Build the list from a crawl of the live site rather than from the product export, because the export will not contain the category, filter and article URLs that hold most of the older links."
     },
     {
       "q": "How does the shop handle cash on delivery?",
-      "a": "Odoo ships cash on delivery as an offline method, so the order is placed and confirmed with no money taken. What needs designing is everything after it: whether stock is reserved for an unpaid order, what the courier remits and when, how failed deliveries are cancelled, and how any surcharge is charged. That reconciliation is a finance process, not a checkout setting."
+      "a": "Odoo ships cash on delivery as an offline method, so the order is placed and confirmed with no money taken. What needs designing is everything after it: whether stock is reserved for an unpaid order, what the courier remits and when, how failed deliveries are cancelled and restocked, and how any surcharge is charged. That reconciliation is a finance process with a courier statement at one end, not a checkout setting."
+    },
+    {
+      "q": "Can we sell subscriptions or rentals through the shop?",
+      "a": "Both exist and both are Enterprise. Subscriptions turn a web order into a recurring contract with its own invoicing schedule and renewal handling. Rental prices a product by duration and tracks what is out and what is due back. Neither is available on Community, so if the plan includes a recurring revenue line, the licence decision is made at that point rather than at the accounting stage."
     }
   ]
 }

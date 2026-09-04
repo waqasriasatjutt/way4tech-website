@@ -1,163 +1,167 @@
 {
-  "metaDescription": "Odoo Knowledge in practice: article trees, permission inheritance, item properties, embedded views, Confluence migration and why it is Enterprise only.",
+  "metaDescription": "Odoo Knowledge in practice: article trees, inherited permissions, item properties, embedded views, Confluence migration and why it is Enterprise only.",
   "intro": [
-    "Odoo Knowledge is the wiki that lives inside the ERP. Articles nest in a tree under Workspace, Shared and Private, they are written in the same editor that writes a quotation description, and they can carry a live Odoo view instead of a screenshot of one. It is an Enterprise application. Odoo Community has no equivalent, and the nearest substitute is the OCA document_page module, which is a flat page model with none of this.",
-    "The argument for it over Confluence or Notion is proximity. A support agent reading a resolution procedure is one panel away from the ticket. A finance clerk working through the month end runbook is inside the system the runbook describes. No second login, no second seat to buy, no second search box. The cost is that Knowledge is a wiki and not a document management system, and those two get confused on most projects.",
-    "Whether it survives contact with a real company is decided by structure and ownership rather than features. Articles multiply fast, permissions are inherited from the parent when an article is moved, and nothing in Odoo tells you a procedure went stale eighteen months ago. The implementation work is agreeing the tree, the permission model, the properties that turn a section into a register, and who is accountable for each branch."
+    "Odoo Knowledge is the wiki that lives inside the ERP. Articles nest in a tree under Workspace, Shared and Private, they are written in the same editor that writes a quotation description, and they can carry a live Odoo view instead of a screenshot of one. It is an Enterprise application. There is no Community equivalent, so adopting it is a licensing decision rather than a module install.",
+    "The argument for it over Confluence or Notion is proximity. A support agent reading a resolution procedure is one panel away from the ticket. A finance clerk working through the month end runbook is inside the system the runbook describes. No second login, and no extra subscription for anyone who already holds an Odoo internal user. The cost is that Knowledge is a wiki and not a document management system, and those two get confused on most projects.",
+    "Whether it survives contact with a real company is decided by structure and ownership rather than by features. Articles multiply fast, permissions are inherited from the parent when an article is moved, and nothing in Odoo tells you a procedure went stale eighteen months ago. The implementation work is agreeing the tree, the permission model, the properties that turn a section into a register, and who is accountable for each branch."
   ],
   "whoFor": [
     "Operations teams who want the procedure and the record it describes in one system, so the runbook opens beside the transaction it governs.",
-    "Support organisations that need a customer facing knowledge base and internal canned replies drawn from the same set of articles.",
+    "Support organisations that need a customer facing knowledge base and internal resolution steps drawn from the same set of articles.",
     "Companies carrying a written compliance obligation, such as a German procedural documentation or a documented e-invoicing process, that has to be maintained rather than written once and filed.",
-    "Teams already paying for Odoo Enterprise and separately for a wiki they use twenty pages of.",
-    "Not for anyone on Odoo Community, where Knowledge is simply absent and the community alternative has no properties, item views or embedded views.",
+    "Teams already paying for Odoo Enterprise and paying a second wiki vendor per seat for twenty pages nobody has reviewed in a year.",
+    "Not for a public documentation site that needs versioned releases, stable permalinks and its own navigation, which a Website page set or a documentation tool serves better than a share link.",
     "Not for controlled document management where every revision needs an approval signature and a retention period, which belongs in Documents and Sign or in a dedicated quality system."
   ],
   "capabilities": [
     {
       "title": "The article tree is also the security model",
-      "body": "Articles nest to any depth. The sidebar separates Favorites, Workspace where every internal user can reach an article, Shared which is limited to named members, and Private which is one person. A child inherits the parent permission unless it is overridden, so moving a branch moves its access rights with it. Articles take an icon and a cover image, can be locked against editing, and deleted ones sit in a trash that empties after a set number of days."
+      "body": "Articles nest to any depth. The sidebar separates Favorites, Workspace where every internal user can reach an article, Shared which is limited to named members, and Private which starts with a single owner. A child inherits the parent permission unless it is overridden, so moving a branch moves its access rights with it. Articles take an icon and a cover image, and an article can be locked so the body stops accepting edits. Deleted articles go to Trash and are purged automatically after thirty days on a default database. That window is a system parameter rather than a switch on a settings page, so treat thirty days as the recovery you have unless somebody has deliberately changed it."
     },
     {
       "title": "Editor and the slash menu",
-      "body": "The body uses the same editor as the rest of Odoo. The slash menu inserts headings, checklists, tables, quotes, code blocks, files, images, video by URL, a table of contents, a link to another article, and a clipboard block whose text copies out in one click. Checklists report their own completion. Content pasted from Word or a browser arrives as HTML, which is where most of the formatting argument on a project starts."
+      "body": "The body uses the same editor as the rest of Odoo. The slash menu inserts headings, checklists, tables, quotes, code blocks, files, images, a video by URL, a table of contents, a link to another article, and a clipboard block whose text copies out in one click. Content pasted from Word or from a browser arrives as HTML with its own markup attached, which is where most of the formatting argument on a project starts. Agree early that authors paste as plain text and restyle, because a tree carrying four inherited font stacks looks like exactly what it is."
     },
     {
       "title": "Items and property fields",
-      "body": "An article can hold items, which are child articles carrying property fields. A property can be text, a number, a date, a checkbox, a selection, tags, or a link to another record such as a partner or an employee. Items then render as a list or a kanban with those properties as columns. A section becomes a small register, an incident log or a policy index, without adding a model in Studio."
+      "body": "An article can hold items, which are child articles carrying property fields defined once on the parent. A property can be text, a number, a date, a checkbox, a selection, tags, or a link to another record such as a partner or an employee. Items then render as a list or a kanban with those properties as columns, filterable and groupable like any other Odoo view. A section becomes a small register, an incident log or a policy index, with no new model and no Studio work."
     },
     {
       "title": "Embedded Odoo views",
-      "body": "An article can embed a real view, for example a filtered list of open tickets or a kanban of purchase orders, with the filter stored in the article. The reader sees current records inside the procedure rather than a picture taken last quarter. Record rules still apply, so a reader without access to the underlying model sees an empty view. This is the one thing an external wiki cannot copy."
+      "body": "An article can embed a real view, for example a filtered list of open tickets or a kanban of purchase orders. The embed is built from the source view rather than from inside the article: you set the filters and grouping on the list you want, then insert that view into an article, and the filter travels with it. The reader sees current records inside the procedure rather than a picture taken last quarter. Access is still evaluated per reader, so somebody without rights on the underlying model gets nothing where the author sees rows. Test every embed with a low privilege login before you tell anyone the page is finished."
     },
     {
       "title": "Sharing inside and outside",
-      "body": "Each article carries an internal permission of none, read or write, plus individual members who override it. An article can be published to the web, which produces a public URL readable by anyone holding the link and reachable by search engines. Members added on a parent apply to everything beneath it, and Odoo shows where an inherited right came from, which matters the first time somebody asks why a contractor can read the pricing article."
+      "body": "Each article carries an internal permission of none, read or write, plus individual members who override it. Members added on a parent apply to everything beneath it, and Odoo shows which ancestor an inherited right came from, which matters the first time somebody asks why a contractor can read the pricing article. An article can also be published to the web, which produces a URL that opens with no login for anyone who has it. There is no expiry on that link and no per visitor permission behind it. Unpublishing withdraws the URL, and that is the whole of the control you have after the fact."
     },
     {
-      "title": "Templates and the record side panel",
-      "body": "From the side panel on a record form, an article can be posted into the chatter as a message, dropped into a description field, or copied to the clipboard. Sales keep answer blocks there, support keeps resolution steps, HR keeps policy wording. The article remains the single copy, so correcting it once corrects every later use. Article templates give new pages a fixed skeleton instead of six people inventing six layouts."
+      "title": "Reuse from the record side panel",
+      "body": "From the Knowledge side panel on a record form, an article can be posted into the chatter as a message, dropped into a description field, or copied to the clipboard block by block. Sales keep answer blocks there, support keeps resolution steps, HR keeps policy wording. The article remains the single copy, so correcting it once corrects every later use. Odoo offers a small set of article templates when you create a page, and for house standards the working pattern is one skeleton article per document type that authors duplicate."
     }
   ],
   "setup": [
     {
       "title": "Design the tree before anyone writes",
-      "body": "Top level sections should follow function rather than the org chart, because departments get renamed and processes do not. Decide what belongs in Workspace, what is genuinely Shared, and what is Private. Agree the naming pattern, because search ranks on titles and a hundred articles called Process are unusable. Two hours of argument here removes a permission repair job later, since restructuring a live tree moves access rights along with the branch."
+      "body": "Top level sections should follow function rather than the org chart, because departments get renamed and processes do not. Decide what belongs in Workspace, what is genuinely Shared, and what is Private. Agree a title pattern up front, for example process area then verb then object, because a result list is read by its titles and forty articles called Process are unusable. Two hours of argument here removes a permission repair job later, since restructuring a live tree carries access rights along with the branch."
     },
     {
       "title": "Write the permission model down",
-      "body": "List who reads and who writes for each top level branch, then set the internal permission on the parent and add members only where the branch differs. Watch the case where a Private article is moved into Workspace, since it becomes visible to every internal user at that moment. Portal users and external collaborators do not get Knowledge access as such, so anything they need is either published to the web or lives somewhere else."
+      "body": "List who reads and who writes for each top level branch, then set the internal permission on the parent and add members only where a branch differs. Watch the case where a Private article is moved into Workspace, since it becomes visible to every internal user at that moment. Name who is allowed to create top level articles as well. On a default database any internal user can start one, and an unowned parallel tree beside the agreed one is how a company ends up with two wikis inside a single application."
     },
     {
       "title": "Turn the repetitive sections into items",
-      "body": "Anything you would otherwise track in a spreadsheet, such as incidents, policies with owners and review dates, or supplier notes, should be items with properties rather than paragraphs. Define the property list once on the parent so every child gets the same fields. A selection property for status and a date property for the next review give you a filtered list of everything overdue, which no amount of free text will do."
+      "body": "Anything you would otherwise keep in a spreadsheet, such as incidents, policies with owners and review dates, or supplier notes, should be items with properties rather than paragraphs. Define the property list once on the parent so every child inherits the same fields, because retrofitting a property across ninety existing items is manual work. A selection property for status and a date property for the next review give you a filtered list of everything overdue, which no amount of free text will do."
     },
     {
       "title": "Put live data in the article",
-      "body": "Where a procedure refers to records, embed the view and save the filter with it rather than pasting an image. Check the embedded view against a low privilege user before you publish, because record rules can leave that reader with a blank block and no explanation. Keep embeds narrow, since a wide list view inside an article is unreadable on a phone and slows the page for everyone."
+      "body": "Where a procedure refers to records, embed the view and save the filter with it rather than pasting an image. Keep embeds narrow, three or four columns, since a wide list view inside an article is unreadable on a phone and slows the page for every reader. Point embeds at a filter you control rather than at an ad hoc domain, so the same list can be corrected in one place when the underlying process changes."
     },
     {
       "title": "Decide the review and retention rules",
-      "body": "Odoo does not expire an article. Add an owner property and a review date property, then schedule an activity on the owner so a stale procedure surfaces as work rather than as a wrong answer during an audit. Set the trash retention deliberately, because the default deletes permanently after a period and a recovered article is far cheaper than a rewritten one."
+      "body": "Odoo will not expire an article. Add an Owner property and a Review Date property on each parent, then keep one items list filtered on review date in the past and work it as a standing monthly job. Where a review has to appear in somebody's task list rather than in a wiki page, mirror it as a recurring project task or a calendar event that links back to the article. Check what Trash retention your database actually runs on as well, because the default gives you thirty days and a recovered article costs far less than a rewritten one."
     }
   ],
   "pitfalls": [
     {
       "title": "Assuming it is in Community",
-      "body": "Knowledge is Enterprise only in Odoo 17, 18 and 19. This surfaces late, usually after a Community pilot has been demonstrated to management using screenshots from Odoo marketing. The community answer, document_page from the OCA, gives hierarchical pages with history and nothing else. No properties, no item views, no embedded views, no side panel on record forms. If the wiki is a real requirement, it belongs in the licensing conversation on day one."
+      "body": "Knowledge is Enterprise only in Odoo 17, 18 and 19. This surfaces late, usually after a Community pilot has been demonstrated to management using screenshots taken from Odoo marketing material. The nearest community option, document_page from the OCA, gives hierarchical pages with revision history and stops there: no properties, no item views, no embedded records, no side panel on a sales order. If a wiki is a real requirement, it belongs in the licensing conversation on day one, not in the second month of a build when the budget is fixed."
+    },
+    {
+      "title": "Counting the writers and forgetting the readers",
+      "body": "Every person who reads a private or workspace article needs an internal Odoo user, and internal users are the ones you pay for. A warehouse of forty operators reading work instructions is forty users, not a free audience. The usual answers are publishing genuinely public procedures to the web, putting customer facing material behind Helpdesk, or accepting the seat cost with open eyes. Do this arithmetic before you promise the whole company a wiki."
     },
     {
       "title": "Permission surprises after a move",
-      "body": "Access is inherited down the branch, so dragging an article to a different parent silently changes who can read it. The two common incidents are a Private draft moved into Workspace and read by the whole company, and a restricted branch that stops being restricted because someone reorganised the tree. Check the members panel after any structural change, and keep genuinely sensitive material out of the tree that people reorganise."
+      "body": "Access is inherited down the branch, so dragging an article to a different parent silently changes who can read it. The two common incidents are a Private draft moved into Workspace and read by the whole company, and a restricted branch that stops being restricted because somebody tidied the tree on a Friday. Check the members panel after any structural change, and keep genuinely sensitive material out of the part of the tree that people reorganise."
     },
     {
       "title": "Expecting a Confluence or Notion importer",
-      "body": "There is none. Migration is a manual or scripted exercise: the page tree has to be rebuilt, macros and databases from the source tool have no equivalent, internal links break, and attachments must be re-uploaded. Scripting it through the Odoo API is possible for the body HTML, but it will not reproduce the source formatting exactly. Budget the migration as content work with an owner, not as a technical import."
+      "body": "There is none. Migration is a manual or scripted exercise: the page tree has to be rebuilt, macros and source tool databases have no equivalent, internal links break, and attachments must be re-uploaded. Writing article records through the API is feasible for the body HTML and the parent relationship, and it will not reproduce the source formatting exactly. Budget the migration as content work with a named owner, not as a technical import that runs overnight."
     },
     {
       "title": "Using it as the document store",
-      "body": "Articles are HTML records, not files under version control. Images pasted directly into a body can end up inline in the record instead of as attachments, which inflates the database, slows the article and enlarges every backup. Contracts, signed policies, drawings and anything with a retention obligation belong in Documents, with the article linking to them. The wiki explains what to do, the file store holds the evidence."
+      "body": "Articles are HTML records, not files under version control. Every file and image you put inside an article becomes an attachment in the filestore, counted in your storage and copied into every backup, with no retention rule applied to it. Contracts, signed policies, drawings and anything with a legal retention period belong in Documents, with the article linking to them. The wiki explains what to do, the file store holds the evidence."
     },
     {
       "title": "Publishing to the web without checking",
-      "body": "Sharing an article to the web creates a public URL that anyone with the link can open and a search engine can index. Child articles and embedded content need the same review, and an internal price list or a customer name inside a screenshot is a disclosure. Review anything public with the same care as a website page, and re-review it after each edit, since the URL stays live throughout."
+      "body": "Sharing an article to the web produces a link that opens without signing in, and anyone who receives it can pass it on. Unpublishing withdraws the URL, but it does nothing about a copy already taken or a page already indexed. Child articles and embedded content need the same review, and an internal price list or a customer name inside a pasted screenshot is a disclosure. Treat a published article like a website page, review it again after each edit, and keep a register of what is public so it can be audited."
     }
   ],
   "worksWith": [
-    "Helpdesk, for a public knowledge base and for resolution steps posted into a ticket from the side panel",
-    "Documents, which holds the files and retention while the article holds the procedure",
+    "Helpdesk, where an article can be published to the help centre and resolution steps drop into a ticket from the side panel",
+    "Documents, which holds the files and the retention while the article holds the procedure",
     "Sign, where a policy needs a countersigned acknowledgement rather than a page view",
-    "Employees, for onboarding paths and role specific handbooks tied to the employee record",
-    "Studio, for the extra fields a review or approval routine needs on top of properties",
-    "Website, for publishing selected articles under your own domain and design",
-    "Project and Quality, for work instructions read at the point the task is executed"
+    "Employees, for onboarding paths and role specific handbooks reached from the employee record",
+    "Studio, for the point where a register outgrows properties and needs a real model with its own access rules and reporting",
+    "Website, for publishing selected articles under your own domain and design rather than a bare share link",
+    "Project and Quality, for work instructions read at the point the task is actually executed"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "A ZATCA Phase 2 clearance procedure is exactly the kind of runbook this belongs in: certificate renewal, the clearance and reporting split between standard and simplified invoices, and what staff do when Fatoora rejects an invoice. Test Arabic in the editor early, since mixed Arabic and Latin text in one paragraph needs checking, and keep personal data out of Workspace articles under the PDPL."
+      "note": "A ZATCA Phase 2 runbook is the strongest first article here: certificate renewal dates, the split between clearance for standard invoices and reporting for simplified ones, and exactly what a cashier does when Fatoora rejects a document. Test Arabic in the editor before you commit, since mixed Arabic and Latin text in one paragraph needs checking, and keep personal data out of Workspace level articles given PDPL exposure."
     },
     {
       "country": "uae",
-      "note": "Corporate tax at 9 percent above AED 375,000 sits alongside 5 percent VAT and multi-year record retention, so the closing checklist and the FTA filing steps benefit from a written owner and review date. WPS salary file preparation is another good candidate. The supporting evidence itself belongs in Documents, because the FTA wants records, not a wiki page describing them."
+      "note": "Corporate tax at 9 percent above AED 375,000 sits alongside 5 percent VAT and a multi year record retention duty, so the closing checklist and the FTA filing steps deserve an owner by name and a fixed re-read date. A group holding both mainland and free zone companies wants one filing article per entity rather than a single group page, because the tests that apply differ by entity and a merged page hides that. WPS salary file preparation is the next candidate."
     },
     {
       "country": "india",
-      "note": "The procedures worth writing here are IRN generation through the invoice registration portal, the 24 hour window in which an IRN can be cancelled, and e-way bill generation and extension. Multi state operations need one article per GSTIN registration rather than a single national page, because place of supply rules and state specific practice differ enough to cause real mistakes."
+      "note": "Write down IRN generation through the invoice registration portal, the 24 hour window in which an IRN can be cancelled, and e-way bill generation and extension including who acts when a vehicle is delayed. Multi state operations want one article per GSTIN registration rather than a single national page, because place of supply treatment and state level practice diverge enough to produce real filing errors."
     },
     {
       "country": "pakistan",
-      "note": "FBR digital invoicing runs through a licensed integrator, with sandbox testing before production credentials are issued, so the token handling and the sandbox to live cut over are worth writing down while they are fresh. Note who holds the credentials and when they expire. Urdu content pastes cleanly, but keep the article titles searchable in the language your staff actually type in."
+      "note": "FBR digital invoicing runs through a licensed integrator, with sandbox testing before production credentials are released, so token handling and the sandbox to live cut over are worth recording while the detail is fresh. Name who holds each credential and when it expires. Urdu pastes cleanly into the editor, but keep titles in the script your staff actually type into a search box."
     },
     {
       "country": "turkey",
-      "note": "The routing decision between e-Fatura and e-Arsiv depends on whether the counterparty is registered with the revenue administration, and that rule is the single most useful page a Turkish finance team can have. KVKK obligations restrict what personal data sits in a widely readable article. Test search with Turkish dotted and dotless i, since casing differences affect what a title search matches."
+      "note": "The routing decision between e-Fatura and e-Arsiv turns on whether the counterparty is registered with the revenue administration, and that single rule is the most useful page a Turkish finance team can hold. e-Defter ledgers and their berat uploads run to their own deadlines, so a calendar article naming who uploads what pays for itself the first time that person is on leave. Check search behaviour with the dotted and dotless i, because casing differences change what a title match returns."
     },
     {
       "country": "germany",
-      "note": "GoBD requires a procedural documentation describing how records are created, processed and archived, and this is the natural place to write and maintain it. The documentation itself has to be versioned and retained to the same standard, so export the approved version to Documents rather than relying on the wiki alone. DATEV export steps and works council agreements are the other two articles worth having."
+      "note": "GoBD expects a Verfahrensdokumentation describing how records are created, processed and archived, and maintaining it as an article beats maintaining it as a Word file nobody can find. The approved version still has to be retained to the same standard, so export it to Documents when it is signed off and treat the article as the working copy. DATEV export steps and works council agreements are the next two pages."
     },
     {
       "country": "france",
-      "note": "The Toubon law requires documents setting out obligations for employees, or needed to do the job, to be available in French, so an English only procedure set is a real exposure rather than an inconvenience. Articles are single language records, so plan one French article per procedure with a link to any English original, and put the Factur-X and platform routing steps in writing before the deadline."
+      "note": "The Toubon law requires documents that set out obligations for employees, or that are needed to do the job, to be available in French, so an English only procedure set is a legal exposure rather than an inconvenience. Articles hold one language each, so plan a French article per procedure linked to any English original. Put Factur-X handling and platform routing in writing ahead of the 2026 and 2027 e-invoicing phases."
     },
     {
       "country": "united-kingdom",
-      "note": "Making Tax Digital requires digital links between the systems that feed a VAT return, and HMRC expects you to be able to describe that chain. A short article mapping each hop, with the embedded view of the source records beside it, answers most of that question. UK GDPR rules on access and retention apply to any article holding staff or customer detail."
+      "note": "Making Tax Digital requires digital links between the systems that feed a VAT return, and HMRC expects a business to be able to describe that chain on request. One article mapping each hop, with an embedded view of the source records beside it, answers most of that conversation. The HMRC connection itself sits in the Enterprise UK localisation and has to be re-authorised periodically, so record which user holds it and when it was last granted."
     }
   ],
   "faqs": [
     {
-      "q": "Is Odoo Knowledge available in Community?",
-      "a": "No. It is an Enterprise application in Odoo 17, 18 and 19. The community route is document_page from the OCA, which gives hierarchical pages with revision history but no property fields, no item views, no embedded Odoo views and no side panel on record forms. If those matter, Knowledge is an Enterprise licence decision rather than a module install."
+      "q": "We are on Odoo Community, what are the options?",
+      "a": "Three, in order of cost. Install document_page from the OCA and accept flat hierarchical pages with history. Publish procedures as unlisted Website pages, which works for read only material and gives you nothing structured. Or move to Enterprise, which is the only route to properties, item views, embedded views and the record side panel. Pick on the strength of the requirement, not on the demo."
     },
     {
       "q": "Can we import our Confluence or Notion pages?",
-      "a": "Not with a supplied importer, because Odoo does not ship one. Body HTML can be pushed through the API, but the page tree, internal links, attachments and any source specific macros or databases have to be rebuilt. Most migrations are better treated as a content review: move what is current, retire the rest, and rewrite the pages people actually open."
+      "a": "Not with a supplied importer, because Odoo does not ship one. Articles are ordinary records, so the body HTML and the parent child structure can be written through the API, while internal links, attachments and any source specific macros or embedded databases have to be rebuilt by hand. Sort the source by last edited and last viewed before you budget anything. The list of pages people actually open is usually short, and the rest is a retirement decision rather than a migration line item."
     },
     {
       "q": "Does it replace SharePoint or Google Drive?",
-      "a": "No. Knowledge stores articles, not managed files. Version controlled documents, approvals, retention periods and signed copies belong in Odoo Documents and Sign, or in the file platform you already run. The workable split is the article explaining the process and linking to the file, with the file itself held where retention rules can be applied to it."
+      "a": "No, and the useful question is which half of the job each side keeps. Knowledge holds the written process and the links out of it. The files stay where an owner, a folder structure and a retention rule can be attached to them, which is Odoo Documents or the platform you already run. Two habits keep the split honest: never let an article hold the only copy of anything, and link from the article to the file rather than the reverse, because the article is what somebody will search for at eight in the morning."
     },
     {
-      "q": "Can customers or suppliers read an article?",
-      "a": "Only by publishing it to the web, which creates a public link readable by anyone who has it and indexable by search engines. There is no per external user permission on an article. If access needs to be limited to one named customer, use the portal and the record it belongs to, or Helpdesk, rather than a shared article link."
+      "q": "Can customers or suppliers be given access to one article?",
+      "a": "Not individually. Knowledge has no per external user permission, and portal users do not reach the application at all. The choices are publishing the article to the web, which is open to anyone with the link, or moving the content to where external access already exists, such as a Helpdesk knowledge base or the portal view of the record the information belongs to."
     },
     {
       "q": "Is there an approval workflow before an article goes live?",
-      "a": "Not natively. Articles publish as soon as they are written. Approval is normally built from a status property on the article, an owner, and a scheduled activity for review, with a Studio field where the audit trail has to be stronger. Where a signed approval is genuinely required, the approved version is exported and signed as a document."
+      "a": "Not natively. An article is live to its audience the moment it is saved. Teams build the missing control from a status property, a named owner and a review date, then work a filtered item list of anything overdue or still in draft. Where an audit trail has to be stronger, the approved version is exported and signed as a document, and the article carries the link to it."
     },
     {
       "q": "Does the search look inside attached files?",
-      "a": "The article search covers titles and article content. A PDF or spreadsheet attached inside an article is not part of that result set, so anything people need to find should be written in the article body and the file kept as the source. In practice this is the strongest argument for writing procedures out rather than attaching a document."
+      "a": "Knowledge search matches article titles and body text, across the articles the person searching is allowed to read. It does not read the contents of an attached PDF or spreadsheet, so a procedure that exists only inside an attachment is invisible to the person who needs it. Write the steps into the body and keep the file alongside as the source. This is the single strongest argument for writing procedures out rather than attaching last year's document."
     },
     {
       "q": "How do we handle a bilingual team?",
-      "a": "Articles are single language records, so the practical pattern is one article per language, linked to each other, with a naming convention that makes the language obvious in search. Assign an owner per language version, because a translated procedure that stops tracking the original is worse than no translation at all when someone follows it during an audit."
+      "a": "An article holds one language, so the practical pattern is one article per language, linked to each other, with the language visible in the title so search separates them. Give each language version its own owner. A translation that quietly stops tracking the original is worse than no translation, because somebody will follow it during an audit and be wrong with confidence."
     },
     {
       "q": "Can we prove that an employee read a policy?",
-      "a": "Not from Knowledge itself, which does not record read receipts per user. Where proof is needed, send the policy through Sign for a countersignature, or use a short Survey with the acknowledgement recorded against the employee. The article stays the living version of the text and the signed record becomes the evidence for that point in time."
+      "a": "Not from Knowledge, which does not keep per user read receipts. Where proof is needed, send the policy through Sign for a countersignature, or use a short Survey with the acknowledgement recorded against the employee. The article stays the living version of the text, and the signed record becomes the evidence for what the text said on a given date."
     }
   ]
 }

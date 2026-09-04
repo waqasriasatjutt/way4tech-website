@@ -1,0 +1,160 @@
+{
+  "metaDescription": "Odoo Marketing Automation in practice: how participants, triggers and traces really behave, what Community cannot do, and the consent rule per country.",
+  "intro": [
+    "Marketing Automation is an Enterprise app. Community ships Email Marketing and SMS Marketing, which send one message to one list, plus Automation Rules, which fire a mail template when a field changes. Neither gives you a waiting tree. The Enterprise app adds one. A campaign points at a model such as Contact, Lead or Mailing Contact, filters it with a domain, and every matching record becomes a participant with its own trace through each step of the workflow.",
+    "The parts that decide whether a campaign works sit outside the builder. Segments are domains over your own fields, so a nurture track split by industry only exists if somebody filled the industry field on forty thousand contacts. Deliverability decides whether the send lands at all. And the Unique Field on the campaign, one line of configuration, is what stops the same person entering the same workflow twice after a duplicate contact slips in.",
+    "Two absences are worth knowing before you buy. Odoo has no points per action scoring engine in the marketing app, so a score is a numeric field that server action steps add to. And there is no packaged double opt-in flow, which matters in Germany and anywhere else a court expects a logged confirmation. Both are buildable with what ships, and both cost less to plan for now than to retrofit after the first campaign has run."
+  ],
+  "whoFor": [
+    "Business to business teams with a long gap between the first enquiry and the first real conversation, where somebody has to stay in touch without a salesperson doing it by hand.",
+    "Training providers, event organisers and membership bodies, whose reminder and follow up sequences are the same shape every time and are the easiest journeys to get right.",
+    "Subscription and ecommerce businesses running onboarding, renewal and win back sequences keyed on a date field rather than on a mailing list.",
+    "Teams already sending mass email who have hit the ceiling of the one off blast and want the second message to depend on what happened to the first.",
+    "Not for transactional messages. An order confirmation, a delivery note or a payment reminder belongs to the mail template on that model and to the follow up levels in Accounting, all of which are Community.",
+    "Not for a Community only budget, and not for a database whose segmentation fields are empty, because the domain editor can only filter on data that is actually there."
+  ],
+  "capabilities": [
+    {
+      "title": "A campaign is a filter over a model, not a mailing list",
+      "body": "You choose the target model, write a domain filter, and pick the field that decides uniqueness, usually the email address. Odoo shows how many records the filter currently matches before you start anything. Targeting Lead or Opportunity instead of Mailing Contact means the workflow can read pipeline fields, stage, expected revenue and salesperson, and branch on them. It also means there is no mailing list underneath, which changes how opt out behaves. Decide the model per journey rather than once for the whole project."
+    },
+    {
+      "title": "Triggers, waits and the condition between two steps",
+      "body": "Every activity hangs off either the beginning of the workflow or a parent activity, with an interval measured in hours, days, weeks or months. The condition on a child step reads what happened to the parent message: opened, not opened, clicked, not clicked, replied, not replied, bounced. An activity can also carry its own filter, re-evaluated when the step runs, so a contact who became a customer in the meantime drops out instead of receiving the next chase."
+    },
+    {
+      "title": "Server action steps, where a workflow stops being email",
+      "body": "One of the activity types runs a server action against the participant record. That is how a step writes a score, sets a tag, changes a lifecycle field, creates a lead for the sales team or schedules a call activity for the account owner. A five step campaign that ends in a task on somebody's list is worth more than a ten step campaign that ends in another email. Sales teams read their activity list. They do not read marketing dashboards."
+    },
+    {
+      "title": "Traces explain why a message did not go",
+      "body": "Each participant carries one trace per activity, and the trace records processed, cancelled, rejected or error. Rejected is the useful one: a blacklisted address, a missing email, a record that no longer matches the filter. Without reading them, a campaign that reaches half its audience looks like a deliverability problem when it is usually a data problem. Read the traces after the first live run, before changing anything about the content."
+    },
+    {
+      "title": "A/B testing, tracked links and honest attribution",
+      "body": "Turn on Mailing Campaigns in the Email Marketing settings and a mailing can be split into variants. Each variant goes to a percentage of the audience, the winner is chosen on open rate, click rate or reply rate, or picked by hand, and it then goes out to everybody who was held back. Links in the body are rewritten by the link tracker, so clicks are counted per recipient rather than as a total, and the UTM source, medium and campaign are stamped on leads and orders created from those links. A lead a salesperson types in after a phone call carries none of that, which is the honest limit of the reporting."
+    },
+    {
+      "title": "Email and SMS are step types. WhatsApp is a separate app.",
+      "body": "Email steps go out through your outgoing mail server. SMS steps go through Odoo's own SMS service on prepaid credits, and sending instead through a local gateway you already pay for is a connector to be built, not a setting to be filled in. WhatsApp is its own Enterprise app on the Meta Cloud API, where each template is approved by Meta per language, and reaching it from inside an automated journey is an integration question to settle during scoping. In several markets the sender identity also has to be registered with the operator before a single message will deliver. The content is the easy part. Sender approval is what sets the launch date."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Sender domain and deliverability before anything else",
+      "body": "Publish SPF, DKIM and DMARC records for the sending domain and verify them from outside Odoo. On Odoo Online the daily outgoing mail cap means real campaign volume goes through an external relay configured as an outgoing mail server. Then warm the domain up with small sends. A new domain that opens with thirty thousand messages gets filtered, and no amount of later content work recovers a reputation burned in week one."
+    },
+    {
+      "title": "Choose the target model per journey, then check the opt out path",
+      "body": "Mailing Contact carries mailing lists and a per list opt out. Contact and Lead do not, so the only thing protecting somebody who unsubscribed is the global blacklist on their email address. Write down, per journey, which model it runs on and which opt out applies. If a customer can leave the newsletter and still receive an onboarding sequence, that has to be a decision somebody made, not a side effect of the model you picked."
+    },
+    {
+      "title": "Add the two or three fields you actually segment on",
+      "body": "The domain editor filters on fields that exist. Most projects need a small number of additions: a lifecycle stage, a consent field holding the date and the source of that consent, and a numeric score. Add them, backfill from the old system where the data is there, and accept that the rest starts empty. A journey built on a field nobody maintains stops working the month after go live."
+    },
+    {
+      "title": "Agree the UTM naming before the first send",
+      "body": "A mailing carries a UTM source, medium and campaign, and leads, orders and website visits created from a tracked link inherit them. One source per journey rather than one per mailing is the convention that survives contact with a busy team. Write it down and hold to it. Renaming UTM values across six months of leads afterwards is a data cleanup nobody budgets for, and until it is done the pipeline cannot be split by the journey that produced the deal."
+    },
+    {
+      "title": "Build one short journey, test it, then widen the filter",
+      "body": "Three steps is enough for a first campaign. The test wizard runs the workflow against a single record you pick, so use it, read the traces it produces, then start the campaign on a deliberately narrow filter such as one country or one product interest. Widen after the second send. The reason is not caution for its own sake. Starting a campaign enrols every record that matches at that moment, so a wide filter on day one means the whole database receives step one at once."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "The first launch mails everybody",
+      "body": "The record count shown next to the filter is what gets enrolled the moment the campaign starts. Nobody misreads that number on purpose. It happens because the filter was written to catch new records and it also catches the eleven years of history sitting behind them. Add a created date condition, or a lifecycle field that only new records carry, then check the count again before pressing start."
+    },
+    {
+      "title": "The relay rejects your mail and nothing says so loudly",
+      "body": "Odoo puts a bounce address in the envelope sender, which is not the address in the visible From. Relays that check the envelope against the authorised sender answer with a 553 sender address rejected and the message never leaves. The failure sits in the outgoing mail queue rather than on the campaign screen, so it can run for weeks before anybody notices. The fix is the from filter on the outgoing mail server."
+    },
+    {
+      "title": "Unsubscribed and blacklisted are not the same record",
+      "body": "Unsubscribing from a mailing list writes an opt out on that subscription. The blacklist is global and keyed on the email address itself. A campaign targeting Contacts never reads the first one. Teams discover this when somebody who left a newsletter two years ago receives a nurture sequence and complains, which in several of these markets is a regulatory matter rather than an apology. Decide which of the two your unsubscribe link writes."
+    },
+    {
+      "title": "It is not instant, and it was never meant to be",
+      "body": "A scheduled action advances participants through the workflow, so a step configured with no delay still waits for the next pass. A campaign is the wrong tool for anything that has to happen within seconds of a form submission. Use an automation rule on the model itself for the immediate acknowledgement and let the campaign own everything from an hour onwards. Designing against this is the most common reason a campaign looks broken."
+    },
+    {
+      "title": "Consent is not a field Odoo ships",
+      "body": "There is no built in record of when somebody agreed, on which form, and to what wording. Build it as a date field, a source field and a text field holding the wording shown at the time, populate it from the website form, and treat an imported list with no consent evidence as unusable rather than as a starting point. The price of that call is a smaller list in month one and an argument you can win in year three."
+    }
+  ],
+  "worksWith": [
+    "Email Marketing and SMS Marketing, both Community, which own the templates, the lists and the blacklist",
+    "CRM, where a step can create or requalify a lead, and where predictive lead scoring already runs in Community",
+    "Contacts, which owns deduplication, email validity and phone sanitisation, and quietly sets your bounce rate",
+    "Website and eCommerce, for the forms, the visitor tracking and the abandoned cart email that already ships",
+    "Events and eLearning, whose reminder sequences are the most reliable first journeys to build",
+    "Subscriptions, an Enterprise app, for renewal and win back sequences keyed on the next invoice date",
+    "WhatsApp on the Meta Cloud API, a separate Enterprise app, plus a connector for any local SMS gateway",
+    "Studio or a developer, for the consent, lifecycle and score fields the domain editor needs to filter on"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "PDPL sets conditions on moving personal data out of the Kingdom, which pushes the marketing database towards in-Kingdom hosting rather than a foreign platform, and it expects withdrawing consent to be as easy as giving it, so the unsubscribe path is part of the compliance story rather than a footer detail. The working week runs Sunday to Thursday, so a send schedule copied from a European playbook fires on the two days nobody is at a desk. Arabic templates need testing right to left, buttons and footer included, and campaign timing has to respect Ramadan."
+    },
+    {
+      "country": "uae",
+      "note": "Promotional SMS goes out under a sender identity registered through the operators, so that step cannot be switched on the week you finish building it. The working week runs Monday to Friday, which puts the UAE and Saudi send windows two days apart inside what the marketing team thinks of as one Gulf campaign. Record consent on the contact and make it survive the migration off whatever tool you are leaving. The legal entity named in the footer differs between a free zone company and a mainland one, and that is the entity a recipient complains about."
+    },
+    {
+      "country": "pakistan",
+      "note": "Bulk SMS goes out under a brand mask registered with the operator under PTA rules, and an unregistered mask simply does not deliver. WhatsApp carries more marketing traffic than email in most consumer categories, which makes the Meta Cloud API and per language template approval the real dependency rather than the mail server. Urdu content needs its own template rather than a translation dropped into a layout built for Latin script."
+    },
+    {
+      "country": "india",
+      "note": "Commercial SMS runs on a header and a content template registered on the DLT platform, with the variable placeholders matching exactly what was approved. A template edited in Odoo after approval fails at the operator rather than in Odoo, so the message disappears without an error anyone would notice. Recipients on the preference registers are scrubbed upstream, and the DPDP Act adds a consent notice that has to be available in the listed local languages."
+    },
+    {
+      "country": "turkey",
+      "note": "Commercial electronic messages need consent registered in IYS, the national consent registry, and an opt out recorded there overrides whatever your database says. That means a reconciliation step in the process, not a checkbox on a form. KVKK governs the underlying data. Put the IYS sync on a schedule, because messaging somebody who opted out there is the expensive mistake in this market."
+    },
+    {
+      "country": "germany",
+      "note": "Section 7 of the UWG requires prior express consent for marketing email, and the case law expects a documented double opt-in with the confirmation timestamp. Odoo ships no double opt-in flow, so build one: a confirmation mail, a tracked link, and a child step triggered on that click which writes the consent date. Open and click tracking need their own legal basis, and the footer needs a real imprint."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "PECR sits on top of UK GDPR. The soft opt-in lets you email existing customers about similar products, provided the opt out was offered when the address was collected and again in every message. Corporate subscribers can be emailed without prior consent but must be able to object. The ICO expects evidence of when and how consent was captured, which is a field you add rather than one you find."
+    },
+    {
+      "country": "united-states",
+      "note": "CAN-SPAM is an opt out regime, so a cold list is not automatically unlawful, but every commercial email needs a valid physical postal address in it and an opt out honoured within ten business days. Edit the footer block rather than leaving the default. SMS is a different rule: prior express written consent, which means the phone opt in has to be captured separately from the email one."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Marketing Automation available in Odoo Community?",
+      "a": "No, it is an Enterprise app, and Enterprise is licensed per internal user across the whole database rather than per marketer, so this is a company decision rather than a departmental one. Community can be pushed further than most teams try. An automation rule sends a mail template when a field changes, and a scheduled action moves records between states on a timer, which between them reproduce a simple two message sequence. What Community will not give you is a branch on whether the previous message was opened, an interval a marketer can change without a developer, or a trace per participant explaining why a step did not run."
+    },
+    {
+      "q": "Can a campaign send WhatsApp messages?",
+      "a": "WhatsApp in Odoo is a separate Enterprise app on the Meta Cloud API. Every template is approved by Meta per language before it can be sent, and approval is the part that slips, so give it its own dates in the plan. Outside the twenty four hour window that a customer reply opens, only an approved template can go out, which rules out freehand copy written the morning of the send. Driving WhatsApp from inside an automated journey is an integration question, so settle it during scoping instead of assuming it is a step type you pick from a list."
+    },
+    {
+      "q": "How does lead scoring actually work here?",
+      "a": "There is no points per action engine in the marketing app. Two honest options. Add a numeric field and have server action steps add to it, which gives full control and a number the sales team can see on the pipeline. Or use the predictive lead scoring that ships with CRM in Community, which fits a model against your own won and lost history rather than against points invented in a workshop. The second ranks better. The first explains itself better to a sales director who wants to know why a lead surfaced."
+    },
+    {
+      "q": "What stops one contact getting five emails in a week from different campaigns?",
+      "a": "Nothing in the product. There is no global frequency cap, and each campaign counts only its own participants, so two teams building journeys independently will collide on the same contacts inside a month. The control is a field on the contact holding the date of the last marketing message, written by a server action step at the end of each journey and read as a condition on the first step of the next. That is an afternoon of configuration, and it is the difference between a programme and a pile of campaigns."
+    },
+    {
+      "q": "How much volume can we send from Odoo itself?",
+      "a": "Odoo Online applies a daily outgoing mail cap sized for transactional mail, not for campaigns. Self hosted, the cap is your own sender reputation, which starts at nothing. Keep campaign mail and system mail on separate sending identities where you can, so a bad list cannot take your invoices down with it. Watch the bounce rate per send rather than as a monthly average: one imported list can sit at fifteen percent while the average still looks respectable, and mailbox providers judge the send, not the average."
+    },
+    {
+      "q": "What survives a move from Mailchimp or HubSpot?",
+      "a": "Contacts, tags and the unsubscribe list migrate cleanly, and the unsubscribe list is the one that matters, because losing it is a compliance incident rather than an inconvenience. Historic opens and clicks generally do not come across, and neither do the journey definitions, which are rebuilt. Budget the real work on the export, the deduplication against contacts already in Odoo, and mapping old segments onto fields that exist on the Odoo side."
+    },
+    {
+      "q": "Do we still need Email Marketing if we have Marketing Automation?",
+      "a": "Yes, and it installs alongside. The mail templates, the mailing lists, the blacklist and the design editor all live in Email Marketing, and an automation step sends what that app defines. Most teams keep running one off announcements from there while the automation owns the sequences. It also means the sending domain, its reputation and its bounce history are shared between the two, so a badly targeted announcement damages the nurture programme running quietly underneath it."
+    }
+  ]
+}

@@ -19,11 +19,11 @@
     },
     {
       "title": "Recurring invoicing and automatic collection",
-      "body": "A daily scheduled job picks up every subscription whose next invoice date has arrived, creates the invoice and, where the customer has authorised a saved payment method, charges it and reconciles the payment in the same run. Tokenised charging is a payment provider capability rather than an Odoo one, and Stripe and Adyen support it. A declined charge leaves the invoice open, notifies the customer and is retried on later runs, and the plan carries an automatic closing period in days after which an unpaid subscription is closed."
+      "body": "A daily scheduled job picks up every subscription whose next invoice date has arrived, creates the invoice and, where the customer has authorised a saved payment method, charges it and reconciles the payment in the same run. Tokenised charging is a payment provider capability rather than an Odoo one, and Stripe and Adyen are the two most commonly used for it. A declined charge leaves the invoice open, notifies the customer and is retried on later runs, and the plan carries an automatic closing period in days after which an unpaid subscription is closed."
     },
     {
       "title": "Mid term upsell priced pro rata",
-      "body": "An upsell quotation adds lines to a running subscription and prices them pro rata from the change date to the end of the current period, so a seat added on the eleventh of the month is billed for the remainder of that month and at the full rate from the next invoice onward. Recurring revenue on the order updates when the upsell is confirmed. Reductions have no matching proration, which is why most contracts move them to the renewal date."
+      "body": "An upsell quotation adds lines to a running subscription and prices them pro rata from the change date to the end of the current period, so a seat added on the eleventh of the month is billed for the remainder of that month and at the full rate from the next invoice onward. The upsell is its own quotation linked back to the parent order, and the recurring revenue figure only moves when it is confirmed, so a pipeline of unconfirmed upsells is invisible in the revenue reporting. Taking quantity away is an edit to the running order and has no equivalent proration behind it."
     },
     {
       "title": "Renewal, closing and the churn reason",
@@ -39,7 +39,7 @@
     },
     {
       "title": "Deferred revenue on annual invoices",
-      "body": "Invoice lines carry a start and an end date, and Odoo Accounting generates the deferral entries from them, so an annual invoice raised in March spreads across twelve months instead of landing in one. It needs a deferred revenue account agreed per product family and correct dates on every recurring line. This is Enterprise accounting. In Community the same result is a manual journal entry every month, which nobody keeps up for long. Finance will test this part hardest at sign off."
+      "body": "Invoice lines carry a start and an end date, and Odoo Accounting generates the deferral entries from them, so an annual invoice raised in March spreads across twelve months instead of landing in one. Since Odoo 17 this replaced the older deferred revenue models, so there is nothing to set up per product: a deferred journal and a deferred revenue account are configured once in the accounting settings, and the accuracy then depends entirely on the dates landing on every recurring line. The settings also decide whether entries are generated as each invoice is validated or produced as one grouped run at period close. This is Enterprise accounting. In Community the same result is a manual journal entry every month, which nobody keeps up for long. Finance will test this part hardest at sign off."
     }
   ],
   "setup": [
@@ -61,7 +61,7 @@
     },
     {
       "title": "Agree the failure policy and the revenue policy",
-      "body": "Settle both with finance during configuration rather than after. The failure policy is the grace period, the automatic closing window set on the plan, the point at which service actually stops and who reviews unpaid subscription invoices each week. The revenue policy is the deferred account per product family and the deferred balance carried over at cut over as an opening entry, so the first month after go live reconciles instead of showing a jump nobody can explain."
+      "body": "Settle both with finance during configuration rather than after. The failure policy is the grace period, the automatic closing window set on the plan, the point at which service actually stops and who reviews unpaid subscription invoices each week. The revenue policy is the deferred journal and account, which recurring products get start and end dates written onto their lines, and the deferred balance carried over at cut over as an opening entry, so the first month after go live reconciles instead of showing a jump nobody can explain."
     }
   ],
   "pitfalls": [
@@ -99,7 +99,7 @@
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "Odoo Enterprise carries the ZATCA integration in the Saudi localisation, so a recurring invoice is cleared through Fatoora before it is a valid document. The detail that catches subscription books is the chain: each invoice carries a counter and the hash of the one before it from the same registered unit, so one rejection inside a batch of several hundred is not a single bad invoice, it holds up everything behind it. Decide before go live whether subscription billing runs as its own registered unit. VAT is 15 percent on the recurring line."
+      "note": "Odoo Enterprise carries the ZATCA integration in the Saudi localisation, so a recurring invoice is cleared through Fatoora before it is a valid document. The detail that catches subscription books is the chain: each invoice carries a counter and the hash of the one before it from the same registered unit, so submissions are sequential and a rejection inside a batch of several hundred leaves the invoices behind it in that chain waiting until somebody resolves it. Decide before go live whether subscription billing runs as its own registered unit. VAT is 15 percent on the recurring line."
     },
     {
       "country": "uae",
@@ -133,7 +133,7 @@
   "faqs": [
     {
       "q": "Is Odoo Subscriptions available in Community?",
-      "a": "No. It is an Enterprise app. On Community the usual route is the OCA contract modules, which produce recurring invoices from a contract record but give you no recurring revenue and churn reporting, no prorated upsell quotation and no subscription portal. A paid apps store module is the other option. The reporting that makes the Enterprise app worth having leans on Enterprise view types, the cohort in particular, so it cannot be rebuilt on Community at any sensible cost."
+      "a": "No. It is an Enterprise app. On Community the usual route is the OCA contract modules, which produce recurring invoices from a contract record but give you no recurring revenue and churn reporting, no prorated upsell quotation and none of the renewal and closing workflow that sits on the order. A paid apps store module is the other option. The reporting that makes the Enterprise app worth having leans on Enterprise view types, the cohort in particular, so it cannot be rebuilt on Community at any sensible cost."
     },
     {
       "q": "Do our subscribers need Odoo user licences?",
@@ -141,15 +141,19 @@
     },
     {
       "q": "Which payment methods can Odoo charge automatically?",
-      "a": "Any provider that stores a payment method and where the customer has authorised one, Stripe and Adyen among them. The scheduled run creates the invoice and charges the stored token in the same pass. Bank collection is a different mechanism with a different timetable: Odoo prepares a file the bank collects on, so nothing is confirmed at the moment of billing and the money is matched later against the statement. Transfer and cheque customers simply receive the invoice and pay it. Most books end up running two or three of these at once, and the failed payment process has to cover each."
+      "a": "Only a card or account held as a token at a provider that supports storing one, Stripe and Adyen being the two most used for it, and only where the customer gave that authorisation. Everything else is collection rather than charging, and the difference is the timetable. A bank file for SEPA Direct Debit or Bacs leaves Odoo on billing day, but the money lands days later and is matched against the statement, so an invoice can be correct, sent and still open in the ledger for a week with nothing wrong anywhere. Transfer and cheque customers simply receive the document. Most books run two or three of these at once, which means a failed payment means something different in each and the weekly review cannot only look at gateway declines."
     },
     {
       "q": "Does Odoo handle usage based or metered billing?",
       "a": "Not natively. There is no meter and no tiered usage table. What works in practice is updating the quantity on the subscription line before the invoice date, by import or by a scheduled action reading from wherever usage is counted, which covers a per user or per site count that moves month to month. Tiers, included allowances and overage rates are a development item and should be quoted as one at the start."
     },
     {
-      "q": "Can an existing subscription book be migrated?",
-      "a": "Yes, and the contract data is the easy half. Each live agreement loads as an active subscription with the dates and amounts the old system was already billing on, which is a mapping exercise. The stored payment methods are the hard half, because most gateways will not release them. Either the two providers agree a token migration between them, which takes weeks and signatures on both sides, or every customer re authorises, which costs a measurable slice of the book. Plan the cut over date around whichever of those two you actually get, not the other way round."
+      "q": "What happens to our reporting history when the book moves across?",
+      "a": "Recurring revenue reporting is calculated from the orders sitting in the database, so a book loaded as active subscriptions on cut over day starts as a flat line with no past behind it. New business, expansion and churn for earlier periods are simply absent, and the retention cohort has nothing to draw on for the first year unless the historic agreements are loaded too, the closed ones included, with their real start and end dates. That is a decision to take before the load rather than after. Either publish a stated reporting start date and leave the old numbers where they are, or pay for the extra data work and load the churned and renewed orders as well. The gap looks acceptable during the project and awkward at the first board pack."
+    },
+    {
+      "q": "A customer commits for a year but pays monthly. How is that modelled?",
+      "a": "As a monthly billing period with a duration on the plan, not as an annual plan split into twelve invoices. The plan holds two separate things: how often an invoice is raised, and how long the subscription runs before it ends or goes to renewal. So a twelve month commitment billed monthly is one plan, a twelve month term paid up front is another, and a rolling monthly deal is a third. Collapsing them is the most common structural mistake on these projects, because recurring revenue and churn are grouped by plan, and a committed customer recorded on a rolling plan makes the churn number look worse than the contracts actually allow."
     },
     {
       "q": "How does an annual contract with an escalation renew?",

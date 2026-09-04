@@ -24,23 +24,23 @@
     },
     {
       "title": "The guest folio and settlement",
-      "body": "A sale order per stay works as a folio. Room and tax post nightly, outlet charges arrive during the stay, and the order invoices at departure. Split billing is normal: a company settles room and tax while the guest pays extras, so one stay produces two documents against two partners. Advance deposits post as down payments and sit as a liability until arrival, which is what keeps money taken in March out of March revenue."
+      "body": "A sale order per stay works as a folio. Room and tax post nightly, outlet charges arrive during the stay, and the order invoices at departure. Split billing is where the standard model strains. Odoo invoices one sale order to one partner, so a company settling room and tax while the guest pays their own extras means either two orders sharing one stay or a routing step that moves lines onto a second document. Pick one before the desk is trained on it. Advance deposits use the standard down payment on the sale order, but check the account behind it. The down payment product carries an income account out of the box, so unless it is repointed at a customer deposits liability, money taken in March lands in March revenue for a stay that happens in July."
     },
     {
       "title": "Housekeeping, engineering and room status",
-      "body": "Room status is its own state machine: dirty, clean, inspected, occupied, vacant, out of order, out of service. It is not stock and it does not belong in Inventory. Attendant boards allocate rooms by credits per shift, and the inspection step is what stops a dirty room being sold. Engineering fits Odoo Maintenance well, because a room out of order is equipment with a request, a cost and a return date that has to feed back into availability."
+      "body": "Room status is its own state machine: dirty, clean, inspected, occupied, vacant, out of order, out of service. It is not stock and it does not belong in Inventory. Attendant boards allocate rooms by credits per shift, and the inspection step is what stops a dirty room being sold. Engineering fits Odoo Maintenance, where a room out of order is equipment with a request, a team, a technician and a scheduled date. The piece to add is the link back: while that request is open the room has to drop out of the availability calculation, and it has to return on the date the request closes rather than when somebody remembers."
     },
     {
       "title": "Outlets, point of sale and room charge",
-      "body": "Restaurants, bars, the pool and room service run as Point of Sale outlets with their own sessions, stock and recipes. Room charge is the integration that matters. A waiter posts the ticket to a room number, the system confirms the guest is in house and inside a credit limit, and the charge lands on the folio instead of being settled at the till. Odoo has no standard route from a Point of Sale order to an open sale order, so this gets built."
+      "body": "Restaurants, bars, the pool and room service run as Point of Sale outlets with their own sessions, stock and recipes. Floor plans, table management and split bills are Community features; the IoT box that drives serial and USB peripherals is Enterprise. Room charge is the integration that matters. A waiter posts the ticket to a room number, the system confirms the guest is in house and inside a credit limit, and the charge lands on the folio instead of being settled at the till. Odoo ships the opposite link only: a confirmed sale order can be loaded into an open session and settled at the till. Pushing an outlet ticket onto an open folio is not standard behaviour, so it gets built."
     },
     {
       "title": "Night audit and the daily position",
-      "body": "The night audit rolls the business date, posts room charges and tourism tax for the night, marks no shows and produces occupancy, average daily rate and revenue per available room for the day just closed. In Odoo the posting is a scheduled action. The discipline around it is the harder half, because every outlet session has to be closed before the roll or the day the revenue belongs to stops matching the day it was rung up."
+      "body": "The night audit rolls the business date, posts room charges and tourism tax for the night, marks no shows and produces occupancy, average daily rate and revenue per available room for the day just closed. In Odoo the posting is a scheduled action. Posting nightly rather than at departure is also what puts revenue in the right period: a stay running from the twenty eighth of December to the third of January belongs to two months and two financial years, and a single invoice at check out drops all of it into January. The discipline around the roll is the harder half, because every outlet session has to be closed before it or the day revenue belongs to stops matching the day it was rung up."
     },
     {
       "title": "Rates, channels and group business",
-      "body": "Pricelists handle a negotiated corporate rate or a package well enough. What they do not hold is a different price for each of the next four hundred nights, minimum stay rules, closed to arrival or a yield ladder. Those belong in a rate calendar built for it. A group block holds a count of rooms until a cutoff date with the rooming list arriving late, which is inventory held without named guests. Odoo has no OTA link, so channels are reached through a channel manager."
+      "body": "Pricelists handle a negotiated corporate rate or a package well enough, and a pricelist item can carry a validity window, so a single date can be priced. What does not scale is four hundred dated items for every room type on every rate plan, and pricelists hold no minimum stay, no closed to arrival and no yield ladder at all. Those belong in a rate calendar built for the job. A group block holds a count of rooms until a cutoff date with the rooming list arriving late, which is inventory held without named guests. Odoo connects to no OTA, so channels are reached through a channel manager."
     }
   ],
   "setup": [
@@ -97,26 +97,26 @@
     "Odoo Inventory and Purchase for outlet stores, minibar stock, housekeeping consumables and recipe costing.",
     "Odoo Maintenance for engineering requests and rooms taken out of order, which has to feed availability back.",
     "Odoo Employees and Attendances for hours and rosters, with Planning for shift scheduling available only in Enterprise.",
-    "Odoo Accounting for departmental reporting and deferred deposits, with the full accounting toolset in Enterprise.",
+    "Odoo Accounting for departmental reporting and deferred deposits. Community ships Invoicing and analytic accounting; the full Accounting app is Enterprise.",
     "A channel manager such as SiteMinder, STAAH or Cloudbeds, since Odoo connects to no OTA on its own.",
     "Payment providers for tokenised guarantee cards and pre arrival payment links, so no card number is ever stored in Odoo."
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "ZATCA Phase 2 clears a business invoice before it is valid, so a corporate or travel agent folio cannot be printed at departure and cleared later. Guest bills are simplified invoices with a QR code, reported within twenty four hours and issued in Arabic. Guest identity is registered with the interior ministry at check in. A municipality fee sits alongside VAT and needs its own line, not one blended rate."
+      "note": "ZATCA Phase 2 clears a standard invoice before it is valid, so a corporate or travel agent folio cannot be printed at departure and cleared afterwards. The desk waits for the cleared document, which puts a network dependency in the middle of check out. Guest bills are simplified invoices, reported within twenty four hours, and both types carry a QR code, so the folio print template is a compliance artefact rather than a design choice. Arabic is required on the face of the invoice. A municipality fee sits alongside VAT and needs its own account and its own line."
     },
     {
       "country": "uae",
-      "note": "Dubai adds a Tourism Dirham per room per night set by hotel classification, on top of a municipality fee and a service charge, so a room folio carries several separate amounts before VAT. Abu Dhabi charges on a different basis again, which matters for a group holding property in both. Guest details are filed with the police at check in, and electronic invoicing arrives through Accredited Service Providers."
+      "note": "Dubai adds a Tourism Dirham per room per night set by hotel classification, on top of a municipality fee and a service charge, so one night carries fixed and percentage amounts before VAT is applied. Abu Dhabi works on a different basis again, so a group holding property in both emirates configures the charges per company rather than once globally. A rate advertised as all inclusive still has to decompose into those components on the folio and on the return. Electronic invoicing arrives through accredited service providers, so budget for a middleware hop rather than filing straight from Odoo."
     },
     {
       "country": "india",
-      "note": "The GST band on a room night depends on the value of that night, so a rate crossing the seven thousand five hundred rupee threshold changes the rate charged and whether input tax credit is available. Tax cannot be a fixed setting on the room product. Restaurant supply in the hotel follows the same band. Past the turnover threshold a folio needs an invoice reference number and QR code."
+      "note": "The GST band on a room night depends on the value of that night, so a rate crossing the 7,500 rupee mark changes the rate charged and whether input tax credit is available. Tax cannot be a fixed setting on the room product. Restaurant supply inside the hotel follows the same band, and past the turnover threshold a corporate folio needs an invoice reference number and QR code."
     },
     {
       "country": "pakistan",
-      "note": "Hotel and restaurant service is taxed by the province, so Sindh under SRB and Punjab under PRA, with the rate falling when the guest settles by card. Tax on a folio then depends on the payment method chosen at departure, which few systems model. Provincial authorities require outlet invoices to be reported electronically as they are issued. Corporate bookings deduct withholding under section 153."
+      "note": "Hotel and restaurant service is taxed by the province, Sindh under SRB and Punjab under PRA, and those invoices are reported electronically as they are issued. Outlet bills carry a lower rate when the guest settles by card than in cash, so tax on a restaurant charge depends on the payment method chosen at the till, which few systems model. Corporate bookings deduct withholding under section 153."
     },
     {
       "country": "turkey",
@@ -128,7 +128,7 @@
     },
     {
       "country": "germany",
-      "note": "Every till in an outlet needs a certified technical security device and a DSFinV-K export on demand, which rules out an unfiscalised point of sale. Accommodation and food are taxed at different rates, so a package rate is split into components rather than sold as one line. A guest registration form is required, many cities levy a bed tax, and the adviser expects a DATEV export under GoBD."
+      "note": "Every outlet till needs a certified technical security device and a DSFinV-K export on demand, which rules out an unfiscalised point of sale. A package rate splits on the folio, because drinks sit at the standard rate while the accommodation element carries the reduced one, and a city bed tax applies to that element alone. Statutes differ on business stays. The adviser expects a DATEV export under GoBD."
     },
     {
       "country": "egypt",
@@ -138,39 +138,43 @@
   "faqs": [
     {
       "q": "Does Odoo include a hotel PMS?",
-      "a": "No. There is no room, rate calendar, folio or night audit in Odoo Community or Odoo Enterprise, and no OTA connection in either. A hotel runs on Odoo through a dedicated module built or bought for the purpose, sitting on standard Sales, Inventory, Point of Sale and Accounting. Anyone describing an out of the box Odoo PMS is describing a third party app rather than Odoo itself."
+      "a": "No. There is no room, rate calendar, folio or night audit in either edition, and no OTA connection in either. That makes the choice of hotel module the real decision on the project, not the choice of Odoo. When a vendor demonstrates one, ask to see availability across a month end, a guest moved to another room mid stay and repriced, a channel modification arriving twice for the same booking, and the list of Odoo versions that module already runs on in production. Those four take ten minutes and they separate a product from a demo."
     },
     {
       "q": "Community or Enterprise for a hotel?",
-      "a": "The hotel layer is needed either way. Community covers Sales, Invoicing, Inventory, Purchase, Point of Sale, Project, Maintenance and Employees, which is enough for a single property with an external accountant. Enterprise adds what a hotel touches daily: full Accounting for deferred deposits and departmental reporting, Planning for rosters, Documents for scanned identity papers, Sign, Helpdesk, Marketing Automation, WhatsApp, Barcode and the IoT box for till printers and cash drawers."
+      "a": "The hotel layer is needed either way. Community covers Sales, Invoicing, Inventory, Purchase, Point of Sale, Maintenance, Employees and analytic accounting, which is enough for one property working with an external accountant. Enterprise adds what a hotel touches daily: full Accounting for deferred deposits and bank reconciliation, Planning for rosters, Documents for scanned identity papers, Sign, Helpdesk, WhatsApp and the IoT box for till printers. Enterprise is licensed per internal user, which changes the arithmetic on three shifts."
     },
     {
-      "q": "Can Odoo connect to Booking.com and Expedia?",
-      "a": "Not directly. Neither edition ships an OTA connector. The normal route is a channel manager that already holds those certifications, with Odoo pushing availability and rates to it and receiving reservations back. The integration has to be two way and idempotent, because channels resend modifications and cancellations, and a stop sell buffer is usually held back so push latency cannot sell the same room twice."
+      "q": "How many Odoo users does a hotel actually pay for?",
+      "a": "Enterprise is priced per internal user, and anyone who writes a record is one. Front desk, reservations, accounts, outlet managers and duty managers all count, and shift work pushes the licence count well above the number of desks. Housekeeping decides the cost: attendants who set room status themselves need internal users, a supervisor posting the whole board from one device does not. Portal users are free and stay out of the backend, which suits a guest viewing a folio, not a receptionist. Community carries no user fee at all."
     },
     {
-      "q": "How does a restaurant bill get onto the guest room?",
-      "a": "Through a built integration. A Point of Sale order has no standard way to settle against an open sale order, so room charge is added: the waiter picks a room, the system confirms the guest is in house and inside the credit limit, and the charge posts to the folio instead of a payment method. Without it, outlet revenue and room revenue never meet on one bill at departure."
+      "q": "Can guests book directly on an Odoo website?",
+      "a": "Odoo has a website and eCommerce, but neither understands a room night. The catalogue sells a quantity of a product, not a date range netted against inventory, and the appointment tool models a slot rather than a stay. A direct booking engine is part of the hotel layer: a date search running the same availability calculation the desk uses, rate selection, a deposit through a payment provider, and a reservation on the same records a channel booking creates."
     },
     {
-      "q": "What does the night audit actually do in Odoo?",
-      "a": "A scheduled action posts the night room charge and tourism tax for every in house reservation, marks no shows, rolls the business date and produces occupancy, average daily rate and revenue per available room for the closed day. The part that needs agreeing with staff is session closing, because an outlet session left open across the roll books its takings to the wrong day and quietly breaks the departmental report."
+      "q": "Can one database run several properties?",
+      "a": "Yes, and multi company works in Community as well as Enterprise. Each property is a company with its own journals, tax setup, sequences and pricelists, while record rules keep one hotel reservation list out of another and still let central reservations see all of them. Analytic accounts stay per department, so a rooms result reads per property or across the group. Consolidation reporting is Enterprise. Settle early whether guests, rates and stock are shared."
     },
     {
-      "q": "Can we move reservations that are already on the books?",
-      "a": "Yes, and it is the piece to plan first. Future reservations move with their rate, the deposit already taken, guest details and the channel reference. Guests mid stay transfer at the audit boundary with their balance to date as one opening charge rather than as recreated lines. Historic folios attach as PDF documents. Rate calendars come across by import from the existing system, never by retyping."
+      "q": "What happens at the front desk if the connection drops?",
+      "a": "Odoo is a server application and the desk is a browser, so a lost link stops check in, room moves and folio posting until it returns. Point of Sale is the exception: a session already open keeps taking orders in the browser and syncs when the connection comes back, which is why outlets ride out a short outage better than reception does. Plan a second line, an arrivals list printed at the audit, and a paper payment rule."
+    },
+    {
+      "q": "What happens at the yearly Odoo release?",
+      "a": "Odoo ships a major version each year and supports three at a time. The standard apps are handled by Odoo's own upgrade path. The hotel module is not. Whoever wrote it ports it, retests availability, the night audit and the channel interface, and reruns a full stay cycle on a copy of the database before production is touched. Enterprise support covers Odoo code, not custom code. Ask which versions a vendor module already runs on."
     },
     {
       "q": "Can Odoo replace Opera or a similar branded PMS?",
       "a": "For an independent property or a small group, yes, and the gain is that the front desk and the accounts sit in one database with one set of numbers. For a franchised hotel it usually cannot, because the brand agreement names the PMS and requires a feed to the central reservation system and the loyalty programme. Read the franchise technology schedule before the project is scoped."
     },
     {
-      "q": "How is city or tourism tax set up?",
-      "a": "As a charge line rather than a percentage tax in most countries. The amount is typically per person per night, often capped after a number of nights and waived for some guests, so the line carries a quantity of guests multiplied by nights. It posts to a liability account, because the hotel collects it on behalf of a municipality, and it clears when the remittance is made."
+      "q": "Can Odoo drive the door locks and the phone system?",
+      "a": "Not on its own. Key card encoders speak vendor specific protocols and expect a PMS interface, so a small piece of middleware sits between them and cuts a key when a room is assigned and the stay is confirmed. Telephone billing and pay television work the same way. Budget these as separate interfaces with their own testing, because the lock vendor rarely knows anything about Odoo."
     },
     {
-      "q": "Can Odoo drive the door locks and the phone system?",
-      "a": "Not on its own. Key card encoders speak vendor specific protocols and expect a PMS interface, so a small middleware sits between them and cuts a key when a room is assigned and the stay is confirmed. Telephone billing and pay television work the same way. Budget these as separate interfaces with their own testing, because the lock vendor rarely knows anything about Odoo."
+      "q": "Can we keep the existing PMS and put only the back office on Odoo?",
+      "a": "Yes, and as a first phase it costs a fraction of a replacement. The interface is a daily summary rather than a live feed: one journal entry per business date carrying room revenue, outlet revenue, taxes and levies split by department, plus the city ledger balances that then get invoiced and chased in Odoo. Purchase, stock, recipes, payroll and the accounts run in Odoo while the desk carries on untouched. It also answers the harder question with real numbers, because after two quarters of departmental reporting the property knows what the existing PMS is and is not doing for it."
     }
   ]
 }

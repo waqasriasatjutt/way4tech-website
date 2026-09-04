@@ -2,15 +2,15 @@
   "metaDescription": "Odoo Project in practice: what Community covers, where the gantt stops, how project profitability is really built, and what progress billing needs.",
   "intro": [
     "Odoo Project holds work as tasks inside a project, and the project is an analytic container. Hours logged against it, vendor bills coded to it and invoices raised from it all land on the same analytic account, which is why a project reports a margin without anybody writing a report. That single design decision explains most of what the app does well, and most of what buyers expect it to do and then find missing.",
-    "The app itself is Community. Tasks, subtasks, stages, kanban and list views, task dependencies, recurring tasks, the customer portal and analytic posting are all there. The gantt view is Enterprise, and so are the map and cohort views, Planning, Helpdesk, Field Service, Documents and Sign. A Community project can plan, deliver and bill work. It cannot draw a timeline with dependency lines, and for many buyers that one view is what the licence is bought for.",
+    "The app itself is Community, and so is almost everything a delivery team touches daily: the board, the subtask, the link that says one task waits on another, the view the customer logs into, and the posting that turns an hour into a cost. What Enterprise buys is a set of views, timesheet validation, and a set of neighbouring apps. A Community project can plan, deliver and bill work. It cannot draw a timeline with dependency lines, and that single view is often the whole reason the licence gets signed.",
     "What decides whether the implementation holds is not the kanban board. It is whether the project structure matches how the business sells and reports, whether cost reaches the analytic account from purchases and subcontractors as well as timesheets, and whether the customer sees in the portal what you intended them to see. Those three decisions are made in the first fortnight and they are expensive to reverse once a year of history sits on top of them."
   ],
   "whoFor": [
     "Professional services firms, agencies and engineering consultancies that deliver against a quoted scope and need delivered cost measured against it.",
     "Contracting, fit-out and installation businesses billing in progress stages, where subcontractor cost, materials and labour have to meet on one record.",
     "Internal IT, product and facilities teams running work that never reaches an invoice but still carries a budget somebody defends.",
-    "Companies already on Odoo Sales or Accounting, where the project is the missing link between what was sold and what it actually cost.",
-    "Not for planning-heavy programmes needing critical path, baselines, earned value or resource levelling, none of which Odoo does, and not for shift rostering, which is Planning.",
+    "Companies already running Odoo Sales or Accounting that can see what was sold and what was spent, but cannot join the two per engagement.",
+    "Not for planning-heavy programmes run on float, baselines and earned value, none of which Odoo produces, and not for shift rostering, which is Planning.",
     "Not for ticket queues with response deadlines, which belong in Helpdesk where the SLA rules live."
   ],
   "capabilities": [
@@ -28,11 +28,15 @@
     },
     {
       "title": "Scheduling, dependencies and the gantt",
-      "body": "Dependencies between tasks are recorded in Community once the setting is on, and a blocked task shows what it is waiting for. Drawing them as a timeline with drag rescheduling is the Enterprise gantt. What the gantt is not is a planning engine. It does not compute a critical path, hold a baseline to compare against, or level an over-allocated resource. It shows the plan you entered."
+      "body": "Task dependencies switch on in project settings, in Community, and a task then records what blocks it and what it blocks. There is exactly one relation type. No lag, no lead, no start to start, so a two week curing period between two activities has to become a task of its own. The other split worth knowing is the date fields. A Community task carries a deadline; the planned start date that a bar gets dragged along comes with the Enterprise module, which is why dependencies are free and the timeline is not."
+    },
+    {
+      "title": "Properties, for the fields this business needs and Odoo does not ship",
+      "body": "A project defines its own set of task properties and every task inside it carries them: text, number, date, checkbox, selection, tags, or a link to another record such as a contact or a product. A fit-out project holds a unit number, a retainer holds the client's PO reference, and neither needs a module written. The constraint is storage. Properties are held as JSON on the task rather than as database columns, so they filter and group well and they are poor ground for pivot analysis. Once two or three of them start driving real reporting, that is the signal to promote those into proper fields."
     },
     {
       "title": "Portal access and project sharing",
-      "body": "Project visibility has three settings: invited internal users, all internal users, or invited portal users. Sharing a project with a portal collaborator lets an external person read and, with the right access, edit tasks in the browser. The detail that catches people is the chatter. A message on a task emails the followers. An internal note does not. Attachments sit on the same record either way."
+      "body": "Project visibility has three settings: invited internal users, all internal users, or invited portal users. On the last one, sharing the project with a customer contact sends an invitation and gives them a browser view of the task list, either read only or with the right to edit and create tasks. They stay portal users rather than internal ones, so they reach the projects they were invited to and nothing else in the database. Access is granted and withdrawn per project per contact, which is worth auditing whenever a client-side manager moves on."
     },
     {
       "title": "Reporting on what happened, not just what is open",
@@ -50,11 +54,11 @@
     },
     {
       "title": "Wire cost in from purchases, not only from hours",
-      "body": "Timesheets post to the project on their own. Nothing else does. A subcontractor bill, a hired plant item or a materials purchase reaches the project only if analytic distribution is set on the line, and the practical fix is a default distribution on the purchase order that flows through to the bill. Skip this and profitability shows full revenue against labour cost alone, which reads as a spectacular margin."
+      "body": "Timesheets post to the project on their own. Nothing else does. A subcontractor bill, a hired plant item or a materials purchase reaches the project only when analytic distribution is filled in on the line, and asking a buyer to remember that on every line does not survive a busy month. Use the analytic distribution models in Accounting so a partner, a product or a product category carries its own default onto the purchase order and the bill inherits it. Skip this and profitability shows full revenue against labour cost alone, which reads as a spectacular margin and gets quoted in a pricing meeting."
     },
     {
       "title": "Set portal visibility before the first customer is invited",
-      "body": "Decide per project what a customer sees: the task list, the deadlines, the messages, the attachments. Then check it through a portal login rather than as an administrator, because the two views differ and only one of them is the one your client gets. Agree with the delivery team where internal discussion goes. Notes stay inside, messages go out, and that rule has to land before go live rather than after."
+      "body": "Decide per project what a customer sees, then check it through an actual portal login rather than as an administrator, because the two views differ and only one of them is the one your client gets. The setting is not neutral later either: moving a project off invited portal users takes the collaborators with it, so a visibility change made for an internal reason ends client access without anybody announcing it. Agree with the delivery team where internal discussion goes. Notes stay inside, messages go out, and that rule has to land before go live rather than after."
     },
     {
       "title": "Import tasks knowing what does not come with them",
@@ -64,7 +68,7 @@
   "pitfalls": [
     {
       "title": "Buying it as a replacement for Microsoft Project",
-      "body": "Odoo schedules tasks and shows dependencies. It does not calculate a critical path, store a baseline to measure slippage against, level resources, or produce earned value. A planner who works in float and variance will find none of those. Where a contract requires that discipline, the plan stays in the planning tool and Odoo carries execution, cost and billing, with an agreed rule for what is copied between them."
+      "body": "Odoo schedules tasks and shows dependencies. It does not calculate a critical path, store a baseline to measure slippage against, level an over-allocated resource, or produce earned value, in either edition. A planner who works in float and variance will find none of it. Say that at the demo rather than after the deposit, because the buyer who was sold a gantt is measuring the wrong thing on day one and blames the implementation for it."
     },
     {
       "title": "Profitability built on half the cost",
@@ -72,7 +76,7 @@
     },
     {
       "title": "The portal showing more than intended",
-      "body": "Customer-visible projects expose the chatter, and a well-meant message about a delay reaches the client the moment it is posted. Task names written for internal use get read literally. Attachments uploaded to a task are visible on the same record. Review one live project through a portal login before inviting anyone, and give the team a short rule about which field is safe to write freely in."
+      "body": "Sharing is granted at project level, and there is no per-task switch inside a shared project. Every task in it is visible to the invited contact, including the one somebody raised to chase an unpaid invoice. The chatter goes the same way: a message about a delay reaches the client the second it is posted, while an internal note does not, and the two boxes sit next to each other. Keep client-facing work in its own project and give the team one rule about which box is safe."
     },
     {
       "title": "Treating the project as the contract",
@@ -85,30 +89,30 @@
   ],
   "worksWith": [
     "Timesheets, which post labour hours and cost to the project analytic account as they are entered",
-    "Sales, where a service product with service tracking creates the project or task on order confirmation",
+    "Sales, where the order line opens the delivery record on confirmation and fixes how that work will be billed",
     "Purchase and Invoicing, where analytic distribution on a bill line brings subcontractor and material cost onto the project",
     "Expenses, for reimbursable cost that can be re-invoiced to the customer at cost or at sales price",
     "Employees, which holds the hourly cost that turns recorded time into a money figure",
     "Planning, Helpdesk and Field Service, all Enterprise, for shifts, tickets and site visits that generate project work",
     "Documents and Sign, both Enterprise, for drawings, method statements and signed approvals held against the job",
-    "Accounting, where the analytic account carries budgets and reporting beyond what the project panel shows"
+    "Accounting, where the same analytic account carries the ledger side of the job and analytic budgets sit above what the profitability panel shows"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "Contracting is the sector that buys this, and a progress invoice raised from a milestone is a standard tax invoice, so it clears through the ZATCA Fatoora platform before it is valid. Only one invoice sequence is permitted, so numbering per project or per site is out. Retention held back on a contractor payment has no native field and has to be designed."
+      "note": "Contracting is the sector that buys this, and a progress invoice raised from a milestone is a standard tax invoice, so it clears through the ZATCA Fatoora platform before it can be handed to the customer. Clearance is per document and each registered issuing unit runs an unbroken counter, so a numbering scheme per site is a registration exercise, not a sequence you add in Odoo. Arabic is mandatory on the invoice itself, which makes the progress billing layout a bilingual template job rather than the English default that gets demonstrated."
     },
     {
       "country": "uae",
-      "note": "Corporate tax at nine percent turned per project cost into a documentation question, particularly for free zone entities testing qualifying income against mainland work. Progress payments on construction contracts also fix the VAT date of supply. Businesses above AED 50 million appoint an Accredited Service Provider and go live on the e-invoicing system in January 2027, adding a step to every billing run."
+      "note": "Corporate tax at nine percent turned per project cost into a documentation question, particularly for free zone entities testing qualifying income against mainland work. Progress payments on construction contracts also fix the VAT date of supply. On the published timetable, businesses above AED 50 million in revenue appoint an Accredited Service Provider and go live on the e-invoicing system from January 2027, which puts a clearance step between the milestone and the customer."
     },
     {
       "country": "qatar",
-      "note": "There is no VAT, so a project invoice carries no tax line and the compliance work sits elsewhere: five percent withholding on payments to non-resident subcontractors, and contract notifications filed through Dhareeba. Financial statements filed with the return must be in Arabic. The e-invoicing law approved in draft has no published scope or format, so nothing should be built against it yet."
+      "note": "There is no VAT, so a project invoice carries no tax line and the compliance work sits elsewhere. Five percent withholding applies to payments to non-residents, which catches the overseas design consultant and the specialist subcontractor on a build. Contracts above the reporting thresholds are notified through Dhareeba, and the return and the accounts filed with it are prepared in Arabic. E-invoicing has no published format or scope yet, so there is nothing to build against."
     },
     {
       "country": "india",
-      "note": "Services connected to immovable property take their place of supply from the site, so a project executed in another state changes whether the invoice carries IGST or CGST plus SGST. Above the turnover threshold each progress invoice needs an IRN and a signed QR code, and the portal rejects documents older than thirty days, so back-dated billing has to be blocked inside Odoo."
+      "note": "Services connected to immovable property take their place of supply from the site, so a project executed in another state decides whether the invoice carries IGST or CGST plus SGST, and the site address becomes a data quality problem rather than a note in the file. Above the turnover threshold each progress invoice needs an IRN and a signed QR code, and for the larger turnover bands the portal refuses documents reported more than thirty days after their date, which rules out catching up a quarter of billing in one evening."
     },
     {
       "country": "pakistan",
@@ -129,32 +133,36 @@
   ],
   "faqs": [
     {
-      "q": "Is Odoo Project available in Community?",
-      "a": "Yes. Tasks, subtasks, stages, kanban and list views, dependencies, recurring tasks, the customer portal, project sharing and analytic posting are all in Community. The gantt, map and cohort views are Enterprise, as are Planning, Helpdesk, Field Service, Documents and Sign. Most services firms move to Enterprise for the gantt and the timesheet grid rather than for anything in Project itself."
+      "q": "Do we need Enterprise to run Project properly?",
+      "a": "Only for the views, timesheet validation and the neighbouring apps. Tasks, subtasks, stages, dependencies, recurring tasks, properties, project sharing and analytic posting are Community. The gantt, map and cohort views and the timesheet grid are Enterprise, as are Planning, Helpdesk, Field Service, Documents and Sign. The pricing detail matters more than the list: Enterprise is licensed per user for the whole database rather than per app, so if those people are already licensed for Sales or Accounting, switching Project on adds nothing to the bill."
     },
     {
-      "q": "Can we bill a project in progress stages?",
-      "a": "Yes, through milestones on a service product, so reaching a milestone releases the invoice for that line. A fixed down payment or a percentage up front is also standard on the sale order. What is not standard is percentage of completion revenue recognition or a retention holdback field, so both need a decision and usually a small build before the first contract is loaded."
+      "q": "Can one project hold fixed price and time and materials work at once?",
+      "a": "Yes, because the billing policy lives on the service product and not on the project. A single order can carry a milestone billed line for the fixed scope and a timesheet billed line for the variable part, both delivering into the same project. The profitability panel reports them separately, so the fixed portion does not disguise an overrun on the hourly portion. It does mean product setup is the real configuration work, not project setup."
     },
     {
       "q": "Does Odoo calculate a critical path or hold a baseline?",
-      "a": "No. Dependencies are recorded and the Enterprise gantt draws them, but there is no critical path calculation, no saved baseline to measure slippage against, no resource levelling and no earned value. Where a contract requires that, keep the plan in the planning tool and use Odoo for execution, cost and billing, with an agreed rule for what moves between the two."
+      "a": "No, in either edition. Where a contract demands that discipline the schedule stays in the planning tool and Odoo carries execution, cost and billing. Make the join explicit rather than cultural: carry the planning tool's activity code on the Odoo task, decide that dates flow in one direction only, and name the person who updates the other system. Two tools both believing they own the finish date is the usual failure."
     },
     {
-      "q": "Where do the project profitability numbers come from?",
-      "a": "Revenue from invoices linked to the project, labour cost from timesheet lines valued at the employee hourly cost, and other costs from anything carrying analytic distribution to the project analytic account. Nothing reaches it automatically except timesheets. A purchase or a subcontractor bill with no analytic distribution is simply absent, and the margin looks better than it is."
+      "q": "If we raise an employee's cost rate, does the project margin change?",
+      "a": "No. The cost that values a timesheet line is taken from the employee when the line is created and stays on it. Time already recorded is not restated, which is correct, and it means a project running across a pay review holds two rates inside one margin figure. If a client engagement needs one blended rate for its whole life, solve that in reporting. Editing historic lines to force it will not reconcile to the ledger afterwards."
     },
     {
-      "q": "Can customers see and update their own tasks?",
-      "a": "Yes. Set project visibility to invited portal users and share the project with the customer as a collaborator. They then see the tasks and, depending on access, can add or edit them. Check what they see through an actual portal login first, because the chatter, the attachments and any internal-sounding task names sit on the same record."
+      "q": "Can timesheets be approved before they turn into an invoice?",
+      "a": "On Enterprise, yes. The validation step, the lock it puts on a validated line and the reminder emails come with the timesheet grid, which is Enterprise. Run validation before the billing run rather than after, because an invoice raised from delivered hours takes whatever is sitting there at that moment. Community has the access groups, so a user sees only their own lines while an approver sees everyone's, but nothing freezes a line once it is entered. The workable substitute is to treat invoicing as the cut-off and reconcile the period before it goes out."
+    },
+    {
+      "q": "Can a customer see our costs in the portal?",
+      "a": "No, and there is no setting that would expose them. Timesheet values, vendor bills, employee cost rates and the profitability panel are internal records a portal user has no access rule for. The exposure runs the other way. That same contact also sees their own quotations and invoices in the portal, so a re-invoiced expense appears at whatever the re-invoicing policy set, described exactly as somebody typed it on the vendor bill. The thing to review is the wording on billable lines, not the portal permissions."
     },
     {
       "q": "How much project history should we migrate?",
-      "a": "Open work and anything still to be invoiced, plus enough closed work to compare against. Discussion history, stage change trails and attachments do not come across in a task import unless they are loaded deliberately, so old projects arrive as a shell. For finished jobs a summary and the original documents in a file store is usually more useful than a rebuilt task list."
+      "a": "Open work, anything still to be invoiced, and enough closed work to compare against. The part teams forget is the money rather than the tasks: a job half delivered before go live needs its cost to date posted to the analytic account, or its first month in Odoo shows revenue against almost no cost and reads as pure profit. Agree that opening position with whoever signs off the margin before the first invoice goes out."
     },
     {
       "q": "Can one project span two companies?",
-      "a": "A project belongs to one company. Cost booked in another company's ledger reaches it only if it posts to the same analytic account, which is possible because an analytic account can be left without a company. Currency is the other trap: cost lands in each company's currency while the project reports in its own, so the conversion basis has to be agreed before anyone quotes a margin."
+      "a": "A project belongs to one company. Cost booked in another company's ledger reaches it only if it posts to the same analytic account, which is possible because an analytic account can be left without a company of its own. Currency is the other trap: cost lands in each company's currency while the project reports in its own, so the conversion basis has to be agreed before anyone quotes a margin from it."
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "metaDescription": "Odoo Studio in practice: what the Custom plan builder really covers, where it stops, what an upgrade does to your views, and when to write a module.",
   "intro": [
-    "Odoo Studio is the browser based builder that ships with the Enterprise subscription. It adds fields, rearranges views, edits PDF reports and creates automation rules without a developer touching the source. Well scoped, it removes weeks of small change requests. Badly scoped, it produces a database nobody can upgrade cleanly, because the customisation lives in database records rather than in versioned code.",
+    "Odoo Studio is the browser based builder inside the Odoo Enterprise range. It adds fields, rearranges views, edits PDF reports and creates automation rules without a developer touching the source. Well scoped, it removes weeks of small change requests. Badly scoped, it produces a database nobody can upgrade cleanly, because the customisation lives in database records rather than in versioned code.",
     "The commercial detail buyers miss is that Studio is not in every Enterprise plan. It sits on the Custom plan, above Standard, alongside multi company and the external API. Community has no Studio at all, although a developer working in the technical menus can build the same fields, views, server actions and automation rules by hand. What the Custom plan buys is the editor and the speed, not a capability that exists nowhere else.",
     "The useful way to scope it is a boundary. On one side sit changes that live inside a single database and end on a screen or a printed page: a field, a filter, a column on an invoice, a rule that stamps a date and notifies a manager. Studio owns those and does them in minutes. On the other side sit changes that have to be tested, versioned, deployed to several databases, or exchanged with a tax authority. That is module work. Mistaking the second kind for the first is what produces a rebuild eighteen months later."
   ],
@@ -57,8 +57,8 @@
       "body": "A model created in Studio starts with a permissive access line and no record rules. Set access per group before it holds real data, then add a record rule if a user should only see their own records. If you run several companies, add the company field at creation and the matching rule at the same time, otherwise one company reads another's records the first time somebody widens a filter."
     },
     {
-      "title": "Test the flows the field is not on",
-      "body": "Required is enforced at model level, not in the one form where you ticked it, so it also applies to data imports, the external API, the customer portal and records created by other modules. Before release, run an import, place an order from the website, and let the scheduled action create the record it creates every night. A required field with no default is the usual reason a cron job has been failing quietly for a fortnight."
+      "title": "Required on one form is not required everywhere",
+      "body": "Ticking Required in the editor writes a modifier into that view. An import, a write over the external API, an order placed on the website and any other module save straight to the model and never see it, so the field arrives empty by a route nobody tested. If it genuinely must never be empty, set it on the field itself under Settings, Technical, Fields, and fill the existing records first: Odoo cannot apply a required column to a table that still holds empty values, and it logs that failure rather than stopping. Then rerun the awkward flows. Run an import, place an order from the website, and let the nightly scheduled action create its record. A new required field with no default is the usual reason a cron job has been failing quietly for a fortnight."
     },
     {
       "title": "Export at every release and keep the zip",
@@ -67,8 +67,8 @@
   ],
   "pitfalls": [
     {
-      "title": "The upgrade service does not cover Studio",
-      "body": "It migrates standard modules and your data. Custom views and reports are yours to verify. An inherited view whose target element was renamed or removed cannot load, and Odoo deactivates it rather than raising an error, so the field is simply absent from the form and nobody notices for a week. A smaller version of the same thing happens when a standard view changes in a patch release. Open every Studio view and print every Studio report on the upgraded test database before go live."
+      "title": "Upgrades break Studio views quietly",
+      "body": "The upgrade converts the standard modules and your data. Inherited views and custom reports are the part you verify yourself. A view whose target element was renamed or removed cannot load, and Odoo deactivates it rather than raising an error, so the field is simply absent from the form and nobody notices for a week. A smaller version of the same thing happens when a standard view changes in a patch release. Open every Studio view and print every Studio report on the upgraded test database before go live."
     },
     {
       "title": "Deleting a field deletes the data",
@@ -80,7 +80,7 @@
     },
     {
       "title": "Studio is not an integration tool",
-      "body": "Sandboxed Python in a server action has no network access. No requests library, no imports, no reading a file from disk. The outbound webhook action posts a payload and forgets it. Any flow that has to send a document to a tax portal and store the identifier that comes back, which is every clearance based regime, needs a module with a queue, a status field and a retry policy. An integration built on a one way webhook loses documents the first time the far end is down."
+      "body": "Sandboxed Python in a server action has no network access. No requests library, no imports, no reading a file from disk. The two webhook features look like a way round that and are not. The inbound trigger lets an outside system post into Odoo and start a rule. The outbound action posts a payload out and ignores whatever comes back. Neither gives you a call and a reply in the same transaction. Any flow that has to send a document to a tax portal and store the identifier it returns, which is every clearance based regime, needs a module with a queue, a status field and a retry policy. An integration built on a one way webhook loses documents the first time the far end is down."
     },
     {
       "title": "Nothing built in Studio is covered by a test",
@@ -103,7 +103,7 @@
     },
     {
       "country": "uae",
-      "note": "The published timetable starts electronic invoicing with larger businesses in 2027, submitted through an accredited service provider, so the payload mapping will belong to a connector rather than to Studio. Meanwhile Studio suits the paperwork around the invoice: trade licence number and expiry on the partner, TRN check status, a free zone flag that drives a different document layout. Payroll and the WPS salary file are Enterprise modules, so a Community site reaches neither of them through Studio or otherwise."
+      "note": "The published timetable starts electronic invoicing with larger businesses in 2027, submitted through an accredited service provider, so the payload mapping will belong to a connector rather than to Studio. Meanwhile Studio suits the paperwork around the invoice: trade licence number and expiry on the partner, TRN check status, a free zone flag that drives a different document layout. Payroll is an Enterprise application, and the WPS salary file the banks expect is payroll output rather than something a Studio field can produce, so a Community site reaches neither through Studio or otherwise."
     },
     {
       "country": "egypt",
@@ -141,7 +141,7 @@
     },
     {
       "q": "Will Studio changes survive an upgrade?",
-      "a": "Your data and the standard modules are handled by the upgrade. Studio views and reports are the part that breaks. Most come through untouched. Some fail because the element they attach to was renamed, and Odoo deactivates a view it cannot load rather than stopping the upgrade, so the failure is silent and the field simply disappears from the form. Budget a pass over every custom view and report on the test database. Screenshots of each customised form taken before the upgrade turn that pass from a day into an hour."
+      "a": "Fields and their contents do. They are columns, and the upgrade carries them with the rest of your data. Automation and approval rules usually come through as well, since they are records rather than code. The fragile parts are views and reports, because both attach to standard XML that Odoo is free to rewrite between versions. Plan that work rather than discover it. Take a screenshot of every customised form and a PDF of every custom report before the upgrade, then compare them against the test database afterwards. It turns the check from a day of hunting into an hour of looking."
     },
     {
       "q": "How do we move Studio work from test to production?",
@@ -153,7 +153,7 @@
     },
     {
       "q": "Can Studio build a multi level approval?",
-      "a": "You can attach more than one approval rule to the same button, which covers a manager and then finance. What you do not get is branching by category or amount band, escalation after a delay, delegation while somebody is on leave, or a single queue showing a person everything waiting on them. Those want a module built on a state field, activities and a scheduled action. If the approval is a genuine control rather than a courtesy, test the case where the record is confirmed by an import or an automation instead of by a person."
+      "a": "You can attach more than one approval rule to the same button, which covers a manager and then finance. What you do not get is branching by category or amount band, escalation after a delay, delegation while somebody is on leave, or a single queue showing a person everything waiting on them. Those want a module built on a state field, activities and a scheduled action. A workable middle ground is one Studio approval on the button plus a status field and activities for the rest of the chain, so the queue sits in the activity list people already open every morning."
     },
     {
       "q": "What happens to our customisations if we move to a cheaper plan?",
@@ -162,6 +162,14 @@
     {
       "q": "Can Studio change the website or the customer portal?",
       "a": "No. Studio edits back office views and PDF reports. The website has its own separate editor and its own pages, and the portal screens a customer sees are QWeb templates Studio does not open. So a field added to the sale order will not appear on the portal quotation page by itself. Putting it there is a template change: on Odoo Online that means a developer working in the technical views, on Odoo.sh or on premise it means a small module. Worth establishing before anyone promises a customer facing change."
+    },
+    {
+      "q": "Can a Studio field calculate a value?",
+      "a": "Yes. A field can be given compute code and the list of fields it depends on, which covers margins, day counts and concatenated references without a module. The catch is what happens next. A computed field that is not stored has no column, so it cannot be grouped in a pivot, sorted on a list, or used in a filter the database has to evaluate. Decide at the start whether the value is for reading on a form or for reporting on. That answer decides whether it has to be stored, and storing it means computing it across every existing record the first time."
+    },
+    {
+      "q": "Can Studio change how standard fields behave?",
+      "a": "It can change how they appear. Hide a standard field in one view, relabel it, reorder it, make it read only for a group, or show it only when a condition holds. What it cannot do is change what a standard field computes, what happens when a standard button is pressed, or the stages a document moves through. Two things bite. A relabel lives in the view you changed, so the original wording still shows in exports, filters and every other view. And hiding a field the standard code requires does not remove the requirement, it removes your users' way of satisfying it."
     }
   ]
 }

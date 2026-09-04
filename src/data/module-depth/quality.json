@@ -1,155 +1,176 @@
 {
-  "metaDescription": "Odoo Quality implementation detail: control points, measures with tolerances, alerts and CAPA, what it will not block for you, and the real ISO 9001 gaps.",
+  "metaDescription": "Odoo Quality in depth: control points, tolerance rules, failure locations, backorder behaviour, and the reports you still have to build yourself.",
   "intro": [
-    "Odoo Quality is an Enterprise app. There is no quality control in Odoo Community, so the first decision on a quality project is a licence decision rather than a configuration one. The app adds control points that fire on receipts, internal transfers, deliveries, manufacturing orders and individual work order steps. Each one records a pass, a fail or a measured value, and a failure becomes an alert that a named team owns.",
-    "The design is deliberately thin. A control point is a rule saying which product, which operation and which test. A quality check is the answer somebody gave, stamped with a user and a time. An alert is the follow up. Everything a quality manager also expects, supplier scorecards, capability indices, sampling plans by AQL, cost of poor quality, is built on that data rather than shipped inside it.",
-    "That thinness decides whether an implementation lands. Teams who scope Odoo Quality as the system of record for checks and non conformances, and put the statistics in a reporting layer, are live in weeks. Teams who expect a validated pharmaceutical quality system out of the box spend months finding out what is absent. The rest of this page is the detail that separates those two outcomes."
+    "Odoo Quality is Enterprise only. The whole family, from the base quality module through quality_control, the manufacturing and repair bridges and the IoT bridge, ships under the OEEL-1 licence, so the first decision on a quality project is a licence decision rather than a configuration one. The app puts control points on receipts, internal transfers, deliveries, manufacturing orders and individual work order steps. Answering a check stamps the responsible user and a control date on the record, and the status is one of three values: To do, Passed or Failed.",
+    "The data model is three objects. A control point is the rule: which products or product categories, which operation types, which test, how often, and whether the check is raised per operation, per product or per quantity. A quality check is the answer somebody gave. An alert is the follow up, carrying a root cause, a vendor, a corrective action and a preventive action. Most of what a quality manager asks for is a report across those three tables rather than a feature hidden inside them.",
+    "What separates a fast project from a slow one is knowing which of those reports Odoo already draws. Each Measure point computes the average and standard deviation of its own answered checks, and both checks and alerts ship with graph and pivot views called Quality Check Analysis and Quality Alert Analysis. Cp and Cpk, control charts with limits calculated from the process, AQL sampling tables and supplier scorecards are not there, and no amount of configuration produces them. The detail below is what decides which side of that line your requirements sit on."
   ],
   "whoFor": [
-    "Manufacturers already running Odoo MRP who want in process checks attached to work order steps instead of a clipboard at the end of the line.",
-    "Importers and distributors doing goods in inspection, where the real need is a dated, defensible reason for rejecting a supplier delivery.",
-    "Food, cosmetics and pharma businesses that must tie an inspection result to a lot number and retrieve it years later during a recall or an audit.",
-    "Not for teams on Odoo Community with no appetite to change edition, because the app is not in that edition and the community alternative is a smaller thing.",
-    "Not for a regulated drug or medical device manufacturer expecting a validated system with compliant electronic signatures, unless computer system validation is a funded workstream.",
-    "Only marginally useful to a pure services business, since control points hang off stock operations and manufacturing, not off projects or helpdesk tickets."
+    "Manufacturers already running Odoo MRP who want in process checks on work order steps in the Shop Floor interface rather than a clipboard at the end of the line.",
+    "Importers and distributors doing goods in inspection, where the real requirement is a dated, defensible reason for rejecting a supplier delivery and a location to put the rejected pallet in.",
+    "Food, cosmetics and pharmaceutical businesses that must tie an inspection result to a lot and retrieve it years later. The lot form carries Quality Checks and Quality Alerts smart buttons that count and open every check and alert recorded against that lot.",
+    "Companies that subcontract production and need the check to happen on the subcontracted receipt. The bridge for that is flagged auto_install, so it appears on its own once quality and subcontracting are both present.",
+    "Not for teams staying on Odoo Community. There is no Odoo quality module under a Community licence, and the OCA alternative covers inspections and results without worksheets, spreadsheet checks, IoT capture or work order steps.",
+    "Not for a regulated drug or device manufacturer expecting a validated system with 21 CFR part 11 signatures out of the box, unless computer system validation is a funded workstream in its own right."
   ],
   "capabilities": [
     {
-      "title": "Control points that fire where the work happens",
-      "body": "A control point targets a product or a whole product category, an operation type such as receipts or delivery orders, and for manufacturing, a specific operation in the routing. Control frequency is set on the point itself: every operation, a random percentage of them, or periodically after a set number of days. That last pair is what makes high volume receiving workable, because inspecting every pallet is a promise nobody keeps."
+      "title": "Control points, and the two settings that decide the workload",
+      "body": "A control point targets products or whole product categories and one or more operation types, and at least one operation type is mandatory, so a point is never warehouse neutral. Control per is then Operation, Product or Quantity: Operation raises one check for the whole transfer, Product one per product, Quantity one per move line with partial quantities allowed. Control Frequency is All, Randomly with a percentage, or Periodically with a day, week or month interval. Odoo 18 added a fourth value, On-demand, for points that are requested from the transfer rather than generated with it. There is also a percentage tested within the lot, defaulting to 100, so you can inspect a fraction of a received lot instead of all of it."
     },
     {
-      "title": "Test types, and which one produces data",
-      "body": "Instructions shows rich text and attachments and asks for acknowledgement. Take a Picture stores an image against the check. Pass or Fail gives a binary result. Measure is the one that matters for analysis: it captures a number against a norm, a tolerance range and a unit of measure, so the check knows by itself whether the reading sits inside specification. There is also a step type for printing a label at the station."
+      "title": "Test types, including the four that only work on work orders",
+      "body": "A standard control point offers Instructions, Take a Picture, Pass - Fail, Measure, Worksheet once the worksheet bridge is installed, and Spreadsheet from Odoo 18 onwards. Register Production, Register Consumed Materials, Register By-products and Print label are different: they come from the mrp_workorder module, they belong on manufacturing steps, and the quality check form filters them out with an explicit domain on their technical names. Register By-products also ships archived, so it does not appear in the list at all until somebody unarchives the test type. Do not plan a print label step on a receipt."
     },
     {
-      "title": "Work order steps on the shop floor",
-      "body": "In manufacturing the same control point mechanism drives the steps an operator walks through on a work order, including registering the quantity produced and the components consumed. On Odoo 17 and later those steps render in the Shop Floor interface, designed for a tablet at the work centre. The effect is that quality stops being a separate visit by an inspector and becomes part of the operation being timed."
+      "title": "Measure checks judge themselves, on the tolerances only",
+      "body": "A Measure point holds a norm, a minimum tolerance, a maximum tolerance and a norm unit. When the operator enters a reading, Odoo compares it against the two tolerances, sets the result, and shows a message naming the value measured and the range it should have fallen in. Three details matter at design time. The norm plays no part in the comparison, it only feeds an onchange that copies itself into the maximum while that maximum is still zero. The norm unit is a free text field defaulting to mm, not a link to the unit of measure table. And measured values round to the decimal precision record named Quality Tests, which ships at two digits, so a reading taken to three decimal places is stored rounded until you change it."
     },
     {
-      "title": "Alerts with an owner and a corrective action",
-      "body": "A failed check can raise a quality alert carrying the product, the lot or serial, a team, a responsible person, priority, tags and a stage. The alert holds the description, the corrective action and the preventive action, which is the spine of a CAPA process. Stages are configurable, so the kanban can mirror your own flow from raised, through investigation and action, to verified and closed."
+      "title": "Failure locations move the rejected quantity, on transfers",
+      "body": "A control point can list Failure Locations, restricted to internal locations. When a check fails, Odoo redirects the failed quantity to one of them and records on the check where it went, splitting the move line and raising a second check for the remainder when only part of the line failed. Two limits are worth knowing before you promise it. The routing runs only when the failed check belongs to a transfer, so a check on a manufacturing order does not move anything. And the field is hidden until Storage Locations is enabled in Inventory settings, with Odoo 17 and 18 hiding it further unless Control per is set to Quantity. Odoo 19 shows it for every test type except Instructions and Take a Picture."
     },
     {
-      "title": "Worksheets for inspections with many readings",
-      "body": "A chain of twenty separate checks is punishing to answer. Quality worksheet templates collapse an inspection into one form with its own fields, designed in Studio and printable as a record. This is how dimensional inspection reports and goods in checklists are normally built. It is also the part most tied to Enterprise, since both the worksheet layer and Studio come with that edition."
+      "title": "Open checks block validation, failed checks do not",
+      "body": "Validating a transfer with an unanswered check does not go through. Odoo opens the check wizard first, and if anything is still at To do when the transfer completes it raises an error telling the user the quality checks are outstanding. A check that has been answered and failed blocks nothing, because it is no longer pending. That asymmetry is the most useful behaviour to understand before you design the process, since it decides where the physical hold has to live and who owns it."
     },
     {
-      "title": "Readings taken from the instrument",
-      "body": "With an IoT Box, measuring devices such as calipers and scales write their reading straight into a measure check, and a camera can satisfy a picture step. That removes the transcription error, which is the most common reason nobody trusts the quality data. It also timestamps the reading at the moment of measurement rather than at the moment somebody got round to typing up the shift."
+      "title": "Alerts hold the CAPA fields and the dates to measure them",
+      "body": "An alert carries a description, a corrective action, a preventive action, a root cause from a configurable list, tags, a priority, a responsible user, a team, the product, the vendor and the lots. It also stamps Date Assigned and Date Closed, so time to close is a real number rather than an estimate. Stages are configurable and each one has an Alert Processed flag, which is what tells the kanban and the reports that an alert is genuinely finished. Odoo ships four stages, New, Confirmed, Action Proposed and Solved, and every quality team also owns an email alias, so alerts can arrive by email."
+    },
+    {
+      "title": "Shop Floor and instrument capture",
+      "body": "Work order steps render in the Shop Floor interface introduced in Odoo 17, built for a touchscreen at the work centre. With the IoT bridge a control point gets a device, and the device type decides what the step can do: a measuring device or a scale feeds a Measure check, a camera answers Take a Picture, a printer serves Print label. The reading is stamped when it is taken rather than when somebody types up the shift, which is usually the difference between data people trust and data they argue about."
     }
   ],
   "setup": [
     {
       "title": "Start from the failures you already have",
-      "body": "Pull the last twelve months of customer complaints, supplier rejections and scrap, then count the causes. Build control points for the causes that repeat and cost money. The alternative, one control point per line of the product specification, produces an inspection that takes eleven minutes, so operators learn to click through it and the resulting data is worse than no data at all."
+      "body": "Pull the last twelve months of customer complaints, supplier rejections and scrap, then count the causes. Build control points for the causes that repeat and cost money. The alternative, one control point per line of the product specification, produces an inspection that runs to eleven minutes, so operators learn to click through it and the resulting data is worse than no data at all."
     },
     {
-      "title": "Set frequency before you write tests",
-      "body": "Decide per control point whether it runs on every operation, on a random percentage, or on a period. A receiving bay handling two hundred pallets a day cannot inspect all of them, and pretending otherwise is how a quality system loses credibility in its first month. Sampling rates should follow your risk view of the supplier and the part, and be revisited once real alert data exists."
+      "title": "Fix Control per and Control Frequency before writing any tests",
+      "body": "Those two fields decide how many records a day the system creates and how much of the shift goes into answering them. Quantity level control on a receiving bay generates a check per move line, which is right for serialised goods and punishing for bulk. A bay handling two hundred pallets a day belongs on Randomly with a percentage, or on a reduced percentage tested within the lot, which sits at 100 until you lower it. Set both per point, and revisit them once a quarter of real check data exists."
     },
     {
-      "title": "Load norms, tolerances and units properly",
-      "body": "Measure points need a norm, a minimum, a maximum and a unit of measure per product. That data usually lives in a technical spreadsheet, and the units have to exist in Odoo before an import will take. Check tolerance direction while loading, because a one sided specification loaded as a symmetric range silently passes parts that should fail, and nobody notices until a customer does."
+      "title": "Prepare the measurement data as a per product table",
+      "body": "Measure points need a norm, a minimum, a maximum and a unit for each product, and that data normally lives in a technical drawing or an engineering spreadsheet rather than anywhere in the ERP. Extract it once, agree who owns changes to it, and load it with both tolerances explicit rather than assumed. Decide the unit convention before loading, because the field is free text and you will otherwise end up with mm, MM and millimetre on three points measuring the same thing. If any characteristic needs more than two decimals, raise the Quality Tests decimal precision first, since it applies to every point in the database."
     },
     {
-      "title": "Name the quarantine route and its owner",
-      "body": "Recording a failure and physically holding the goods are two different things. Create a quarantine location, decide which transfer moves rejected stock into it, and name the person allowed to release or scrap from there. Restrict the location so warehouse staff cannot pick from it. This is ordinary Inventory configuration, but it is the piece that makes a quality decision bite in the warehouse."
+      "title": "Create the failure locations and lock them down",
+      "body": "Enable Storage Locations, create the quarantine locations as internal locations, and list them on the points that need them. Then restrict access so warehouse staff cannot pick from those locations in normal operation, and name the person allowed to release or scrap. Odoo will route the failed quantity there for you. It will not stop somebody taking the stock back out again, and that is the part you configure."
     },
     {
-      "title": "Teams, stages and escalation",
-      "body": "Quality teams route alerts and stages describe your process. Keep the stage list short and process shaped rather than department shaped, because a stage per department turns the kanban into an org chart. Use activities and followers so an alert sitting untouched for a week becomes visible. Agree at design time who is allowed to close an alert, and what evidence closing it requires."
+      "title": "Choose the answering surface deliberately",
+      "body": "A chain of twenty separate checks is punishing to answer. The two ways to put several fields behind one check are a worksheet template, whose fields are designed in Studio because the worksheet module depends on it and the design button is limited to administrators, or from Odoo 18 a spreadsheet template with a nominated success cell, where the check passes when that cell evaluates to TRUE. A spreadsheet suits dimensional inspection with formulas and calculated results and carries no Studio dependency. Pick one per inspection type and stay with it."
+    },
+    {
+      "title": "Teams, stages, alias and the closing rule",
+      "body": "Quality teams route alerts and stages describe your process. Keep the stage list short and process shaped rather than department shaped, and set the Alert Processed flag only on stages that truly mean closed, because reporting keys off that flag. Agree at design time who is allowed to close an alert and what evidence closing it requires. Use the team alias if you want production or customer services to raise alerts without holding a full user seat."
     }
   ],
   "pitfalls": [
     {
-      "title": "The system records the failure, it does not enforce it",
-      "body": "The strength of the app is the record: who checked, when, against which lot, with what result. Treat the physical consequence as something you design. Quarantine locations, access rights on those locations and a clear rule about who may release are what stop failed goods flowing onward. Projects that assume the software will hold the stock for them find the gap in the first week of live operation."
+      "title": "A failed check does not hold the goods, an open one does",
+      "body": "Odoo blocks validation while a check is unanswered and lets the transfer through once it is answered, even with a fail. Routing the failed quantity into a failure location records where it went, it does not lock it, and on a manufacturing order it does not even do that. Restricted access on the quarantine location, a named release authority and a written rule about scrapping are what actually stop rejected material rejoining stock. Design those three before go live rather than after the first argument about a released pallet."
     },
     {
-      "title": "SPC is a reporting layer, not a switch",
-      "body": "Measures are stored per check with their norm and tolerance, and you can group, pivot and graph them over time, which answers most of the questions people actually ask. Control charts with limits calculated from the process, capability indices such as Cp and Cpk, and rule based out of control detection are not in the app. Scope them as a BI model or a custom report over quality check data."
+      "title": "Tolerances decide the result, the norm does not",
+      "body": "Pass or fail on a Measure check is computed against the minimum and maximum tolerance only. A point imported with a norm and blank tolerances therefore has a range of zero to zero and fails every reading. The onchange that copies the norm into the maximum fires when a user types in the form, never on import. A one sided specification loaded as a symmetric range has the opposite effect and passes parts it should reject. Check tolerance direction on the loaded records, not on the source spreadsheet."
+    },
+    {
+      "title": "Statistics stop at average and standard deviation",
+      "body": "Each Measure point computes the mean and standard deviation of its own checks, and Quality Check Analysis groups, pivots and graphs the rest, which answers most of what people actually ask. Control limits calculated from the process, capability indices such as Cp and Cpk, and rule based out of control detection are absent. So is a supplier scorecard: the alert carries a vendor and a root cause, so acceptance rate by supplier is a pivot, but nothing tightens sampling automatically after a bad run or blocks a vendor. Scope that reporting up front and price it."
+    },
+    {
+      "title": "Control point sprawl, and deleting instead of archiving",
+      "body": "A point per product looks tidy in month one and is unmaintainable by month six, when four hundred exist and nobody knows which are current. Use product categories and operation types so one point covers a family. Archive rather than delete: the link from a check back to its point is not protected, so removing a point leaves historical checks with their answers intact and the rule that produced them blank, which is exactly the trail an auditor asks to follow."
+    },
+    {
+      "title": "Backorders quietly delete the checks nobody answered",
+      "body": "Receive part of a purchase order and create a backorder, and Odoo moves the checks belonging to the delivered lines onto the completed transfer, deletes any still sitting at To do on the original, and generates fresh checks against the backorder. Cancelling a transfer removes its pending checks the same way. This keeps the data tidy, and it means an unanswered check leaves no trace, so a compliance count of checks raised against checks answered will always agree with itself. If you need evidence that an inspection was skipped, that has to come from the transfer history, not from the quality tables."
     },
     {
       "title": "ISO 9001 is an audit of your organisation",
-      "body": "No software makes anyone certified. Odoo holds a large share of the evidence: dated inspection records, non conformances with corrective and preventive actions, traceability to lot level, controlled documents and training records. Management review, the internal audit programme, design control and the quality manual itself stay outside the app. An auditor asks to see the process being followed, then asks the system to prove it."
-    },
-    {
-      "title": "Control point sprawl",
-      "body": "A point per product looks tidy in month one and is unmaintainable by month six, when four hundred of them exist and nobody knows which are current. Use product categories and operation types so one point covers a family. Archive rather than delete, since historical checks reference their point and removing it damages the audit trail the system was bought to keep."
-    },
-    {
-      "title": "Supplier quality has to be built",
-      "body": "There is no vendor scorecard, no acceptance rate by supplier and no automatic blocking of a vendor after repeated rejections. The data exists, because an alert carries the product and the lot, and the lot leads back to the receipt and the purchase order. Turning that into a monthly supplier report is a reporting build, so put it in scope rather than expecting it to arrive with the app."
+      "body": "No software makes anyone certified. Odoo holds a good share of the evidence: dated inspection records naming the user who answered them, non conformances with corrective and preventive actions, traceability to lot level, and documents attached where an auditor can find them. Management review, the internal audit programme, design control and the quality manual stay outside the app. An auditor watches the process being followed, then asks the system to prove it happened."
     }
   ],
   "worksWith": [
-    "Odoo Manufacturing, for checks on manufacturing orders and on individual work order steps",
-    "Odoo Inventory, for the lot and serial tracking and quarantine locations a rejection depends on",
-    "Odoo Purchase, so a rejected receipt becomes a return and a credit note against the vendor",
-    "Odoo Maintenance, where a repeating defect usually points at a machine out of calibration",
-    "Odoo IoT, for calipers, scales and cameras that write readings into a check",
-    "Odoo Studio, which is where quality worksheet templates are designed",
-    "Odoo Documents and Knowledge, for the controlled work instructions an auditor will ask to see"
+    "Odoo Manufacturing, where the quality bridges put checks on the manufacturing order and on individual work order steps",
+    "Odoo Inventory, for the lots, serials and internal locations that a rejection depends on",
+    "Odoo Purchase, so a rejected receipt becomes a return transfer and then a vendor credit note in Accounting",
+    "Odoo Subcontracting, whose quality bridge installs itself and puts the incoming check on the subcontracted receipt",
+    "Odoo Repair, which gained its own auto installing quality bridge in Odoo 18, so a repair order can carry checks",
+    "Odoo Barcode, where a dedicated bridge lets checks be answered on the scanner during the transfer instead of afterwards at a desk",
+    "Odoo IoT, mapping a measuring device or scale to a Measure step, a camera to a picture step and a printer to a label step",
+    "Odoo Studio and Odoo Spreadsheets, the two ways to build an inspection form that holds more than one field"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "Imported goods need a SABER conformity certificate per shipment before customs release, and SFDA registration governs food, cosmetics, drugs and medical devices. Make that a receipt control point that checks the certificate against the consignment and files the document on the lot. Inspection records and alerts are expected to read in Arabic."
+      "note": "Imports need a product certificate of conformity and a shipment certificate through SABER before customs release, and SFDA registration governs food, cosmetics, drugs and devices. An Instructions step only asks the operator to acknowledge, so it cannot force anyone to attach the certificate. Use a picture step or a worksheet field where the document has to exist before the receipt is validated. One trap for Arabic sites: test type names are translatable, but the title and the instruction note you write on a control point are plain fields stored in one language, so an Arabic shop floor reads English steps unless you write them in Arabic to begin with."
     },
     {
       "country": "uae",
-      "note": "MoIAT runs ECAS and the Emirates Quality Mark, and regulated goods need a conformity certificate before clearance. Food adds a second layer through Dubai Municipality and ADAFSA in Abu Dhabi, so a group trading across both emirates cannot rely on one incoming checklist. Halal evidence belongs against the lot, not against the product record."
+      "note": "MoIAT runs ECAS and the Emirates Quality Mark, while food is supervised by Dubai Municipality in one emirate and ADAFSA in another. A group trading across both cannot run a single incoming checklist. Because operation types are mandatory on a control point and belong to a warehouse, the clean pattern is a separate operation type per emirate with its own point set behind it, rather than one global point carrying exceptions. Halal evidence belongs against the lot, since that is what a customer or an inspector asks you to produce."
     },
     {
       "country": "pakistan",
-      "note": "PSQCA operates a mandatory certification mark over a listed set of products, and DRAP governs pharmaceutical manufacture with GMP inspection and batch release. Release is a gate, not a check: the finished lot must stay unavailable until a named person signs. Odoo has no release status on a lot, so that becomes a restricted quarantine location or a custom state."
+      "note": "PSQCA operates a mandatory certification mark over a listed set of products, and DRAP governs pharmaceutical manufacture with GMP inspection and batch release. Release is a gate, not a check: the finished lot must be unavailable until a named person signs. Odoo gives the lot its quality history but no release status field, so the gate has to be built as a restricted quarantine location that only the release authority can move stock out of, with the signature captured on the alert or the check that authorises the move."
     },
     {
       "country": "india",
-      "note": "BIS quality control orders keep pulling new product categories into mandatory ISI certification, FSSAI covers food labelling and shelf life, and CDSCO covers medical devices. A sample sent to a third party laboratory is a stock move on a delivery challan with an e-way bill above the state threshold, not a line in a logbook."
+      "note": "BIS quality control orders keep pulling new product categories into mandatory ISI certification, FSSAI covers food labelling and shelf life, and CDSCO covers medical devices. The modelling problem nobody budgets for is the third party laboratory. A sample sent out is a stock move on a delivery challan and needs an e-way bill once consignment value passes the threshold, fifty thousand rupees for interstate movement, so build it as a real transfer to a sample location rather than a note in a logbook."
     },
     {
       "country": "bangladesh",
-      "note": "BSTI certification is mandatory for a listed set of products. In garments the working standard is the buyer AQL inspection and the RSC factory audit rather than the plant internal rule, so final random inspection results belong against the shipment lot. A claim raised months later is answered from that record, not from an email thread."
+      "note": "BSTI certification is mandatory for a listed set of products, and in garments the operative standard is the buyer contract and the RSC factory audit rather than any plant internal rule. The structural question for a cut and make operation is where the check sits. Production that leaves the building goes out as subcontracting, and the subcontracting quality bridge installs itself and puts the inspection on the subcontracted receipt, which is the moment the goods and the paperwork are both in front of somebody."
     },
     {
       "country": "turkey",
-      "note": "TAREKS screens regulated imports before customs clearance, TSE certification covers the domestic market, and goods sold into the EU still need CE marking with the technical file behind it. Inspection evidence held in the Odoo filestore falls under the rule that Turkish records stay in Turkiye, which decides where the system is hosted."
+      "note": "TAREKS screens regulated imports before customs clearance, TSE certification covers the domestic market, and goods sold into the EU still need CE marking with the technical file behind it. Every answered check stores the user who answered it and the timestamp, so the quality check table is personal data under KVKK and inherits the restrictions on transferring it abroad. That makes hosting location a question to settle with the client at project start rather than during the go live weekend."
     },
     {
       "country": "germany",
-      "note": "Automotive supply runs on IATF 16949 and VDA process audits, and a customer complaint arrives expecting an 8D report with containment usually demanded within 24 hours. An Odoo alert holds a description, a corrective action and a preventive action, which is three of the eight disciplines. The 8D document itself is a worksheet or a custom report."
+      "note": "Automotive supply runs on IATF 16949 and VDA process audits, and a customer complaint arrives expecting an 8D report, with containment commonly demanded inside 24 hours. An alert covers the problem description, the corrective action, the preventive action and a root cause, which is a subset of the eight disciplines. Odoo ships exactly four root cause records, Workcenter Failure, Parts Quality, Work Operation and Others, so the cause catalogue needs extending to whatever your customer audits against, and the 8D document itself is a worksheet or a custom report."
     },
     {
       "country": "united-states",
-      "note": "For FDA regulated manufacture, 21 CFR part 11 sets the bar for electronic records and signatures and cGMP requires the procedures behind them. Odoo logs who answered a check and when, but a compliant signature and a validated installation are a separate qualification workstream. FSMA rule 204 adds lot level traceability duties for listed foods."
+      "note": "For FDA regulated manufacture, 21 CFR part 11 sets the bar for electronic records and signatures and cGMP requires the procedures behind them. Odoo stamps the user and the control date on every check, which is an audit trail but not a compliant signature, and a validated installation is a qualification workstream with documentation of its own. FSMA rule 204 adds lot level traceability duties for listed foods, and that work lands on the Inventory configuration far more than on the Quality app."
     }
   ],
   "faqs": [
     {
       "q": "Is Odoo Quality available in Community?",
-      "a": "No. Quality is an Enterprise app in Odoo 17, 18 and 19. The OCA publishes a community quality control module that gives you inspections and a pass or fail result, which suits a light goods in process. It does not give you worksheets, IoT measurement capture or work order steps in Shop Floor."
+      "a": "No. Every quality module carries the Enterprise licence in Odoo 17, 18 and 19, so this is a subscription decision rather than a per app purchase. The OCA publishes a quality control set for Community that handles inspections and results, and OCA coverage of any given version tends to lag the Odoo release by some months, so check the branch for the version you are actually deploying before promising it to anyone."
     },
     {
-      "q": "Does a failed check stop the goods moving?",
-      "a": "Plan for the answer being no unless you design it. The check records the failure and can raise an alert with an owner. Physically holding the pallet is Inventory configuration: a quarantine location, restricted access to it, and a named person who releases or scraps. Decide that during design, not after go live."
+      "q": "Do we need Studio to build an inspection form?",
+      "a": "On Odoo 17, effectively yes. The worksheet route is the only way to get several fields into one check, and the worksheet module has a hard dependency on Studio with the design button limited to administrators. Odoo 18 removed that constraint with the spreadsheet test type. The follow up question is who maintains the template afterwards, since a worksheet edit is a Studio change on a live database and a spreadsheet edit is not. Most quality departments can own the second and cannot own the first."
     },
     {
-      "q": "Can Odoo produce SPC control charts, Cp and Cpk?",
-      "a": "Measure results are stored with their norm and tolerance and can be grouped, pivoted and graphed over time. Control limits calculated from the process, capability indices and out of control rule detection are not part of the app. They come from a BI model or a custom report built on the quality check data."
+      "q": "Can we run an AQL sampling plan?",
+      "a": "Not natively. Odoo offers a random percentage per control point and a percentage of each lot to test. Both are fixed rates, not a sampling table whose accept and reject numbers move with lot size and inspection level, and neither tightens or reduces based on recent history. Where a customer contract names an AQL, the sample size and accept number are worked out outside Odoo and recorded against the check, or built as an extension that sets the tested quantity from the received quantity."
     },
     {
-      "q": "Will this make us ISO 9001 certified?",
-      "a": "Certification is an audit of your organisation, and no software grants it. What the app gives an auditor is evidence: dated inspection records, non conformances with corrective and preventive actions, traceability down to the lot, and controlled documents. Management review, internal audits and design control remain processes you have to run."
+      "q": "Who can raise an alert, and does it cost a user seat?",
+      "a": "A quality user raises alerts from a check, from a transfer or directly in the app. Every quality team also carries an email alias pointed at the alert model, so a production supervisor or someone in customer services can raise one by email without holding a full seat, and the message stays on the record as correspondence. Decide early which route you want. Two routes with no rule between them produces two alerts for the same defect and a duplicate hunt at month end."
     },
     {
-      "q": "How many control points should we start with?",
-      "a": "Fewer than the specification suggests. Ten to twenty points covering the defects that actually cost money will be answered honestly by the people doing the work. Two hundred points covering every characteristic get clicked through in seconds. Expand after a quarter of real alert data shows where the failures concentrate."
+      "q": "How do we handle a check that a laboratory answers three days later?",
+      "a": "Leave the check open and the transfer cannot be validated, which is a natural hold but keeps the goods out of stock entirely. If the receipt has to be booked while the result is pending, put the goods away into a restricted location and carry the laboratory result as a separate On-demand check, the frequency option added in Odoo 18 and raised from the transfer when the result arrives. Either way the release authority is named in the process rather than implied by who has access."
     },
     {
-      "q": "Can operators run checks on a tablet on the floor?",
-      "a": "Yes. Work order steps appear in the Shop Floor interface on Odoo 17 and later, built for a touchscreen at the work centre, and checks on transfers can be answered from a browser on a tablet. Where readings are numeric, an IoT connected caliper or scale writes the value in and removes typing errors."
+      "q": "What can an auditor pull out of the system without our help?",
+      "a": "From a lot, the two smart buttons return every check answered against it with the user and control date, and every alert raised. From an alert, the description, corrective action, preventive action, root cause and the assigned and closed dates, with attachments on the record. What an auditor cannot pull is whatever lives in a parallel spreadsheet, which is the usual reason a demonstration that started well turns awkward twenty minutes in."
+    },
+    {
+      "q": "Does quality work on subcontracted and repaired goods?",
+      "a": "Subcontracting has a bridge that installs automatically when both apps are present, putting the check on the subcontracted receipt so the inspection happens where the goods arrive. Repair gained an equally automatic bridge in Odoo 18, so a repair order can carry checks. On Odoo 17 there is no repair bridge at all and that side has to be modelled another way, which is worth knowing before committing to a version."
+    },
+    {
+      "q": "How does this behave across companies and warehouses?",
+      "a": "Control points, teams, checks and alerts are all company scoped with company consistency enforced between them, and a point requires at least one operation type, which belongs to a warehouse. A group with four warehouses therefore does not get one shared checklist by default. Either standardise the operation types across sites and hang a single point set on all of them, or accept a point set per site and impose a naming convention strict enough to keep them findable."
     }
   ]
 }

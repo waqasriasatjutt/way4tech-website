@@ -2,7 +2,7 @@
   "metaDescription": "Odoo Manufacturing implementation guide: BOM structure, work centre costing, subcontracting, shop floor licensing, WIP at month end and country rules.",
   "intro": [
     "Odoo Manufacturing is not a separate production database bolted onto stock. A manufacturing order is a set of stock moves: components leave their location for a virtual production location, and the finished good comes back out of it. Operations on work centres add recorded time, and the cost of a finished unit is what those moves and those hours actually consumed. Nothing about production is held outside the stock ledger, which is why MRP figures and inventory figures cannot quietly drift apart.",
-    "The edition split decides more than most buyers expect. Community carries the engine: multi level bills of materials, work centres, operations, work orders, by products, flexible or blocked component consumption, unbuild orders, scrap, subcontracting and the replenishment scheduler. Enterprise adds the Shop Floor interface, Quality control points, Product Lifecycle Management with engineering change orders, the Barcode app and the IoT box. A plant that wants operators working from tablets on the line is buying Enterprise, whatever the MRP feature list suggests.",
+    "The edition split decides more than most buyers expect, and it does not fall where the feature comparisons suggest. Almost everything that turns components into a finished unit is in Community, multi level bills of materials and subcontracting included. What Enterprise mostly adds is the glass people stand in front of, plus two things that catch projects out late: monthly forecasting through the Master Production Schedule, and the link between a machine breakdown and the production it stops. So the useful question is not which features you want. It is who touches the system. Planners at desks go a long way on Community. Operators at the machine mean Enterprise.",
     "The software is rarely the hard part. Bills of materials maintained in a spreadsheet drift, scrap allowances live in a foreman's head, and nobody has timed an operation since the last machine was replaced. Load that into a scheduler and it produces confident, wrong dates. Getting the component lists, the units of measure and the routing times right is most of the project, and it is what decides whether anyone on the shop floor believes the plan."
   ],
   "whoFor": [
@@ -16,15 +16,15 @@
   "capabilities": [
     {
       "title": "Bills of materials, kits and variants",
-      "body": "A bill of materials is either something you manufacture or a kit. A kit is never built: it explodes into components on the sale or delivery line, so there is no manufacturing order, no work in progress and no production cost. A component carrying its own bill of materials generates its own order, so a three level product becomes three orders with three cost rolls. Lines can apply to selected variants only, by products can take a share of the cost, and each bill sets whether operators may over consume, are warned, or are blocked."
+      "body": "A bill of materials is either something you manufacture or a kit. A kit is never built: it explodes into components on the sale or delivery line, so there is no manufacturing order, no work order time and no production cost. A component that carries its own bill of materials generates its own order, so a three level product becomes three orders and three cost rolls. Lines can be restricted to selected variants, by products take a share of the cost through a cost share percentage, and each bill sets its own tolerance for operators who consume more or less than the quantity planned."
     },
     {
       "title": "Work centres, operations and time standards",
-      "body": "Since Odoo 15 there is no separate routing record. Operations sit on the bill of materials itself, each pointing at a work centre with a working calendar, a capacity, a cost per hour and optional setup and cleanup time. An operation duration is either a flat number of minutes or computed from the tracked time of recent work orders, which is the only honest way to get standards out of a plant that has never measured any. Blocked time is logged against a loss reason and feeds work centre efficiency reporting."
+      "body": "Since Odoo 15 there is no separate routing record. Operations sit on the bill of materials itself, each pointing at a work centre with a working calendar, a capacity, a cost per hour, a time efficiency percentage and optional setup and cleanup time. An operation duration is either a flat number of minutes or computed from tracked time on the last ten work orders, which is the only honest way to get standards out of a plant that has never measured any. Capacity means pieces processed in parallel, not a shift limit, and it is the field people set wrong. Blocked time is logged against a loss reason and feeds the OEE figure against the target held on the work centre."
     },
     {
       "title": "Planning, replenishment and the master schedule",
-      "body": "Odoo replenishes two ways. Reordering rules hold a minimum and a maximum per product per warehouse, and the scheduler raises the manufacturing or purchase order when forecast stock falls under the minimum. Replenish on order builds the chain from the confirmed sale line down through every sub assembly instead. The master production schedule adds a period by period forecast with a suggested build, for plants that plan monthly rather than react daily. Lead times come from the product, the bill of materials and the security days set in configuration."
+      "body": "Odoo replenishes two ways in Community. Reordering rules hold a minimum and a maximum per product per warehouse, and the scheduler raises the manufacturing or purchase order when forecast stock falls below the minimum. Replenish on order builds the chain from the confirmed sale line down through every sub assembly instead. The Master Production Schedule, a period by period forecast with a suggested build for plants that plan monthly rather than react daily, is an Enterprise module and a common surprise late in a Community project. Lead times then stack from three separate places: the Manufacturing Lead Time, a days to prepare buffer that creates the order early enough to gather components, and a company wide Security Lead Time in the Manufacturing settings. Check which record holds each one in your version, because they have moved between the product and the bill of materials."
     },
     {
       "title": "Subcontracting",
@@ -32,15 +32,15 @@
     },
     {
       "title": "The manufacturing order as a cost object",
-      "body": "Every order accumulates the value of the components it consumed plus work centre time at the configured rate, and under average or first in first out costing that becomes what the finished unit is worth. Under standard costing it does not: the finished good is booked at standard and the difference has to be explained somewhere the accountant can see it. Odoo will compute a product cost from its bill of materials including sub assemblies, but only when somebody runs the action. It does not recalculate when a component price moves."
+      "body": "Every order accumulates the value of the components it consumed plus work centre time at the configured rate, and under average or first in first out costing that becomes what the finished unit is worth. Under standard costing it does not: the finished good is booked at standard and the difference has to be explained somewhere the accountant can see it. Note what the rate is made of. Community gives a work centre one blended cost per hour. Splitting machine cost from labour, or costing named operators at their own hourly rate, comes from the Enterprise work order module. Analytic distribution sits on the work centre, so production cost reaches the analytic ledger without a second posting."
     },
     {
       "title": "Traceability, quality and unbuild",
-      "body": "Lots and serials on components and finished goods give genealogy in both directions, which is what a recall actually needs: what went into this batch, and who received anything containing that raw material lot. Quality control points, in Enterprise, trigger on an operation type or a specific work order step and can demand a measurement, a pass or fail, or a photograph, with failures raising an alert. Unbuild orders reverse a completed order and return the components, which is how a wrong build is corrected without an untraceable inventory adjustment."
+      "body": "Lots and serials on components and finished goods build genealogy in both directions. Quality control points, in Enterprise, trigger on an operation type or on one specific work order step, and can demand a measurement inside a tolerance, a pass or fail, a photograph or a printed label, with a failure raising an alert that holds the step. Unbuild orders reverse a completed order, return the components to stock and leave both movements on the record, which is how a wrong build is corrected without an untraceable inventory adjustment. For serialised output there is a mass produce wizard that generates the numbers for a whole order in one pass instead of one line at a time."
     },
     {
       "title": "Maintenance and the machines that stop the line",
-      "body": "Equipment records link to work centres, so a breakdown is raised against the machine that caused it and downtime lands on the right cost centre. Preventive requests run on a calendar or on meter readings, corrective requests come off the shop floor, and mean time between failure and mean time to repair are computed from the request history rather than typed in. The Maintenance app is in Community, which matters for plants that assumed asset management meant another licence line."
+      "body": "Equipment records carry preventive schedules, corrective requests raised off the floor, and mean time between failure and mean time to repair computed from request history rather than typed in. The Maintenance app itself is Community. The link most plants actually want is not. Attaching equipment to a work centre, so a breakdown blocks that machine and its downtime lands on the right cost centre, comes from the MRP maintenance bridge, which is Enterprise and pulls in the Shop Floor module behind it. Preventive requests repeat on a time interval. There is no meter or usage based trigger in standard Odoo, so hour meters and cycle counts need development or a manual read."
     }
   ],
   "setup": [
@@ -54,11 +54,11 @@
     },
     {
       "title": "Work centre rates and operation durations",
-      "body": "A cost per hour invented in a meeting makes every job cost wrong in the same direction. Build the rate from what the work centre genuinely absorbs: labour at real cost, machine running cost, and the overhead finance is willing to defend. Set operation durations conservatively, then enable computation from tracked time so the standards correct themselves over the first months of running. Capacity and the working calendar matter as much as the rate, because between them they decide the promised dates."
+      "body": "A cost per hour invented in a meeting makes every job cost wrong in the same direction. Build the rate from what the work centre genuinely absorbs: labour at real cost, machine running cost, and the overhead finance is willing to defend. Three other fields then quietly change the answer. Capacity decides how many pieces run in parallel. Time efficiency scales every duration, so a work centre left at 100 percent when it really runs at 80 promises dates it cannot hold. The working calendar decides which hours exist at all. Set durations conservatively at first, then switch the operations to computed duration so the standards correct themselves from real work order time over the first months."
     },
     {
       "title": "Costing method, valuation accounts and work in progress",
-      "body": "Set the costing method on the product category before a single order is posted, because changing it later revalues everything on hand. Automated valuation posts component consumption and finished goods receipt to the accounts held on that category, so the stock account and the trial balance move together. Odoo keeps no dedicated work in progress account or report, so agree with the accountant during design how part built orders are presented at month end, rather than discovering it during the first close."
+      "body": "Set the costing method on the product category before a single order is posted, because changing it later revalues everything on hand. Automated valuation posts component consumption and finished goods receipt to the accounts held on that category, so the stock account and the trial balance move together. Then settle the month end treatment for part built orders while you are still in design, since component value has already left stock while no finished goods value exists yet. Odoo 18 added a Post WIP Accounting Entry action that runs over selected manufacturing orders and posts against the Production WIP and Production WIP Overhead accounts held on the company, which are seeded from the chart of accounts. Both those accounts and the action itself are Community. Odoo 17 has no equivalent, so the accrual there is a manual journal that somebody has to own."
     },
     {
       "title": "Cutover: open jobs, opening stock and the first scheduler run",
@@ -68,15 +68,15 @@
   "pitfalls": [
     {
       "title": "Kits used where a manufacturing order was needed",
-      "body": "A kit is the fastest way to make a product look manufactured without manufacturing it. Nothing is produced, no labour is absorbed, no lot links a finished unit to the components inside it, and the margin reads better than it is because no operation time was ever charged. It is the right answer for a bundle sold as one line and the wrong answer for anything assembled. The choice gets made in week two and discovered at the first recall or the first costing review."
+      "body": "A kit is the fastest way to make a product look manufactured without manufacturing it. It is the right answer for a bundle picked and shipped as one line, and the wrong answer for anything assembled, because no order exists to carry the labour, the lot link or the variance. Margin reads better than it is for exactly that reason. The choice gets made in week two of configuration and discovered at the first recall or the first costing review, and switching kits to real bills of materials afterwards means reconstructing history that was never recorded."
     },
     {
       "title": "Consumption tolerance set once, for everything",
-      "body": "The consumption setting on a bill of materials decides whether an operator may consume more than the order asked for, gets a warning, or is stopped. Left flexible everywhere, real usage disappears into the noise and no variance is ever visible. Set to blocked everywhere, the night shift stops and somebody with administrator rights edits orders at two in the morning. Flexible on materials that genuinely vary, blocked on serialised and high value components, is the version that survives contact with a plant."
+      "body": "The consumption field on a bill of materials has three settings. Allowed lets an operator record whatever was actually used. Allowed with warning shows the differences when the order is closed. Blocked means only a manufacturing manager can close an order where consumption does not match the plan. Set to Allowed everywhere, real usage disappears into the noise and no variance is ever visible. Set to Blocked everywhere, the night shift queues at a supervisor's phone at two in the morning. Allowed with warning on materials that genuinely vary, Blocked on serialised and high value components, is the version that survives contact with a plant."
     },
     {
       "title": "A standard cost nobody rolls up",
-      "body": "Odoo computes a product cost from its bill of materials only when the action is run, and it does not cascade when a raw material price changes. A plant on standard costing drifts quietly: purchase prices move, the standard does not, and next year is quoted off a number from before the last steel increase. Decide who owns the roll up, when it runs, and how the resulting revaluation is posted, so it arrives as a scheduled event rather than an unexplained journal."
+      "body": "The Compute Price from BoM action does roll sub assemblies up correctly when you run it. Nothing runs it for you, and no price change on a raw material triggers it. A plant on standard costing drifts quietly: purchase prices move, the standard does not, and next year is quoted off a number from before the last steel increase. Decide who owns the roll up, what triggers it, and how the resulting revaluation is posted, so it arrives as a scheduled event rather than an unexplained journal."
     },
     {
       "title": "Bills of materials that were never accurate",
@@ -94,9 +94,9 @@
   "worksWith": [
     "Inventory, which holds every component and finished goods move and is where manufacturing accuracy is won or lost",
     "Purchase, so a component shortage becomes a request for quotation against the right vendor and lead time",
-    "Sales, for make to order chains that run from a confirmed line down through every sub assembly",
+    "Sales, where the make to order route turns a confirmed line into the production and purchase orders beneath it, and where a kit line ships components while the customer sees one product",
     "Quality, in Enterprise, for control points on receipts, operations and individual work order steps",
-    "Maintenance, linking equipment to work centres so downtime lands against the machine that caused it",
+    "Maintenance, for equipment records, preventive schedules and MTBF in Community, though tying equipment to a work centre needs the Enterprise bridge and brings Shop Floor with it",
     "PLM, in Enterprise, for engineering change orders, bill of materials versions and approval routing",
     "Accounting, for automated stock valuation, analytic distribution on work centres and the cost of goods produced",
     "Barcode and IoT, in Enterprise, for scanner driven consumption and readings taken straight from scales and gauges"
@@ -138,7 +138,7 @@
   "faqs": [
     {
       "q": "Can we run manufacturing on Odoo Community?",
-      "a": "Yes, and more of it than most comparisons suggest. Bills of materials, work centres, operations, work orders, subcontracting, by products, unbuild, scrap and the replenishment scheduler are all in Community. What you give up is the Shop Floor interface, Quality control points, PLM with engineering change orders, the Barcode app and IoT. If operators are meant to work from tablets on the line, that is the reason to buy Enterprise."
+      "a": "Yes, and more of it than the feature comparisons suggest. The mrp module, subcontracting and the manufacturing accounting layer are Community, which covers bills of materials, work centres, work orders, by products, unbuild, scrap, the replenishment scheduler and the work in progress entry. On the Enterprise side sit Shop Floor, Quality, PLM, Barcode, IoT, the Master Production Schedule and the maintenance bridge. That bridge installs Shop Floor along with it, so a plant that only wants breakdowns tied to a machine ends up on Enterprise for that one requirement. One practical point gets missed in these comparisons: Community does not run on Odoo's own hosting, so choosing it is also a decision to run a server and pay somebody to look after it."
     },
     {
       "q": "Does Odoo do finite capacity scheduling?",
@@ -146,7 +146,7 @@
     },
     {
       "q": "How does Odoo handle work in progress at month end?",
-      "a": "Component value leaves stock when it is consumed and returns as finished goods value when the order closes. There is no dedicated work in progress account or report, so a part built order has no balance sitting in a named place. On short cycles nobody notices. On builds that run for weeks, agree the presentation with the accountant during design, not during the first close."
+      "a": "Component value leaves stock when it is consumed and only returns as finished goods value when the order closes, so between those two events the money sits in neither place. On short cycles the amount is immaterial and most plants ignore it. On builds that run for weeks it is the difference between a balance sheet the auditor accepts and an unexplained dip in stock. Odoo 18 and 19 handle it with an entry posted across the open orders and reversed into the next period, and the important word is posted. It is an action somebody runs, not a running balance, so the close checklist needs a line for it with a named owner and a cut off time. Odoo 17 needs the same accrual done by hand."
     },
     {
       "q": "Can Odoo handle process manufacturing and variable yield?",
@@ -154,15 +154,15 @@
     },
     {
       "q": "What does migrating bills of materials actually involve?",
-      "a": "Products and units of measure first, then bills of materials, then operations. The technical import is a day of work. The reconciliation is the project: legacy lists carry components that no longer exist, text lines that were never products, scrap allowances buried inside quantities and sub assemblies recorded flat. Expect to rebuild the top selling products against a physical build rather than trusting the export."
+      "a": "The technical import is a day of work. The reconciliation is the project. Legacy lists carry components that no longer exist, text lines that were never products, scrap allowances buried inside quantities, and sub assemblies recorded flat so a three level product reads as one. Units of measure are the other trap, because a list built in kilograms against a product stocked in metres imports cleanly and costs everything wrong. Budget a second pass after go live as well. The errors that survive validation are the ones only a machine operator notices."
     },
     {
-      "q": "Can we send components to a subcontractor and receive finished parts?",
-      "a": "Yes, and it is in Community. Set the bill of materials type to subcontracting, name the vendor, and receiving the finished part consumes the components sitting at their location. Components get there by a resupply route, either shipped from your warehouse or purchased direct to the vendor. The purchase price should be the service, not the finished part, or material cost is counted twice."
+      "q": "Can we change a manufacturing order once it has started?",
+      "a": "Yes, within limits, and all of it is in Community. A wizard changes the quantity on a confirmed order and adjusts component demand to match. An order can be split into several smaller ones, or merged with others for the same product. Closing an order for less than the ordered quantity offers a backorder for the remainder. What you cannot do is rewrite history quietly: a completed order is corrected with an unbuild, which returns the components and leaves both movements on the record. Plants used to editing finished production in place find that uncomfortable for about a month, then stop asking."
     },
     {
-      "q": "How quickly can we trace a batch after go live?",
-      "a": "Once lots are recorded on components and finished goods, traceability walks both directions from any lot: what went into a finished batch, and every customer who received a unit containing a given raw material lot. The limit is discipline rather than software. If receiving lets goods in without a lot number because the shift was busy, the genealogy has a hole and the report is confidently incomplete."
+      "q": "How fast can we actually trace a batch?",
+      "a": "The report is instant. The discipline behind it is not. Odoo walks a lot in both directions from the lot record, and the answer is only as complete as receiving was. The usual hole is a component left with no tracking, or a receipt where the lot number was typed as whatever the storeman had to hand because the truck was waiting. Decide per component which ones need lots and which need serials before go live, because tracking is awkward to change once quantities exist. Then rehearse the recall you would have to run for real: pick one raw material lot, list every customer who received anything containing it, and time it. If that takes more than a few minutes on live data, the problem is upstream of Odoo."
     },
     {
       "q": "Do we need barcode scanners on the shop floor?",

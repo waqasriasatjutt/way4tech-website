@@ -2,28 +2,29 @@
   "metaDescription": "Odoo Timesheets in practice: what Community covers, what needs Enterprise, how billing from logged hours actually works, and where the migration bites.",
   "intro": [
     "Odoo Timesheets records hours against a project and a task, then lets those hours become a cost, an invoice line and a utilisation number without anyone retyping them. Every entry is an analytic line, so the same record that says a developer spent four hours on a task also carries the cost of those four hours to the project's analytic account. That single storage decision explains most of what the app does well and most of what surprises people later.",
-    "The base app ships in Community. Entry on tasks, the analytic posting, billing hours through a service product and timesheet entries generated from approved time off are all there. What Enterprise adds is the weekly grid view, the start and stop timer, and validation that locks a period. A Community project can still bill from hours. It cannot stop somebody editing last quarter, and that is usually the sentence that decides the licence.",
-    "The value is not in the entry screen. It is in whether the hours are trusted enough to invoice a client, defend a research tax claim or price next year's work. That depends on cost rates, project structure and approval discipline set up in the first two weeks, not on the app. Getting those wrong is recoverable, but only by reworking history that people have already been paid against."
+    "The base app ships in Community. Entry against a project and a task, the analytic posting, and billing hours through a service product on a sale order are all there. Enterprise adds three things: the weekly grid view, the start and stop timer, and validation that locks a period. A Community project can still bill from hours. It cannot stop somebody editing last quarter, and that is usually the sentence that decides the licence.",
+    "The value is not in the entry screen. It is in whether the hours are trusted enough to invoice a client, defend a research tax claim or price next year's work. That depends on cost rates, project structure and approval discipline set in the first two weeks, not on the app. Getting those wrong is recoverable, but only by reworking history that people have already been paid against."
   ],
   "whoFor": [
     "Professional services firms, agencies and consultancies that sell time and need delivered hours to reach an invoice without a spreadsheet in between.",
     "Internal project teams that need cost per project rather than cost per department, taken from the same record the work was logged on.",
     "Engineering, software and product teams claiming research relief, where a per project time record has to survive an audit years after the work.",
     "Support and field operations already on Odoo Helpdesk or Field Service, where the hours are a by-product of work that is happening anyway.",
+    "Groups that recharge time between legal entities, where a management fee has to be supported by a record of who did the work, on what, and at what cost.",
     "Not for hourly workforces that need clock in and clock out evidence, which is Attendances, and not for shift rostering, which is Planning."
   ],
   "capabilities": [
     {
       "title": "Hours stored as analytic lines",
-      "body": "A timesheet entry is an analytic line carrying the employee, the date, the project, an optional task, a description and a duration in hours. It posts to the project's analytic account, which is why timesheet cost appears in project profitability and in analytic reporting with no separate posting step. It also means a timesheet holds a length, not a start and an end. Odoo records how long, not from when to when, unless the Enterprise timer captured it."
+      "body": "A timesheet entry is an analytic line carrying the employee, the date, the project, an optional task, a description and a duration in hours. It posts to the project's analytic account, which is why timesheet cost appears in project profitability and in analytic reporting with no separate posting step. It also means the line holds a length, not a span. Odoo records how long the work took, not the clock times it sat between. The Enterprise timer keeps a start stamp while it runs, but what it writes when it stops is still a duration."
     },
     {
       "title": "Cost from the employee, revenue from the order",
-      "body": "Each employee carries an hourly cost in their HR settings, in the company currency, and Odoo multiplies the recorded duration by that rate to produce the cost side. Revenue arrives from the other direction, through a service product on a sale order whose invoicing policy bills based on timesheets. The two meet on the project. Neither figure is typed by the person logging time, which is what keeps the numbers usable at month end."
+      "body": "Each employee carries an hourly cost in their HR record, in the company currency, and Odoo multiplies the recorded duration by that rate to produce the cost side. Revenue arrives from the other direction, through a service product on a sale order whose invoicing policy bills based on timesheets. The two meet on the project. Neither figure is typed by the person logging time, which is what keeps the numbers usable at month end."
     },
     {
       "title": "Billing hours without retyping them",
-      "body": "Set a service product to invoice based on timesheets and give it a service tracking option that creates the project or the task on confirmation. Logged hours then raise the delivered quantity on the order line and the next invoice picks up whatever has not been billed. Prepaid and milestone policies behave differently: prepaid sells a block of hours and the order line shows what remains, milestones ignore hours and invoice on completion instead."
+      "body": "Set a service product to invoice based on timesheets and give it a service tracking option that creates the project or the task on order confirmation. Logged hours then raise the delivered quantity on the order line and the next invoice picks up whatever has not been billed. The other policies behave differently and the choice is hard to reverse once orders exist: prepaid sells a block of hours and the order line shows what remains, milestones ignore hours entirely and invoice on completion."
     },
     {
       "title": "Approval and locking a period",
@@ -49,11 +50,15 @@
     },
     {
       "title": "Set the encoding unit and hold it",
-      "body": "Timesheets can be encoded in hours or in days, with days converted using the company working hours per day. Changing that setting after go live does not restate what is already recorded, so a database ends up holding both conventions and every report becomes suspect. Pick one, usually hours. If a local practice or a research claim needs days, derive days in reporting rather than switching the encoding unit mid year."
+      "body": "Timesheets are encoded in hours or in days, and days are derived from hours using the company working hours per day figure in the Timesheets settings. The stored duration does not change when you switch, but everything on screen and in every export does, and altering the hours per day figure later restates how all historical lines read in days. Pick hours and hold it. Where a local practice or a research claim wants days, derive days in the report rather than moving the encoding unit under a year of history."
+    },
+    {
+      "title": "Set the working schedule, because it is the denominator",
+      "body": "The employee's working schedule decides what a full day and a full week are worth. It drives the hours to days conversion, the capacity behind every utilisation figure, and whether a four day week reads as under-recording. Part time staff, a Sunday to Thursday week in the Gulf, a 35 hour week in France and a shortened Ramadan day are all schedule records rather than settings. Copying one calendar across a whole group is how a consultant who is genuinely 80 percent utilised gets reported at 64."
     },
     {
       "title": "Import history as analytic lines, in decimal hours",
-      "body": "Migrating a year of timesheets means loading analytic lines with employee, date, project, task, description and duration. Durations must be decimal, so seven and a half hours is 7.5 and never 7:30. Cost is derived from the employee's current rate as each line is written, so imported history values old work at today's money. Import one month, reconcile totals per employee against the source, then run the rest."
+      "body": "Migrating a year of timesheets means loading analytic lines with employee, date, project, task, description and duration. Durations are decimal, so seven and a half hours is 7.5 and never 7:30. Cost is derived from the employee's current rate as each line is written, so imported history is valued at today's money rather than the money it was earned at. Settle that with finance before the load, not after. Import one month, reconcile totals per employee against the source, then run the rest."
     },
     {
       "title": "Set access groups so people see their own hours",
@@ -63,7 +68,7 @@
   "pitfalls": [
     {
       "title": "Timesheets used as proof of attendance",
-      "body": "A timesheet says four hours went to a task. It does not say the person was at work between nine and one, and the entry carries no start or end time unless a timer created it. Labour inspections, working time law and client disputes all ask the second question. Where that matters, run Attendances alongside, reconcile the two, and expect a genuine gap between recorded attendance and recorded project time."
+      "body": "A timesheet says four hours went to a task. It does not say the person was at work between nine and one, because the line stores a duration and nothing else. Labour inspections, working time law and client disputes all ask the second question. Where that matters, run Attendances alongside, reconcile the two, and expect a genuine gap between recorded attendance and recorded project time rather than treating the difference as an error to chase."
     },
     {
       "title": "Invoicing before approving",
@@ -72,6 +77,10 @@
     {
       "title": "Uncosted or wrongly costed people",
       "body": "Contractors logging time under a shared employee record, staff whose rate was never entered, and multi company groups where the rate sits in one currency while the project reports in another all produce margins that look precise and are wrong. Check the cost side before showing a profitability figure to anybody. A project that appears to run at ninety percent margin usually means somebody in the database is working for free."
+    },
+    {
+      "title": "Reading project profitability as profit",
+      "body": "The profitability panel sets timesheet cost and other analytic costs against invoiced and to be invoiced revenue on that project. It carries no overhead, none of the salaried time nobody logged, and none of your revenue recognition policy. What it produces is a contribution figure per engagement, which is the right number for deciding whether the work was worth running and the wrong number to reconcile against the profit and loss. Firms that publish it as margin spend the next quarter explaining the difference to their own board."
     },
     {
       "title": "Expecting the app to enforce a budget",
@@ -89,46 +98,47 @@
     "Employees, which holds the hourly cost, the working schedule and the manager who approves",
     "Time Off, so approved leave can appear as timesheet entries and a short week stops reading as under-recording",
     "Attendances, for the check in and check out record that timesheets deliberately do not keep",
+    "Purchase, where a subcontractor bill posted to the same analytic account puts bought hours and internal hours into one project cost",
     "Helpdesk and Field Service, both Enterprise, where hours logged on a ticket or an intervention become the same analytic lines"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "Invoices raised from timesheets are standard tax invoices, so ZATCA Phase 2 clears each one through Fatoora before it can be issued, and the invoice counter has to run sequentially with no gaps. Numbering schemes built around a project code do not survive that. A monthly billing run becomes an API round trip per invoice rather than a print job, and it fails loudly on an incomplete customer VAT number. Ramadan hours also change what a full timesheet week looks like."
+      "note": "Capacity moves with the calendar here. The working day shortens through Ramadan for Muslim employees, on Hijri dates that shift about eleven days a year, so a utilisation baseline hard coded to eight hours misreports a full month annually and the working schedule has to carry that change rather than the report. On the billing side, an invoice built from hours is a standard tax invoice and clears through ZATCA before it reaches the client, so a month end run of forty client invoices is forty round trips rather than a print job. Arabic is required on the face of that invoice, which matters more than it sounds when the line description is generated from a service product instead of typed by a person."
     },
     {
       "country": "uae",
-      "note": "Corporate tax at nine percent turned intercompany time recharges into a transfer pricing question, and a per project timesheet with a defensible cost rate is the evidence behind a management fee between a free zone entity and a mainland one. The e-invoicing programme routes invoices through an Accredited Service Provider, so the billing run gains a step. Wage Protection System files come from contracts, not from hours."
+      "note": "Corporate tax at nine percent turned intercompany time recharges into a transfer pricing question. Where staff employed by one entity work on another entity's projects, the management fee behind that needs support, and a per project hour record with a costed rate is the most direct support available. The trap is that the employee hourly cost in Odoo is a cost, not an arm's length price, so the mark up policy belongs on the sale side as a product and a price list rather than being folded into the rate and lost. Keep the recharge invoice traceable to the hours it came from, because the question arrives years after the work."
     },
     {
       "country": "pakistan",
-      "note": "Consulting hours are taxed as a service by the province where the service is rendered, through the Punjab or Sindh revenue authority rather than as federal sales tax, so the invoice built from timesheets has to carry the right jurisdiction, rate and registration number. FBR digital invoicing returns its own number before the invoice is issued. Withholding under section 153 then arrives at payment, so recovery has to be measured on the invoice and not on the bank line."
+      "note": "Withholding under section 153 is deducted when the client pays rather than when you invoice, so the cash that lands is smaller than the recovery figure the timesheets produced, and the two have to be reconciled per client instead of assumed equal. Sales tax on services is a provincial matter, so the same consultant's hour can carry a different rate and a different registration depending on the authority the engagement falls under, which makes that jurisdiction a property of the project record rather than a note on the invoice. Neither fact is visible anywhere in the timesheet app, which is why both surface at the first quarter end."
     },
     {
       "country": "india",
-      "note": "Place of supply decides whether a billed hour attracts IGST or CGST plus SGST, so the client state has to be correct on the order the timesheets feed. Above the turnover threshold the invoice needs an IRN and a signed QR code before it counts. Section 194J withholding then makes the receipt smaller than the invoice, which the recovery report has to expect."
+      "note": "Hours billed to an overseas client are a zero rated export of services, raised without IGST under a letter of undertaking, with payment required in convertible foreign exchange inside the prescribed period. That makes the customer's status on the sale order the timesheets feed a compliance field rather than a reporting convenience. Where delivery runs through an SEZ unit the hours also have to be attributable to the unit that performed the work, which argues for one project per contracting entity rather than one per account manager. Getting the entity wrong looks like a data fix and behaves like a restated return."
     },
     {
       "country": "united-kingdom",
-      "note": "There is no B2B e-invoicing mandate, but Making Tax Digital expects digital links from the source record through to the VAT return, so a re-key into a spreadsheet breaks the chain. Research and development claims need an Additional Information Form that splits qualifying expenditure by project, with staff cost apportioned from time records. A history kept as the work happened supports that. One assembled for the claim does not."
+      "note": "Research and development relief is the reason most UK software and engineering firms finally put timesheets in properly. A claim needs the Additional Information Form filed ahead of the return, splitting qualifying expenditure by project, with staff cost apportioned by the share of each person's time spent on qualifying work. HMRC has been pressing hard on claims where that apportionment is a percentage somebody assigned afterwards, and a contemporaneous per project hour record is the difference between a claim that survives enquiry and one that gets withdrawn. Externally provided workers and subcontracted work are restricted differently from employed staff, so the record has to distinguish who was on the payroll and who was not."
     },
     {
       "country": "germany",
-      "note": "Recording working time is a statutory duty following the 2022 Federal Labour Court ruling, and a duration logged against a project is not that record. Start and end times belong to Attendances. GoBD expects an unalterable trail with an audit history, which sits badly with a Community setup where any user can edit last quarter, so validation and access rules carry compliance weight here."
+      "note": "The research allowance under the Forschungszulagengesetz is claimed on qualifying research wages, and the claim rests on documented hours per employee per project, with the project certified separately from the tax filing. That is a timesheet, and it has to have existed while the work was happening. GoBD then expects records feeding the accounts to be traceable and not quietly alterable, which is where a Community setup that lets any user rewrite last quarter becomes a compliance argument rather than a preference. Bear in mind too that a per employee record carrying a cost figure is employee performance data, so how it is reported is a works council matter and not only an access rights one."
     },
     {
       "country": "france",
-      "note": "The e-invoicing reform routes invoices through an accredited platform, so hours billed to a French client leave Odoo through that channel rather than by email. The research tax credit needs time per researcher per project, retained and auditable. Consultants on a forfait jours agreement are measured in days, which argues for reporting days from hourly entries rather than changing the encoding unit."
+      "note": "The research tax credit, the CIR, is the strongest single reason a French firm runs timesheets properly. A claim needs time per researcher per project, retained and produced years later during an inspection, and an apportionment reconstructed for the claim is exactly what gets rejected. Separately, managerial and autonomous staff on a forfait jours contract are engaged in days per year rather than hours, and the employer has to track that day count and the rest periods around it. Keep entry in hours and report days out of it. Switching an entire database to day encoding for the benefit of one population is the wrong trade."
     },
     {
       "country": "united-states",
-      "note": "There is no e-invoicing mandate, but federal contract work brings Defense Contract Audit Agency expectations that shape the setup: daily entry by the person who did the work, a recorded reason for every change, and no supervisor entering hours for someone else. Standard Odoo does not meet that alone, so any project touching federal funding should scope the audit trail before the billing design."
+      "note": "Federal contract work is where timekeeping discipline stops being a preference. Defense Contract Audit Agency expectations are specific: the person who did the work enters their own hours, enters them daily, every correction keeps the original value alongside a stated reason, and no supervisor logs time on someone else's behalf. Standard Odoo records that a line changed without capturing why, so any project touching federal funding should price that audit trail before the billing design rather than after the first incurred cost submission. Commercial clients rarely ask for any of it, which is why it gets missed on the one contract that does."
     }
   ],
   "faqs": [
     {
       "q": "What do we actually lose by staying on Community?",
-      "a": "Three things. The weekly grid, so entry is a list or a form rather than a week seen at once. The timer. And validation, so there is no built in way to freeze a period after it has been invoiced. Everything else is Community, including billing from hours. Moving later is a licence change rather than a migration, because the data model is the same and the Enterprise modules install over the history you already have."
+      "a": "The weekly grid, the timer, and validation. The first two are convenience. The third is the one that matters, because without it nothing stops an invoiced month being edited afterwards. The usual Community answer is a record rule blocking writes to lines older than a set date with a small group allowed to override, which works and is easy to get subtly wrong, so test it against a real correction rather than a demo. The OCA timesheet repository also carries sheet and approval modules, though confirm your version is covered before planning around them. Moving to Enterprise later is a licence change rather than a migration, because the data model is the same and the modules install over the history you already hold."
     },
     {
       "q": "What happens to hours logged after an invoice has gone out?",
@@ -147,12 +157,16 @@
       "a": "Give it somewhere to go. An internal project with tasks for admin, pre sales, recruitment and training keeps that time inside the same analytic reporting instead of disappearing. Hours with no sale order line behind them report as non-billable, which is what utilisation needs as its denominator. Firms that only create client projects end up with a system claiming everybody is fully billable and a management team that knows better."
     },
     {
+      "q": "Does any of this feed payroll?",
+      "a": "No, and it should not. Payroll runs off the contract, the working schedule, approved time off and, where you use them, attendance records. Project timesheets are cost accounting: they say what work absorbed a salary you were paying anyway. Firms that try to pay people from project hours end up with a payroll that breaks whenever somebody forgets to log a Tuesday. Keep the two apart and reconcile them monthly as a completeness check, which is a useful report in its own right."
+    },
+    {
       "q": "How much timesheet history should we migrate?",
-      "a": "Enough to answer the questions you will actually ask. For most firms that is the current financial year plus the one before it for comparison, and any open engagement in full regardless of age. Older data is usually better kept as a read only extract outside Odoo. Whatever you load, reconcile it per employee per month against the source and get it signed off before go live, because nobody will audit it afterwards."
+      "a": "Enough to answer the questions you will actually ask. For most firms that is the current financial year plus the one before it for comparison, and any engagement still open in full regardless of age. Older data is usually better kept as a read only extract outside Odoo than loaded and half trusted. The real cost of loading more is not the import, it is that every historical line is revalued at today's rates, so a long history makes old work look wrong to the person who ran it."
     },
     {
       "q": "Does it work on a phone?",
-      "a": "Yes, in a mobile browser and through the Odoo mobile app, which wraps the same screens. The difference is the timer, which is Enterprise. Hours captured while the work happens and hours reconstructed on a Friday afternoon are not the same data. The gap shows up first on short tasks and internal work, where reconstruction quietly rounds everything to the nearest half hour."
+      "a": "Yes, in a mobile browser, and the entry screens hold up on a small display. The difference worth planning around is the timer, which is Enterprise. Hours captured while the work happens and hours reconstructed on a Friday afternoon are not the same data. The gap shows up first on short tasks and internal work, where reconstruction rounds everything to the nearest half hour and inflates the day to exactly eight."
     },
     {
       "q": "Can clients see the hours logged against their project?",

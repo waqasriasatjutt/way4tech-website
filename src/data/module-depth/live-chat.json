@@ -3,7 +3,7 @@
   "intro": [
     "Odoo Live Chat is the im_livechat app. It ships in Odoo Community, so the chat window, the operator side inside Discuss, canned responses and the scripted chatbot cost nothing beyond the people who answer the chats. What it is not is a standalone chat product bolted onto an ERP. The visitor record, the lead, the sale order and the invoice are the same database rows, which is the reason to run chat inside Odoo rather than beside it.",
     "The distance between a working demo and a working deployment is mostly infrastructure and routing. Live chat runs over a websocket, so a reverse proxy that does not upgrade the connection gives you a button that opens and then goes silent. Availability follows operator presence in Discuss rather than a schedule set on the channel. Both of those surprise teams who expected Intercom behaviour, and both are cheaper to fix before launch than after.",
-    "Where Community stops matters here. Turning a conversation into a CRM lead works on Community, because CRM is Community. Turning it into a support ticket does not, because Helpdesk is an Enterprise app. WhatsApp is Enterprise too, and it is a separate app rather than another inbox inside the same live chat channel. Pricing a chat project without that split is how budgets move after the kickoff meeting."
+    "Where Community stops matters here. Turning a conversation into a CRM lead works on Community, because CRM is Community and the bridge module installs itself once both apps are present. Turning it into a support ticket does not, because Helpdesk is an Enterprise app and the bridge that carries a chat into a ticket wants the Website app alongside it. WhatsApp is Enterprise too, and it is a separate app rather than another inbox inside the same live chat channel. Odoo 19 adds an AI agent that can answer chats, and that is Enterprise only as well. Pricing a chat project without that split is how budgets move after the kickoff meeting."
   ],
   "whoFor": [
     "Ecommerce and B2B sites already running Odoo Website, where a pre-sales question should end as a lead on the same contact record.",
@@ -16,19 +16,19 @@
   "capabilities": [
     {
       "title": "Channel rules decide where chat appears",
-      "body": "A live chat channel carries an ordered list of rules, each one a regular expression matched against the visited URL. That is how the pricing page gets the sales channel while the documentation page gets support. Rules are evaluated in sequence and the first match wins, so the catch all belongs at the bottom of the list. Per rule you choose whether the button simply shows, shows with the welcome text, or opens on its own after a timer in seconds, and whether a chatbot answers instead of a person. A rule can also restrict by country, which depends on a GeoIP database being present on the server. The wording is what people get wrong: the button label and the welcome message belong to the channel, not to the rule, so two pages that need different opening lines need two channels."
+      "body": "A live chat channel carries an ordered list of rules, each one a regular expression matched against the visited URL. That is how the pricing page gets the sales channel while the documentation page gets support. Matching runs in two passes, and this is the part people get wrong. Odoo first searches the rules that have countries set on them, and only when none of those matches does it fall back to the rules with no country at all. A country rule therefore beats a general rule whatever the sequence numbers say, and inside each pass the lowest sequence wins. Per rule you set the button to Show, Show with notification, Open automatically after a timer in seconds, or Hide, and you can attach a chatbot. Country rules need a GeoIP database on the server. The button label and the welcome message belong to the channel rather than the rule, so two pages that need different opening lines need two channels."
     },
     {
       "title": "Operator routing and presence",
-      "body": "Operators are internal Odoo users added to the channel. Odoo offers a conversation only to operators it treats as online from their Discuss presence, and it spreads new chats across whoever is available rather than holding them in a queue with a position. An operator whose session goes idle drops out of the rotation until they touch the browser again, which is why a rota of six half attentive people performs worse than two who keep Discuss in front of them. A returning visitor is put back with the operator they spoke to last where that person is online. Each operator can be given a live chat username, so the visitor sees a first name rather than the full name on the employee record."
+      "body": "Operators are internal Odoo users added to the channel, and Odoo only offers a conversation to the ones its Discuss presence reports as online. The selection order is worth knowing, because it is not round robin. A returning visitor goes back to the operator they spoke to last, unless that person is already holding two active conversations or is in a call. Failing that, Odoo looks for an operator whose own language matches the visitor, then for one carrying the visitor's language in the Livechat Languages field on their user record, then for one in the same country, and only then falls back to whoever is least busy. Two practical settings follow. Fill in Livechat Languages for anyone genuinely bilingual, because nothing else reads that. Give each operator a Livechat Username so the visitor sees a working first name instead of the name on the employee record."
     },
     {
       "title": "Canned responses and the in chat commands",
-      "body": "Canned responses are typed as a colon followed by a shortcut, and in current versions they live in Discuss rather than being live chat only, so the same library serves internal chat. The commands save more time than the templates do. /history prints the pages the visitor read before writing, /lead creates a CRM lead, /helpdesk opens a ticket on Enterprise, /leave ends the operator side of the session. The two conversion commands carry the conversation into the description of the record they create, so nobody retypes the problem and whoever picks the lead up on Monday can read what was actually said."
+      "body": "Canned responses are typed as a colon followed by a shortcut, and they sit on the shared Discuss model, so one library serves internal chat and live chat alike. The commands save more time than the templates do. /history asks the visitor's browser to hand over the pages it has recorded, the last fifteen of them, kept for a day, which means it works on any site the widget is embedded on. /lead creates a CRM lead and is Community. /helpdesk and /helpdesk_search open or find a ticket and need Enterprise. /leave and /who are the ordinary Discuss commands. The conversation is copied into the lead or the ticket the command creates, so nobody retypes the problem and whoever picks it up on Monday reads what was actually said."
     },
     {
-      "title": "The chatbot is a script, not a model",
-      "body": "Chatbot steps are an ordered list you configure: a line of text, a multiple choice question, an email or phone capture with validation, free input, create a lead, create a ticket, or forward to an operator. A step can be tied to an answer given earlier, so a branch appears only for the visitor who chose it. There is no intent matching and no language model in standard Odoo, so the script handles exactly what you wrote and nothing else. It earns its place on qualification and on out of hours capture. Point it at open questions and it embarrasses you in front of the customer."
+      "title": "The chatbot is a script, and on 19 optionally an AI agent",
+      "body": "Core Live Chat gives the script seven step types: text, a multiple choice question, an email capture, a phone capture, free input on one line, free input on several, and forward to an operator. Create Lead is not one of them. It arrives with the CRM bridge, which is Community. Create Ticket arrives with the Helpdesk bridge, which is Enterprise. A step can be tied to an answer given earlier, so a branch appears only for the visitor who chose it, and the rule carries a setting that runs the bot only when no operator is available. The scripted bot does no intent matching, so it handles exactly what you wrote. Odoo 19 Enterprise adds a different thing beside it, an AI agent set on the rule. Where a rule has both, the AI agent answers and can pass the visitor on to the script. On 17, on 18, and on Community at any version, the script is all there is."
     },
     {
       "title": "Visitor context before you answer",
@@ -36,7 +36,7 @@
     },
     {
       "title": "Rating, transcripts and reporting",
-      "body": "At the end of a session the visitor is offered a happy, neutral or unhappy rating with an optional comment, and can ask for a copy of the conversation by email. Reporting covers session history, session statistics and operator analysis, so volume, response time and rating per operator are there without anything being built. Ratings are stored as rating records, the same structure that already carries helpdesk and project satisfaction, so one satisfaction dashboard can cover all three rather than three that disagree."
+      "body": "At the end of a session the visitor is offered a happy, neutral or unhappy rating with an optional comment, and can ask for a copy of the conversation by email. The three faces store as 5, 3 and 1 on the rating record, which is what any dashboard built later has to average. Reporting covers session history, session statistics and operator analysis, so volume, response time and rating per operator are there without anything being built. Ratings use the same rating model that already carries helpdesk and project satisfaction, so one satisfaction dashboard can cover all three rather than three that disagree."
     },
     {
       "title": "What a session is in the database",
@@ -54,11 +54,11 @@
     },
     {
       "title": "Decide the out of hours behaviour deliberately",
-      "body": "Because availability follows operator presence, the honest options are to hide the button or to attach a chatbot that says the team is offline and collects a name and an email as a lead. Hiding keeps the site clean and loses the enquiry. The bot keeps it and leaves something on a desk for the morning. Choose per rule instead of accepting whatever the default gives you, and check what the site does at lunchtime and on a public holiday, not only at midnight."
+      "body": "Because availability follows operator presence, decide this on the rule instead of accepting whatever the default gives you. Two settings do the work. A rule whose action is Hide takes the button off the page when nobody is online. Or attach a chatbot and set it to run only if no operator is available, which leaves the bot to say the team is offline and take a name and an email as a lead, then gets out of the way the moment somebody comes online. Hiding keeps the site clean and loses the enquiry. The bot keeps it and leaves something on a desk for the morning. Check what the site does at lunchtime and on a public holiday, not only at midnight."
     },
     {
       "title": "Embedding on a site Odoo does not host",
-      "body": "The channel has a widget tab that produces a snippet to paste into an external site, which is how a WordPress or Shopify front end gets the same chat as the Odoo backend. Visitor tracking is thinner there because there is no Odoo website session, so URL rules still work but the page history the operator relies on is limited. Brief the operators on that difference, otherwise they open a conversation expecting context the record cannot hold."
+      "body": "The channel has a widget tab that produces a snippet to paste into an external site, which is how a WordPress or Shopify front end gets the same chat as the Odoo backend. Page history still works there, because the widget records recent pages in the visitor's own browser rather than on the server. What is missing is the visitor record the Odoo Website app maintains, with the full page views, the language, the country and the partner once the person logs in. Brief the operators on that difference, otherwise they open a conversation expecting a profile that was never created."
     },
     {
       "title": "Draw the chatbot script before building it",
@@ -80,7 +80,7 @@
     },
     {
       "title": "Empty sessions and real conversations age differently",
-      "body": "Odoo clears out live chat sessions that never received a message, so the statistics are not distorted by everyone who opened the box and left. Conversations that do carry messages stay in the database indefinitely, and they hold names, email addresses and sometimes order numbers. That is personal data with no deletion schedule attached to it. A retention rule has to be decided by the business and then actually built as a scheduled action, because nothing in the standard app will do it for you."
+      "body": "A scheduled job deletes live chat sessions that never received a message and are more than an hour old, so the statistics are not distorted by everyone who opened the box and left. Conversations that do carry messages stay in the database indefinitely, and they hold names, email addresses and sometimes order numbers. That is personal data with no deletion schedule attached to it. A retention rule has to be decided by the business and then actually built as a scheduled action, because nothing in the standard app will do it for you."
     },
     {
       "title": "Country rules do nothing until GeoIP exists",
@@ -112,7 +112,7 @@
     },
     {
       "country": "india",
-      "note": "The Digital Personal Data Protection Act expects the collection notice to be available in English or any of the twenty two Eighth Schedule languages at the individual's choice, which lands on the line above the chat box and not only on the privacy page. Withdrawing consent has to be as easy as giving it, so somebody has to own deleting a conversation on request. A regional language site wants its own channel with rules matched on the language prefix. GST and the IRN appear only once the lead becomes an invoice."
+      "note": "The Digital Personal Data Protection Act expects the collection notice to be available in English or any of the twenty two Eighth Schedule languages at the individual's choice, which lands on the line above the chat box and not only on the privacy page. Withdrawing consent has to be as easy as giving it, so somebody has to own deleting a conversation on request. Operators who cover more than one Indian language should have each of them listed on their user record, because that field is what the routing actually reads. GST and the IRN appear only once the lead becomes an invoice."
     },
     {
       "country": "turkey",
@@ -142,7 +142,7 @@
     },
     {
       "q": "Can the chatbot understand a free text question?",
-      "a": "No. It follows the branches you drew, so anything unanticipated falls through to whatever you put at the end of the script. Two things help. Put a free input step where people go off script, because the text is still captured on the conversation even though the bot cannot act on it. Then read those answers after a month and turn the repeats into branches. Wiring an external language model in is custom development and it changes your data protection position, so treat it as a separate decision rather than a configuration option."
+      "a": "The scripted chatbot cannot. It follows the branches you drew, so anything unanticipated falls through to whatever you put at the end of the script. Odoo 19 Enterprise is the exception, because it adds an AI agent that you set on the channel rule, and that does answer free text and can hand over to the script or to a person. Everywhere else, which means 17, 18 and any Community build, the answer is no. Two things help there. Put a free input step where people go off script, because the text is still captured on the conversation even though the bot cannot act on it. Then read those answers after a month and turn the repeats into branches."
     },
     {
       "q": "Our website is WordPress. Can we still use it?",
@@ -154,7 +154,7 @@
     },
     {
       "q": "Can chats be routed by language?",
-      "a": "In practice you create a channel per language, match rules against the language prefix in the URL, and put operators who speak it on the right channel. That beats trusting the browser language, it keeps reporting separate per language, and because the chatbot is attached per rule each language can run its own script. The cost is honesty about coverage: a language with one operator has no cover when that person is away, so either hide the button or let the bot take a message."
+      "a": "Yes, and mostly without building anything. Odoo already matches the visitor's language against the operator's own language, then against the Livechat Languages listed on the operator's user record, before it falls back to country and then to whoever is least busy. So the first job is filling that field in for every bilingual operator, not designing a routing scheme. Add a channel per language only where the button text, the welcome message or the bot script has to differ, since all three are channel settings and not rule settings. The thing to watch is what the fallback does. A language with one operator has no cover when that person is away, and the chat is then handed quietly to somebody who does not speak it."
     },
     {
       "q": "How is this different from the WhatsApp app in Odoo Enterprise?",

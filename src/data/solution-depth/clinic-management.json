@@ -1,5 +1,5 @@
 {
-  "metaDescription": "Odoo for clinics: which edition the booking page needs, how the patient record and insurer billing are really built, and what breaks on live projects.",
+  "metaDescription": "Odoo for clinics: what the patient record really costs to build, which edition the booking page needs, and where insurer billing breaks on live projects.",
   "intro": [
     "Odoo ships no patient record. There is no clinical note, no prescription and no consultation model in Community or in Enterprise. What Odoo does ship is a calendar, a booking page, invoicing, stock with expiry dates, a customer portal and a point of sale. A clinic system is those parts plus a patient and visit layer built on top of them, and that layer is where the cost and the risk sit.",
     "The edition line matters more here than on most projects. Calendar is Community. Appointments, the public booking page that reads availability from staff calendars, is Enterprise. So are WhatsApp messaging, Sign, Documents, Studio and Planning. Community covers invoicing, lot and expiry tracking, the portal, POS and SMS through Odoo credits. A single site with reception-entered bookings can run Community. Online booking with WhatsApp confirmations cannot.",
@@ -28,7 +28,7 @@
     },
     {
       "title": "Insurance, TPA and the split bill",
-      "body": "The patient stays the customer and the insurer becomes the invoice partner, so the receivable ages against whoever owes it. Each payer gets its own price list, because one consultation is not one price across every scheme. Co-pay and insurer share are two invoices against a single visit, tied by an analytic account. Pre-authorisation and rejection are stages on the claim with the reason recorded against the visit."
+      "body": "The visit has to become a sales order or a POS order before the money behaves. That is where the payer price list is applied and where the patient can stay the customer while the insurer sits in the invoice address, so the receivable ages against whoever actually owes it. An invoice keyed directly ignores price lists altogether, which is the usual reason payer rates end up duplicated as separate products. Co-pay and insurer share are two invoices from one visit, tied by an analytic account. Pre-authorisation and rejection are stages on the claim, with the reason recorded against the visit."
     },
     {
       "title": "Reminders, recalls and consent to be messaged",
@@ -36,7 +36,7 @@
     },
     {
       "title": "The counter, deposits and what the doctor is paid",
-      "body": "Reception takes cash and card through Point of Sale, or the invoice is paid from the portal through a payment provider already live on the website. An appointment type can require payment before it confirms, which is the practical answer to no-shows. Odoo pays nobody a percentage of a service line, so doctor commission is a rule over posted invoice lines, calculated per practitioner, per service and per payer."
+      "body": "Reception takes cash and card through Point of Sale, or the invoice is paid from the portal through a payment provider already live on the website. An appointment type can require payment before it confirms, which is the practical answer to no-shows. Doctor pay is the part that gets underestimated. Odoo 18 added a Commissions app on Enterprise, but it is built around sales users and plans over invoiced amounts, so it will not split one visit between the practitioner, the service code and the payer. Clinic commission stays a build."
     }
   ],
   "setup": [
@@ -46,19 +46,23 @@
     },
     {
       "title": "Build the catalogue as services with a price per payer",
-      "body": "Every consultation, procedure and package is a product of type service with an income account, a tax and an analytic distribution carrying the branch and the practitioner. Payer pricing is price lists, never duplicate products. Have finance sign the list before anything is imported, because a catalogue rebuilt after go-live invalidates every report and every commission line already posted against the old codes."
+      "body": "Every consultation, procedure and package is a product of type service with an income account and a tax. Branch and practitioner analytics come from analytic distribution models, not from a field typed on each line, because nobody keys a distribution two hundred times a day. Payer pricing is price lists rather than duplicate products, and that only holds if the visit is confirmed as an order. Have finance sign the list before anything is imported. A catalogue rebuilt after go-live invalidates every report and every commission line already posted against the old codes."
     },
     {
       "title": "Working schedules, leave and timezones",
-      "body": "Slots come from working schedules, so each branch and each part time contract needs its own rather than one company default. Link doctors to employee records and approved leave removes their slots automatically. Every bookable user needs a timezone on the user record, the appointment type carries one, and the public page renders in the visitor timezone. One wrong value gives a page that looks right and books an hour out."
+      "body": "Slots come from working schedules, so each branch and each part time contract needs its own rather than one company default. Link doctors to employee records so approved time off clears their slots, then put one real leave request through end to end before trusting it. Every bookable user needs a timezone on the user record, the appointment type carries its own, and the public page renders in the visitor timezone. One wrong value gives a page that looks correct and books an hour out."
     },
     {
       "title": "Access rights and the export button before go-live",
-      "body": "Reception, nurse, doctor, cashier and manager are groups with record rules, not job titles on a slide. Odoo treats export as its own capability, so a receptionist who has it can take the whole patient list to a spreadsheet in two clicks. Switch it off for everyone who does not need it. Odoo has no built-in audit trail either, so field tracking and an audit module are added deliberately."
+      "body": "Reception, nurse, doctor, cashier and manager are groups with record rules, not job titles on a slide. Odoo treats export as its own capability, so a receptionist who holds it can take the whole patient list to a spreadsheet in two clicks. Switch it off for everyone who does not need it. The audit trail Odoo ships is an accounting feature, it keeps posted entries from being edited silently and says nothing about who opened a patient file, so field tracking on the clinical model and a logging module are a separate decision made before go-live, not after an incident."
     },
     {
       "title": "Bring the old patient list across once",
       "body": "Export the old system to a spreadsheet, clean it there, import once. Agree the rule that makes two rows the same person before starting, usually national identity number, then sanitised mobile number, then name with date of birth. Keep the legacy file number as a searchable field so staff can still find people by the number written on the paper folder. Attachments and scans move after identity is stable."
+    },
+    {
+      "title": "Go live on the diary before the money",
+      "body": "Put reception and the calendar live first and leave invoicing on the old system for a fortnight. The diary breaks loudly and gets fixed the same day. Billing breaks quietly and is only found at month end. Switch invoicing on the first day of an accounting period so the old and the new never cover the same month. Insurer claims move last, after a full cycle of clean patient invoices has proved the catalogue and the price lists."
     }
   ],
   "pitfalls": [
@@ -80,18 +84,18 @@
     },
     {
       "title": "Scans and images pushed into the database",
-      "body": "Referral letters, consent forms, photographs of an insurance card and phone pictures of a skin condition arrive by the hundred, and every one becomes an attachment. Odoo can keep attachments in the filestore on disk or inside the database itself, and a database holding them grows until the nightly dump takes hours and the restore is never tested. Keep the filestore on disk, back it up with the dump, and cap the upload size. Radiology in DICOM belongs in imaging software with a link on the visit."
+      "body": "Referral letters, consent forms, photographs of an insurance card and phone pictures of a skin condition arrive by the hundred, and every one becomes an attachment. Odoo can keep attachments in the filestore on disk or inside the database itself, and a database holding them grows until the nightly dump takes hours and the restore is never tested. Keep the filestore on disk, back it up with the dump, and cap the upload size."
     },
     {
       "title": "Commission paid on money that never arrived",
-      "body": "Commission computed from posted invoices pays practitioners for revenue the insurer later rejects. A rejected claim, a credit note and a counter discount all move the figure after payroll has already used it. Decide at design time whether the rule follows the invoice or the settled payment, keep it in one place that can be recomputed for a closed period, and agree in writing how a clawback is handled. Retro-fitting this once doctors have been paid is a contract problem, not a configuration one."
+      "body": "Commission computed from posted invoices pays practitioners for revenue the insurer later rejects. A rejected claim, a credit note and a counter discount all move the figure after payroll has already used it. Decide at design time whether the rule follows the invoice or the settled payment, keep it in one place that can be recomputed for a closed period, and agree in writing how a clawback is handled."
     }
   ],
   "worksWith": [
     "Odoo Inventory for the dispensing counter, with lot numbers and expiration dates",
-    "Point of Sale at reception for cash and card, posting to the same journals",
-    "Odoo Accounting so patient and insurer receivables age separately",
-    "Employees, Attendance and Payroll for rosters, duty hours and practitioner pay",
+    "Point of Sale at reception for cash and card, one session per till closed and posted daily, which is what makes the drawer reconcile",
+    "Odoo Accounting for patient and insurer receivables, though the aged receivable and partner ledger reports are Enterprise only",
+    "Employees and Attendance for duty hours, with Planning on Enterprise for rosters and Payroll on Enterprise localised country by country",
     "Sign and Documents on Enterprise for consent forms and scanned referrals",
     "WhatsApp Business and SMS gateways for confirmations, results and recalls",
     "Website payment providers for deposits taken at the moment of booking",
@@ -100,15 +104,15 @@
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "ZATCA Phase 2 decides the invoice format. Patient bills are simplified invoices reported to Fatoora within twenty four hours, while insurer invoices are standard invoices cleared before they are handed over, both as signed XML with a QR code. Claims themselves ride on NPHIES, which sits outside Odoo, so plan the reconciliation between the two."
+      "note": "ZATCA Phase 2 decides the invoice format. Patient bills are simplified invoices reported to Fatoora within twenty four hours, while insurer invoices are standard invoices cleared before they are handed over, both as signed XML carrying a QR code. Claims themselves ride on NPHIES, which sits outside Odoo entirely, so plan the reconciliation between the two from the start."
     },
     {
       "country": "uae",
-      "note": "Preventive and basic healthcare is zero rated while cosmetic treatment is standard rated, so the tax depends on why the procedure was done and the catalogue has to carry both. Dubai claims are submitted to eClaimLink as XML, and the federal e-invoicing programme is Peppol based, so build for a structured export rather than a PDF."
+      "note": "Dubai and Abu Dhabi run separate claim platforms, eClaimLink and Shafafiya, so a group across both emirates has two coded submission paths sitting outside one Odoo database. Tax splits by intent rather than by department: preventive and curative treatment is zero rated, elective cosmetic work is standard rated, and the same practitioner produces both in an afternoon. Corporate tax makes the analytic split by branch worth building before the first return rather than after it."
     },
     {
       "country": "india",
-      "note": "Healthcare services from a clinical establishment are GST exempt while the pharmacy counter and cosmetic procedures are taxable, so one clinic runs exempt and taxable revenue side by side and cannot claim full input credit. E-invoicing with an IRN applies to the taxable business side above the turnover threshold, not to exempt consultations."
+      "note": "A clinical establishment charges no GST on healthcare services, but the dispensing counter, cosmetic procedures and room rent above the notified limit are taxable. That mix blocks full input credit, so equipment and rent carry GST nobody reclaims. E-invoicing with an IRN applies to the taxable side above the turnover threshold, not to exempt consultations, so one database runs both paths."
     },
     {
       "country": "pakistan",
@@ -116,7 +120,7 @@
     },
     {
       "country": "egypt",
-      "note": "The ETA system splits into e-invoices for registered businesses and e-receipts for walk-in patients, and a clinic issues many more of the second. Both need every service and medicine mapped to a GS1 or EGS code, submissions are signed JSON rather than PDF, and the printed receipt has to carry what ETA returns."
+      "note": "Most clinic income is a walk-in patient paying at the counter, which falls under the ETA e-receipt track rather than the e-invoice track used for corporate and insurer billing. Both require every service and medicine mapped to an EGS or GS1 code, and the printed slip has to carry the reference the ETA returns. Two document flows, one reception desk."
     },
     {
       "country": "united-kingdom",
@@ -124,29 +128,29 @@
     },
     {
       "country": "germany",
-      "note": "Treatment is VAT exempt under the medical exemption, so input VAT on equipment is not recoverable and the tax mapping cannot be copied from a retail build. The Steuerberater will ask for a DATEV export rather than a trial balance PDF, records have to meet GoBD retention rules, and any till taking cash needs a certified TSE."
+      "note": "The Steuerberater will ask for a DATEV export rather than a trial balance PDF, and that expectation shapes the chart of accounts from the first week. Treatment is VAT exempt under the medical exemption, so input VAT on equipment is not recoverable and the tax mapping cannot be copied from a retail build. Records must meet GoBD retention, and any till taking cash needs a certified TSE."
     },
     {
       "country": "australia",
-      "note": "Most medical services are GST free while cosmetic work is taxable, and the item billed decides which. Practices bill Medicare against MBS item numbers and take health fund payments through HICAPS terminals, neither of which Odoo speaks, so those stay outside and are reconciled to the invoice. Payroll reports to the ATO under Single Touch Payroll Phase 2."
+      "note": "Medicare is billed against MBS item numbers and health fund payments arrive through HICAPS terminals. Odoo speaks to neither, so both stay outside and are reconciled against the invoice, which is the largest scoping question on an Australian build. Most medical services are GST free while cosmetic work is taxable, and the item billed decides which. Payroll reports under Single Touch Payroll Phase 2."
     }
   ],
   "faqs": [
     {
       "q": "Does Odoo have a built-in clinic or EMR module?",
-      "a": "No. Neither Community nor Enterprise ships a patient record, a prescription or a clinical note. What exists is Calendar, Appointments, Invoicing, Inventory, Portal and Point of Sale. A clinic system is those parts plus a patient and visit layer, taken from a third-party app on the Odoo store or built for the practice."
+      "a": "No. Neither Community nor Enterprise ships a patient record, a prescription or a clinical note, and no Odoo release has. That layer comes from a third-party app on the Odoo store or is built for the practice. Store apps are worth reviewing, but check which Odoo version the app is genuinely maintained on, whether it stores clinical text in its own fields or in the chatter, and how far it goes into billing."
     },
     {
       "q": "Community or Enterprise for a clinic?",
-      "a": "Appointments, WhatsApp, Sign, Documents, Studio and Planning are Enterprise. Community gives invoicing, lot and expiry tracking, the portal, POS and SMS on Odoo credits. If public online booking and WhatsApp confirmations are the reason for the project, Enterprise. A single site where reception enters every booking can run Community and spend the difference on the build."
+      "a": "Enterprise if patients book themselves, because the booking page has no Community equivalent and rebuilding it is not a small module. The second deciding factor is money owed by insurers. Community gives you invoices and manual payment matching, while the aged receivable report, the partner ledger, bank feed synchronisation and automated follow-up are Enterprise, and a practice carrying ninety days of payer debt feels that gap within a quarter. Community to Enterprise later is a supported move. The reverse is not, so keep custom work in modules that survive it."
     },
     {
       "q": "Can patients book online and pay a deposit?",
-      "a": "Yes, with Appointments on Enterprise and a payment provider already live on the website. The deposit is a product carrying its price and tax, and the appointment type can refuse to confirm without payment. Refunds are not automatic, so a cancelled paid booking needs a credit note raised by a person under a written policy."
+      "a": "Yes, with Appointments on Enterprise. The deposit is an ordinary product carrying its own price and tax, so it posts to a real account instead of sitting as an unexplained credit. Two things catch clinics out. The money arrives as a payment against the booking and still has to be matched to the invoice raised after the visit, and refunds are not automatic, so a cancelled paid booking needs a credit note raised by a person against a written cancellation policy. Agree who is allowed to raise one before the page goes live."
     },
     {
-      "q": "How does insurance and TPA billing actually work?",
-      "a": "The patient is the customer, the insurer is the invoice partner, and each payer has its own price list. Co-pay and insurer share are two invoices against one visit, linked by an analytic account so the visit still reports as one number. Claim submission to a national platform is a separate integration, not something Odoo does out of the box."
+      "q": "Does Odoo submit claims to insurers or to a national platform?",
+      "a": "No. There is no claim submission in any edition, and no country localisation adds one. Each payer platform carries its own schema, its own credentials and usually its own sandbox, so an integration is scoped and priced per payer rather than once for the clinic. The realistic default is that staff key the claim into the payer portal while Odoo holds the amount claimed, the stage and the reference that comes back. Build a file export only for a payer whose volume pays for the mapping and for the schema changes that follow it."
     },
     {
       "q": "Do portal patients need a paid licence?",
@@ -154,11 +158,11 @@
     },
     {
       "q": "Can two branches share one database?",
-      "a": "Yes. Either one company with an analytic plan per branch, which is simpler and keeps reporting in one place, or multi-company with record rules where the branches are separate legal entities. Contacts are shared across companies, so the patient record stays single either way while stock and journals stay separate."
+      "a": "Yes. Either one company with an analytic plan per branch, which is simpler and keeps reporting in one place, or multi-company with record rules where the branches are separate legal entities. Contact records are normally left with no company set, so the patient stays a single record either way while stock, journals and sequences stay separate. The cost of multi-company is that every user needs the right companies enabled, and a booking taken under the wrong active company invoices from the wrong entity."
     },
     {
-      "q": "Where do scans, consent forms and imaging actually live?",
-      "a": "Documents attach to the patient or the visit and sit in the filestore on disk, which has to be backed up alongside the database dump or the records come back empty. Sign on Enterprise captures a consent form without printing it. Radiology studies stay in imaging software and are referenced from the visit by link, because moving DICOM through an ERP attachment table is slow and gains nothing."
+      "q": "Can a patient see their own record and their invoices?",
+      "a": "Invoices, quotations and appointments, yes, through the free portal, and for most clinics that is as far as it should go. Nothing Odoo ships exposes clinical fields to the portal, so publishing a history or a result is a deliberate build with access rules and consent wording of its own. Watch the chatter as well. On a document the patient can open, an internal log note stays hidden, but a message and anything attached to it are visible on that portal page."
     },
     {
       "q": "Is Odoo compliant with patient data rules?",

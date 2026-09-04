@@ -20,11 +20,11 @@
   },
   {
    "title": "Availability is a weekly grid, then Odoo subtracts",
-   "body": "This is the part most buyers get wrong. Slots do not come from an employee working schedule. Each appointment type holds its own availability lines, weekday plus a start and end time, repeated every week, and each line can be restricted to particular staff or particular resources. Odoo cuts that grid into slots of the type duration, then removes anything already occupied in the calendars it can read. The engine is subtractive, so the default answer is yes: whatever it cannot see stays on sale. There is also a one-off variant where a user picks specific times and shares them by link for a single meeting, which is the right tool for a board date and the wrong tool for a clinic."
+   "body": "This is the part most buyers get wrong. Each appointment type holds its own availability lines: a weekday plus a start and end time, repeated every week, and each line can be restricted to particular staff or particular resources. Odoo cuts that grid into slots of the type duration, then removes anything already busy in the calendars it can read. Install Employees alongside Appointments and the type gains a further option that keeps slots inside each bookable user's working schedule and respects approved time off, which is how a part time contract stops being sold as full time. The engine is subtractive, so the default answer is yes: whatever it cannot see stays on sale, and an event marked free rather than busy blocks nothing at all. There is also a one-off variant where a user picks specific times and shares them by link for a single meeting, which is the right tool for a board date and the wrong tool for a clinic."
   },
   {
    "title": "Booking a person or booking a thing",
-   "body": "A type is scheduled against named users, so the customer chooses a practitioner, or against resources such as rooms, chairs, bays, tables and machines. Resources carry a capacity, so one slot in a room that seats eight can absorb several bookings until that capacity is used up, and resources have their own calendar where closures and maintenance are entered. Resources are not users, so they cost no licence. That single choice usually moves the annual bill more than anything else on the project."
+   "body": "A type is scheduled against named users, so the customer chooses a practitioner, or against resources: rooms, chairs, bays, tables and machines. Each resource carries a capacity and a setting for whether it can be shared. A shareable table for eight takes several unrelated bookings until the capacity is used up. An exclusive treatment room goes to the first booking whatever its size. Resources hold their own working schedule and their own unavailability, so a repaint, a service interval or a bank holiday closure is recorded against the equipment itself, with no dummy user standing in for a room. Resources are also not users, which is why this one choice usually moves the annual bill more than anything else on the project."
   },
   {
    "title": "Questions asked at the point of booking",
@@ -88,7 +88,7 @@
   "CRM, so a booked discovery call raises or advances an opportunity instead of sitting in a diary",
   "Sales and Invoicing, for the deposit or consultation fee, the tax on it and the credit note when it is refunded",
   "Website, and the payment providers already configured there for eCommerce",
-  "Employees and Time Off, where approved leave blocks a slot only if that leave type puts an entry on the calendar",
+  "Employees and Time Off, which add the option to keep slots inside each user's working schedule and out of approved leave",
   "Google Calendar and Microsoft Outlook, two way, connected by each user for their own account",
   "SMS and email templates for reminders, with SMS consuming Odoo IAP credits",
   "Field Service or Helpdesk, when a booking has to become a task or a ticket, which is usually a small automation rather than a setting"
@@ -138,15 +138,19 @@
   },
   {
    "q": "How do phone bookings and walk-ins fit in?",
-   "a": "Reception creates the meeting directly in Calendar and the slot stops being offered, because the engine subtracts existing events. Staff can also open the same booking page and book on the customer's behalf, which keeps the questions and the confirmation email consistent. The failure mode is a phone booking written somewhere that is not a connected calendar, which is what actually causes double bookings."
+   "a": "Reception can create the meeting straight in Calendar, or open the public page and book on the customer's behalf. The second is usually better, because the booking then carries the same questions, the same confirmation email and the same reference as a self service one, which keeps the reporting comparable. The failure mode is neither of those: it is the appointment written in a notebook, a WhatsApp thread or a personal calendar nobody connected."
   },
   {
    "q": "What reporting do we get out of it?",
-   "a": "Booking volume by type, by staff member and by period, from the reporting views over the appointment data. What it does not hand you is revenue, utilisation against paid capacity, or a no-show rate you can manage by. Those come from Sales and Invoicing, or from a small amount of reporting work. Name the numbers you intend to run the business on before go live, not after."
+   "a": "The Appointments reporting view gives booking counts grouped by type, by staff member or resource, and by period, and it will pivot and graph like any other Odoo report. What it does not hand you is revenue per slot, utilisation against the capacity you pay for, or a no-show rate. Revenue comes from Sales and Invoicing, utilisation and no-shows need the booking status kept honest by whoever runs reception. Name the three numbers you intend to run the business on before go live, then check the system can actually produce them."
   },
   {
    "q": "Our consultants live in Outlook. Do they have to work in Odoo?",
-   "a": "No. Each person connects their own account once and events move both ways, so a meeting moved in Outlook moves in Odoo. The catch is timing rather than direction: the sync runs on a schedule and when somebody opens the Calendar app, so treat it as minutes of lag and set the minimum booking notice wide enough that a slot cannot be sold inside the gap."
+   "a": "No. Each person connects their own account once and events move both ways, so a meeting moved in Outlook moves in Odoo. Two things are worth knowing before you promise it. Only events cross the link, never the availability rules, so the bookable grid stays in Odoo and the working hours set in Outlook mean nothing to it. And the connection is personal: the user can revoke it, and a tenant admin policy can revoke it for them, after which their outside commitments silently stop blocking slots and nothing warns anybody. Put a check on the connected accounts into a monthly routine."
+  },
+  {
+   "q": "What stops two customers taking the last slot at the same moment?",
+   "a": "Availability is checked again when the booking is submitted, not only when the page drew the slots, so the second person is told the time has gone rather than being confirmed into a clash. The residual risk is not the database, it is the lag. An event created in Outlook a minute ago may not have reached Odoo yet, and a payment step widens the same window because the customer is away at the provider while the clock runs. A minimum notice of an hour or two absorbs most of it. Test the abandoned payment path before you publish, because that is the case nobody rehearses."
   },
   {
    "q": "Can a customer book a course of ten sessions in one go?",

@@ -24,11 +24,11 @@
     },
     {
       "title": "Labour sold against labour clocked",
-      "body": "Labour is sold as service products: a diagnostic, bench time, a named operation such as a cambelt change, a minimum charge, an out of hours rate. Worked time is a timesheet on the job, costed from the hourly cost held on the employee record. Sold hours against clocked hours per technician is the number a workshop manages by. The grid entry screen for timesheets is an Enterprise feature; Community captures the same hours from a list view."
+      "body": "Labour is sold as service products: a diagnostic, bench time, a named operation such as a cambelt change, a minimum charge, an out of hours rate. Worked time is a timesheet on the job, and its cost comes from the hourly cost on the employee record, so the analytic line it posts is at what the hour cost the business, not at what the customer paid for it. Nothing in standard puts the two side by side. The comparison is a report built on those analytic lines, with the standard time carried on the labour product, so an overrun shows while the car is still on the ramp instead of at month end."
     },
     {
       "title": "Parts from the shelf into the bay",
-      "body": "Every part issued is a stock move, so reservation, valuation and traceability work normally. A bin location per shelf and a location per van keep small items findable. Vendor product codes on the supplier record let the counter search by the number printed on the box. Special orders run on the replenish on order route so a job pulls its own purchase order, and landed costs put duty and freight onto the value of imported components."
+      "body": "Every part issued is a stock move, so reservation, valuation and traceability behave as in any distribution build. A bin per shelf and a location per van keep small items findable. Barcodes and vendor codes belong on the product from the first import, so the counter finds a part by the number on the box, not a typed description. A special order needs both the replenish on order route and the buy route on that part, since replenish on order only passes the demand along and it is the buy route that raises the purchase. Landed costs put duty and freight onto imported components, which is a reason to settle the costing method early, because Odoo permits them only on automated valuation with FIFO or average cost."
     },
     {
       "title": "Authorisation, and the work found on the ramp",
@@ -36,7 +36,11 @@
     },
     {
       "title": "Three payers, one ramp",
-      "body": "Warranty work carries cost and no retail revenue, so parts and labour sit at zero on the customer document and the claim is raised as a separate order to the manufacturer at the agreed rate. Insurer work splits the same job between the insurer and the driver excess. A fleet contract pays some lines and refuses others. Each of these is two orders against one vehicle visit, tied together by a claim or authorisation number held on the job."
+      "body": "Warranty work carries cost and no retail revenue, so parts and labour sit at zero on the customer document and the claim goes out as a separate order to the manufacturer at the agreed rate. Insurer work splits the same job between the insurer and the driver excess. A maintenance contract usually covers the scheduled service and refuses tyres, damage and anything the driver caused, so the split runs line by line and every line has to know which document it lands on before an invoice is raised. Each of these is two orders against one vehicle visit, tied together by a claim or authorisation number held on the job."
+    },
+    {
+      "title": "Bays, ramps and who is free at ten",
+      "body": "Capacity in a workshop is bays multiplied by hours, minus the technician who called in sick. Odoo has no bay planner. Enterprise supplies the Gantt views behind Planning and Field Service, and the Appointments app for online booking, which is what most garages are describing when they ask for a scheduling screen. Community shows the same jobs in calendar and Kanban and takes bookings through a website form that creates the job. Either way the plan only holds if the estimated hours on a job come from the labour catalogue instead of from a guess at the counter."
     }
   ],
   "setup": [
@@ -54,7 +58,15 @@
     },
     {
       "title": "Analytic costing before go live, not after",
-      "body": "Give each job an analytic account and apply analytic distribution to parts and labour lines, then let timesheets post their own analytic entries at employee cost. Without it the workshop reports revenue less parts cost and calls the difference margin, which ignores the technician completely. Community gives invoicing, journals and stock valuation postings; the fuller accounting toolset, including bank reconciliation and asset handling, sits in Enterprise."
+      "body": "Give each job an analytic account and apply analytic distribution to parts and labour lines, then let timesheets post their own entries at employee cost. Without it the workshop reports revenue less parts cost, calls the difference margin, and leaves the technician out of the number entirely. Where the job card is a project, that project's analytic account reaches its timesheets and the order lines behind them without anyone choosing it from a dropdown at eight in the morning, which is one of the stronger arguments for the project shaped job card over a bare sale order."
+    },
+    {
+      "title": "Fix the parts data and the costing method before the first receipt",
+      "body": "Costing method and valuation are set on the product category, and changing them once stock has moved leaves a trail of revaluation entries behind it. Decide standard, average or FIFO during design. Import the lines that actually sell, archive the rest, and put barcodes, vendor codes and pack sizes on the fast movers first. Reordering rules belong on a few hundred parts, not on the whole catalogue, or the first replenishment run proposes a purchase order no buyer will read."
+    },
+    {
+      "title": "Rehearse the eight o'clock hour",
+      "body": "The risk at go live is not month end, it is the first Monday morning. Walk three real vehicles through the whole sequence with the people who will actually do it: check in, estimate, approval, parts issue, clock on, a second approval for the damage found on the ramp, invoice, handover. Time each step. Anything that costs the service advisor more than a minute at the counter gets fixed before the floor sees it, because a queue at eight in the morning is how a new system gets abandoned in week two."
     }
   ],
   "pitfalls": [
@@ -63,12 +75,12 @@
       "body": "Fleet looks like the obvious home for a vehicle and is the wrong one. Each vehicle needs a brand and a model record, so importing several thousand customer cars builds a model list nobody maintains, and the cost, contract and odometer reporting that makes Fleet worth having for an owned fleet fills with vehicles the business does not own. Keep Fleet for courtesy cars, the recovery truck and the parts vans."
     },
     {
-      "title": "Negative stock enabled to keep the bay moving",
-      "body": "It is a setting on the product category and it is the most common irreversible mistake in a parts build. Once a category has gone negative the valuation is wrong, the margin on every job containing that part is wrong, and the stock count that would fix it is refused by a workshop that cannot stop trading. If the real cause is that goods arrive faster than the paperwork, fix receiving instead of the setting."
+      "title": "Issuing parts the shelf does not hold",
+      "body": "Odoo will let a part leave a bay it is not holding, and nothing in standard configuration forbids it. The damage is not the negative number, it is when the cost turns up. Under FIFO or average cost Odoo revalues that issue once the real receipt lands and posts the difference as an adjustment dated then, so the job was invoiced in one month and its true cost appears in another. Under standard cost no correction arrives at all. The usual cause is that goods reach the shelf faster than the paperwork, so fix receiving, because the stock count that would tidy it up is refused by a workshop that cannot stop trading."
     },
     {
       "title": "Labour that never gets recorded",
-      "body": "Technicians resist timesheets, so projects quietly drop them and bill a labour line instead. The workshop then knows the price of every hour it sold and the cost of none of them, cannot see which jobs overran their standard time, and cannot tell a productive technician from a busy one. The fix is a start and a stop button on a tablet in the bay, not a form filled in on Friday afternoon."
+      "body": "Technicians resist timesheets, so projects quietly drop them and bill a labour line instead. The workshop then knows the price of every hour it sold and the cost of none of them, cannot see which jobs overran their standard time, and cannot tell a productive technician from a busy one. Recording has to happen in the bay while the job is open, and someone senior has to read the overrun column every week. A timesheet nobody looks at stops being filled in within a month."
     },
     {
       "title": "Serial tracking turned on for everything",
@@ -76,12 +88,16 @@
     },
     {
       "title": "The excess discovered at handover",
-      "body": "An accident repair billed part to an insurer and part to the driver reads as one document until somebody builds it. The invoicing partner comes from the contacts on the order, the tax treatment can differ between the two portions, and betterment or an uninsured extra is a separate agreement with the driver. Model it as two orders against one job from the start, with the excess raised before the keys go back."
+      "body": "The insurer portion is authorised, invoiced and chased by an office that does this all day. The driver portion is a few hundred collected at a counter by whoever hands the keys back, and it is the half that goes missing. The handover step has to check the payment state of the driver document, because once the car has left, an excess is a debt owed by somebody with no further reason to visit. Tax treatment can differ between the two portions, and betterment or an uninsured extra is a separate agreement that needs the driver's signature before the work starts rather than an argument at the desk."
+    },
+    {
+      "title": "A cost price nobody ever updates",
+      "body": "On standard cost a part is worth whatever was typed during import, and the gap against what the supplier actually charged goes to the price difference account, where nobody looks. Oil, filters and batteries move several times a year, so within two seasons every job containing them reports a margin that is invented. Either the category maintains its own cost from receipts, or a named person owns a monthly review with a diary entry behind it. The symptom is a workshop that quotes confidently from its revenue figures and ignores every margin column on the report."
     }
   ],
   "worksWith": [
     "Odoo Inventory for bin locations, reordering, reservation and the valuation behind every part issued to a bay.",
-    "Odoo Purchase for supplier catalogues, replenish on order special parts, and landed costs on imported components.",
+    "Odoo Purchase for supplier catalogues and price breaks, the vendor part number the counter searches by, and the bills that carry a sublet cost back to the job.",
     "Odoo Sales for the estimate, portal signature and the invoice, since a repair order carries no prices of its own.",
     "Odoo Project and Timesheets for the workshop board, technician assignment and clocked hours against each job.",
     "Odoo Fleet, kept for the courtesy cars, recovery truck and parts vans the business itself owns.",
@@ -92,7 +108,7 @@
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "ZATCA Phase 2 clears a standard invoice before it is valid, so a car cannot leave on a handwritten gate pass. Counter work is a simplified invoice with a QR code, reported within 24 hours, and the document carries Arabic. Accident jobs usually begin from a Najm report number, which belongs on the job card, and MVPI inspection dates drive the reminder list."
+      "note": "ZATCA Phase 2 clears a standard invoice before it is valid, so a car cannot leave on a handwritten gate pass. Counter work is a simplified invoice with a QR code, reported within 24 hours, and the document carries Arabic. The clearance integration sits in the Saudi localisation in Enterprise, while Community has the chart of accounts and no clearance, so the edition is settled for a Saudi workshop before a single workshop requirement is discussed. Accident jobs usually open from a Najm report number, which belongs on the job card, and MVPI inspection dates drive the reminder list."
     },
     {
       "country": "uae",
@@ -116,7 +132,7 @@
     },
     {
       "country": "germany",
-      "note": "Labour is quoted in Arbeitswerte, so the price list is built from time units per operation rather than from clock hours. A Kostenvoranschlag binds the workshop, and exceeding it materially means going back to the customer first, which turns the supplement approval trail into a legal record. GoBD requires job cards and photos to be unalterable, and the tax adviser expects a DATEV export rather than a folder of PDFs."
+      "note": "Labour is quoted in Arbeitswerte, so the price list is built from time units per operation, not clock hours. A Kostenvoranschlag binds the workshop, and exceeding it materially means asking the customer first, which makes the supplement trail a record. GoBD requires job cards and photos to be unalterable. The tax adviser expects a DATEV export, which ships with the German localisation in Enterprise and must be built in Community."
     },
     {
       "country": "france",
@@ -126,35 +142,39 @@
   "faqs": [
     {
       "q": "Can a workshop run on Odoo Community, or is Enterprise needed?",
-      "a": "A single site garage can run Community. It covers Repair, Inventory, Purchase, Sales, Project, Timesheets, Point of Sale, Maintenance and invoicing. Enterprise adds what a busy workshop feels daily: Gantt scheduling for bays and technicians, the timesheet grid, the Barcode app, Field Service, Documents, Sign, Studio, WhatsApp and the fuller accounting toolset. Multi branch operations usually end up wanting the scheduling views."
-    },
-    {
-      "q": "Should customer vehicles go into the Fleet app?",
-      "a": "Only if there are a few dozen. Fleet reports cost, contracts and odometer for vehicles a company owns, and filling it with customer cars distorts that reporting while forcing a brand and model record for every variant on the road. A dedicated vehicle record linked to the customer and referenced by job cards is the usual answer."
+      "a": "A single site garage can run on Community. Repair, Inventory, Purchase, Sales, Project, Timesheets, Point of Sale, Maintenance and invoicing are all there. Enterprise adds what a busy workshop notices daily: Gantt scheduling for bays and technicians, the timesheet grid, the Barcode app, Appointments, Field Service, Documents, Sign, Studio, WhatsApp, and the accounting side including bank reconciliation and asset handling. The usual tipping point is a second branch, or a workshop that wants customers booking slots online."
     },
     {
       "q": "Does Odoo include flat rate labour times?",
-      "a": "No. There is no manufacturer time database inside Odoo and no import for one. Standard times are configured as service products with a duration and a price, taken from whatever schedule the workshop already works to. That is a client side data exercise, and it is the item most often underestimated when a project timeline is being agreed."
+      "a": "No. There is no manufacturer time database inside Odoo and no import for one. Standard times are configured as service products with a duration and a price, taken from whatever schedule the workshop already works to. A garage with a licensed time guide keeps using the guide and copies the times across. It is client side data work, and it is the single item most often underestimated when a project timeline is being agreed."
     },
     {
-      "q": "How do we invoice an insurance job where the driver pays an excess?",
-      "a": "As two documents against one vehicle visit. The insurer is billed at the agreed network rate, the driver is billed the excess at handover, and both carry the same claim number and vehicle. Odoo takes the invoicing partner from the contacts on an order, so one order cannot cleanly produce invoices for two unrelated companies."
+      "q": "Can Odoo look up a vehicle from its registration, or decode a VIN?",
+      "a": "No. No edition reads a plate against a national vehicle database or expands a VIN into make, model and engine. Fleet stores a chassis number as a plain field and does nothing with it. Where it matters, and at a UK or Gulf front desk it usually does, it is a small integration with a commercial data provider, called when the plate is typed. Budget it as an integration rather than assuming it is in the box."
     },
     {
-      "q": "Can we see everything ever done to one vehicle?",
-      "a": "Yes, once the job points at a vehicle record rather than at the customer. Orders, parts and invoices then filter by that vehicle, and serial tracked items such as batteries, gearboxes and turbochargers can be traced back to the car they were fitted to and to the supplier batch they came from."
+      "q": "How does sublet work such as paint, machining or recovery get costed to the job?",
+      "a": "As a purchase order carrying the job's analytic account, so the supplier bill lands on the same job as the parts and labour, and margin is calculated after it. A service line on the customer order can be configured to raise that purchase automatically when the order is confirmed. The failure mode is a sublet invoice posted to a general expense account three weeks later, which leaves the job looking profitable and the month worse than the jobs suggest."
+    },
+    {
+      "q": "Can parts be scanned onto a job?",
+      "a": "Partly, and the edition decides how far it goes. The Barcode app, with its guided receipt, transfer and picking flows, is Enterprise. In Community a USB or Bluetooth scanner still behaves as a keyboard, so scanning a barcode into a search box finds the part on an order or a transfer, and the trade counter can scan at Point of Sale. What Community does not give is a hands free scanning flow designed for a phone in a stores aisle."
     },
     {
       "q": "How are service and inspection reminders sent?",
-      "a": "A scheduled action reads the next service date or an estimated odometer and sends an email or SMS built from a template, with the reply landing back on the vehicle record. Odoo SMS runs on prepaid credits. WhatsApp is an Enterprise app. Measure the return rate from the first month, because that is what the campaign is judged on."
+      "a": "A scheduled action reads the next service date or estimated odometer and sends an email or SMS from a template, with replies landing back on the vehicle record. SMS runs on prepaid credits bought from Odoo, so the cost is per message and worth modelling before the first campaign. WhatsApp is an Enterprise app and needs your own Meta business account. Track the return rate from month one, because that number is the only argument for keeping the run alive."
     },
     {
       "q": "Can technicians clock on and off a job from a tablet?",
-      "a": "Yes. A timesheet with a start and a stop against the job is what makes sold hours comparable with worked hours. The grid entry view and the shop floor tablet interface used in manufacturing are Enterprise features. In Community the same records are created from a list view, which works but needs a short screen designed for the bay."
+      "a": "Yes, and the edition decides how much of it is out of the box. Enterprise timesheets carry a start and stop timer on the task plus a grid for correcting the week. Community records the same hours as lines added from a list, which does work on a tablet but takes more taps than oily hands tolerate, so a Community build usually gets one large button on the job and nothing else. One shared tablet per two bays is normally enough. Settle in advance who is allowed to correct the technician who forgets to stop the clock at lunch, because that happens on the first day and an uncorrected line puts the wrong cost on the job."
     },
     {
-      "q": "What happens to manufacturer warranty work?",
-      "a": "The customer document is priced at zero so the job carries parts and labour cost without retail revenue, which is what makes warranty spend reportable. The claim itself goes to the manufacturer as a separate order at the agreed labour rate and parts terms. Holding the claim reference on the job card is what allows a monthly reconciliation of claims submitted, paid and rejected."
+      "q": "Can we take a deposit before ordering special parts?",
+      "a": "Yes. A confirmed order raises a down payment invoice for a fixed amount or a percentage, and the balance is invoiced at handover with the deposit deducted. Paired with a payment provider on the portal, the customer approves the estimate and pays the deposit in one visit. That is the only reliable defence against a special order sitting on a shelf for six months waiting for a driver who changed their mind."
+    },
+    {
+      "q": "Can several branches run in one database?",
+      "a": "Yes. The choice is one company with a warehouse per site, or one company per site. A single company keeps one customer list, one vehicle history and one parts catalogue, and reports per site through warehouse filters and analytic accounts. Separate companies are right where each site files its own return or holds its own bank account, at the cost of configuring transfers and pricing between them. Both are Community features, so the decision is legal rather than licensing."
     }
   ]
 }

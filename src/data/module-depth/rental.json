@@ -3,7 +3,7 @@
   "intro": [
     "Odoo Rental is an Enterprise app. A rental order is an ordinary sale order carrying a pickup date, a return date and price rules that live on the product, so the customer record, the tax engine, the invoice and the accounting entry are the ones you already know. Install Inventory alongside it and a bridge module, Rental Stock Management, installs itself and adds stock movement and serial level tracking. The rental layer is thin. The weight of the project sits elsewhere.",
     "Hire businesses rarely struggle on the order screen. They struggle on the Tuesday a machine comes back damaged, the next booking starts in four hours, and nobody can say whether the standby unit is free. Availability across overlapping bookings, preparation time, deposits, damage recharges and long contracts billed monthly are what decide the implementation. None of them is a checkbox.",
-    "Most of what shapes the configuration is behaviour you can test in an afternoon. Odoo prices a hire with the cheapest rule that fits the duration and rounds a part period up. Only confirmed orders count against availability, so a quotation reserves nothing. The pickup and return dates belong to the order rather than to the line, which means one order is one hire window. None of that is in the brochure, and each one changes a decision you would otherwise make in month three."
+    "Most of what shapes the configuration is behaviour you can test in an afternoon. Odoo prices a hire with the cheapest rule that fits the duration and rounds a part period up. Only confirmed orders count against availability, so a quotation holds nothing. A late fee is timed from the moment the return is keyed in, not from the date typed on the form. None of that is in the brochure, and each one changes a decision you would otherwise make in month three."
   ],
   "whoFor": [
     "Plant, tool and equipment hire with a countable fleet, where the same unit goes out and comes back.",
@@ -16,27 +16,27 @@
   "capabilities": [
     {
       "title": "Pricing by duration, and the lowest rule wins",
-      "body": "A rentable product carries a table of price rules. Each rule is a period, a price and, optionally, a pricelist and a set of variants, so a contract account gets its own weekly rate without a duplicate product. When a hire is priced, Odoo works out the duration in each unit, rounds a part period up to a whole one, evaluates every rule that applies and charges the lowest total. Nine days against a table holding a daily and a weekly rate is charged as two weeks whenever that comes out cheaper. Months convert at thirty one days, so long hires need testing rather than arithmetic."
+      "body": "A rentable product carries a table of price rules. Each rule is a period, a price and, optionally, a pricelist and a set of variants, so a contract account gets its own weekly rate without a duplicate product. When a hire is priced, Odoo works out the duration in each unit, rounds a part period up to a whole one, evaluates every rule that applies and charges the lowest total. Nine days against a table holding a daily and a weekly rate is charged as two weeks whenever that comes out cheaper. A month converts at thirty one days, so long hires need testing rather than arithmetic."
     },
     {
       "title": "Availability measured across the booking window",
-      "body": "Odoo takes the largest number of units committed at any instant inside the window you are booking, allows for early pickups and early returns, and warns when that exceeds what you hold. A unit is counted from its pickup date minus the preparation time set on the product, through to its return date. The Schedule view lays the week out as pickups and returns. Rental, then Orders, then To Do Today splits the day into a Pickup list and a Return list, which is how a dispatcher actually works a morning."
+      "body": "Odoo takes the largest number of units committed at any instant inside the window you are booking and warns when that exceeds what you hold. A unit is counted from its pickup date, less the preparation time set on the product, through to its return date. Only confirmed orders count, which is the most misread line in the app. The Schedule view puts the fleet on a timeline, so an overlap shows as two bars rather than as a warning after the fact, and the order list filters down to what is due out and what is due back on a given day."
     },
     {
       "title": "Pickup and return move real stock",
-      "body": "With Inventory installed, the Rental Stock Management bridge installs itself. Pickup moves the units into an internal location named Rental that Odoo creates under Customers, one per company, and the return moves them back to the warehouse. Pickups can be partial. A setting called Rental Transfers decides whether the movement also produces a delivery and a receipt for the warehouse team to work from, or stays as a stock move written when the counter processes the order. For serial tracked products the wizard shows what is reserved, what is out and what is back, unit by unit."
+      "body": "Pickup moves the units into an internal location named Rental, one per company, and the return moves them back to the warehouse. That location is internal, so the asset never leaves your inventory or your stock valuation while it is out. Pickups can be partial. A setting called Rental Transfers decides whether the movement also produces a delivery and a receipt for the warehouse team to work from, or stays as a stock move written when the counter processes the order on the sales side."
     },
     {
       "title": "Late returns priced from the fine fields on the product",
-      "body": "Two fields on the product hold the overdue rate, one per hour and one per day. They are labelled Extra Hour and Extra Day in Odoo 17 and 18, and Hourly Fine and Daily Fine in 19. A company grace period, two hours out of the box, has to pass before anything is charged. Odoo then adds a single delay line to the same order, priced from the overrun, so the fee sits on the hire it belongs to and invoices with it. Policy stays with you: waivers for key accounts, a cap on the penalty, and who is allowed to delete that line."
+      "body": "Two fields on the product hold the overdue rate, Extra Hour and Extra Day. A company grace period, two hours by default, has to pass before anything is charged. Odoo then adds a single delay line to the same order, priced from the overrun, so the fee sits on the hire it belongs to and invoices with it. What the software will not decide is policy: waivers for key accounts, a cap on the penalty, and who is allowed to delete that line once it exists."
     },
     {
       "title": "Hire, sale and labour on one order",
-      "body": "One order holds rented items, consumables sold outright, delivery and collection charges and an operator day rate. Sold lines still produce an ordinary delivery. Rented lines run through pickup and return instead. Tax and income account follow each product, so hire revenue, goods revenue and recharges land in separate accounts without a manual journal, and tax can differ line by line, which several of the regimes below require rather than merely permit."
+      "body": "One order holds rented items, consumables sold outright, delivery and collection charges and an operator day rate. Sold lines still produce an ordinary delivery. Rented lines run through pickup and return instead. Tax and income account follow each product, so hire revenue, goods revenue and recharges land in separate accounts without a manual journal, and tax can differ line by line, which several tax regimes require rather than merely permit."
     },
     {
-      "title": "Rental periods are configuration",
-      "body": "A period is a record holding a duration and a unit, kept under Configuration, so a four hour shift, a three day weekend rate or a twenty eight day month is a setup record rather than a development ticket. Overnight hire uses a night period, and Odoo refuses to let a night period share a product with hourly, daily or weekly rules. Check that against the rate card you intend to publish, because it is a constraint on the card rather than on the software."
+      "title": "Booking limits that sit on the company, not the product",
+      "body": "A minimum rental duration rejects anything shorter than the figure you set, so a fleet priced by the half day cannot be booked for two hours by a salesperson in a hurry. Pickup and return days can be blocked by weekday, which stops a Sunday collection being promised on the website by a yard that does not open on Sunday. A default preparation time holds each unit for a set number of hours before its pickup for checking and loading, and any product can override it. The first two are company wide, so a group hiring both plant and marquees out of one company gets one rule for both."
     }
   ],
   "setup": [
@@ -50,11 +50,11 @@
     },
     {
       "title": "Set the delay policy deliberately",
-      "body": "Three settings decide what a late return costs and none of them defaults to your policy. The grace period sits on the company and is two hours out of the box. The hourly and daily fine amounts sit on each product and are company dependent, so a second company gets its own values and an import has to run per company. The delay product is a single service product for the whole database. Leave it blank and Odoo creates one called Rental Delay Cost the first time a fee is charged, on whatever income account and tax that product inherits. Every late fee in the business posts through it."
+      "body": "Three things decide what a late return costs and none of them defaults to your policy. The grace period sits on the company and is two hours out of the box. The hourly and daily fine amounts sit on each product, so changing the penalty across a catalogue of four hundred items is a data job rather than one setting. The delay product is one service product per company. Leave it blank and Odoo creates one called Rental Delay Cost the first time a fee is charged, on whatever income account and tax that product inherits, and every late fee in that company then posts through it."
     },
     {
       "title": "Decide whether the warehouse sees paperwork",
-      "body": "Rental Transfers is off by default. Left off, the stock move is written when someone processes the pickup or the return on the order, which suits a counter where the same person does both. Switched on, each hire produces a delivery dated at pickup and a receipt dated at return through a dedicated rental route, which is what a yard team working from a picking screen expects. The same settings page holds the default padding time, the hours a unit is held before pickup for checking and loading, which then lands on each product as a field you can override."
+      "body": "Rental Transfers is off by default. Left off, the stock move is written when someone processes the pickup or the return on the order, which suits a counter where the same person does both. Switched on, each hire produces a delivery to work from at pickup and a receipt at return, which is what a yard team standing at a picking screen expects. The choice is not cosmetic. It decides whether warehouse operatives ever open a sales document, and therefore which of the two teams owns the accuracy of the fleet count."
     },
     {
       "title": "Map deposits and damage recharges with the accountant",
@@ -68,7 +68,7 @@
   "pitfalls": [
     {
       "title": "One order carries one hire window",
-      "body": "The pickup and return dates live on the order and every rental line inherits them, in 17, 18 and 19 alike. A customer who wants a generator for two weeks and a light tower for three days needs two orders, or one order that overcharges for the light tower. Hire desks find this on the first day of user testing. Settle early whether the counter raises one order per window or one order per job, because it drives numbering, paperwork and how the customer reads their statement."
+      "body": "The rental period is set on the order and every rental line on it inherits that pickup and return date. A customer who wants a generator for two weeks and a light tower for three days needs two orders, or one order that overcharges for the light tower. Hire desks find this on the first day of user testing. Settle early whether the counter raises one order per window or one order per job, because it drives numbering, paperwork and how the customer reads their statement."
     },
     {
       "title": "Treating the availability warning as a lock",
@@ -79,8 +79,8 @@
       "body": "Because the engine takes the cheapest applicable rule, a monthly rate added for contract customers also applies to a two week hire the moment it beats fourteen days at the daily rate. The rule table is a commitment, not a menu the salesperson chooses from. Scope long period rates to a pricelist that only contract accounts use, then price the short durations again, because a pricelist scoped rule is still evaluated for everyone on that pricelist."
     },
     {
-      "title": "Padding time covers preparation, not the workshop",
-      "body": "Odoo can hold a unit for a set number of hours before its pickup, which covers checking, cleaning and loading, and that padding is set per product. It holds nothing after the return. A machine is countable again the moment its return date passes, whether or not it came back with a cracked panel and a hydraulic leak. Model the workshop as a real stock location and move damaged units into it, otherwise the fleet count is what you bought rather than what you can hire out, and operations keeps a private spreadsheet of the difference."
+      "title": "Preparation time covers the run-up, not the workshop",
+      "body": "Odoo can hold a unit for a set number of hours before its pickup, which covers checking, cleaning and loading. It holds nothing after the return. A machine is countable again the moment its return date passes, whether or not it came back with a cracked panel and a hydraulic leak. Model the workshop as a real stock location and move damaged units into it, otherwise the fleet count is what you bought rather than what you can hire out, and operations keeps a private spreadsheet of the difference."
     },
     {
       "title": "Late fees timed from data entry",
@@ -97,8 +97,8 @@
     "Maintenance in Community, for service intervals per machine, on its own equipment register with no hour meter",
     "Sign in Enterprise, for the hire agreement and the condition record captured at pickup",
     "Field Service in Enterprise, for delivery, collection and breakdown attendance against the same customer",
-    "Planning in Enterprise, where an operator goes out with the machine, through the rental and planning bridge",
-    "Website and eCommerce with the eCommerce Rental module, for a date picker, blocked pickup days and online payment",
+    "Planning in Enterprise, for the operator who goes out with the machine, scheduled on a shift rather than on the rental line",
+    "Website and eCommerce, where the rental bridge adds a date range picker, an availability check before checkout and blocked pickup days",
     "The country accounting localisation, for e-invoicing on hire invoices, delay lines and deposit refunds"
   ],
   "regional": [
@@ -142,11 +142,11 @@
     },
     {
       "q": "Do rented units still count as our stock?",
-      "a": "Yes. A hire is a move between your own locations rather than a sale, so the asset stays in inventory and stays in the valuation while it is out with the customer. Two consequences follow. On-hand figures have to be read by location or the yard looks fuller than it is, and reordering rules do not treat an expected return as incoming supply, so a rentable product with a reordering rule will propose buying another one while the fleet is out."
+      "a": "Yes. A hire is a move between two of your own locations rather than a sale, so the asset stays in inventory and stays in the valuation while it is out with the customer. Two consequences follow. On hand figures have to be read by location, or a company level total shows a yard that looks full while it is empty. And because nothing is sold, no cost of goods entry is posted against hire revenue, so margin per hire is not something the standard accounting hands you."
     },
     {
       "q": "Can we book a specific serial number and stop it being promised twice?",
-      "a": "With Inventory installed and the product tracked by serial, the pickup wizard lists the serials held in that warehouse, leaves out the ones another confirmed hire holds for the same window, and records which went out and which came back. That is a reservation of the unit rather than of a quantity. Quantity tracked products only ever give a count, which is right for scaffold boards and wrong for a machine with a service history."
+      "a": "With Inventory installed and the product tracked by serial, pickup and return are handled unit by unit, and the serials another confirmed hire holds for the same window are not offered to you. That is a reservation of the machine rather than of a quantity, which is what you need when the customer asks for the low hours unit or when a service record has to follow the asset. Quantity tracked products only ever give a count, which is right for scaffold boards."
     },
     {
       "q": "Can one database run several depots?",
@@ -154,7 +154,7 @@
     },
     {
       "q": "A customer wants to keep the machine another week. What happens?",
-      "a": "Extend the return date on the order and Odoo reprices the rental lines against the rule table, which is usually cheaper for the customer than letting the fine accumulate. Odoo blocks a change to the pickup date once the order is picked up, and a change to the return date once it is returned. So an extension agreed after the return was processed becomes a new line, not an edit to the old one."
+      "a": "Extend the return date on the order before the return is processed and Odoo reprices the rental lines against the rule table, which is usually cheaper for the customer than letting the fine accumulate. Once the return has been processed the hire is closed and a delay line may already exist, so you are correcting a document rather than extending a booking. Give the desk one instruction: agree extensions in the system on the day they are agreed on the phone."
     },
     {
       "q": "Can a six month contract be invoiced monthly?",
@@ -162,7 +162,7 @@
     },
     {
       "q": "Can customers book and pay on the website?",
-      "a": "Yes, with the eCommerce Rental module. The product page carries a date range picker, availability is checked before checkout, and pickup and return days can be blocked by weekday so nobody books a Sunday collection. It fits a published catalogue at list rates. It fits negotiated contract hire with site access and insurance checks badly, so most fleets publish a part of the catalogue rather than all of it."
+      "a": "Yes, once eCommerce is installed alongside Rental. The product page carries a date range picker, availability is checked before checkout, and the days you do not open can be blocked so nobody books a Sunday collection. It fits a published catalogue at list rates. It fits negotiated contract hire with site access and insurance checks badly, so most fleets publish a part of the catalogue rather than all of it."
     },
     {
       "q": "How do we report fleet utilisation?",

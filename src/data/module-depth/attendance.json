@@ -10,6 +10,7 @@
     "Employers in the Gulf and South Asia already running fingerprint or face terminals who want the data inside the ERP instead of in a vendor desktop tool.",
     "Contracting, facilities, security and manufacturing operations that have to evidence presence per site or per project during an audit or a client claim.",
     "HR teams who rebuild the same payroll input spreadsheet from device exports every month and want that reconciliation to happen once.",
+    "Organisations with a large workforce and few Odoo users, since an employee needs no user account to be clocked in at a kiosk.",
     "Not for salaried head office teams on a fixed schedule where nobody will read the report, and not for buyers expecting geofencing, roster building or shift premium calculation from this app on its own."
   ],
   "capabilities": [
@@ -19,15 +20,15 @@
     },
     {
       "title": "Kiosk mode, badges and the PIN",
-      "body": "Kiosk mode identifies people by scanning a badge barcode or an RFID card, by selecting a name from a list, or by both. The badge value is a field on the employee record and Odoo can generate and print the badge itself. A PIN can be required so that picking a name off the list is not enough on its own. One tablet in a browser covers a door, and a keyboard emulating card reader plugged into it needs no extra software."
+      "body": "Kiosk mode identifies people by scanning a badge barcode or an RFID card, by selecting a name from a list, or by both. The badge value is a field on the employee record and Odoo can generate and print the badge itself. A PIN can be required so that picking a name off the list is not enough on its own. Recent versions can read the badge with the tablet camera rather than a scanner, which removes a piece of hardware per door, and a keyboard emulating card reader plugged into the tablet still needs no extra software."
     },
     {
       "title": "Extra hours measured against the working schedule",
-      "body": "Odoo compares each day of recorded attendance with the working schedule on the employee and stores the difference as extra hours. Two company level tolerances decide when a difference counts, one in favour of the company and one in favour of the employee, so arriving three minutes early does not create overtime. The running balance sits on the employee record. This is a calculation and not an approval workflow, so who validates the balance is a policy you design rather than a switch you enable."
+      "body": "Odoo compares each day of recorded attendance with the working schedule on the employee and stores the difference as its own daily record, which is what the running balance on the employee form adds up. Two company level tolerances decide when a difference counts, one in favour of the company and one in favour of the employee, so arriving three minutes early does not create overtime. A start date setting controls the first day counted, which is what stops a data load producing balances nobody agreed to. This is a calculation and not an approval workflow, so who signs the balance off is a policy you design rather than a switch you enable."
     },
     {
       "title": "What a record captures besides the time",
-      "body": "Recent versions store more than a timestamp. A check in can carry the IP address, the browser, the mode it was created in and, where the device allows it and the employee permits it, a city, a country and coordinates. That is useful evidence for remote and field staff. It is captured, not enforced. Odoo will not refuse a check in from the wrong place, so a rule that blocks a punch outside a site radius is development work rather than configuration."
+      "body": "Recent versions store more than a timestamp. A check in can carry the IP address, the browser, the mode it was created in and, where the device allows it and the employee permits it, a city, a country and coordinates. Two things follow. It is genuine evidence for remote and field staff when a day is questioned weeks later. And it is captured rather than enforced: Odoo records where a punch came from and accepts it anyway."
     },
     {
       "title": "Reporting that survives a payroll query",
@@ -35,7 +36,7 @@
     },
     {
       "title": "Handing hours to payroll and timesheets",
-      "body": "In Odoo Enterprise Payroll the employment contract decides where work entries come from, and attendance is one of the options, which makes recorded hours rather than the theoretical calendar the basis of the payslip. Community has no payroll engine, so the handover there is an export. With Timesheets installed, hours logged against tasks can be set beside hours recorded at the clock, which is the quickest way to find people billing eight hours who were on site for six."
+      "body": "In Odoo Enterprise Payroll the employment contract carries a work entry source, and attendance is one of the options, which makes recorded hours rather than the theoretical calendar the basis of the payslip. Community ships no payroll engine, so the handover there is an export into whatever pays people. Timesheets is a separate reconciliation: the clock says somebody was on site six hours while the timesheet claims eight against a customer task. Community puts no standard report beside those two numbers, so the comparison is a pivot built once, and on billable work it often pays for the attendance project by itself."
     }
   ],
   "setup": [
@@ -53,7 +54,7 @@
     },
     {
       "title": "Agree the overtime policy before setting tolerances",
-      "body": "The two tolerance settings look small and are not. Decide what counts as late, what grace period applies at the start of a shift, whether early arrival can generate paid time, and whether a manager approves extra hours before they reach payroll. Write that down as a policy, then set the thresholds to match it. Changing the rule after three months of live data leaves historic balances that no longer match the policy people were told about."
+      "body": "The two tolerance settings look small and are not. Decide what counts as late, what grace period applies at the start of a shift, whether early arrival can generate paid time, and whether a manager approves extra hours before they reach payroll. Set the date extra hours start counting from in the same conversation, so last year's imported punches do not create balances against a policy that did not exist then. Changing the rule after three months of live data leaves historic balances that no longer match what people were told."
     },
     {
       "title": "Access rights and the correctable record",
@@ -71,7 +72,11 @@
     },
     {
       "title": "Open attendances quietly ruin the month",
-      "body": "Somebody checks in on Monday and never checks out. The record stays open, worked hours for that person are wrong, and the extra hours balance inherits the error. It happens on every site with a door people can walk out of. Put a weekly filter on records with no check out into the HR routine, close them with a stated reason, name the person who owns that task, and run it before payroll rather than after."
+      "body": "Somebody checks in on Monday and never checks out. The record stays open, worked hours for that person are wrong, and the extra hours balance inherits the error. It happens on every site with a door people can walk out of. Odoo 18 added an automatic check out that closes records left running past a set number of hours, which stops one missed punch swallowing a week, but the time it writes is invented and still needs a human decision before it feeds pay. Put a weekly review of open records into the HR routine, name the person who owns it, and run it before payroll rather than after."
+    },
+    {
+      "title": "The kiosk trusts whoever is standing in front of it",
+      "body": "A tablet with manual selection turned on checks in anybody who taps a name, and a badge card travels easily from one pocket to another at the gate. Odoo offers two controls: require a PIN, and identify by badge or RFID rather than by a name list. Neither defeats two colleagues who have agreed to cover for each other. Where hours drive pay, the answer is a biometric terminal writing into Odoo, or a supervisor who signs the monthly total, and that choice belongs in the design workshop before the tablets are bought. Put the rule in the attendance policy people sign, because a shared badge argument is settled by that policy rather than by the timestamp."
     },
     {
       "title": "Expecting pay rules from a time clock",
@@ -86,7 +91,7 @@
     "Employees, which holds the working schedule, the badge, the PIN and the department every report groups by",
     "Time Off, so an approved absence explains a missing day instead of showing as an unexplained gap",
     "Planning on Enterprise, which holds the shift somebody was rostered to work, so planned against actual becomes a report, though extra hours are still measured against the resource calendar and not the roster",
-    "Timesheets, for hours logged against tasks set beside hours recorded at the clock",
+    "Timesheets, where hours booked to tasks can be reconciled against hours recorded at the clock, using a pivot you build rather than a standard side by side report",
     "Payroll on Enterprise, where the employment contract can take work entries from attendance rather than the calendar",
     "ZKTeco and comparable terminals through a connector module using the device push protocol or a scheduled pull",
     "A keyboard emulating barcode or RFID reader plugged straight into the kiosk tablet, which needs no extra software",
@@ -95,15 +100,15 @@
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "The working day is eight hours and the week 48, cut to six and 36 for Muslim employees through Ramadan, so a second calendar is needed on Hijri dates that move every year. Overtime is paid at 150 percent of the hourly wage, a figure Attendances counts but does not price. GOSI and Mudad wage files run off contract data, not off the clock."
+      "note": "The working day is eight hours and the week 48, cut to six and 36 for Muslim employees through Ramadan, so a second calendar is needed on Hijri dates that move every year. Overtime is paid at 150 percent of the hourly wage, a figure Attendances counts but does not price. GOSI and Mudad wage files run off contract data rather than the clock, so a clean attendance month does not by itself keep those filings right."
     },
     {
       "country": "uae",
-      "note": "Federal Decree-Law 33 of 2021 caps normal overtime at two extra hours a day and prices it at 125 percent, rising to 150 percent for work falling between 10pm and 4am. The hour of the night therefore changes the cost, and the attendance record is where it is evidenced. Ramadan removes two hours from the day, and flexible permits let one person hold two employers."
+      "note": "Federal Decree-Law 33 of 2021 caps normal overtime at two extra hours a day and prices it at 125 percent, rising to 150 percent for work falling between 10pm and 4am. The hour of the night therefore changes the cost, and the attendance record is where it is evidenced. The night uplift does not apply to employees working a shift system, which is often the exact population the clock was installed for, so any rule built on top has to know who is on shifts and who is not."
     },
     {
       "country": "kuwait",
-      "note": "Kuwait sets eight hours a day and 48 a week, cut to 36 in Ramadan, with overtime capped at two hours a day and 180 hours a year. The multiplier follows the type of day rather than the hour of the night, 125 percent on a normal working day, higher on the weekly rest day and higher again on a public holiday. That puts the public holiday list on the resource calendar directly in the pay path, so a calendar nobody maintains prices the wrong day."
+      "note": "The multiplier follows the type of day rather than the time of day: 125 percent on a normal working day, more on the weekly rest day, more again on a public holiday. That puts the public holiday list on the resource calendar directly in the pay path, so a calendar nobody maintains prices the wrong day. Overtime also carries an annual ceiling per employee, a cumulative figure Odoo will not police, so somebody has to watch the running total during the year rather than discover it at the end."
     },
     {
       "country": "pakistan",
@@ -115,11 +120,11 @@
     },
     {
       "country": "germany",
-      "note": "Since the Federal Labour Court ruling of September 2022 employers have had a duty to record working time, so the recording system itself is under scrutiny rather than optional. The Arbeitszeitgesetz caps the day at eight hours, extendable to ten with compensation inside six months. Introducing a time recording system needs works council agreement, and a fingerprint reader raises that bar again."
+      "note": "Since the Federal Labour Court ruling of September 2022 employers have had a duty to record working time, so the recording system itself is under scrutiny rather than optional. The Arbeitszeitgesetz caps the day at eight hours, extendable to ten with compensation inside six months, which makes the balance on the employee record a compliance figure as much as a pay figure. Introducing a time recording system needs works council agreement, and a fingerprint reader raises that bar again."
     },
     {
       "country": "france",
-      "note": "For employees not on a fixed collective schedule the employer has to keep a daily record of hours worked, which is exactly what Attendances produces. Biometrics are the harder question, since CNIL has treated fingerprint clocks for timekeeping as disproportionate, so badge or PIN check in is the safer design. The 35 hour week also means overtime starts earlier than an imported policy usually assumes."
+      "note": "For employees not on a fixed collective schedule the employer has to keep a daily record of hours worked, which is exactly what Attendances produces. Biometrics are the harder question, since CNIL has treated fingerprint clocks for ordinary timekeeping as disproportionate, so badge or PIN check in is the safer design. The 35 hour week also means overtime starts earlier than an imported policy assumes, and the tolerance settings have to be read against the collective agreement rather than against company preference."
     },
     {
       "country": "united-kingdom",
@@ -132,6 +137,10 @@
       "a": "It is part of Community. Kiosk check in, badge and RFID scanning, PIN entry, worked hours and extra hours all work without an Enterprise licence, and the Attendances app itself is the same in both editions. Enterprise matters for what sits around it: Payroll, Planning and the official mobile app. On most of these projects the Enterprise argument is payroll rather than the clock, so price both routes before assuming a licence is needed."
     },
     {
+      "q": "Do employees need Odoo user accounts to be tracked?",
+      "a": "No, and on Enterprise that is a pricing question rather than a technical one. An employee record is enough to appear in kiosk mode, hold a badge and accumulate hours, so several hundred people on a shop floor can be clocked without adding a single user. Accounts are only needed for the systray check in, which requires an internal user, and for the managers and HR staff who open the records. Count the people who have to read attendance, not the people who have to be in it."
+    },
+    {
       "q": "Does Odoo connect to ZKTeco or other biometric devices?",
       "a": "Not natively, and the feasibility answer comes from three things: the exact model, the firmware running on it, and whether the terminal can reach the Odoo server or only the local network. Ask for all three before quoting. Two further items decide the running cost. Terminal clocks drift, so a device an hour out writes every punch an hour out until somebody notices, and replacing a failed terminal usually means re-enrolling fingers and rebuilding the device user ID mapping. Neither is Odoo work. Both land on the same project."
     },
@@ -141,7 +150,7 @@
     },
     {
       "q": "How does Odoo calculate overtime?",
-      "a": "Day by day against the working schedule, with two tolerance settings that stop small differences counting. Three things surprise people. The balance nets both directions, so short days pull it down and it can sit below zero. Editing an attendance record recalculates that day, so a correction made in March can move a balance February was signed off on. And the reference is the calendar on the employee record, of which there is one at a time, so moving somebody between shift patterns changes how their earlier days are judged whenever the balance is recomputed."
+      "a": "Day by day against the working schedule, once the tolerances have been applied. Three behaviours surprise people. The balance nets both directions, so short days pull it down and it can sit below zero. Editing an attendance recalculates that day, so a correction made in March can move a balance February was signed off on. And the reference is the calendar on the employee record, of which there is one at a time, so moving somebody between shift patterns changes how their earlier days are judged whenever the balance is recomputed."
     },
     {
       "q": "What happens when someone forgets to check out?",
@@ -153,11 +162,11 @@
     },
     {
       "q": "Can several years of history be imported from the old system?",
-      "a": "Yes, with two cautions. Odoo stores every datetime in UTC, so a file exported in local time loads each punch offset by the time zone difference and no error is raised. Extra hours are also recomputed against the working schedule, so calendars have to exist for the periods being loaded. Import one month, reconcile it against the source, then load the rest."
+      "a": "Yes, with two cautions. Odoo stores every datetime in UTC, so a file exported in local time loads each punch offset by the time zone difference and no error is raised. Extra hours are also recomputed against the working schedule, so calendars have to exist for the periods being loaded, or the counting start date has to sit after them. Import one month, reconcile it against the source, then load the rest."
     },
     {
       "q": "How many people can one kiosk handle at a gate?",
-      "a": "The constraint is the queue at the door rather than the server. A tablet with a card reader clears a person in a few seconds, so a gate taking two hundred arrivals inside ten minutes needs more than one device. Count arrivals per minute at the busiest entrance, then decide the number of kiosks and whether the site needs its own network path to the server."
+      "a": "The constraint is the queue at the door rather than the server. A tablet with a card reader clears a person in a few seconds, so a gate taking two hundred arrivals inside ten minutes needs more than one device. Count arrivals per minute at the busiest entrance, then decide the number of kiosks and whether the site needs its own network path to the server. A kiosk is also a web page, so a site that loses its link loses the ability to punch at all, which is the argument for a buffering terminal at a remote location."
     }
   ]
 }

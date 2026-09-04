@@ -3,7 +3,7 @@
   "intro": [
     "Odoo Planning builds a shift roster and puts it in front of the people who have to work it. You draw shifts on a Gantt grid grouped by employee, by role or by project, copy the previous week, repeat a pattern forward, then publish. Publishing emails each employee a personal link to their own shifts, and a shift left without a name on it can be published as open for anyone holding that role to claim.",
     "The record behind the grid is small: a start, an end, a role, an optional employee, a quantity of allocated hours, and a link to a project task or a sales order line when those apps are installed. Everything else is convention that you impose. That is why two Planning rollouts on the same Odoo version can feel like different products, and why the design work sits in the role list and the resource calendars rather than in the app itself.",
-    "Planning is an Odoo Enterprise app with no Community equivalent, and it is neither a timeclock nor a pay engine. A shift records intent. Attendances record what happened. Payroll decides what it cost. Most disappointing Planning projects expected one of the other three from it. The ones that work treat the roster as a cover plan and reconcile it against attendance data every week."
+    "Planning is an Odoo Enterprise app with no Community equivalent, and it is neither a timeclock nor a pay engine. A shift records intent. Attendances record what happened. Payroll decides what it cost. Planning projects go wrong when the buyer expected one of those records to do all three jobs. The ones that work treat the roster as a cover plan and reconcile it against attendance data every week."
   ],
   "whoFor": [
     "Retail, hospitality, clinics, security and facilities operations where a named role has to be covered at a specific hour, and an unfilled slot is an operational problem before it is a payroll problem.",
@@ -15,7 +15,7 @@
   "capabilities": [
     {
       "title": "Roles, not job titles",
-      "body": "Assignment runs on planning roles: barista, triage nurse, site supervisor. Each employee carries one default role and a list of others they can cover, and the Gantt groups by role so a gap shows as an empty band rather than a missing name. Auto Plan and open shifts both match on that list and nothing else. Skills recorded in the Employees app are not used for matching, so any capability that has to drive who gets a shift must exist as a role."
+      "body": "Assignment runs on planning roles: barista, triage nurse, site supervisor. Each employee carries one default role and a list of others they can cover, and the Gantt groups by role so a gap shows as an empty band rather than a missing name. Role is the only key Auto Plan and open shifts match on. Any qualification that has to decide who gets a slot, a driving licence, a language, a site induction, has to exist as a role or it will have no effect on assignment at all."
     },
     {
       "title": "Building the week without redrawing it",
@@ -27,7 +27,7 @@
     },
     {
       "title": "Open shifts and self assignment",
-      "body": "A shift can carry a role and no employee. Published as open, it is offered to everyone holding that role and can be taken from the portal, which covers most short notice gaps without a phone tree. A separate setting controls whether employees may hand a shift back and how many days before the start they can do it. Behaviour around taking and returning shifts has changed between releases, so test it on the version you are deploying rather than on a demo of a different one."
+      "body": "A shift can carry a role and no employee. Published as open, it is offered to every employee holding that role and can be claimed from the portal, which covers most short notice gaps without a phone tree. Claiming is first come, so releasing a batch of open shifts at one moment hands them to whoever reads email fastest rather than to whoever is owed the hours. Behaviour around claiming and returning shifts has changed between releases, so test it on the version you are deploying rather than on a demo of a different one."
     },
     {
       "title": "Conflicts and availability, flagged not blocked",
@@ -52,6 +52,10 @@
       "body": "Publication depends on the data most projects leave until last. An employee with no work email receives nothing and never finds out. An employee with the wrong time zone reads correct shifts at the wrong clock time. An employee with no default role is invisible to Auto Plan and to every open shift. Audit those three fields plus the calendar across the whole population before the first publish, not after the first complaint."
     },
     {
+      "title": "Decide per role whether shifts go out named or open",
+      "body": "A published shift with a name on it is an instruction. The same shift published open is a marketplace. Most operations want both, and the line runs by role: scarce or supervisory cover assigned by the planner, interchangeable cover released open. Settle it role by role before go live. Moving a role from named to open once people are used to being told where they work changes how the operation is run, and it gets argued about as a management decision rather than accepted as a setting."
+    },
+    {
       "title": "Decide the publication rhythm and restrict the right",
       "body": "Publication is the contract with the team, so it needs a stated rule: rosters out by Thursday for the following week, changes inside 48 hours only by the duty manager, open shifts released at publication. Odoo enforces none of that. Decide who holds the publish right, restrict Planning access accordingly before go live, and treat it as part of the design rather than a line in the training deck."
     },
@@ -71,7 +75,7 @@
     },
     {
       "title": "Silent changes after publication",
-      "body": "Two different things happen after you publish, and both are quiet. A shift created afterwards stays draft, so nobody sees it at all. A published shift you edit does update on the employee's link, immediately, with no fresh notification to say it moved. The manager who reworks Saturday afternoon and closes the screen has therefore either told nobody or changed somebody's day without a word. Make republication part of the change routine, and when somebody says they were never told, check the published state rather than the Gantt."
+      "body": "Two different things happen after you publish, and both are quiet. A shift created afterwards starts as draft, so nobody sees it at all. A shift that was already published and is then edited changes on the employee's link without a fresh notification going out. The manager who reworks Saturday afternoon and closes the screen has therefore either told nobody or moved somebody's day without a word. Make republishing part of the change routine, and when somebody says they were never told, check the published state rather than the Gantt."
     },
     {
       "title": "Copying a week that contained exceptions",
@@ -88,24 +92,25 @@
     "Attendances, for the check in and check out data that turns a plan into a record of what happened",
     "Project and Timesheets, where a shift attaches to a task and planned hours sit beside recorded hours",
     "Sales, where hours sold on a service order line can be scheduled as shifts against that line",
-    "Payroll, where the employment contract decides whether work entries come from the working schedule, from attendances or from the roster"
+    "Payroll, where the employment contract decides whether the roster feeds work entries at all or stays a cover plan",
+    "Studio or a custom report, for the rest gap, weekly cap and consecutive day checks that no standard Planning view performs"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "Saudi labour law caps eight hours a day and 48 a week, and cuts Muslim employees to six hours a day through Ramadan, on Hijri dates that move about eleven days each year. That needs a second resource calendar switched on for the period, not a manual redraw of the Gantt. The weekend is Friday and Saturday, which Odoo's default calendar does not assume, and Saudization targets make cover a nationality question Planning does not model at all."
+      "note": "Saudi labour law caps eight hours a day and 48 a week, and cuts Muslim employees to six hours a day through Ramadan. Ramadan falls about eleven days earlier in each Gregorian year, so the date you switch working schedules on is different every year and belongs in a diary entry rather than in a procedure that names a month. The weekend is Friday and Saturday, which Odoo's default calendar does not assume. Saudization targets make cover a nationality question the roster does not model at all."
     },
     {
       "country": "uae",
-      "note": "Federal Decree-Law 33 of 2021 recognises part time and temporary work permits, so one person can legitimately sit on two employer rosters and neither Odoo database knows about the other. Ramadan removes two hours from the working day. Private sector weekend patterns still vary by employer after the 2022 public sector move to Saturday and Sunday, so build a working schedule per site rather than one company default."
+      "note": "Federal Decree-Law 33 of 2021 recognises part time and temporary work permits, so one person can legitimately hold shifts with two employers and neither Odoo database can see the other's roster. Any rest gap or weekly cap you check is a check on your half of that person's week only. Ramadan hours drop for all staff here rather than for Muslim staff alone, which is a different rule from the Saudi one. Private sector weekends still vary by employer after the 2022 public sector move to Saturday and Sunday, so the working schedule belongs on the site, not on the company."
     },
     {
       "country": "qatar",
-      "note": "Outdoor work is prohibited during a defined midday window from the start of June to the middle of September, so summer rosters for site and facilities crews are built around a blocked band rather than trimmed week by week. Encode it as a seasonal calendar and move employees onto it, because Auto Plan will fill a prohibited hour without hesitation if the calendar says the hour is available."
+      "note": "Outdoor work is prohibited during a defined midday window from the start of June to the middle of September, so summer rosters for site and facilities crews are built around a blocked band rather than trimmed week by week. Auto Plan will fill a prohibited hour without hesitation if the calendar says the hour is available, so the ban has to sit in the resource calendar and not in a toolbox briefing. Neighbouring states run their own bans on their own dates, which is why a contractor rostering across the Gulf from one database needs a calendar per country."
     },
     {
-      "country": "bahrain",
-      "note": "Private sector wages run through the LMRA portal with a named wages responsible person and separate maker and checker roles, so pay approval sits outside Odoo entirely and works from contract data rather than from published shifts. Bahrain also restricts outdoor midday work across July and August, a shorter window than Qatar's, which matters to any group rostering crews in both countries from one database."
+      "country": "pakistan",
+      "note": "Labour law has been provincial since the eighteenth amendment, so a group with sites in Punjab, Sindh and Khyber Pakhtunkhwa works to three sets of Shops and Establishments rules and cannot roster all three from one working schedule. Factory hours run to nine a day and 48 a week with a rest interval inside the day, and Friday carries a prayer break that shows up as a gap in the middle of the shift rather than a shorter day. Model it as a split working schedule, or allocated hours overstate every Friday."
     },
     {
       "country": "india",
@@ -130,6 +135,10 @@
       "a": "No. Planning is Enterprise, on Odoo Online, Odoo.sh or a self hosted Enterprise licence, and there is no Community substitute. Community teams generally fall back to calendar events or project tasks, which gives them a grid and nothing else: no role matching, no open shifts, no draft and published states, no personal link for staff who hold no user account."
     },
     {
+      "q": "Do all our staff need Odoo user accounts?",
+      "a": "Only the people who build, edit and publish the roster need Odoo users with Planning access. Everyone else reads their own shifts through the link the publication email sends them, which opens without a login, and where self assignment is enabled they can claim open shifts from that same page. The difference between licensing a dozen managers and licensing four hundred hourly staff is usually what makes the business case work."
+    },
+    {
       "q": "What is the difference between Planning, Attendances and Timesheets?",
       "a": "Planning says who should work when. Attendances records who checked in and out. Timesheets records what the hours were spent on and what is billable. Three apps, three separate records, and none of them stands in for another. The value sits in the reconciliation: rostered against attended tells you whether cover held, attended against timesheeted tells you what the paid hours produced."
     },
@@ -140,6 +149,10 @@
     {
       "q": "Can Odoo build the roster automatically?",
       "a": "Auto Plan assigns existing open shifts to employees who hold the role, fall inside their working schedule and are not on approved leave. It is an assignment helper, not an optimiser. It does not create the shifts, size the week, spread unpopular slots fairly across a month or cost the outcome, and it cannot rescue a roster built on a role list nobody cut down."
+    },
+    {
+      "q": "How do overnight shifts behave?",
+      "a": "A shift is a start and an end, so 22:00 to 06:00 is one record crossing the day boundary rather than two, and allocated hours compute across it. The awkwardness is downstream. A report grouped by day counts that shift on the day it started, so hours worked in the small hours of Saturday sit under Friday unless the report is written to split at midnight. Agree which day owns a night shift before anyone builds the cover report, not after two departments have built two versions of it."
     },
     {
       "q": "Can rostered shifts feed payroll?",

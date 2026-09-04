@@ -1,12 +1,12 @@
 {
   "metaDescription": "Odoo Events in implementation detail: ticket sale windows, per-attendee questions, tracks, booths, Registration Desk check-in, and what Enterprise adds.",
   "intro": [
-    "Odoo Events is the event record plus a ring of optional modules around it. The core holds the event, its ticket types and one registration per attendee. Sales adds paid tickets and invoicing, Website publishes the page and the agenda, and further modules add talks, sponsors, booths and CRM lead creation. All of it runs on the same partner and product records as the rest of the database, so a delegate, a customer and a sponsor contact are one record rather than three lists that drift apart.",
-    "Nearly all of that ships in Community, which surprises buyers who expect ticketing to be an Enterprise upsell. Registration Desk is in the standard Events app: it opens on a phone, reads the code on a badge with the camera, and sets the attendee to attended. Paid tickets, the public event site, tracks, sponsors, booths and lead rules are Community as well. The Enterprise line sits further out. Marketing Automation for multi-step nurture, Planning for staffing the desk and the halls, Sign for speaker and exhibitor contracts, Studio for changes without code, and the Accounting app if ticket income taken months in advance has to be deferred into the month the event actually runs.",
+    "Odoo Events is one core app with a ring of optional modules bolted to it. The core holds the event, its ticket types and one registration per seat. Sales adds paid tickets and invoicing, Website publishes the page and the agenda, and separate modules add talks, sponsors, booths and CRM lead creation. Those modules install themselves as the matching settings are switched on, which is why two databases both described as running Events can behave very differently. All of it sits on the same partner and product records as the rest of the system, so a delegate, a customer and a sponsor contact are one record rather than three lists that drift apart.",
+    "Nearly all of that is Community, which surprises buyers who expect ticketing to be an Enterprise upsell. Tickets, the public event site, tracks, sponsors, booths and lead rules are all on the free side. The Enterprise pull on an events project usually comes from accounting rather than from events. Community stops at Invoicing, so ticket income taken in January for an event that runs in June can be invoiced but not deferred into June, and deferred revenue is an Enterprise feature. Marketing Automation, Planning, Sign and Studio sit on that same side of the line if the programme needs them.",
     "What makes an Events project harder than it looks is that it is three systems wearing one name: an operations record for the day itself, a public website, and a sales channel with tax and payment behind it. Most weak configurations do one of the three properly and treat the other two as an afterthought. The registration record is where all three meet, and almost every decision below comes back to what is stored on it."
   ],
   "whoFor": [
-    "Associations and training bodies running a recurring calendar of paid sessions where the delegate, the invoice and the membership have to be one record rather than three.",
+    "Associations and training bodies running a recurring calendar of paid sessions where the delegate, the invoice and the membership record have to be one contact rather than three lists.",
     "Conference and exhibition organisers selling tickets, sponsorship and floor space against the same event and wanting one revenue figure at the end of it.",
     "Manufacturers and distributors running dealer days, launches and roadshows where the point is capturing qualified leads rather than selling seats.",
     "Universities and professional bodies that need a verified attendance record feeding a certificate or a CPD log.",
@@ -19,6 +19,10 @@
       "body": "Each event carries its own ticket types, and each ticket has a product, a price, a maximum number of seats and its own sales start and sales end datetime. Early bird pricing is therefore two ticket records rather than a discount rule, and the changeover happens on the clock with nobody touching the site at midnight. The event can hold a separate overall cap on top of the per ticket limits. Price sits on the ticket while tax comes from the linked product and the buyer's fiscal position, which is the split that catches teams out the first time an overseas delegate is charged the wrong rate."
     },
     {
+      "title": "How a sale order becomes a registration",
+      "body": "A ticket only produces an attendee if the product behind it has its service tracking set to Event Registration, the field labelled Create on Order on the product form in recent versions. Miss that and the order confirms, the money is taken, and no registration is ever created. It is the most common configuration fault on a new events database and it stays invisible until somebody counts attendees. With it set, the order line carries an event and a ticket, confirming the order creates one registration per unit, and increasing the quantity on that line adds seats. Booths use the same mechanism through their own tracking value."
+    },
+    {
       "title": "Registration questions asked per order or per attendee",
       "body": "Questions are configured on the event or inherited from the event template, and each one is asked either once per order or once for every attendee. The types available are name, email, phone, company, a free text box and a single choice from a list you define. Answers are stored on the registration itself, which is what the badge layout, the attendee list and the export all read from. Dietary requirement, job title, session choice and accessibility need are all questions, so a normal conference needs no custom fields at all."
     },
@@ -28,7 +32,7 @@
     },
     {
       "title": "Booths and sponsors sold as ordinary products",
-      "body": "Booth management is a setting in the Events app rather than a separate purchase. Switching it on creates booth categories, each pointing at a product with a price, and a service product configured to create the booth when the order is confirmed. An exhibitor is quoted through the normal sales flow, and confirming the order marks that booth unavailable, so the floor plan and the revenue stay in step without a second spreadsheet. Sponsor levels are a different thing entirely and only control how logos are grouped on the event page, which is worth knowing before somebody tries to price sponsorship through them."
+      "body": "Booth management is a setting in the Events app rather than a separate purchase. Switching it on creates booth categories, each pointing at a product with a price, and that product is configured to create the booth when the order is confirmed. An exhibitor is quoted through the normal sales flow, and confirming the order marks the booth unavailable, so the floor plan and the revenue stay in step without a second spreadsheet. Sponsor levels are a different thing entirely and only control how logos are grouped on the event page, which is worth knowing before somebody tries to price sponsorship through them."
     },
     {
       "title": "Badges and Registration Desk check-in",
@@ -36,7 +40,7 @@
     },
     {
       "title": "Scheduled messages and CRM lead rules",
-      "body": "Each event carries its own list of scheduled messages, every one with a mail or SMS template, an interval, and a trigger of after each registration, before the event or after the event. Lead rules turn registrations into CRM leads or opportunities, one per attendee or one per order, fired when a registration is created, confirmed or marked attended, and restricted by event or event category with a further condition on the registration itself. That rule is the difference between a roadshow producing pipeline and producing a spreadsheet nobody opens again."
+      "body": "Each event carries its own list of scheduled messages, every one with a mail or SMS template, an interval, and a trigger of after each registration, before the event or after the event. Lead rules turn registrations into CRM leads or opportunities, one per attendee or one per order, fired when a registration is created, confirmed or marked attended, and narrowed to a given event or a set of event templates with a further filter on the registration itself. That rule is the difference between a roadshow producing pipeline and producing a spreadsheet nobody opens again."
     }
   ],
   "setup": [
@@ -50,11 +54,11 @@
     },
     {
       "title": "Prove the mail scheduler before you rely on it",
-      "body": "Scheduled messages do not fire when the event is saved. They fire when the event mail scheduled action runs, under Settings, Technical, Automation, Scheduled Actions, so confirm it is active and check how often it runs on a fresh database. Adding a scheduler to an event that already holds registrations does not behave the same as adding it before anyone booked. Test by moving a draft event date and watching what queues, rather than discovering the behaviour on the real send window the night before."
+      "body": "Scheduled messages do not fire when the event is saved. They fire when the event mail scheduled action runs, found under Settings, Technical, Automation, Scheduled Actions with developer mode on, so confirm it is active and check its interval on a fresh database. Adding a scheduler to an event that already holds registrations does not behave the same as adding it before anyone booked. Test by moving a draft event date and watching what queues, rather than discovering the behaviour on the real send window the night before."
     },
     {
-      "title": "Tax, payment and when the revenue is recognised",
-      "body": "Paid tickets use the standard payment providers and the standard tax engine, so the fiscal position on the buyer decides treatment, not the event. Decide before launch whether prices are shown tax inclusive or exclusive, because changing it after the first sale means credit notes and reissued invoices for everyone who already paid. If tickets sell in January for an event in June, agree whether that income is recognised on payment or deferred to June, since the deferred revenue schedule belongs to the Enterprise Accounting app and Community stops at Invoicing."
+      "title": "Tax, payment and the gateway lead time",
+      "body": "Paid tickets use the standard payment providers and the standard tax engine, so the fiscal position on the buyer decides treatment, not the event. Decide before launch whether prices are shown tax inclusive or exclusive, because changing it after the first sale means credit notes and reissued invoices for everyone who already paid. Treat the payment provider as a lead time item rather than a configuration item. Gateway and bank onboarding runs on somebody else's clock and is the usual reason a finished site still cannot open ticket sales."
     },
     {
       "title": "Badge layout and the print run",
@@ -62,13 +66,13 @@
     },
     {
       "title": "Fix the reporting shape before the first event",
-      "body": "Revenue sits on sale orders and invoices while attendance sits on registrations, and nothing joins the two for you. Decide up front how events are grouped, apply event categories and tags consistently, and give each event an analytic account or analytic distribution so ticket income, venue hire, catering and speaker travel all report against the same code. Setting that up on event one costs an hour. Reconstructing it across two years of history is a data project with its own budget."
+      "body": "Attendance sits on registrations, ticket income sits on sale orders and invoices, and cost sits on supplier bills. The event record carries no analytic field of its own, so the join has to be made deliberately: create an analytic account per event or per season, then set the analytic distribution on the ticket order lines and on the bills for venue hire, catering and speaker travel. Apply event tags consistently at the same time, because tags are what the standard reports group by. Doing this on event one costs an hour. Reconstructing it across two years of history is a data project with its own budget."
     }
   ],
   "pitfalls": [
     {
       "title": "Five tickets, the same name on all five badges",
-      "body": "When somebody buys a block of seats, Odoo creates one registration per seat and fills every one of them from the buyer unless at least one question is set to be asked per attendee rather than per order. Teams find this out at badge printing, two days before the doors open. Turn on per attendee name and email from the start, and give the buyer a way to supply the other names after checkout rather than forcing five sets of details into a single purchase flow."
+      "body": "When somebody buys a block of seats, Odoo creates one registration per seat and fills every one of them from the buyer unless at least one question is set to be asked per attendee rather than per order. Teams find this out at badge printing, two days before the doors open. Turn on per attendee name and email from the start. There is also no self service route for a buyer to come back later and complete the other four names, so the real choice is asking for everything at checkout or collecting the rest by email and typing them in. Somebody should make that choice on purpose."
     },
     {
       "title": "There is no waiting list",
@@ -95,50 +99,50 @@
     "Sales and Invoicing, so tickets, sponsorship and booths all bill on ordinary sale orders",
     "eCommerce, putting tickets in the same cart and the same payment providers as merchandise",
     "CRM, through event lead rules that turn registrations into an owned pipeline",
-    "Email Marketing and SMS, for the invitation list and for the per event scheduled reminders",
+    "Email Marketing and SMS, for the invitation list and the per event reminders, with SMS bought as in-app credits and priced per message per country",
     "Surveys, linked from a post event message for feedback and for scored certification tests",
-    "Point of Sale, for walk-up tickets, catering and merchandise sold at the venue",
+    "Point of Sale, for catering and merchandise at the venue, remembering that a ticket rung up at a till does not create a registration by itself",
     "Marketing Automation, Planning and Sign on Enterprise, for nurture flows, shift rotas and speaker contracts",
-    "Members, where the delegate price comes from a pricelist tied to an active membership"
+    "Contacts and pricelists, where a member or partner rate is a pricelist held on the buyer rather than a discount typed in by hand"
   ],
   "regional": [
     {
       "country": "saudi-arabia",
-      "note": "A ticket sold to an individual is a simplified tax invoice, so ZATCA phase 2 rules apply: 15 percent VAT, a QR code on the document, and reporting to Fatoora within 24 hours of issue. Badges and certificates need the Arabic name, and that is a separate registration question rather than a translation of the Latin one, because transliteration by hand fails at scale. Fix dates against the Hijri calendar and against Ramadan working hours before anything goes to print."
+      "note": "A ticket sold to an individual is a simplified tax invoice: 15 percent VAT, a QR code on the document, and reporting to the Fatoora platform within 24 hours of issue. A sponsorship invoice to a company is a standard invoice and has to be cleared by ZATCA before it reaches the buyer, so two documents from the same event follow two different flows. Badges and certificates need the Arabic name as its own registration question rather than a transliteration somebody produces by hand at print time. Check the dates against the Hijri calendar and against Ramadan working hours before anything goes to print."
     },
     {
       "country": "uae",
-      "note": "The trap here is registration rather than the rate. Admission is taxed where the event physically happens, so a Dubai conference charges 5 percent even to overseas delegates, and a foreign organiser running a UAE event can create its own UAE VAT registration obligation before it has sold a ticket. Sponsorship billed to a UAE company is business to business and falls inside the Electronic Invoicing System, phased from 1 January 2027 for large taxpayers and 1 July 2027 for everyone else."
+      "note": "The trap here is registration rather than the rate. Admission is taxed where the event physically happens, so a Dubai conference charges 5 percent even to overseas delegates, and a foreign organiser running a UAE event can create its own UAE VAT registration obligation before it has sold a ticket. Sponsorship billed to a UAE company is business to business and falls inside the Electronic Invoicing System, phased from 1 January 2027 for the largest taxpayers and 1 July 2027 for everyone else, with an accredited service provider appointed well ahead of each date."
     },
     {
       "country": "india",
-      "note": "Delegates from other states usually cannot recover the tax on their ticket, because place of supply for admission is the venue and the invoice carries host state CGST and SGST rather than IGST. Finance teams argue about that every year, so put it in the booking terms rather than in an email afterwards. Above the e-invoicing threshold both delegate and sponsorship invoices need an IRN and a signed QR code from the portal, and moving stands, printed material and giveaways between states needs an e-way bill."
+      "note": "Delegates from other states usually cannot recover the tax on their ticket, because place of supply for admission is the venue and the invoice carries host state CGST and SGST rather than IGST. Finance teams argue about that every year, so put it in the booking terms rather than in an email afterwards. Above the e-invoicing turnover threshold, currently five crore, both delegate and sponsorship invoices need an IRN and a signed QR code from the portal, and moving stands, printed material and giveaways between states needs an e-way bill."
     },
     {
       "country": "pakistan",
-      "note": "Tax on event management is provincial rather than federal: the Sindh Revenue Board or the Punjab Revenue Authority sets the rate and the registration for the service, while FBR digital invoicing governs the goods side. Checkout matters more than tax here. JazzCash and Easypaisa are what delegates actually hold, Odoo ships no connector for either, and most organisers fall back to bank transfer with manual reconciliation. Settle that before the registration page goes live."
+      "note": "Tax on event management is provincial rather than federal: the Sindh Revenue Board or the Punjab Revenue Authority sets the rate and the registration for the service, while FBR digital invoicing governs the goods side. Checkout matters more than tax here. JazzCash and Easypaisa are what delegates actually hold, Odoo ships no connector for either, and most organisers fall back to bank transfer reconciled by hand against the registration. Settle that before the page goes live, because it decides how many bookings need a person to confirm them."
     },
     {
       "country": "turkey",
-      "note": "A ticket sold to an individual is an e-Arsiv document reported to GIB, while a sponsorship invoice to another registered taxpayer goes out as e-Fatura over the UBL-TR flow, both sealed through a licensed private integrator. The archive rule shapes the hosting decision as much as the tax rule does: five years under tax law and ten under the commercial code, held inside Turkiye, which rules out leaving the event database and its attendee files only on a server abroad."
+      "note": "A ticket sold to an individual is an e-Arsiv document reported to GIB, while a sponsorship invoice to another registered taxpayer goes out as e-Fatura over the UBL-TR flow, both sealed through a licensed private integrator. The archive rule shapes hosting as much as the tax rule does. Those documents have to be preserved and produced on demand for five years under tax law and ten under the commercial code, and the electronic copies are expected to sit in Turkiye rather than only on a server abroad, which makes hosting a decision to settle before the first ticket is sold."
     },
     {
       "country": "united-kingdom",
-      "note": "Exemption is the decision that matters. Admission by an eligible body to a qualifying cultural or educational event can be exempt, and that changes the ticket price, the input tax recoverable on the venue and the wording on the website, so it is settled before tickets go on sale. Otherwise admission is standard rated at 20 percent, including for business delegates, and an organiser based abroad may still have to register here. VAT records are kept digitally and filed under Making Tax Digital."
+      "note": "Exemption is the decision that matters. Admission by an eligible body to a qualifying cultural or educational event can be exempt, and that changes the ticket price, the input tax recoverable on the venue and the wording on the website, so it is settled before tickets go on sale. Otherwise admission is standard rated at 20 percent, including for business delegates. An organiser with no UK establishment has no registration threshold to shelter behind and registers from the first taxable sale. VAT records are kept digitally and filed under Making Tax Digital."
     },
     {
       "country": "germany",
-      "note": "Any till taking walk-up ticket, catering or merchandise money on site is subject to the Kassensicherungsverordnung and needs a certified technical security device, which Odoo's German point of sale certification handles through a cloud provider and which has to be arranged well before the doors open. Photography at the event and badge scanning by exhibitors each need a stated lawful basis and visible signage. Invoices sit under GoBD retention and the tax adviser will expect a DATEV export."
+      "note": "Any till taking catering or merchandise money on site falls under the Kassensicherungsverordnung and needs a certified technical security device, which Odoo covers with a cloud based TSE in its German point of sale localisation. That certification covers Enterprise rather than Community, and the device has to be ordered and registered well before the doors open. Sponsorship invoicing is the other half: since January 2025 a German business has to be able to receive a structured e-invoice, so XRechnung and ZUGFeRD arrive whether or not you issue them yet. Records sit under GoBD retention and the accountant will ask for a DATEV export, which comes from the Enterprise German reporting module."
     },
     {
       "country": "france",
-      "note": "Selling tickets to consumers at a desk or a till puts the software inside the anti-fraud rule of article 286 I-3 bis of the tax code, which Odoo answers with its certified point of sale module and the certificate of conformity that goes with it. Sponsorship and exhibitor invoices to French companies fall under the e-invoicing reform, in Factur-X, UBL or CII through an approved platform, and the obligation to receive electronic invoices lands before the obligation to issue them."
+      "note": "Selling tickets to consumers at a desk or a till puts the cash software inside the anti fraud rule of article 286 I-3 bis of the tax code, which Odoo answers with its certified point of sale module and the certificate of conformity that goes with it, again on Enterprise rather than Community. Sponsorship and exhibitor invoices to French companies fall under the e-invoicing reform: every business has to be able to receive a structured invoice from September 2026, large and mid sized companies have to issue from the same date and smaller ones from September 2027, in Factur-X, UBL or CII through an approved platform."
     }
   ],
   "faqs": [
     {
       "q": "Is Odoo Events part of Community or Enterprise?",
-      "a": "The Events app, the public event website, paid tickets, tracks and the call for papers, sponsors, booths, lead rules and Registration Desk check-in are all Community. Enterprise adds pieces around the edges rather than inside Events: Marketing Automation for multi-step campaigns, Planning for staffing rotas, Sign for speaker and exhibitor contracts, Studio for changes without code, and full Accounting if ticket income has to be deferred to the month the event runs. Running a paid conference end to end on Community is normal."
+      "a": "Events, paid ticketing through Sales, the public event site, tracks and the call for papers, sponsors, booths, CRM lead rules and the Registration Desk check-in screen are all standard rather than an Enterprise add-on, so a paid conference runs end to end on Community. What Community does not give you is deferred revenue in accounting, Marketing Automation for multi step nurture, Planning for staffing rotas, Sign for speaker contracts and Studio for changes without code. One more point catches European organisers: the French and German fiscal certifications for point of sale cover Enterprise only, so a till at a venue in either country is an Enterprise decision on its own."
     },
     {
       "q": "Can a delegate transfer their ticket to somebody else?",
@@ -149,12 +153,16 @@
       "a": "No. Tickets are types with a quantity, not numbered seats, and there is no seating chart and no hold mechanism. An event with allocated seats needs a specialist ticketing platform plus an integration that writes the registration and the revenue back into Odoo. Rebuilding the Events module into a seat map is not a sensible project, and the cost of carrying that customisation through version upgrades usually exceeds the licence it was meant to avoid."
     },
     {
+      "q": "Can attendees pick individual sessions with limited places?",
+      "a": "Not with capacity control. Tracks describe the agenda and an attendee can build a personal list from them, but a track holds no seat count and has no check-in of its own, so nothing stops forty people walking into a workshop room laid out for twenty. A session with a real limit is modelled either as its own ticket type on the same event, which gives it a cap and a line on the badge, or as a separate event linked from the parent page. Decide before the agenda is published, because moving a session from a track to a ticket after sales open means reissuing what people already bought."
+    },
+    {
       "q": "Can we run free events without buying Sales?",
       "a": "Yes. The Events app on its own handles free registration, questions, badges, scheduled reminders and check-in. Publishing a public page adds Website, taking money adds Sales and a payment provider, and pushing registrations into a pipeline adds CRM. That modularity is why an association can start with free member evenings and add paid ticketing a year later without rebuilding the part that already works."
     },
     {
       "q": "How do we report on revenue and repeat attendance across a season?",
-      "a": "Attendance comes from registration analysis, grouped by event, ticket type or any question answer. Revenue comes from sale orders and invoices rather than from the event record, so the two only meet if events are tagged consistently and each one carries its own analytic account. Repeat attendance is a count of registrations per contact, which is only true if the same partner is matched at booking instead of a fresh contact being created on every purchase."
+      "a": "Events ships two reports of its own. Attendees analyses registrations by event, ticket type, state or any question answer. Revenues shows ticket income per event once Sales is installed. Neither one includes sponsorship, booth sales or any cost at all, so a margin per event comes from analytic accounting rather than from the Events app. Repeat attendance is a count of registrations per contact, which is only true if the same partner is matched at booking instead of a fresh contact being created on every purchase."
     },
     {
       "q": "Can Odoo run an online or hybrid event?",
@@ -165,8 +173,8 @@
       "a": "Yes, through multi-company, or at minimum multi-currency with a fiscal position per buyer. Set the timezone on each event, price tickets through pricelists in the local currency, and let the fiscal position decide tax rather than hard coding it per event. The harder half is payment, because each market expects the gateways and wallets its buyers already hold, and a checkout that only offers a card fails quietly in several of the markets covered above."
     },
     {
-      "q": "What does an Events implementation actually involve?",
-      "a": "Event templates carrying the default tickets, questions and messages; the website pages and their menu items; tax, pricelist and payment configuration; badge and ticket print layouts; the CRM lead rules; analytic coding so cost and revenue land together; and a rehearsal of check-in on the real hardware, ideally in the real venue. Past attendees normally import as contacts plus registrations against back dated events, so repeat delegate reporting works from the first live event rather than a year after it."
+      "q": "What usually takes the time on an Events implementation?",
+      "a": "Rarely the Events configuration itself. Payment provider onboarding runs on the gateway's clock and the bank's, and it is the item most likely to sit between a finished site and an open ticket sale. Badge printing needs a rehearsal on the real stock and the real printer, because margins that look right on screen drift on pre-cut card. Historical attendees import as contacts plus registrations against back dated events, which is the only way repeat delegate reporting works from the first live event. Question design comes last and matters more than it looks: every question asked per attendee is a field somebody fills five times when they book five seats."
     }
   ]
 }

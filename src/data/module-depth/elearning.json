@@ -1,8 +1,8 @@
 {
   "metaDescription": "Odoo eLearning in practice: course structure, quizzes and karma, Survey certification, selling courses through eCommerce, and where SCORM and video stop.",
   "intro": [
-    "Odoo eLearning is the website_slides app. It is LGPL licensed and part of Community, not an Enterprise upsell. A course holds sections, and sections hold content items: an uploaded PDF, an image, an article written in the Odoo editor, a video by link, a quiz, or a certification. Courses run on the same partner, product, invoice and portal records as the rest of the database. That is the reason most buyers pick it over a standalone LMS. The learner, the customer and the invoice are one record.",
-    "It is not a replacement for Moodle or a corporate LMS. There is no SCORM, xAPI or AICC player. Video is played from YouTube, Google Drive or Vimeo rather than stored in Odoo. A certificate carries no expiry date. What Odoo does well is training with a commercial or operational edge: customer onboarding triggered by a confirmed sale order, partner enablement behind a portal login, and internal training whose completion record sits beside the person it belongs to.",
+    "Odoo eLearning is the website_slides app. It is LGPL licensed and ships in Community, not as an Enterprise upsell. A course holds sections, and sections hold content items: an uploaded PDF, an image, an article written in the Odoo editor, a video by link, a quiz, or a certification. Courses run on the same partner, product, invoice and portal records as the rest of the database. That is the reason most buyers pick it over a standalone LMS. The learner, the customer and the invoice are one record.",
+    "It is not a replacement for Moodle or a corporate LMS. There is no SCORM, xAPI or AICC player. Video is played from YouTube, Google Drive or Vimeo rather than stored in Odoo. A certificate carries no expiry date. What Odoo does well is training with a commercial or operational edge: customer onboarding that starts from a confirmed sale order, partner enablement behind a portal login, and internal training whose completion record sits beside the person it belongs to.",
     "There are two course types and they behave differently. A Training course is an ordered set of lessons with a completion percentage per attendee. A Documentation course is a browsable library with no fixed order, where a nominated group can publish content directly. The choice changes how progress reads later, so make it before the catalogue is built."
   ],
   "whoFor": [
@@ -16,33 +16,37 @@
   "capabilities": [
     {
       "title": "Course structure and what actually uploads",
-      "body": "A course holds sections and sections hold content items. Two things upload into the database: a PDF and an image. Word, Excel and PowerPoint items come in as Google Drive links, and a video item takes a YouTube, Google Drive or Vimeo URL. Odoo reads an uploaded PDF and pre-fills the item duration from it. Any item except a certification can be flagged as a preview so visitors read it before joining, and items publish one at a time, so a live course can grow without being taken down."
+      "body": "A course holds sections and sections hold content items. Two things upload into the database: a PDF and an image. Everything else is a link, so an Office document arrives from Google Drive and a video arrives as a YouTube, Google Drive or Vimeo URL. Odoo reads an uploaded PDF and pre-fills the item duration from its page count, which is worth correcting by hand because those durations add up into the length advertised on the course. Items publish one at a time, so a live course can grow without being taken down, and the content list that spans every course is the fastest place to publish in bulk."
     },
     {
       "title": "Quizzes, karma and what karma controls",
-      "body": "A quiz attaches to any content item, with choice based questions, a correct answer flag and a comment shown after the learner answers. Karma is awarded on the first pass and drops on later attempts: the shipped defaults are 10, 7, 5 and 2 points for the first, second, third and every further attempt, each editable per item. Karma sits on the user record, not on the attendee record. It drives ranks and badges, and the karma thresholds on a course decide who may review it, comment on a lesson or vote."
+      "body": "A quiz attaches to any content item, with choice based questions, a correct answer flag and a comment shown to the learner after they answer. Karma is awarded on the first pass and drops on later attempts: the shipped defaults are 10, 7, 5 and 2 points for the first, second, third and every further attempt, each editable per item. Finishing the course awards a further amount set per course. Karma sits on the user record rather than the attendee record, it feeds ranks and badges, and the karma thresholds on a course decide who may review it, comment on a lesson or vote."
     },
     {
       "title": "Certification through Survey",
-      "body": "Certification is a Survey, joined to the course by a certification content item that requires a survey and can never be set as a preview. The survey carries the required score, which defaults to 80 percent, an attempt cap that defaults to one, an optional time limit and random question selection per section. Six certificate layouts ship, modern and classic in three colours; anything else is a report template. Each attempt is stored as a survey submission tied to the attendee, so the answer sheet survives an audit, not just the result. Survey and the certification bridge are both Community."
+      "body": "Certification is a Survey, joined to the course by a certification content item. The survey carries the required score, which defaults to 80 percent, an attempt cap that defaults to one, an optional time limit and random question selection per section. On a pass it can email the certificate and award a badge, both switches on the survey rather than development. Six certificate layouts ship, modern and classic in three colours, and anything beyond those is a report template. Each attempt is stored as a survey submission tied to the attendee, so the answer sheet survives an audit, not just the result. Survey and the bridge into eLearning are both Community."
     },
     {
       "title": "Enrolment, visibility and the attendee record",
-      "body": "Enrolment is Open or On Invitation, with On Payment appearing once the eCommerce bridge is installed. Visibility is a separate setting with three values: Everyone, Signed In, or Course Attendees. Joining creates an attendee record holding a completion percentage and a status of invited, joined, ongoing or completed. Invitations stay valid for three months, after which an invited record with no progress is removed by the autovacuum. A course can also auto enrol the members of a user group, and one course can be set as a prerequisite for another."
+      "body": "Enrolment is Open or On Invitation, with On Payment appearing once the eCommerce bridge is installed. Visibility is a separate setting: Everyone, Signed In, or Course Attendees. Joining creates an attendee record holding a completion percentage and a status of invited, joined, ongoing or completed. An invited record that never turns into progress is cleared by the autovacuum after about three months. A course can also auto enrol the members of a user group, and one course can be set as a prerequisite for another, which is the nearest thing to a learning path."
     },
     {
       "title": "Selling courses",
-      "body": "Set enrolment to On Payment and the course points at a service product sold through the normal checkout, with pricelists, coupons, taxes and fiscal positions behaving as they do for any other product. Confirming the order adds the ordering partner to the course. The shop refuses a quantity above one on a course line, so a cart cannot hold five seats. Invoices, revenue and refunds stay in the accounting already in use, so finance is not reconciling a second platform against the bank."
+      "body": "Set enrolment to On Payment and the course points at a service product sold through the normal checkout, with pricelists, coupons, taxes and fiscal positions behaving as they do for any other product. Confirming the order adds the ordering partner to the course. The revenue, the invoice and any credit note stay in the accounting already in use, so finance is not reconciling a second platform against the bank. One course line enrols one person, so selling a block of seats to a company is a decision to take before the pricing page is written."
+    },
+    {
+      "title": "The public catalogue",
+      "body": "The course list is a website page, themed and edited like any other page rather than a separate portal skinned to match. Courses carry tags, tags sit in groups, and the groups become the filter blocks a visitor uses to narrow a large catalogue. Individual content items can be flagged as a preview, which lets a visitor read a real lesson before signing up and gives search engines something to index beyond a marketing description. Reviews and comments are per course and gated by karma, so a fresh account cannot post the moment it lands."
     },
     {
       "title": "Reporting and evidence",
-      "body": "Attendee records list, group and pivot by course, status and date, and completion averages across the people on a course. The number is computed rather than stored as a fact: completion is completed items over published items, so it moves when the course moves. For anything that has to stand up later, the durable record is the survey submission with its date, score and stored answers, which no change to the course structure rewrites."
+      "body": "Attendee records can be filtered and grouped by course and status, each carrying a completion percentage. That number is recomputed rather than kept as a historical fact: it is completed items over published items, so it moves whenever the course moves. For anything that has to stand up later, the durable record is the survey submission with its date, score and stored answers, which no change to the course structure rewrites."
     }
   ],
   "setup": [
     {
       "title": "Fix the content model before anything is uploaded",
-      "body": "Completion is stored per content item and is deleted with it, so restructuring a live course removes the history recorded against the items you drop. Publishing works the same way in reverse. Completion is completed items over published items, so adding one lesson to a finished course pushes every attendee below 100 percent, flips them back to ongoing and takes back the karma awarded for finishing. Decide granularity, naming, and the rule for adding content later. The usual answer is a new course version per intake rather than edits to a course people have already completed."
+      "body": "Completion is stored per content item and is deleted with it, so restructuring a live course removes the history recorded against the items you drop. Publishing works the same way in reverse. Completion is completed items over published items, so adding one lesson to a finished course pushes every attendee below 100 percent, flips them back to ongoing and reverses the karma awarded for finishing. Decide granularity, naming, and the rule for adding content later. The usual answer is a new course per intake rather than edits to a course people have already completed."
     },
     {
       "title": "Decide where the video is hosted",
@@ -50,11 +54,11 @@
     },
     {
       "title": "Design the certification before building it",
-      "body": "Write the survey first: the question pool, the points per answer, the passing score, the attempt limit, the time limit and the certificate layout. The defaults are 80 percent to pass, one attempt and a ten minute limit, and each deserves a decision rather than acceptance. Then handle expiry. Odoo does not track it, so if a certificate expires you store the date on a field and drive the reminder and the re-enrolment from a scheduled action. Agree who may see failed attempts, because that answer changes the record rules on survey submissions."
+      "body": "Write the survey first: the question pool, the points per answer, the passing score, the attempt cap and the time limit. The defaults are 80 percent to pass, one attempt and a ten minute limit, and each deserves a decision rather than acceptance. Settle whether a pass emails the certificate and whether it awards a badge, since both are configuration on the survey. Then agree who may read failed attempts, because that answer changes the record rules on survey submissions and it is an uncomfortable thing to tighten after managers have already seen the report."
     },
     {
       "title": "Paid enrolment, tax and payment methods",
-      "body": "The course product needs the correct tax, a fiscal position for learners in other countries, and a payment provider carrying the methods local buyers hold. Seats are the other decision to take here. Odoo grants the course to the partner named on the order, so a corporate sale needs its enrolment mechanism agreed before the pricing page is written, not discovered after the first invoice."
+      "body": "The course product needs the correct tax, a fiscal position for learners in other countries, and a payment provider carrying the methods local buyers actually hold. Digital training changes where tax is due in most of the markets below, so build the fiscal positions before the catalogue rather than after the first cross border order. Refunds are the other thing to settle early: crediting an invoice does not remove anyone from a course, so agree who withdraws access, on what trigger, and what happens to the completion record when they do."
     },
     {
       "title": "Migrating from an existing LMS",
@@ -64,19 +68,19 @@
   "pitfalls": [
     {
       "title": "Assuming SCORM will run",
-      "body": "Odoo has no SCORM, xAPI or AICC player. Content bought from a library, or authored in Articulate or iSpring, will not play. Two routes work: rebuild the material as Odoo lessons with quizzes, or keep the old LMS as the player and write completion into Odoo over the API so the training record still sits with the customer or the employee. This single question moves scope more than anything else on an eLearning project, so ask it in the first meeting."
+      "body": "Odoo has no SCORM, xAPI or AICC player. Content bought from a library, or authored in Articulate or iSpring, will not play. Two routes work: rebuild the material as Odoo lessons with quizzes, or keep the old LMS as the player and write completion into Odoo over the API so the training record still sits with the customer or the employee. This single question moves scope more than anything else on an eLearning project, so ask it in the first meeting rather than during the build."
     },
     {
       "title": "Treating karma as a grade",
-      "body": "Karma is a gamification score. It rises with quiz passes and course completion, it is taken back when an attendee is set to uncompleted, and it is shared with the forum. It is not a mark anyone should defend to an auditor. Where someone needs a pass or fail with a date and an answer sheet, that is a certification survey, which is a different object holding different data."
+      "body": "Karma is a gamification score. It rises with quiz passes and course completion, it is reversed when an attendee is set back to not completed, and it is shared with the forum. It is not a mark anyone should defend to an auditor. Where someone needs a pass or fail with a date and an answer sheet, that is a certification survey, which is a different object holding different data."
     },
     {
       "title": "Completion that nobody assessed",
-      "body": "A learner can mark an item complete without opening it. The self mark button is withheld only on quizzes and on items that carry questions, so a course built from PDFs and videos produces completion records that prove a toggle was clicked. Where the evidence has to mean something, put questions on the items that matter and a certification at the end. Compliance reviewers ask how completion was established, and clicked is a poor answer."
+      "body": "A learner can mark an item complete without opening it. The self mark button is withheld only on items that carry questions, so a course built from PDFs and videos produces completion records that prove a toggle was clicked. Where the evidence has to mean something, put questions on the items that matter and a certification at the end. Compliance reviewers ask how completion was established, and clicked is a poor answer."
     },
     {
-      "title": "Recurring compliance training",
-      "body": "An annual refresher is not a native cycle. Retaking means setting the attendee back to uncompleted, which overwrites the current state and removes the completion karma, so the earlier proof has to exist elsewhere before the reset happens. The pattern that holds is the survey submission as the permanent record, a certification date and an expiry date stored on the employee or the attendee, and re-enrolment fired by a scheduled action."
+      "title": "One attempt, one failure, one support ticket",
+      "body": "The certification attempt cap defaults to a single try. A learner who fails is then locked out, and the ways back are raising the cap or deleting the attempt, which destroys the record the certification exists to produce. Set the cap deliberately, decide in advance who may grant a retake, and where failures have to stay visible, raise the limit rather than clearing submissions."
     },
     {
       "title": "Portal signup left on invitation only",
@@ -84,7 +88,7 @@
     },
     {
       "title": "The course nobody can see",
-      "body": "Four independent settings, checked in this order: the course is unpublished, individual content items are unpublished, Show Course To is set to Signed In or Course Attendees, or the enrolment policy is On Invitation when public was intended. Most reports of a broken course are one of those four, set for a different audience than the one complaining. Logs come later."
+      "body": "Five settings, checked in this order: the course is unpublished, individual content items are unpublished, visibility is set to Signed In or Course Attendees, the enrolment policy is On Invitation when public was intended, or on a multi website database the course belongs to the other website. Most reports of a broken course are one of those five, set for a different audience than the one complaining. Logs come later."
     }
   ],
   "worksWith": [
@@ -94,7 +98,7 @@
     "Gamification, installed underneath eLearning, which supplies the ranks and badges karma feeds",
     "Forum, for per course questions that would otherwise arrive as support tickets",
     "Email Marketing for announcements, with Marketing Automation on Enterprise for enrolment triggered follow up",
-    "Employees, where an onboarding plan activity can point a new hire at a course. No native field joins a course completion to an employee record, so that link is a small customisation",
+    "Employees, for internal training, where an onboarding plan can raise an activity pointing a new hire at a course in their first week",
     "CRM, when a free course is the lead magnet and a signup should raise an opportunity against the same partner"
   ],
   "regional": [
@@ -104,11 +108,11 @@
     },
     {
       "country": "uae",
-      "note": "The Electronic Invoicing System covers B2B and B2G, so consumer course sales sit outside it while corporate training billed to a company does not. Large taxpayers appoint an Accredited Service Provider and go live on 1 January 2027, smaller businesses on 1 July 2027. Course products need the 5 percent VAT treatment and a fiscal position for learners abroad, since place of supply for an electronically supplied service follows the customer."
+      "note": "The Electronic Invoicing System covers B2B and B2G, so a consumer course sale sits outside it while the same course billed to a company does not. Filing runs through an Accredited Service Provider rather than direct to the authority, and go live is staged by taxpayer size, so confirm the date that applies to the entity rather than the one announced first. Course products carry 5 percent VAT, and an electronically supplied service follows the customer for place of supply, so fiscal positions for learners outside the UAE belong in the build."
     },
     {
       "country": "india",
-      "note": "An online course sold to Indian consumers is an OIDAR supply, so GST follows the recipient location and the invoice line needs its service accounting code. Business customers above the e-invoicing turnover threshold need an IRN and a signed QR code from the portal before the invoice counts. Odoo's Indian e-invoicing module handles that once the GSP credentials are configured, but it runs on the accounting side and nothing inside eLearning triggers it."
+      "note": "An online course sold to Indian consumers is an OIDAR supply, so GST follows the recipient location and the invoice line needs its service accounting code. Business customers above the e-invoicing turnover threshold need an IRN and a signed QR code from the portal before the invoice counts. Odoo's Indian e-invoicing modules handle that once the GSP credentials are configured, but they sit on the accounting side and nothing inside eLearning triggers them."
     },
     {
       "country": "pakistan",
@@ -120,7 +124,7 @@
     },
     {
       "country": "united-kingdom",
-      "note": "Education is VAT exempt only where an eligible body supplies it, so a commercial online course is normally standard rated, and a course delivered with minimal human involvement counts as an electronically supplied service for place of supply. VAT records must be kept digitally and filed under Making Tax Digital. The HMRC submission lives in Odoo's Enterprise accounting reports, so a Community deployment holds the records in Odoo and files them through other software."
+      "note": "Education is VAT exempt only where an eligible body supplies it, so a commercial online course is normally standard rated, and a course delivered with minimal human involvement counts as an electronically supplied service for place of supply. VAT records must be kept digitally and filed under Making Tax Digital. The HMRC submission lives in Odoo's Enterprise accounting reports, so a Community deployment keeps the records in Odoo and files them through other software."
     },
     {
       "country": "germany",
@@ -142,19 +146,23 @@
     },
     {
       "q": "Can we import our existing SCORM courses?",
-      "a": "There is no player for the package format, so a SCORM file will not run. Rebuilding is usually less work than it sounds where the material is text, slides and video. Where the library is large or licensed from a vendor, keep the current LMS as the player and write its completion results into Odoo over the API, so reporting and the customer or employee record still sit in one place."
+      "a": "There is no player for the package format, so a SCORM file will not run. Where the material is text, slides and video, rebuilding is usually less work than it sounds. Where the library is large or licensed from a vendor, keep the current LMS as the player and have it write results into Odoo over the API: create the attendee on the course, mark the matching items complete, store the score. Budget that bridge as integration work with its own test cycle, not as a setting."
     },
     {
-      "q": "Can we host the course videos in Odoo?",
-      "a": "No. A video item takes a URL from YouTube, Google Drive or Vimeo, and the only files that upload into the database are PDFs and images. That is usually the right outcome. Video in the filestore is copied by every backup, and a video platform gives you playback quality control that Odoo does not attempt."
+      "q": "Can we keep the course videos private?",
+      "a": "Only as private as your video platform makes them. Odoo stores a URL and embeds the player, so there are no signed links, no expiring URLs and no DRM on the Odoo side, and a learner who copies the address can pass it to someone who never enrolled. Restrict at the platform instead, with unlisted or domain locked playback. For high value material the practical deterrent is watermarking and account discipline rather than a technical lock."
     },
     {
       "q": "Can we sell a course to a company and enrol their whole team?",
-      "a": "Not without a decision up front. Odoo grants the course to the buyer named on the order, and one course line produces one enrolment. Three routes are common: the buyer contact sends invitation links from the attendee list, your team creates portal users during onboarding, or a short extension reads the seat count from the order line and enrols the named colleagues. Invitations expire after three months, so a phased rollout needs a reminder step."
+      "a": "Not without a decision up front. Odoo grants the course to the buyer named on the order, and one course line produces one enrolment. Three routes are common: the buyer contact sends invitation links from the attendee list, your team creates the portal users during onboarding, or a short extension reads the seat count from the order line and enrols the named colleagues. The third is the only one that holds up past a handful of corporate clients."
     },
     {
       "q": "Does a certificate expire, and can we run annual refresher training?",
-      "a": "Odoo does not track certificate expiry. The pattern that works is to store the certification date and an expiry date, keep the survey submission as the permanent proof, and use a scheduled action to notify the learner and re-enrol them. Setting an attendee back to uncompleted overwrites their progress and removes the completion karma, so capture the evidence before the reset."
+      "a": "Odoo does not track certificate expiry. The pattern that works is to store the certification date and an expiry date, keep the survey submission as the permanent proof, and use a scheduled action to notify the learner and re-enrol them. Setting an attendee back to not completed overwrites their progress and reverses the completion karma, so capture the evidence before the reset rather than after."
+    },
+    {
+      "q": "Can the certification score written answers?",
+      "a": "A free text answer is stored with the submission, but scoring in Survey works on the suggested answers of choice questions, so written text carries no points and cannot pass or fail anyone by itself. Two shapes work: score the choice questions and treat the written part as evidence a reviewer reads, or set an automatic pass mark and record the human sign off separately. Decide which before the question bank is written, because it changes the passing score."
     },
     {
       "q": "Can one database serve courses in Arabic and English?",
@@ -162,7 +170,7 @@
     },
     {
       "q": "How do we show a course to some partners and hide it from others?",
-      "a": "Set Show Course To to Course Attendees so only enrolled people reach the content, then control who becomes an attendee: invitation links, auto enrolment for members of a user group, or membership created by a confirmed order. The group option works on user groups rather than partner tags, so tiering by a field on the contact needs a small automation to add the right people."
+      "a": "Set visibility to Course Attendees so only enrolled people reach the content, then control who becomes an attendee. Invitation links, auto enrolment for members of a user group, and membership created by a confirmed order all work. The group option keys off user groups rather than partner tags, so a tier held as a field on the contact needs a small automation to put the right people in the right group, and to take them out again when the tier changes."
     }
   ]
 }

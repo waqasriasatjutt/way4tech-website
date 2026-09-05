@@ -1,0 +1,172 @@
+{
+  "metaDescription": "Odoo Live Chat in practice: channel rules and routing, chatbot scripts, the websocket that breaks it, chat to lead or ticket, and where Community stops.",
+  "intro": [
+    "Odoo Live Chat is the im_livechat app. It ships in Odoo Community, so the chat window, the operator side inside Discuss, canned responses and the scripted chatbot cost nothing beyond the people who answer the chats. What it is not is a standalone chat product bolted onto an ERP. The visitor record, the lead, the sale order and the invoice are the same database rows, which is the reason to run chat inside Odoo rather than beside it.",
+    "The distance between a working demo and a working deployment is mostly infrastructure and routing. Live chat runs over a websocket, so a reverse proxy that does not upgrade the connection gives you a button that opens and then goes silent. Availability follows operator presence in Discuss rather than a schedule set on the channel. Both of those surprise teams who expected Intercom behaviour, and both are cheaper to fix before launch than after.",
+    "Where Community stops matters here. Turning a conversation into a CRM lead works on Community, because CRM is Community and the bridge module installs itself once both apps are present. Turning it into a support ticket does not, because Helpdesk is an Enterprise app and the bridge that carries a chat into a ticket wants the Website app alongside it. WhatsApp is Enterprise too, and it is a separate app rather than another inbox inside the same live chat channel. Odoo 19 adds an AI agent that can answer chats, and that is Enterprise only as well. Pricing a chat project without that split is how budgets move after the kickoff meeting."
+  ],
+  "whoFor": [
+    "Ecommerce and B2B sites already running Odoo Website, where a pre-sales question should end as a lead on the same contact record.",
+    "Support teams on Odoo Enterprise that want a chat to become a helpdesk ticket with the conversation attached, without anyone copying text by hand.",
+    "Small sales teams who answer their own chats, since every operator has to be an internal Odoo user, and on a subscription that is a paid seat each.",
+    "Companies with a genuinely repetitive first question, where a script can qualify the visitor, capture an email and pass on only the chats worth a person.",
+    "Not for contact centres that need a queue with a stated wait position, skills based routing or supervisor barge in, because standard Odoo has none of those.",
+    "Not for teams whose real inbound channel is WhatsApp or Instagram, since those are separate Enterprise apps and their messages do not land in a live chat channel."
+  ],
+  "capabilities": [
+    {
+      "title": "Channel rules decide where chat appears",
+      "body": "A live chat channel carries an ordered list of rules, each one a regular expression matched against the visited URL. That is how the pricing page gets the sales channel while the documentation page gets support. Matching runs in two passes, and this is the part people get wrong. Odoo first searches the rules that have countries set on them, and only when none of those matches does it fall back to the rules with no country at all. A country rule therefore beats a general rule whatever the sequence numbers say, and inside each pass the lowest sequence wins. Per rule you set the button to Show, Show with notification, Open automatically after a timer in seconds, or Hide, and you can attach a chatbot. Country rules need a GeoIP database on the server. The button label and the welcome message belong to the channel rather than the rule, so two pages that need different opening lines need two channels."
+    },
+    {
+      "title": "Operator routing and presence",
+      "body": "Operators are internal Odoo users added to the channel, and Odoo only offers a conversation to the ones its Discuss presence reports as online. The selection order is worth knowing, because it is not round robin. A returning visitor goes back to the operator they spoke to last, unless that person is already holding two active conversations or is in a call. Failing that, Odoo looks for an operator whose own language matches the visitor, then for one carrying the visitor's language in the Livechat Languages field on their user record, then for one in the same country, and only then falls back to whoever is least busy. Two practical settings follow. Fill in Livechat Languages for anyone genuinely bilingual, because nothing else reads that. Give each operator a Livechat Username so the visitor sees a working first name instead of the name on the employee record."
+    },
+    {
+      "title": "Canned responses and the in chat commands",
+      "body": "Canned responses are typed as a colon followed by a shortcut, and they sit on the shared Discuss model, so one library serves internal chat and live chat alike. The commands save more time than the templates do. /history asks the visitor's browser to hand over the pages it has recorded, the last fifteen of them, kept for a day, which means it works on any site the widget is embedded on. /lead creates a CRM lead and is Community. /helpdesk and /helpdesk_search open or find a ticket and need Enterprise. /leave and /who are the ordinary Discuss commands. The conversation is copied into the lead or the ticket the command creates, so nobody retypes the problem and whoever picks it up on Monday reads what was actually said."
+    },
+    {
+      "title": "The chatbot is a script, and on 19 optionally an AI agent",
+      "body": "Core Live Chat gives the script seven step types: text, a multiple choice question, an email capture, a phone capture, free input on one line, free input on several, and forward to an operator. Create Lead is not one of them. It arrives with the CRM bridge, which is Community. Create Ticket arrives with the Helpdesk bridge, which is Enterprise. A step can be tied to an answer given earlier, so a branch appears only for the visitor who chose it, and the rule carries a setting that runs the bot only when no operator is available. The scripted bot does no intent matching, so it handles exactly what you wrote. Odoo 19 Enterprise adds a different thing beside it, an AI agent set on the rule. Where a rule has both, the AI agent answers and can pass the visitor on to the script. On 17, on 18, and on Community at any version, the script is all there is."
+    },
+    {
+      "title": "Visitor context before you answer",
+      "body": "With the Website app installed, each browser gets a visitor record holding the pages viewed, the language, the country where GeoIP is available, and the partner once the person logs in. The operator reads that beside the conversation, so a delivery question arrives with the product page already attached to it. Visitors can also be listed and approached first, before they write. That is a fair tactic on a quotation or pricing page and an unpleasant one everywhere else, and the bounce rate will tell you which one you built."
+    },
+    {
+      "title": "Rating, transcripts and reporting",
+      "body": "At the end of a session the visitor is offered a happy, neutral or unhappy rating with an optional comment, and can ask for a copy of the conversation by email. The three faces store as 5, 3 and 1 on the rating record, which is what any dashboard built later has to average. Reporting covers session history, session statistics and operator analysis, so volume, response time and rating per operator are there without anything being built. Ratings use the same rating model that already carries helpdesk and project satisfaction, so one satisfaction dashboard can cover all three rather than three that disagree."
+    },
+    {
+      "title": "What a session is in the database",
+      "body": "A conversation is a discuss.channel record of the live chat type, and the messages on it are ordinary mail messages, the same table as the chatter on an invoice. That is worth knowing before anyone quotes for a custom report, a retention job, an export or an integration, because none of it is chat vendor territory. It is normal Odoo work against models your developers already use, and it is also why a transcript is searchable from the backend instead of sitting behind someone else's API."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Get the websocket path right before anything else",
+      "body": "Since Odoo 16 the bus runs over a websocket. With workers set above zero the gevent process listens on its own port, usually 8072, and the reverse proxy has to forward /websocket there with the upgrade headers over HTTP 1.1. Miss it and the chat window opens, then no message ever arrives in either direction. Odoo also needs proxy_mode enabled and the forwarded protocol header set, or a site served over https will try to open an insecure socket and the browser will block it. Any CDN in front of Odoo has to permit the upgrade too. Test from an outside network, not from the server."
+    },
+    {
+      "title": "One channel per audience, not per page",
+      "body": "Start with two or three channels, typically pre-sales and support, then route pages into them with rules and add a channel only where the opening message genuinely has to differ. Channels are what the reports group by and what operators are assigned to, so a channel per page produces reporting nobody opens. On a multi website database the live chat channel is chosen on the website record itself, so each site can carry its own channel without a single rule being written."
+    },
+    {
+      "title": "Decide the out of hours behaviour deliberately",
+      "body": "Because availability follows operator presence, decide this on the rule instead of accepting whatever the default gives you. Two settings do the work. A rule whose action is Hide takes the button off the page when nobody is online. Or attach a chatbot and set it to run only if no operator is available, which leaves the bot to say the team is offline and take a name and an email as a lead, then gets out of the way the moment somebody comes online. Hiding keeps the site clean and loses the enquiry. The bot keeps it and leaves something on a desk for the morning. Check what the site does at lunchtime and on a public holiday, not only at midnight."
+    },
+    {
+      "title": "Embedding on a site Odoo does not host",
+      "body": "The channel has a widget tab that produces a snippet to paste into an external site, which is how a WordPress or Shopify front end gets the same chat as the Odoo backend. Page history still works there, because the widget records recent pages in the visitor's own browser rather than on the server. What is missing is the visitor record the Odoo Website app maintains, with the full page views, the language, the country and the partner once the person logs in. Brief the operators on that difference, otherwise they open a conversation expecting a profile that was never created."
+    },
+    {
+      "title": "Draw the chatbot script before building it",
+      "body": "A script past a dozen steps gets hard to change, because the answers that trigger later steps connect them in ways the list view does not show. Draw the tree, agree it with whoever owns sales or support, then configure it. Test with the built in test mode and again in a private browser window, since your own logged in session behaves differently from a first time visitor and will not show you what a visitor sees."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Chat history is not portable, so plan the cutover",
+      "body": "Odoo has no importer for Intercom, Zendesk or Tawk transcripts. Contacts and open leads come across through the standard import, conversations do not, and writing a loader for them is rarely worth the money. The workable pattern is to run both tools for two weeks, keep the old one read only for whatever retention period legal asks for, and export a flat archive before the subscription lapses. Settle that before the renewal date, because access usually ends with the invoice."
+    },
+    {
+      "title": "Every operator is an internal user, and that has two costs",
+      "body": "Portal users cannot answer chats, so each operator is an internal user. On Odoo Online or an Enterprise subscription that is a billed seat each, which is how a plan for twelve part time answerers becomes a rota of four. On self hosted Community there is no per user fee, so the money changes but the rule does not, and a shared login is still wrong: operator analysis then credits every conversation to one person and the audit trail on any lead the chat creates names the wrong human. Work the operator count out during scoping, not when the invoice arrives."
+    },
+    {
+      "title": "The widget covers the mobile checkout button",
+      "body": "On a phone the chat bubble sits bottom right, which is exactly where the add to cart or continue button often sits on a themed shop. It is a CSS fix rather than a setting, and it is found by testing on a real handset instead of a resized desktop window. Check it again after every theme change and after every upgrade, because the bubble is injected late and the theme has no reason to know it is there."
+    },
+    {
+      "title": "Empty sessions and real conversations age differently",
+      "body": "A scheduled job deletes live chat sessions that never received a message and are more than an hour old, so the statistics are not distorted by everyone who opened the box and left. Conversations that do carry messages stay in the database indefinitely, and they hold names, email addresses and sometimes order numbers. That is personal data with no deletion schedule attached to it. A retention rule has to be decided by the business and then actually built as a scheduled action, because nothing in the standard app will do it for you."
+    },
+    {
+      "title": "Country rules do nothing until GeoIP exists",
+      "body": "A rule restricted to a country matches nobody on a self hosted server until the GeoLite2 database is installed and referenced in the server configuration. The symptom is a chat button that never appears at all, which reads as a broken deployment rather than a missing data file, so people spend a day looking in the wrong place. The same database feeds the country shown on the visitor record, so both features fail together and both are fixed by the same change."
+    }
+  ],
+  "worksWith": [
+    "Website, for the visitor record, the page history and the per site channel field",
+    "CRM, where a chat becomes a lead on the same contact rather than a note somewhere else",
+    "Helpdesk on Enterprise, for chat to ticket with the conversation in the ticket description",
+    "Discuss, which is where operators actually work and where canned responses now live",
+    "Sales, when the lead a chat produced becomes a quotation without the contact being retyped",
+    "eCommerce, where the cart and the order pages give the operator context the visitor never has to explain",
+    "WhatsApp on Enterprise, a separate channel that shares the contact rather than the chat",
+    "Automation rules, standard in Community, to alert a manager when a session is rated unhappy"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Arabic leads on consumer facing pages, so the button label, the welcome message and every chatbot step need an Arabic version. Because the label and the welcome text belong to the channel rather than the rule, an Arabic site usually means its own channel, and the rules have to match the Arabic path prefix instead of the English one. The Personal Data Protection Law covers what the chat collects and restricts moving it outside the Kingdom, so hosting location and a transcript retention rule are decisions to take before launch."
+    },
+    {
+      "country": "uae",
+      "note": "The first inbound message is usually WhatsApp, and in Odoo that is a separate Enterprise app rather than another inbox on the live chat channel, so a budget written for chat alone lands short. The conversation itself sits before the tax event. What matters is that the lead it creates already carries the TRN and the emirate of supply, because the 5 percent VAT invoice at the far end needs both and nobody wants to ask a second time."
+    },
+    {
+      "country": "pakistan",
+      "note": "Traffic is overwhelmingly mobile and often on a weak connection, so the websocket reconnecting cleanly after a signal drop matters more than the cleverness of the script. Test on a real handset on mobile data rather than on office wifi. Urdu is right to left, so the layout work matches Arabic. Nothing in the conversation touches FBR digital invoicing, which starts at the sale order, but sales tax on services is provincial, so the lead should record the province and not only the city."
+    },
+    {
+      "country": "india",
+      "note": "The Digital Personal Data Protection Act expects the collection notice to be available in English or any of the twenty two Eighth Schedule languages at the individual's choice, which lands on the line above the chat box and not only on the privacy page. Withdrawing consent has to be as easy as giving it, so somebody has to own deleting a conversation on request. Operators who cover more than one Indian language should have each of them listed on their user record, because that field is what the routing actually reads. GST and the IRN appear only once the lead becomes an invoice."
+    },
+    {
+      "country": "turkey",
+      "note": "KVKK expects the clarification text at the point of collection, so the chat carries its own line before the first message rather than a link in the footer, and consent for the conversation is separate from consent for marketing. Bundling the two is the common finding. A transfer abroad needs one of the grounds in the amended Article 9, which since 2024 includes standard contractual clauses notified to the authority, and that is usually what decides whether the database stays in Turkiye."
+    },
+    {
+      "country": "germany",
+      "note": "Operator analysis reports response time and rating per named person, which is performance monitoring under section 87 of the Works Constitution Act, so a company with a works council settles the report before it is switched on rather than after somebody notices it. The chat cookie needs consent under the TDDDG unless it is strictly necessary to a conversation the visitor asked for, so the widget loads after the banner and not with the page. German buyers read the imprint and the privacy page before they type, so both have to name the chat."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Public sector and large enterprise procurement asks about accessibility, so the chat window has to be operable with a keyboard alone and announce new messages to a screen reader, tested against WCAG 2.2 AA rather than assumed. The other British specific is PECR, which sits over UK GDPR: the widget's storage escapes consent only while the visitor has genuinely asked for the conversation, so anything that initialises on page load belongs behind the banner."
+    },
+    {
+      "country": "france",
+      "note": "The Toubon law requires French for consumer facing commercial content, so an English only widget on a French shop is a compliance point rather than a style preference, and that covers the button label and the chatbot script as much as the page around them. CNIL treats a chat tracker like any other non exempt one, and expects a refusal to cost the visitor no more clicks than a consent, which shapes where the widget sits in the load order. Factur-X applies to the invoice that follows, not to the conversation that produced it."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Live Chat included in Community?",
+      "a": "Yes, and it is the same code in both editions. The app, the widget, canned responses, the chatbot builder and the live chat reports are all in Community. The Enterprise line is drawn at the apps chat connects to. CRM is Community, so chat to lead works everywhere. Helpdesk and WhatsApp are Enterprise, so chat to ticket and WhatsApp as a channel need a subscription."
+    },
+    {
+      "q": "How many operators do we need, and do they cost extra?",
+      "a": "Size on concurrent chats in your busiest hour, not on total headcount. A comfortable operator holds three conversations at once when the answers are short and one when they are not, so an hour with nine overlapping chats needs three people online at the same moment rather than nine on a rota. Each of those seats is billed on a subscription and free on a self hosted Community server, so the edition decides whether your ceiling is money or attention. Then read operator analysis after the first month and resize on the real arrival pattern, because most sites find their volume sits in two hours of the day and nowhere else."
+    },
+    {
+      "q": "Can the chatbot understand a free text question?",
+      "a": "The scripted chatbot cannot. It follows the branches you drew, so anything unanticipated falls through to whatever you put at the end of the script. Odoo 19 Enterprise is the exception, because it adds an AI agent that you set on the channel rule, and that does answer free text and can hand over to the script or to a person. Everywhere else, which means 17, 18 and any Community build, the answer is no. Two things help there. Put a free input step where people go off script, because the text is still captured on the conversation even though the bot cannot act on it. Then read those answers after a month and turn the repeats into branches."
+    },
+    {
+      "q": "Our website is WordPress. Can we still use it?",
+      "a": "Yes, the snippet from the channel drops into any site. Three things to check before you promise a date. The snippet calls back to your Odoo domain, so that domain has to be publicly reachable and hold a valid certificate. The host site's content security policy has to allow both that script source and a wss connection to it, which is the usual reason a widget works on staging and not on production. And the chat runs on the Odoo domain, so the consent banner on the WordPress side does not automatically cover it."
+    },
+    {
+      "q": "The chat opens but messages never arrive. What is wrong?",
+      "a": "Diagnose it in the browser rather than in the logs. Open the network tab, filter to WS and reload: a healthy connection shows a request to /websocket answered with 101 Switching Protocols. A 404 or a 502 means the proxy is not forwarding to the gevent port. A mixed content error means Odoo thinks it is on http and built a ws address for an https page. A socket that opens and drops every few seconds is usually a CDN or a load balancer with an idle timeout shorter than the keepalive. Each has a different fix, and guessing between them costs a day."
+    },
+    {
+      "q": "Can chats be routed by language?",
+      "a": "Yes, and mostly without building anything. Odoo already matches the visitor's language against the operator's own language, then against the Livechat Languages listed on the operator's user record, before it falls back to country and then to whoever is least busy. So the first job is filling that field in for every bilingual operator, not designing a routing scheme. Add a channel per language only where the button text, the welcome message or the bot script has to differ, since all three are channel settings and not rule settings. The thing to watch is what the fallback does. A language with one operator has no cover when that person is away, and the chat is then handed quietly to somebody who does not speak it."
+    },
+    {
+      "q": "How is this different from the WhatsApp app in Odoo Enterprise?",
+      "a": "Different app, different rules. Live chat is your own website, the visitor is anonymous until they tell you who they are, and you can open the conversation whenever you like. WhatsApp runs on Meta's platform: you need an approved business number, and outside the service window that follows the customer's last message you can only start a conversation with a template Meta has approved. The chatbot builder does not drive it. What the two share is the contact and the CRM record, which is the argument for running both inside Odoo rather than in two tabs."
+    },
+    {
+      "q": "Will chat fill the CRM with duplicate leads?",
+      "a": "It will if nobody plans for it, because each /lead command and each chatbot create lead step makes a new record. Two habits fix it. Ask for the email early in the script so the lead has something to match on, and check the similar leads on the record before working it. On a high volume site it is worth adding a rule that merges or links on the email address, which is a small piece of development rather than a product feature."
+    },
+    {
+      "q": "Can operators answer from a phone?",
+      "a": "Yes, the Odoo mobile app carries Discuss and live chat conversations appear in it. Treat it as cover rather than as the rota. Presence follows the app session, so an operator who backgrounds the app can drop out of the rotation, and typing a considered answer on a phone is slower than a visitor waiting on a pricing page will tolerate. Use it for quiet hours and for someone between meetings, not as the plan for a business day."
+    }
+  ]
+}

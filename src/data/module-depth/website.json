@@ -1,0 +1,180 @@
+{
+  "metaDescription": "Odoo Website in practice: multi-site and multi-language setup, the 301 redirect map, forms that create leads, cookie consent gaps and what Community covers.",
+  "intro": [
+    "Odoo Website is a page builder that writes into the same database as the rest of the system. A page is a QWeb view holding the HTML, paired with a website.page record that carries the URL, the published flag and the indexing switch. The menu entry is a third record pointing at that URL. Nothing is exported to a separate CMS. That is the whole argument for using it: a form on a landing page creates a lead with its campaign attached, a product page reads live stock, and a portal login shows the customer their own invoices.",
+    "The builder is a Community app. Pages, blocks, the blog, the forum, multi-language including right to left, the per page SEO fields and multi-website all work on a Community licence, and nothing in the drag and drop editor is held back for paying customers. An Enterprise subscription buys the apps that sit behind the pages rather than the pages themselves, which is why the edition question is really a question about your back office. The FAQ below lists which of those apps a website project usually pulls in.",
+    "What it is not is a publishing platform. There is no editorial workflow, no scheduled publishing queue, and no version history beyond the editor's undo stack and a one step reset of a customised view back to the version its module shipped. Design freedom stops where the theme grid stops. A brand whose site is the product, or a newsroom with ten writers working in parallel, is better served by a front end of its own reading Odoo over the API. Most companies do not have that problem and should not pay for that answer."
+  ],
+  "whoFor": [
+    "Companies whose site already produces enquiries that somebody is retyping into a spreadsheet or a CRM by hand.",
+    "B2B manufacturers and distributors who want a public catalogue, a request for quotation form and a customer portal running off one product list.",
+    "Groups selling into several markets who need a site per country, in the local language, without a separate CMS and a separate login for each one.",
+    "Marketing teams who need a landing page live on the day of the campaign rather than in the next development sprint.",
+    "Not for publishers and media sites that need editorial workflow, embargoes and several writers working on the same content at once.",
+    "Not for brands where the site is the product and a bespoke design system with a headless front end reading Odoo over the API is the honest answer."
+  ],
+  "capabilities": [
+    {
+      "title": "Where the content actually lives",
+      "body": "Blocks dragged onto a page are stored as HTML inside a view record. A website.page record beside it holds the URL, the published flag and the search indexing switch, and the menu entry is a separate record pointing at that URL. Content is a database row and not a file, so it is inside the nightly backup, it is not in your git repository, and it does not move with a code deployment. An unpublished page returns a 404 to the public while a logged in editor still sees it, which is how a new page is staged in place. Settle this model before the first page is built, because most of the decisions below follow from it."
+    },
+    {
+      "title": "Several websites from one database",
+      "body": "One database can serve several websites, each with its own domain, theme, menus, languages, company and pricelists. Most records carry an optional website reference, and a record left without one is shared by every site. That is how a group runs a corporate site plus three country sites without three databases to upgrade and three product lists to maintain. Shared views behave differently once a site edits them, which is covered below, so decide early which header, footer and legal pages are meant to stay common."
+    },
+    {
+      "title": "Languages and right to left",
+      "body": "Installing a language adds a URL prefix, a language selector and alternate hreflang links on the translated pages. Odoo compiles a mirrored version of the stylesheet whenever a right to left language is installed, so the layout flip is handled for you rather than being a design task. Translation is per field and per block and is written in the editor's translate mode, not in a file a developer owns. A block added to the English page shows the source text on the Arabic one until somebody writes it, menu labels and product names are separate jobs from page bodies, and text baked into an image is never translated at all."
+    },
+    {
+      "title": "Forms that write to real records",
+      "body": "The form block posts into a model rather than an inbox. Contact Us can create a lead, raise a Helpdesk ticket on Enterprise, or post a message on an existing record. Fields are mapped to model fields in the editor, required and hidden values are set there, and a model has to be flagged as reachable by website forms before it appears in the list. reCAPTCHA v3 is switched on by pasting a Google site key and secret into the general settings, and it scores traffic silently instead of showing a puzzle. A lead created this way keeps the campaign, source and medium it arrived with, which is what makes ad spend traceable to a closed order."
+    },
+    {
+      "title": "SEO controls that are per page, not global",
+      "body": "Each page carries its own title, meta description, keywords, social preview image and an indexing toggle. Odoo emits a canonical link and alternate language links, serves sitemap.xml from a cached attachment rather than rebuilding it on every request, and exposes robots.txt as an editable view. Renaming the URL of a published page offers to create the redirect for you, and redirects are ordinary website.rewrite records holding the old address, the new one and the type, so a migration map can be loaded in bulk from a spreadsheet and audited later. Static pages have no site wide title template, so a hundred pages means a hundred entries written by hand; product and blog pages fall back to the record name."
+    },
+    {
+      "title": "Gated pages, visitors and the portal",
+      "body": "Page visibility can be set to everyone, signed in users, a named user group or a password, which turns a specification sheet or a price list into a gated asset without a plugin. Visitors are stored as records with the pages they viewed, and a visitor becomes a known contact the moment they log in or submit a form. Live chat, the blog and the forum read those same visitor and contact records, and the portal shows a customer their own quotations, invoices and tickets. There is no second user table to keep in step."
+    },
+    {
+      "title": "Theme, brand and injected code",
+      "body": "The theme panel sets colours, fonts, header and footer layout and button styles across the whole site, and a designer goes further with SCSS delivered in a small module. Custom head and end of body code can be injected for a tag manager or a chat widget, across the site or on a single page. A CDN base URL can be set so static files are served from an edge network. Frontend CSS and JavaScript are compiled into a hashed bundle and cached hard, so the first request after a theme change is slow and a stale bundle is the usual reason a change refuses to appear."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Fix the URL structure and the redirect map first",
+      "body": "Before a block is dragged, list every URL on the old site with its traffic, decide its new address, and load the pairs as 301 records. Pull that list from the old sitemap and from Search Console, not from memory, because the pages that earn traffic are rarely the ones anyone remembers. A relaunch that goes live without redirects loses the rankings that justified the project, and recovery takes months rather than days."
+    },
+    {
+      "title": "Decide the hosting before the design",
+      "body": "Odoo Online runs the official apps and Studio but not custom modules, so a bespoke theme, an SCSS layer or a third party snippet needs Odoo.sh or a server of your own. Moving hosting later is possible, but the design work done inside the Online constraints is the part that gets thrown away. Answer this in the first week, with the designer in the room, rather than after the mockups have been signed off."
+    },
+    {
+      "title": "Set the domain, then freeze the base URL",
+      "body": "Each website record has a domain field and it wants the full address including the protocol, because canonical links, social previews and every link inside an outgoing email are built from it. Separately, the web.base.url system parameter is rewritten by default to whatever host the last administrator logged in from. Set web.base.url.freeze on any database reachable on more than one hostname, or password reset emails start pointing at a staging server."
+    },
+    {
+      "title": "Decide the language model before anyone translates",
+      "body": "Choose which languages are real, whether each market gets its own website record or a language prefix on a single one, and who owns the wording. A separate site per country allows different menus, prices, legal pages and contact details. A language on one site keeps the structure identical and swaps only the words. Arabic almost always wants the first option, because right to left layout, local contacts and a different page order are not a translation task."
+    },
+    {
+      "title": "Wire forms to the model that owns the follow up",
+      "body": "Point the contact form at a lead with a sales team, a salesperson and a source set, rather than at a shared mailbox. Configure the required fields, switch on reCAPTCHA, and test both the acknowledgement to the sender and the notification to the team. Agree what happens to a submission that arrives at midnight. A form that creates a lead nobody owns is worse than a mail link, because everyone assumes it is being handled."
+    },
+    {
+      "title": "Moving content off WordPress or a static site",
+      "body": "There is no first party importer. Pages are rebuilt as blocks, which is quick for a forty page brochure site and slow for a thousand post blog. Posts can be pushed into the blog model over the API or loaded from a file, but the pasted HTML has to be reduced to the classes the editor understands or the first edit reflows the layout. Images move into the filestore and every path inside the content has to be rewritten. Third party import tools exist and are worth a look at volume, though treat what they produce as a first draft that an editor still opens page by page."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Content does not travel with your code",
+      "body": "On Odoo.sh, or any setup with a staging branch, a deployment moves modules and not pages. Text edited on staging stays on staging. The two workable patterns are editing production directly with new pages left unpublished until they are ready, or pulling a fresh copy of production down before a content sprint. Teams that build a whole new site on staging and expect a merge to publish it end up rebuilding it by hand under deadline."
+    },
+    {
+      "title": "Editing a shared view splits it per site",
+      "body": "In a multi-website database, changing a header, a footer or any other shared view while one site is active creates a copy bound to that site. From then on that site stops receiving changes to the original, including fixes that arrive with a module update. The behaviour is deliberate and correct. It still surprises people during an upgrade, when one site keeps an old footer and nobody can find where it is defined."
+    },
+    {
+      "title": "The cookie bar is a notice, not a consent manager",
+      "body": "Odoo can show a cookie bar from the website settings and it stores the visitor's answer. What it does not do is hold third party scripts until that answer arrives, offer a choice per category, or keep an auditable record of who consented to what and when. A tag pasted into the head fires on the first request either way. In Germany, France and the UK that is the gap a regulator writes up first. Budget for a dedicated consent platform and load the tag manager behind it."
+    },
+    {
+      "title": "Page weight from an unmanaged image library",
+      "body": "Photographs arrive at full camera resolution and go straight into a block. The editor will resize and re-encode on upload, but only if somebody uses it. A ten block page with untouched images runs to several megabytes, which is invisible on office fibre and painful on a mid range phone over mobile data. Put a maximum file size in the content brief, and test finished pages on a throttled connection before launch rather than after the first bounce rate report."
+    },
+    {
+      "title": "Swapping the theme after launch",
+      "body": "Installing a different theme rewrites the colour palette, the fonts and the default blocks, and customised header or footer views can be reset in the process. Do it once, at the start, on a copy of the database, with a backup taken first. The same discipline applies to the sample pages a theme ships with: demo content left published gets indexed, and prospects and competitors do find it."
+    },
+    {
+      "title": "A restored copy of the database is a second live site",
+      "body": "A backup restored onto any reachable hostname serves the same pages, the same sitemap and the same working forms as production. Search engines index it, prospects find it and the analytics stop meaning anything. Put every copy behind HTTP authentication or an IP allowlist at the proxy, and go looking for the one somebody spun up for a demo last quarter. That copy also holds live customer data, so it is a data protection exposure before it is an SEO one."
+    }
+  ],
+  "worksWith": [
+    "eCommerce, which is the same builder with a catalogue, checkout and a local payment provider added, and Community like the rest of it",
+    "CRM, so a form submission becomes a lead with its campaign, source and medium already filled in",
+    "Blog and Forum, both Community, for the long tail pages and question threads that earn search traffic",
+    "Live Chat, reading the same visitor record the rest of the site writes to",
+    "Events and eLearning, for registration and course pages that sell through the normal checkout",
+    "Email Marketing on Community, with Marketing Automation on Enterprise for the sequence that follows a submission",
+    "Studio on Enterprise, when a form has to write into a model with fields that do not exist yet",
+    "Google Search Console and Analytics, which have their own fields in the website settings; the verification tag is harmless, the analytics tag is one of the ones that has to wait behind your consent tool"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Arabic is the primary version rather than a translation layer, which usually means its own website record so the menu order, the contact details and the legal pages can differ from the English site. Form data falls under the PDPL administered by SDAIA, so consent wording and a route to deletion belong in the build rather than in a later phase. An online store also registers on Maroof and shows its commercial registration number, while ZATCA rules land on the checkout and the invoice, not on content pages."
+    },
+    {
+      "country": "uae",
+      "note": "A single site carrying Arabic and English usually works here, because the audience reads both and the two versions can share one structure. Consumer prices are shown inclusive of the 5 percent VAT. Personal data collected by forms sits under Federal Decree-Law 45 of 2021, while entities in the DIFC or ADGM answer to their own regimes instead, so the privacy page has to name the right one. Free zone companies should carry their licensing authority on the legal pages."
+    },
+    {
+      "country": "turkey",
+      "note": "KVKK and the Board guidance require explicit opt in for anything past strictly necessary, and most controllers register with VERBIS. An online store registers with ETBIS, shows the badge, and publishes the distance sales contract and the return policy as real pages rather than as a PDF. The larger constraint is hosting: tax documents may not be archived outside Turkiye, so a database serving both the site and e-Fatura has to sit in country."
+    },
+    {
+      "country": "germany",
+      "note": "Section 5 DDG requires an Impressum naming the company, its legal form and address, the register court and number, the VAT identification number and the managing director, reachable in two clicks from any page. Non essential cookies need consent before they load under section 25 TDDDG. Host your fonts as site assets rather than calling Google servers, after a Munich court treated that call as a data protection breach. Consumer shops also fall under the BFSG since 28 June 2025."
+    },
+    {
+      "country": "france",
+      "note": "The CNIL position is that refusing must be as easy as accepting, so a banner with an accept button and a link to settings is a finding rather than a grey area. Mentions legales are mandatory, and the loi Toubon requires French for commercial content aimed at French consumers, which makes the French version the source text and not a translation of the English one. Public sector bodies answer additionally to the RGAA accessibility framework."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "A limited company has to publish its registered name, company number, place of registration and registered office address on the site under the trading disclosure rules, not only a trading name in the footer. Retail prices quoted to consumers include VAT at 20 percent under the Price Marking Order. Cookies are governed by PECR rather than by UK GDPR, so they stay a separate compliance item from the privacy notice and a separate conversation with your lawyer. Selling at distance adds pre contract information and a 14 day cancellation notice as pages a buyer can reach before paying. The Equality Act makes accessibility a service obligation, and WCAG 2.2 AA is the reference an auditor reaches for even outside the public sector."
+    },
+    {
+      "country": "india",
+      "note": "The DPDP Act requires a notice at the point of collection, and that notice has to be available in English or any language in the Eighth Schedule, which makes it a content job rather than a legal annex. The Consumer Protection e-commerce rules want the seller's legal name, address and a named grievance officer published on the site, with complaints acknowledged inside 48 hours. If the site sells, expect UPI to sit beside cards at checkout, so choose a payment provider that carries it. Decide the language prefixes at the same time as the URL structure, because adding them afterwards renames pages that already rank."
+    },
+    {
+      "country": "pakistan",
+      "note": "No general data protection statute is in force yet, so the privacy notice here is written for the buyer rather than for a regulator, and the practical constraints matter more than the legal ones. Urdu needs a Nastaliq capable web font shipped with the theme, because the common fallbacks render it in Naskh and read as wrong to anybody local; that font is heavy, so subset it before it goes into the bundle. Most enquiries still arrive on WhatsApp, so put that route beside the form instead of burying it in the footer, and keep the form as the record of what was actually agreed."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Do we need Enterprise for the website builder?",
+      "a": "No. Website, Blog, Forum, eCommerce, Live Chat, multi-website and multi-language including right to left are all Community, and the editor is the same in both editions. Enterprise buys what sits behind the page: Helpdesk for tickets raised from a form, Marketing Automation for the sequence that follows, Studio for adding fields without a developer, and Sign for the document that closes the deal. Choose the edition on the back office apps, never on the builder."
+    },
+    {
+      "q": "Can we keep our existing site and use Odoo only for the back office?",
+      "a": "Yes, and it is sometimes the right call, particularly where a marketing team is already productive in another stack. The join is the form: post submissions into Odoo over the API so the lead arrives with its attribution intact. What you give up is the live catalogue, stock, pricelists and a portal reading the same records as your invoices, plus one backup and one login instead of two systems that have to be kept in step."
+    },
+    {
+      "q": "Should each country site be its own database or a second website inside one?",
+      "a": "One database with several website records when the markets share products, customers and a chart of accounts, because you upgrade once and maintain one product list. Separate databases when the legal entities are genuinely separate, when one market needs a localisation the other must not have, or when a local partner wants their own release cycle. Splitting later is an export and a reimport rather than a setting, so make the call before content is written."
+    },
+    {
+      "q": "What actually happens to our search traffic after a relaunch?",
+      "a": "With the redirect map loaded, expect two to six weeks of movement while the index catches up, then a return to roughly where you were. Watch Search Console for 404s the map missed and fix them the same week. Keep the titles and descriptions of pages that already rank rather than rewriting all of them at once. Traffic that never returns is almost always a page nobody mapped, or a page rewritten so heavily it no longer answers the query it used to win."
+    },
+    {
+      "q": "Is an Odoo site fast enough?",
+      "a": "For a brochure or catalogue site, yes, provided somebody attends to it. Compress images at upload, keep the block count per page sensible, serve static files through the CDN setting or a proxy cache, and run enough workers for the concurrency you expect instead of the single process a default install starts with. The usual cause of a slow Odoo site is a five megabyte hero image and an undersized server, not the framework underneath."
+    },
+    {
+      "q": "Can the site sit behind Cloudflare or a corporate reverse proxy?",
+      "a": "Yes, and most production installs do. Turn on proxy mode in the server configuration so Odoo trusts the forwarded host and protocol headers, set the website domain, and freeze the base URL so email links do not follow whatever host an administrator last used. Keep aggressive caching to static assets only. Caching a logged in portal page or a cart is how one customer ends up looking at another customer's data."
+    },
+    {
+      "q": "Can our marketing team edit pages without breaking things?",
+      "a": "Yes for text, images, blocks and new pages, which is the point of the builder. Website access comes at two levels: a restricted editor changes content, while the full editor and designer level also reaches theme settings and the view level tools. Give marketing the restricted level, agree that shared header and footer views are out of scope, and take a backup before a large content push. New pages can sit unpublished until somebody reviews them. Structural work stays with whoever owns the site."
+    },
+    {
+      "q": "How much work is Arabic really?",
+      "a": "Budget it as a build with an owner and a date, not as a translation pass at the end. Count the units first: every block on every page, product and category names, mail templates, the terms and the privacy notice, any PDF a visitor downloads, and any image with words baked into it. Machine output is obvious to a native reader inside a sentence, so a writer has to own the copy. Two things get forgotten. The theme font has to carry Arabic glyphs at the weights the design uses, and the Arabic site usually wants a different page order rather than the same pages in Arabic."
+    },
+    {
+      "q": "What happens to the site when we upgrade Odoo versions?",
+      "a": "Pages are data, so they come across with the database. The work sits elsewhere. Views you customised get compared against the new module versions, any view that was copied per website in a multi-site database is reviewed on its own, and a third party theme needs a build for the target version or the site is rebuilt on a theme that has one. Snippet markup does change between major versions, so open and re-save the important pages on a copy before you commit to a date."
+    }
+  ]
+}

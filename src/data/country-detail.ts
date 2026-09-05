@@ -38,6 +38,11 @@ export interface CountryProvider {
 export interface CountryDetail {
   einvoicing: {
     scheme: string;
+    /* The branded name buyers actually search, when the market has one.
+       `scheme` is prose ("Fatoora (فاتورة) - ZATCA E-Invoicing", "None. Kuwait
+       has no e-invoicing scheme.") and cannot go in a title. Left undefined for
+       the markets with no branded regime, so those titles are unchanged. */
+    seoToken?: string;
     authority: string;
     status: string;
     appliesTo: string;
@@ -57,6 +62,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "saudi-arabia": {
   "einvoicing": {
    "scheme": "Fatoora (فاتورة) - ZATCA E-Invoicing",
+   "seoToken": "ZATCA",
    "authority": "Zakat, Tax and Customs Authority (ZATCA), هيئة الزكاة والضريبة والجمارك",
    "status": "Phase 1 (generation) has applied since 4 December 2021 and Phase 2 (integration with the Fatoora platform) since 1 January 2023, rolled out wave by wave. Wave 25 is the latest announced: taxpayers whose VAT-taxable revenue exceeded SAR 187,500 in 2022, 2023, 2024 or 2025 must integrate by 1 February 2027.",
    "appliesTo": "VAT-registered persons resident in Saudi Arabia. Phase 1 already applies to all of them. Phase 2 applies from the date in your wave notification, and ZATCA notifies each wave at least six months before its integration date. Wave 25 sets the revenue trigger at SAR 187,500, the lowest of any wave so far.",
@@ -401,6 +407,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "uae": {
   "einvoicing": {
    "scheme": "UAE Electronic Invoicing System (EIS)",
+   "seoToken": "EIS",
    "authority": "Ministry of Finance, with the Federal Tax Authority as the reporting endpoint",
    "status": "The pilot programme started on 1 July 2026 with a selected group of taxpayers. Businesses with annual revenue of AED 50 million or more must appoint an Accredited Service Provider by 30 October 2026, extended from 31 July 2026, and go live on 1 January 2027. That go-live date has not moved.",
    "appliesTo": "All persons conducting business in the UAE, for B2B and B2G transactions, except where a specific exclusion applies. Excluded businesses may still opt in voluntarily. Businesses under AED 50 million revenue appoint an ASP by 31 March 2027 and go live on 1 July 2027. Government entities appoint by 31 March 2027 and go live on 1 October 2027. B2C is not in the current scope.",
@@ -1345,6 +1352,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "oman": {
   "einvoicing": {
    "scheme": "Fawtara (فوترة), the Oman Tax Authority e-invoicing system",
+   "seoToken": "Fawtara",
    "authority": "Oman Tax Authority (OTA)",
    "status": "Nothing is mandatory yet. As of 22 August 2026 the OTA is running a voluntary pilot with about 100 selected large VAT-registered companies, and Decision 189/2026 (issued 9 August 2026) fixes the binding dates at 1 April 2027 and 1 October 2027.",
    "appliesTo": "VAT-registered taxable persons. Decision 189/2026 obliges those with annual supplies above OMR 5 million from 1 April 2027, and those at or below OMR 5 million from 1 October 2027. Before those dates participation is voluntary and in practice limited to the OTA's invited pilot group of about 100 large taxpayers.",
@@ -1998,6 +2006,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "pakistan": {
   "einvoicing": {
    "scheme": "FBR Digital Invoicing (electronic sales tax invoicing under section 23 of the Sales Tax Act 1990, Chapter XIV of the Sales Tax Rules 2006)",
+   "seoToken": "FBR Digital Invoicing",
    "authority": "Federal Board of Revenue (FBR), Inland Revenue. Integration runs through PRAL (Pakistan Revenue Automation Pvt Ltd) or an FBR licensed integrator.",
    "status": "Live and in force for every sales tax registered person. SRO 1413(I)/2025 of 1 August 2025 brought all registered persons into scope on a phased calendar that ran out during 2025, and FBR's Sales Tax General Order 01 of 2026, dated 30 March 2026, restates the obligation as applying to all sales tax registered persons.",
    "appliesTo": "All sales tax registered persons, corporate and non-corporate. Tier-1 retailers carry a separate standing obligation under the proviso to section 23(6) to integrate their retail outlets for real-time reporting of sales.",
@@ -2284,6 +2293,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "india": {
   "einvoicing": {
    "scheme": "GST e-invoicing (e-invoice under rule 48(4) of the CGST Rules), with the e-way bill as a separate mandate for movement of goods",
+   "seoToken": "GST e-Invoicing",
    "authority": "Goods and Services Tax Network and the Invoice Registration Portals, principally the NIC portal, under the Central Board of Indirect Taxes and Customs",
    "status": "Fully live and stable. The threshold has sat at INR 50 million aggregate annual turnover since 1 August 2023 and has not moved since.",
    "appliesTo": "Registered persons whose aggregate annual turnover exceeded INR 50 million in any financial year from 2017-18 onwards, for B2B supplies, exports, credit notes and debit notes. B2C invoices are outside e-invoicing.",
@@ -2920,6 +2930,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "egypt": {
   "einvoicing": {
    "scheme": "منظومة الفاتورة الإلكترونية and منظومة الإيصال الإلكتروني, the Egyptian e-invoice system and e-receipt system",
+   "seoToken": "ETA",
    "authority": "Egyptian Tax Authority (مصلحة الضرائب المصرية), ETA",
    "status": "Egypt runs a clearance model: a B2B or B2G invoice is submitted to the ETA portal and validated before it counts as a valid invoice. B2C is a separate e-receipt system that is still being switched on wave by wave, so two different builds are in play.",
    "appliesTo": "All companies registered for VAT selling taxable goods or services have had to issue e-invoices for B2B since April 2023, and a paper invoice issued after that date cannot support an input VAT deduction. The B2C e-receipt obligation is phased. The most recent wave confirmed by a Big Four or specialist source is the eighth sub-phase of stage two, under ETA Decision No. 281 of 2025, covering taxpayers named in the annex who are registered at the Sixth District and Fifth Settlement tax offices in Cairo, effective 15 September 2025.",
@@ -3238,6 +3249,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "jordan": {
   "einvoicing": {
    "scheme": "JoFotara, the National Electronic Invoicing System (نظام الفوترة الوطني)",
+   "seoToken": "JoFotara",
    "authority": "Income and Sales Tax Department (ISTD), Ministry of Finance, delivered with the Ministry of Digital Economy and Entrepreneurship",
    "status": "Phase 2 has been live since 1 April 2025 and covers B2B, B2C and B2G. As of August 2026 ISTD is still pulling smaller taxpayers in, and an invoice that did not go through JoFotara is not accepted as a deductible expense.",
    "appliesTo": "Taxpayers issuing invoices in Jordan. No sector or entity-type exemption has been published. The commercial trigger is simpler than the legal one: your customer cannot deduct the cost if the invoice did not clear JoFotara, so they will refuse it.",
@@ -3541,6 +3553,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "turkey": {
   "einvoicing": {
    "scheme": "e-Fatura (e-Invoice) and e-Arşiv (e-Archive), part of GİB's e-Belge (e-Document) family",
+   "seoToken": "e-Fatura",
    "authority": "Gelir İdaresi Başkanlığı (GİB), the Turkish Revenue Administration",
    "status": "Turkiye has run mandatory e-invoicing for years and the threshold rolls forward every year. Taxpayers with 2025 gross sales of TRY 3 million or more were required to be on e-Fatura by 1 July 2026, a deadline that has now passed. The rule is standing rather than one-off, so the next annual transition date applies to whoever crosses the threshold next.",
    "appliesTo": "Taxpayers above the gross sales thresholds plus named sectors including fuel and e-commerce. The split matters more than the threshold: e-Fatura applies when both parties are registered in the system, and everything else goes out as e-Arşiv. In practice a Turkish company of any size issues no paper invoices.",
@@ -4188,6 +4201,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "germany": {
   "einvoicing": {
    "scheme": "E-Rechnung. B2B sits in section 14 UStG; federal B2G runs on XRechnung under the E-Rechnungsverordnung (ERechV)",
+   "seoToken": "E-Rechnung",
    "authority": "Bundesministerium der Finanzen and the Land tax offices for B2B. For federal public contracts, the Bund's central invoice receipt platforms (ZRE and OZG-RE)",
    "status": "Every German business has had to be able to receive structured e-invoices since 1 January 2025. Issuing is still in transition: 2026 is the last full year in which paper or PDF is allowed with the buyer's agreement.",
    "appliesTo": "Domestic B2B supplies where both the supplier and the customer are established in Germany. Supplies exempt under section 4 nos. 8 to 29 UStG are out of scope and B2C is not covered. Separately, suppliers to federal contracting authorities have had to send e-invoices since 27 November 2020 for orders above 1,000 euro net.",
@@ -4508,6 +4522,7 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  "france": {
   "einvoicing": {
    "scheme": "Facturation electronique (mandatory B2B e-invoicing and e-reporting reform)",
+   "seoToken": "Factur-X",
    "authority": "DGFiP (Direction generale des Finances publiques), Ministere de l'Economie et des Finances",
    "status": "Live from 1 September 2026. Every business subject to French VAT must be able to receive e-invoices from that date, and large companies and ETIs must also issue them and file e-reporting; PME, TPE and micro-enterprises follow on 1 September 2027.",
    "appliesTo": "Businesses established in France and subject to French VAT, including those under the franchise en base. Receiving e-invoices: all of them from 1 September 2026. Issuing e-invoices and transmitting e-reporting data: grandes entreprises and entreprises de taille intermediaire (ETI) from 1 September 2026, then PME, TPE and micro-enterprises from 1 September 2027.",

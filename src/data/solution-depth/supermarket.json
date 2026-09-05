@@ -1,0 +1,172 @@
+{
+  "metaDescription": "Odoo for supermarkets: scales and weighed items, price-embedded barcodes, multi-buy promotions, fresh traceability, and the POS fiscal rules per country.",
+  "intro": [
+    "Odoo has no supermarket edition and no grocery vertical. What a grocery floor needs sits in four places: the point of sale, inventory with lots and expiry dates, the barcode nomenclature that decodes a scale label, and the discount and loyalty programs that carry a multi-buy. A supermarket build is the work of joining those four, and the joins are where these projects go wrong.",
+    "Three things separate a grocery till from a fashion or electronics one. A large share of lines are sold by weight rather than by piece. A large share carry a date and lose all their value on it. And the catalogue is big, often twenty to sixty thousand sellable lines at low margin, which turns till speed and stock accuracy into commercial questions rather than technical ones.",
+    "The edition question settles early on a grocery build, and it settles on two things. A checkout scale reaches the till only through an IoT Box, and the IoT Box is Enterprise. Local fiscal rules are the other, wherever the law names a certified device or a reporting channel. Both are yes or no answers, and almost everything else a supermarket needs runs on either edition. Ask them in the first workshop rather than after the hardware is ordered."
+  ],
+  "whoFor": [
+    "Independent supermarkets and small chains, roughly two to twenty stores, with fresh counters and a central buying office.",
+    "Grocers running weighed items at the checkout and label-printing scales in butchery, bakery and produce.",
+    "Cash and carry operations selling the same item by case to trade and by piece to consumers, which is two units of measure on one product file.",
+    "Chains that want stock, promotions and margin inside one system instead of a till that exports a daily sales total to accounts.",
+    "Not for a single convenience store with a few hundred lines and no fresh counter, where a plain point of sale setup already covers the trade.",
+    "Not for hypermarkets whose core process is vendor rebates, concession settlement and electronic shelf labels. Odoo has no rebate management and no shelf label integration, and consignment stops at owner-tracked quantities with no settlement run, so the build turns mostly bespoke."
+  ],
+  "capabilities": [
+    {
+      "title": "Selling by weight at the checkout",
+      "body": "A loose product takes a weight unit of measure, a price per kilo and the flag that marks it as weighed at the till. With an IoT Box in place the point of sale reads the connected scale and writes the reading in as the line quantity, so the price follows the weight rather than a keyed number. Odoo drives a fixed list of scale models over their own protocols, so the exact model matters more than the brand. Tare is the scale's job. Nothing in Odoo subtracts a container weight for you."
+    },
+    {
+      "title": "Barcodes with the price or the weight inside",
+      "body": "Counter scales print an EAN-13 label where part of the code is a value rather than an identifier. Odoo decodes these with barcode nomenclature rules, set in the Inventory configuration: a pattern states which digits hold the item reference and which hold the embedded weight or price, with the value positions written inside braces. The rule type decides what the till does with the number it pulls out, so a weight rule and a price rule behave differently on two labels that look identical. Prefixes 20 to 29 are reserved for in-store codes, which is exactly what these are."
+    },
+    {
+      "title": "Multi-buy, mix and match, and loyalty",
+      "body": "Discount and loyalty programs are Community and cover what a grocer actually runs: three for two, a percentage across a product category, a minimum quantity trigger, coupons issued per customer and points on a loyalty card. Each program carries its own start and end date and has to be made available to the point of sale it applies in, which is a per program setting rather than a global switch. Gift cards and an eWallet balance run on the same machinery."
+    },
+    {
+      "title": "Fresh traceability and date control",
+      "body": "With lots and expiration dates switched on, an incoming batch carries a best before date, a removal date and an alert date. FEFO sorts by the removal date rather than by receipt order, so it picks nothing sensible until those dates are keyed at goods in. A recall runs from the lot back to its receipt and forward through the deliveries and sessions it left by, which is as far as any trace reaches for a walk-in shopper who paid cash."
+    },
+    {
+      "title": "Own label and in-store production",
+      "body": "An own-label line made by a co-packer is a bill of materials with a subcontractor on it: components go out, finished goods come back at a cost that includes the conversion. Bakery and butchery output is a manufacturing order where the cuts come out as by-products, each carrying a cost share percentage, so one carcass or one dough cost is distributed across the outputs instead of landing on whichever line was listed first. Those percentages are a margin decision, not a data entry chore."
+    },
+    {
+      "title": "Cash office, cashiers and till discipline",
+      "body": "A session belongs to a till and closes on a counted drawer, with cash in and cash out movements and any difference posted to a nominated account. Turn on several employees per session and each order carries the cashier who rang it, so speed, voids, discounts and returns read per person rather than per terminal. Agree the refund rule before opening, including who may authorise a negative line and whether it returns stock to the shelf or to a quarantine location."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Decide per line how the item is sold",
+      "body": "The unit of measure is the first decision and the hardest to reverse. A line sold by piece, a line sold by kilo and a line sold as a pre-packed weight are three different products, not three prices. Fix the internal reference that doubles as the PLU on the counter scales at the same time, because Odoo pushes no item file into a scale. Loading prices into each machine stays a store routine."
+    },
+    {
+      "title": "Barcode nomenclature before the first label",
+      "body": "Order the rules, then decide whether counter labels carry a weight or a finished price, because that choice fixes the shelf edge as well as the till. Print a sample from every scale model on the estate and scan it into a live session during configuration, not on the morning of go-live. Two machines from the same maker are often set to different digit layouts by whoever installed them. Changing the rules after labels are printed makes the printed stock wrong, not the system."
+    },
+    {
+      "title": "Store topology and replenishment",
+      "body": "Each store is a warehouse with a stock location behind the till, resupplied from the distribution centre through a route rather than by hand-raised transfers. Reordering rules with a minimum and a maximum per store drive the replenishment list, and lead times have to reflect the actual delivery day rather than a nominal one. Decide whether shop floor and backroom are separate locations before go-live, because splitting them afterwards means recounting every line."
+    },
+    {
+      "title": "Shelf prices, tax and the receipt",
+      "body": "Grocery shelf prices are gross, so taxes are configured as included in the price and the rounding method is agreed before the first receipt prints. Where the rate varies by item, and across food it usually does, the rating belongs on the product rather than on the customer, with fiscal positions kept for real exceptions such as export or a duty free zone. Where the smallest coin in circulation is bigger than the smallest tax step, set cash rounding so the cash total rounds and the card total does not. Receipt content is set by local rules, which gives the layout a legal deadline rather than a design one."
+    },
+    {
+      "title": "Cut over on a counted night, one store first",
+      "body": "Count with the doors shut, keying lot numbers and dates on fresh lines rather than skipping them, because FEFO cannot sort what has no date. Freeze the price file for the count window and open each till with a declared float. Then trade one store for two or three weeks before the next batch, since the faults a grocery build produces appear in a Saturday queue, not in a test script."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "A scale the till cannot read",
+      "body": "Two machines get called a scale. The counter device that prints a label is one, the checkout scale a cashier weighs produce on is another. The checkout scale has to be a supported model and it connects through an IoT Box, which means Enterprise. The label scale keeps its own item file, maintained separately, and Odoo never writes to it. Most Community grocers avoid the question entirely, weighing produce at a counter scale that prints a barcode the cashier then scans, with nothing wired to the till, which costs a queue at the produce counter instead of a subscription. Ordering hardware before this is settled is the most expensive mistake on a grocery project."
+    },
+    {
+      "title": "A catalogue the terminal cannot carry",
+      "body": "The point of sale runs in the browser and keeps data on the terminal so it can keep selling when the line drops. In Odoo 17 the whole list of products marked available in the point of sale loads at session open, and a file of forty thousand lines on a cheap all in one shows up as a slow open and a sluggish search. From Odoo 18 the terminal loads a working set and queries the server for the rest as they are searched, which fixes the session open and moves the problem, because a line nobody has loaded cannot be found while the connection is down. Either way, restrict what is marked available in the point of sale, keep the till categories shallow, and benchmark the real product file on the exact terminal model before the hardware order is signed."
+    },
+    {
+      "title": "Case in, piece out, and a unit you cannot change",
+      "body": "Cash and carry lines are bought by case and sold by piece, which is one product with a purchase unit and a sales unit inside the same measure category. Odoo blocks a change of unit of measure on any product that already has stock moves against it, so a wrong choice is not corrected later, it is replaced with a new product and a manual move of the old one's stock. Model the case, the inner and the piece on paper before anything is imported."
+    },
+    {
+      "title": "Promotions that stack in ways nobody priced",
+      "body": "Programs are written one at a time and then meet each other in a basket. A category percentage, a three for two and a loyalty reward can all land on one line and take it below cost, and nobody notices until the margin report a month later. Build the combination matrix during configuration, ring the awkward baskets through a real session, and decide which programs may combine before the first one goes live."
+    },
+    {
+      "title": "Shelf price and system price drift apart",
+      "body": "The sales price on a product carries no future effective date, so a change is either made on the day by hand or scheduled through a pricelist with validity dates. Pricelists are the only mechanism that will hold next Monday's price today. Either way the paper label is a separate print run that somebody walks the aisle with, and that walk is the step plans forget. Treat label printing as an afterthought and the floor ends up contradicting the till."
+    },
+    {
+      "title": "Sessions left open and adjustments left unexplained",
+      "body": "A session posts its accounting entry when it closes, so a till left open across two trading days puts both days into one entry and one period. Unpicking that afterwards is manual. Closing is a daily discipline the store manager owns, not a setting. Stock has the same shape: an inventory adjustment with no reason and no counted-by name is a number nobody can defend three weeks later."
+    }
+  ],
+  "worksWith": [
+    "Point of Sale with discount and loyalty programs, for the till, cash control and the offers themselves",
+    "Inventory, for lots and expiry dates, FEFO removal, putaway rules and scheduled cycle counts",
+    "Barcode nomenclature in the Inventory configuration, which is what decodes a weight or price embedded scale label",
+    "Purchase with vendor pricelists and purchase agreements, for seasonal fresh buying against a fixed price",
+    "Manufacturing and subcontracting, for in-store cutting and own-label lines made by a co-packer",
+    "Employees, for badge or PIN cashier identification when several people share one till",
+    "The IoT Box in Enterprise, for the checkout scale and the serial hardware around it",
+    "Accounting with landed costs, for tax-included shelf prices, the session journal entry and stock valuation per store"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA phase 2 reaches the checkout. A simplified tax invoice carries a QR code holding the seller name, VAT number, timestamp, total and VAT amount, reported to Fatoora within twenty four hours rather than cleared before it is issued. Arabic is required on the document, and VAT is fifteen percent with no grocery zero rating. The receipt QR comes from the Saudi localisation, while the reporting link belongs to the Enterprise e-invoicing side, which is often what settles the edition for a Saudi grocer."
+    },
+    {
+      "country": "uae",
+      "note": "Excise on carbonated, energy and sweetened drinks is paid upstream and sits inside the cost, so it never appears as a tax line at the till and the margin on those lines is not what a five percent VAT calculation suggests. The e-invoicing programme runs through accredited service providers and starts with business and government counterparties, so the back office is in the first wave and the consumer receipt is not. Discount campaigns and prize draws in Dubai need a permit from the economic department, which puts a lead time on the promotion calendar rather than a setting in the system."
+    },
+    {
+      "country": "pakistan",
+      "note": "Tier-1 retailers must integrate every point of sale terminal with the FBR system, so each receipt is fiscalised as it prints and carries an FBR invoice number and QR code. Standard Odoo ships nothing for this in either edition, so it is an integration against an approved provider, licensed and budgeted per terminal, and it gates the opening of a store rather than following it."
+    },
+    {
+      "country": "india",
+      "note": "The same commodity is rated by how it is sold, since pre-packaged and labelled staples attract GST where the loose equivalent does not, which puts the tax on the pack rather than on the ingredient and makes the pre-pack a product of its own. Above the turnover threshold a dynamic QR code is required on B2C invoices, and stock moved to a store travels on an e-way bill. The e-invoice and e-way bill connectors are part of the Indian localisation on Enterprise."
+    },
+    {
+      "country": "egypt",
+      "note": "Retail sales report through the ETA e-receipt system, a separate channel from B2B e-invoicing that applies at the till itself. Every line needs a registered GS1 code or an internally coded EGS reference before it can appear on a receipt, so coding a large grocery catalogue is a gating task rather than a go-live week task. The Egyptian localisation addresses e-invoicing rather than the receipt channel, so the till side is scoped as an integration."
+    },
+    {
+      "country": "turkey",
+      "note": "Retail receipts come from a certified new generation cash register, so the till software has to work with that device rather than print a receipt of its own. Invoicing splits by counterparty, e-Fatura to registered businesses and e-Arsiv to consumers, and stock moved between stores travels on an e-Irsaliye issued before the vehicle leaves. Odoo ships no Turkish e-invoicing integration in either edition, so all three documents go through a private integrator and that connector is a project line of its own."
+    },
+    {
+      "country": "germany",
+      "note": "Every till needs a certified technical security device recording each transaction, a receipt must be offered to the customer, and an auditor can ask for a DSFinV-K export during a cash inspection. Odoo signs transactions through a cloud fiscalisation service and that module sits on Enterprise. GoBD retention and a DATEV export for the tax adviser are both expected, so agree the export format with the adviser before the first month closes."
+    },
+    {
+      "country": "france",
+      "note": "Cash software used for retail sales has to satisfy the anti-fraud rules on inalterability, security, retention and archiving. Odoo ships a point of sale certification module for France that locks what can be altered once a receipt is issued, and the attestation an inspector asks for depends on a current subscription rather than on the code alone. Food promotions are capped at thirty four percent in value and twenty five percent in volume under the Egalim rules, which constrains what the promotion calendar may contain rather than how it is built."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Does every cashier need a paid Odoo user account?",
+      "a": "No. A session is opened and closed by an Odoo user, so a store needs at least one of those. Everyone else on the till can be an employee record identified by a badge or a PIN, which is not a user account and does not count as one. Get that distinction into the licence estimate early, because a chain that assumes one paid user per lane budgets for seats it will never create. Odoo sets its own user pricing and revises it, so confirm the current terms with Odoo rather than with an implementer's spreadsheet."
+    },
+    {
+      "q": "Should a chain be one company or one company per store?",
+      "a": "One company with a warehouse per store is the normal answer. It gives you one product file, one price file, store to store movement as internal transfers, and reporting that filters by warehouse with nothing to consolidate. Separate legal entities are an ownership or tax answer rather than an operational one, and they buy you a chart of accounts each, inter-company transfers to keep in step, and a consolidation on top, where the consolidated reporting is Enterprise. Pricing stays flexible either way, since each till points at a default pricelist, so a region or a single store can differ without a second catalogue."
+    },
+    {
+      "q": "Can a supermarket run on Odoo Community?",
+      "a": "The trading core can, and most of a grocery build never touches Enterprise. Point of sale with cash control and several employees per session, multi-warehouse inventory, lots with expiry and FEFO, barcode nomenclature, pricelists, discount, coupon and loyalty programs, product label printing and manufacturing with by-products are all Community. Enterprise carries the IoT Box for the checkout scale and serial hardware, the Barcode app for warehouse work on a handheld, Studio, the dynamic accounting reports, consolidation, and several of the country fiscal modules. Check which side of that last line your country sits on before the budget is fixed."
+    },
+    {
+      "q": "Does Odoo support electronic shelf labels?",
+      "a": "No. There is no electronic shelf label integration in any current version. Paper labels print from the product label layouts, including a ZPL option for a thermal printer, so a price change means a print run and a walk of the aisle. If you want electronic labels, the work is an integration against that vendor's own interface, scoped and priced separately, and it needs a decision about which system holds the master price."
+    },
+    {
+      "q": "How is near-date stock marked down?",
+      "a": "By hand, on purpose. Nothing in Odoo reprices a line because it is four hours from expiry, and there is no time of day markdown rule. What the system gives you is the worklist, since lots can be filtered on removal and alert date instead of walking the chiller. The reduction itself is one of three things: a promotion program with a date window, a pricelist rule, or a manual discount on the line where the store is trusted with one. Pick which before go-live, because the manual route leaves nothing to report on afterwards."
+    },
+    {
+      "q": "Can we measure shrinkage properly?",
+      "a": "Yes, if waste is scrapped to locations kept apart by cause instead of vanishing into inventory adjustments, and if cycle counts run on a schedule per location rather than once a year. Odoo has no shrinkage report as such, so the figure is built as a pivot over scrap moves and adjustment moves, split by category, store and period. The reporting is the easy half. The discipline of naming a reason at the write-off is the half that fails."
+    },
+    {
+      "q": "What happens at the till when the internet drops?",
+      "a": "Selling continues on what the terminal already holds. The point of sale keeps its loaded product and pricing data in the browser and queues completed orders there, then syncs them when the connection returns. What stops is anything that needs the server: opening or closing a session, a product that was never loaded, a customer created elsewhere that minute, and card payments routed through a networked terminal. The real risk is operational, since clearing the browser data or reimaging a terminal before the queue has synced destroys those orders permanently."
+    },
+    {
+      "q": "Is there a self-checkout?",
+      "a": "Not a grocery one. Odoo's self-ordering kiosk is built for food service, where a customer picks products from a menu, and it has no scale integration, no security weighing and no attendant override screen. A supermarket self-checkout is either a third party system integrated to Odoo or a bespoke build. A customer-facing display on a staffed till is a different matter and is a standard option."
+    },
+    {
+      "q": "How do we read margin on fresh?",
+      "a": "Costing is set per product category as standard, FIFO or average cost. Fresh usually sits on average cost, because a case price moves week to week and a standard cost goes stale within days. Freight and duty on imported produce belong on a landed cost so the value reaches the item rather than a general expense line. Margin on a weighed line reads correctly only when the purchase unit converts cleanly to the sales unit, so test one before trusting the report."
+    }
+  ]
+}

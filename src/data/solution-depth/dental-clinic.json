@@ -1,0 +1,172 @@
+{
+  "metaDescription": "Odoo for dental clinics: how the odontogram, treatment plans and lab cases are really built, what Community cannot do, and the rules country by country.",
+  "intro": [
+    "Odoo has no tooth. No surface, no procedure code, no odontogram, in Community or in Enterprise. What it does have is a quotation with optional lines the patient can accept and sign online, invoicing that separates delivered quantity from invoiced quantity, a diary, serial tracked stock and an attachment store. A dental system is a charting and treatment plan layer sitting on those parts, and that layer carries most of the budget and nearly all of the risk.",
+    "The edition question is not the app list. Community covers Sales, Purchase, Inventory with serial numbers and expiry dates, Invoicing, Point of Sale and the free patient portal, which is enough for one site that books by phone and charts at the chair. Enterprise is what you buy Appointments, Sign, Documents, Studio, WhatsApp, bank feed synchronisation and deferred revenue for. Orthodontic contracts billed monthly across two years are usually what forces the accounting side.",
+    "The rest decides the first year. A chart has to read correctly to a dentist trained on a different numbering system. A crown has to be traceable from the impression to the lab invoice to the fit appointment. An implant fixture needs a serial number tied to a named patient for the life of that implant. And an associate expects to be paid on collections, after the laboratory bill has come off."
+  ],
+  "whoFor": [
+    "Single site general practices where the chair diary, the lab tray and the recall list are the whole operation.",
+    "Groups of three to thirty sites that want one patient record, one fee schedule and operator numbers that can be compared.",
+    "Implant and prosthetic heavy practices, where laboratory cost and device traceability drive both margin and liability.",
+    "Orthodontic and aligner clinics billing a fixed case fee in instalments across eighteen to thirty months.",
+    "Not for a two chair practice that needs a diary and a receipt book, where a small dental app subscription costs less than any build.",
+    "Not for a practice required to keep clinical records in software formally approved by its health authority, because Odoo holds no such approval."
+  ],
+  "capabilities": [
+    {
+      "title": "Charting a tooth Odoo has never heard of",
+      "body": "The odontogram is a grid of thirty two permanent teeth, each with up to five surfaces, each carrying a status that changes over time. None of it exists in Odoo, so it gets modelled: one record per tooth per patient, a finding per surface, and history that is appended rather than overwritten. Store the notation once and render it more than one way. FDI two digit numbering is read across Europe and the Gulf, Universal one to thirty two by a US trained dentist, and primary teeth need the same handling for a child in mixed dentition."
+    },
+    {
+      "title": "Treatment plans as quotations accepted in stages",
+      "body": "A plan maps onto a sale order better than onto anything else Odoo ships. Lines are procedures carrying the tooth and the surface. Optional lines let a patient choose between a composite and a crown without producing two documents, and the quotation is viewed, accepted and signed from the portal on either edition. Because the order tracks delivered quantity apart from invoiced quantity, a plan half completed reports as half completed instead of as one accepted total. Long cases split into phased orders under a single plan reference."
+    },
+    {
+      "title": "Lab cases, shades and the chargeback",
+      "body": "A crown leaves as an impression or a scan and comes back weeks later for a fit. That round trip needs its own record: laboratory, tooth, shade against the guide the lab works to, material, date sent, date due, linked to the plan line it belongs to. The lab bill is a vendor bill posted to the analytic account of that case. Record remakes on the same object. A laboratory that is cheap per unit and remakes one crown in ten is not cheap, and nobody can prove it without the link."
+    },
+    {
+      "title": "Imaging, and the line Odoo will not cross",
+      "body": "Odoo stores files. It does not read DICOM, so there is no viewer, no windowing and no measurement inside the system. Radiographs are attachments on the patient and the visit under a naming rule that survives a staff change, with Documents on Enterprise adding workspaces, tags and a filing rule per site. Size it honestly before go-live. Intraoral images run to a few megabytes, a panoramic more, and one cone beam volume into hundreds, which becomes a restore problem long before it becomes a disk problem."
+    },
+    {
+      "title": "Implants, consumables and sterilisation",
+      "body": "Fixtures, abutments and membranes are serial tracked products in Inventory, so the exact component placed in a named patient is recoverable years later when a manufacturer withdraws a batch. Carpules and composite carry a use by date once Expiration Dates is switched on in the Inventory settings, which is off in a fresh database and only appears once Lots and Serial Numbers is enabled. A service line moves no stock by itself, so each procedure needs a materials list that raises an internal move when the visit closes. Autoclave loads follow the same pattern, a lot against a cycle, recorded on the visit that used it."
+    },
+    {
+      "title": "Recall as a due date, not a mailing list",
+      "body": "Recall belongs on the patient: six months for hygiene, twelve or twenty four for a review, shorter for a periodontal case, set per person rather than per practice. A scheduled action walks those dates nightly, skips anyone already holding a future booking, and hands reception a working queue. Log the contact attempt and its outcome. Keep a second queue for patients lapsed eighteen months or more, and measure invited, booked and seen as three separate numbers, because the gap between them is the cheapest revenue in the building."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Settle notation and the surface model in week one",
+      "body": "Decide the primary notation, the alternate view, and whether a finding sits per tooth or per surface before the first chart row exists. Every import, every report and every printed plan inherits that choice. A practice that stores the chart as free text discovers in month four that it cannot answer how many distal composites were placed last quarter, and no amount of later work recovers the answer from the text."
+    },
+    {
+      "title": "Build the catalogue against the codes you actually bill",
+      "body": "Each procedure becomes a service product with its income account and its tax, and the analytic distribution naming the site and the operator reaches the line from a distribution model keyed on that product rather than sitting on the product itself. Code it against the schedule you bill under, whether that is CDT, BEMA and GOZ, a national item list or a private fee list, because that identifier travels onto claims and into every report built later. Set the invoicing policy to delivered quantity on anything clinical. Have the principal sign the list before import, since a rebuild strands every commission already calculated."
+    },
+    {
+      "title": "Chairs and hygiene rooms as bookable resources",
+      "body": "The constrained resource is the chair, not the dentist. Appointments on Enterprise books resources as well as users, so surgeries, the hygiene room and the scanner become bookable without a paid licence for each. Give every appointment type its own duration, because a check up and a molar endodontic case are not the same slot, and build in the turnaround between patients. Link operators to employee records so approved leave clears availability instead of living in a receptionist memory."
+    },
+    {
+      "title": "Decide imaging storage and retention before the first scan",
+      "body": "Attachments sit in the filestore on disk by default and can be forced into the database with a system parameter, which is the wrong choice at imaging volumes. Size the disk for years of growth, prove that a restore of database and filestore together finishes inside your tolerance, and write down the retention period your regulator sets for radiographs and consent forms. This is an infrastructure decision and it is far cheaper made early."
+    },
+    {
+      "title": "Agree when a plan becomes revenue",
+      "body": "Settle with the accountant whether a treatment plan is recognised on acceptance, on completion of each procedure, or on payment. Dentistry makes the question real, because a restorative course runs six months and an orthodontic case runs two years. The answer sets the invoicing policy on the catalogue, decides whether deposits are down payments or liabilities, and determines whether deferred revenue schedules are needed at all, which carries a licence cost because those sit in the Accounting app and therefore in Enterprise. Deciding it after the first close means restating."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Lab cost never reaches the case",
+      "body": "The laboratory invoice arrives monthly as one bill covering forty cases and lands in a single expense account. Per case margin then does not exist, and an associate paid a share after lab cost is being paid from a guess. Split the bill at entry, or make each lab invoice line carry the analytic account of the treatment plan it belongs to. Most practices find this after a year of overpaying, and the correction is an uncomfortable conversation."
+    },
+    {
+      "title": "Implant serials still recorded on paper",
+      "body": "The fixture sticker goes into the paper notes, so when a manufacturer issues a field safety notice the practice cannot produce the affected patient list without opening every folder. Serial tracking only works when the number is captured at the chair, at the moment of placement, on a screen the operator will genuinely use. An awkward capture step gets skipped, and a traceability record with gaps is worse than none because people trust it."
+    },
+    {
+      "title": "Half a plan invoiced as a whole sale",
+      "body": "A plan is accepted, invoiced in full, then abandoned after the second of six visits. Revenue has been recognised for work that will never be done, plus a refund nobody budgeted for. Invoice against completed procedures, hold deposits as down payments, and report accepted value, delivered value and invoiced value as three separate figures. In a dental practice those three numbers are never equal."
+    },
+    {
+      "title": "Deposits that never attach to a plan",
+      "body": "Reception takes a lump sum towards an implant case and posts it as a payment on account. Six weeks later nobody can say which plan it belongs to, how much of the case is still unbilled, or whether the patient is in credit. Raise the deposit as a down payment line on the treatment plan order so it consumes against later invoices, and reconcile it the moment the invoice is raised, because an unmatched credit sitting for months is how a patient gets chased for money they have already paid."
+    },
+    {
+      "title": "Annual insurance maximums checked from memory",
+      "body": "Dental cover is capped per patient per policy year, with waiting periods and frequency limits such as one set of bitewings in twelve months. Reception presents a plan, the patient accepts, and the claim is cut short because the cap was spent in March. Odoo knows nothing about a policy year or a remaining benefit. Hold the payer, the policy year, the annual maximum and the consumed value on the patient, and check before the plan is presented."
+    },
+    {
+      "title": "The old chart that will not migrate",
+      "body": "Legacy dental packages export patients, appointments and ledgers to a spreadsheet without complaint, then export the chart as a proprietary blob or not at all. Plan for the chart not to arrive. The workable answer is to attach the opening chart as a scanned snapshot on the patient, chart live from the first visit after go-live, and keep the old system readable for the retention period rather than trying to parse it."
+    }
+  ],
+  "worksWith": [
+    "Inventory for serial tracked implant components and lot tracked consumables with expiry dates",
+    "Purchase and vendor bills for dental laboratories, costed per case rather than per month",
+    "Point of Sale at reception for card and cash takings, posting into the same journals",
+    "Appointments, Sign and Documents on Enterprise for booking, consent and the imaging archive",
+    "Employees on either edition for hygienist rosters, associate contracts and duty hours, with Payroll being Enterprise and localised for only some countries",
+    "WhatsApp on Enterprise, or an SMS gateway on either edition, for recalls and confirmations",
+    "Intraoral scanners and imaging suites, which keep their own viewer and hand Odoo the exported file",
+    "Website payment providers for deposits taken when a plan is accepted online"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Chairside bills are consumer sales, so they follow the simplified path under ZATCA Phase 2, QR coded and reported after issue, while insurer invoices are cleared before they are handed over. Arabic is mandatory on the printed invoice. SCFHS practitioner licence numbers belong on the operator record with an expiry date and a reminder, since a lapsed licence stops that clinician working."
+    },
+    {
+      "country": "uae",
+      "note": "Preventive and therapeutic dentistry from a licensed provider is zero rated while whitening, veneers and elective cosmetic work are standard rated, so one catalogue carries both rates and the operator picks at the chair. A zero rated line still needs a zero rate tax on it, not an empty tax field. Dubai claims go to eClaimLink and Abu Dhabi to Shafafiya as XML, coded to payer code sets."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "NHS courses in England and Wales are paid in Units of Dental Activity against an annual contract value settled by the NHS Business Services Authority, so that income does not arrive per patient and cannot be modelled as one invoice per visit. Scotland and Northern Ireland pay per item under their own statements of dental remuneration, which is a different build. On a UDA contract the build reports units delivered against target while the ledger carries the monthly contract payment. Dental treatment is VAT exempt, whitening is not, and a registered practice files under Making Tax Digital."
+    },
+    {
+      "country": "germany",
+      "note": "Statutory patients are billed under BEMA and settled through the KZV, private patients under GOZ, where a factor above 2.3 needs a written justification printed on the invoice. Prosthetic work needs a Heil und Kostenplan approved by the insurer before it starts, which is a treatment plan with an external approval state. The Steuerberater expects a DATEV export, records fall under GoBD, and a cash till needs a certified TSE."
+    },
+    {
+      "country": "france",
+      "note": "Prostheses fall into the 100 percent Sante baskets, so the same crown carries a different patient cost by basket and the plan has to present those options before signature. Acts are coded in CCAM, and SESAM Vitale with tiers payant splits one course of treatment between Assurance Maladie and the mutuelle, leaving two receivables. Patient billing is B2C, so it falls under transaction reporting rather than the Factur-X flow."
+    },
+    {
+      "country": "turkey",
+      "note": "Invoices split by recipient, e-Fatura for registered taxpayers and e-Arsiv for individual patients, both through the GIB. Dental tourism adds a second problem. Packages are quoted to foreign patients in euros or pounds while the invoice is issued in lira, and the deposit often arrives months before the patient flies in. Hold that deposit as a liability against future treatment, not as revenue in the month it cleared."
+    },
+    {
+      "country": "united-states",
+      "note": "Procedures are coded in CDT, revised by the American Dental Association every year, so the catalogue needs an annual review rather than a single import. Claims leave as an 837D through a clearinghouse and remittance returns as an 835, and Odoo produces neither format, so that bridge is bought or built. HIPAA then shapes hosting, access rights, audit logging and what a reminder message is allowed to contain."
+    },
+    {
+      "country": "india",
+      "note": "Treatment is exempt, so input credit on chairs, materials and equipment is blocked and the real cost of a surgery includes GST nobody reclaims. Aligners, crowns and appliances are goods, they are taxed, and movement between the practice and the technician can require an e-way bill. Cosmetic dentistry billed separately is taxable revenue and can pull the practice into IRN generation for those lines alone."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Should we buy a dental app from the Odoo store or have the chart built?",
+      "a": "Either can work and the store app is the cheaper start, so judge it on four things. Does it hold a finding per surface with history, or only one status per tooth. Does a plan line reach a sale order and an invoice, or does it stop at a note. Does it move stock when a visit closes. And has the publisher shipped a version for each of the last three Odoo releases, because a chart abandoned at 17 leaves you rewriting under time pressure. A build earns its cost when the fee schedule, the payer rules or the associate split are odd enough that no published app fits them."
+    },
+    {
+      "q": "Community or Enterprise for a dental practice?",
+      "a": "Four questions decide it, not the app list. Does the public book online, does consent need signing and storing against the patient, is revenue deferred across periods, and is anyone keying bank statements by hand. Each has a Community answer that costs staff hours instead of licence fees, so price those hours against the licences. The clinical layer does not depend on the edition: a charting module written for Community runs unchanged on Enterprise."
+    },
+    {
+      "q": "Does every clinician need a paid Odoo user?",
+      "a": "Anyone who charts a tooth, writes a note or takes a payment needs an internal user, and on Enterprise that is a licence each. Patients on the portal are free. A chair, a surgery or a scanner booked through Appointments is a resource rather than a user, so equipment costs nothing. Avoid a shared reception login. Odoo stamps the author on every change, and a shared account destroys the one trail you would want during a complaint."
+    },
+    {
+      "q": "Will our imaging software talk to Odoo?",
+      "a": "Not by itself, and the working pattern is a shared identifier rather than an interface. The Odoo patient reference is written into the imaging system as the patient ID, the exported image or report is attached to the visit, and the diagnostic viewer stays where it is. Pushing a worklist from the diary into the sensor software is bespoke, so put two questions to the imaging vendor before anyone prices it: does the software accept a modality worklist at all, and is that exposed on the licence you hold, because several desktop dental suites keep it for a hospital tier."
+    },
+    {
+      "q": "How do we pay associate dentists and hygienists?",
+      "a": "Enterprise ships a Commissions app built on plans, targets and periods, calculated over invoiced or won amounts. That is not the dental question. Associate pay is a share of collections rather than of invoices, so it can only be worked out after reconciliation, and it is usually split by operator and sometimes by payer. Neither edition computes a share of money actually received net of a third party cost, so this is built. Budget for the statement as well as the calculation, because associates read it line by line and a figure they cannot audit gets argued over every month."
+    },
+    {
+      "q": "Can we run orthodontic payment plans over two years?",
+      "a": "Yes, with a payment term carrying dated lines, or Subscriptions on Enterprise for recurring invoices and automatic card collection. Plan for what goes wrong rather than the happy path. Patients move away mid case, miss three instalments, or want the unearned balance back when debond slips. Decide up front what the practice keeps if a case stops early, and make sure the schedule can be rewritten without reissuing the whole contract."
+    },
+    {
+      "q": "Can Odoo submit dental insurance claims?",
+      "a": "Not on its own. Claim formats are national and specific, from 837D in the United States to eClaimLink in Dubai and SESAM Vitale in France, and no edition produces any of them as standard. The practical build keeps the claim state, the pre-authorisation and the payer reference in Odoo, hands submission to an integration or the payer portal, then reconciles the remittance back to the invoice."
+    },
+    {
+      "q": "Can a group run several practices in one database?",
+      "a": "Yes. One company per site, with journals, fee lists, stock locations and analytic accounts kept apart, and multi company works in both editions. Contacts are shared across companies, so a patient treated at two sites keeps one record and one chart, which is usually why a group consolidates at all. Reporting that consolidates across companies is Enterprise, because the accounting report engine is, and Community leaves you the journal items and a spreadsheet. The harder question is whether the sites will accept one procedure catalogue, because separate ones make group reporting close to useless."
+    },
+    {
+      "q": "What happens to the tooth chart at the next Odoo upgrade?",
+      "a": "Odoo releases a major version each year. The upgrade service migrates standard data, and a charting layer is not standard data, so someone has to port it. That is the recurring cost of anything custom and clinical, and it belongs in the first year budget rather than being found in year two. Two habits reduce it: keep the chart in its own module instead of scattering fields across sale and stock, and keep clinical logic out of Studio, which is Enterprise only, carries no code review and no tests, and cannot be moved to a Community site later."
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "metaDescription": "Odoo IoT box setup for scales, receipt and label printers, scanners and card terminals. Enterprise only. What is supported, what breaks, and country notes.",
+  "intro": [
+    "Odoo IoT is the bridge between Odoo and physical hardware on a counter or a shop floor. A small Linux box joins the same local network as the tills or work centres, talks to devices over USB, serial, Bluetooth or the network, and presents each one to Odoo as a named device you assign to a point of sale, a work centre or a quality control point. The browser drives that conversation, not the Odoo server, so the screen and the box have to see each other on the local network. The app is Enterprise only.",
+    "Most of the effort goes on hardware decisions, not configuration screens. Odoo ships drivers for a specific set of printers, scales and terminals, and a device outside that set needs a handler written for it or does not work. Choosing hardware before the network, the acquirer contract and the local fiscal rules are settled is how these projects lose a month.",
+    "It helps to treat the box as a translator rather than a controller. It holds no database, keeps no history, runs no scheduled jobs of its own, and pulls its drivers down when it pairs. Odoo asks for a print or a reading, the box speaks the device's language and hands the answer back. Once that is agreed, most scoping arguments settle themselves: anything needing buffered history, a control loop or a machine protocol belongs in a PLC or a separate collector, and the box carries only the result into a transaction."
+  ],
+  "whoFor": [
+    "Retailers and restaurants needing the printer, drawer, customer display and card terminal to act as one till.",
+    "Butchers, delis and packing halls that price by weight and want the scale reading in the order line.",
+    "Manufacturers whose work order steps need a measurement, a photo, a printed label or a footswitch.",
+    "Warehouses printing shipping and product labels at the packing bench instead of from a driver installed on one desktop.",
+    "Not for plant telemetry or condition monitoring. The box moves a single event or reading into a transaction, it does not sample a signal all day.",
+    "Not for Community. The app does not ship there at all, so a shop on Community is limited to what a keyboard scanner and an Epson printer on the network can do between them."
+  ],
+  "capabilities": [
+    {
+      "title": "Point of sale hardware behaving as one till",
+      "body": "Assign a receipt printer, cash drawer, barcode scanner, electronic scale and customer display to a point of sale configuration and the session drives all of them. The drawer opens on the kick signal from the printer rather than through its own cable, which is why a drawer that will not open is usually a printer problem. Products flagged as sold by weight open the scale screen at the till, so the cashier confirms a live reading instead of typing a number. A second screen plugged into the box can carry the customer display, which is how a counter gets a customer facing total without a second computer."
+    },
+    {
+      "title": "Card terminals, and which of them need the box",
+      "body": "Terminal support routes differently by acquirer, and that decides whether you buy a box at all. Ingenico and Worldline terminals reach Odoo through the IoT box on the local network. Adyen and Stripe connect over the internet with no box involved. Recent versions also ship Razorpay and Paytm terminal support for the Indian market, again without a box. Every one of these integrations is an Enterprise module. In each case Odoo pushes the amount and reads the result back, so the figure on the terminal cannot drift from the figure on the order."
+    },
+    {
+      "title": "Measurement in production and quality",
+      "body": "A quality control point of the measure type can read from a connected gauge instead of a keyboard, so the value stored on the check is the one the instrument produced rather than the one an operator remembered. Work order steps do the same, and can print a label or capture a photograph from a USB camera at the step that requires it. Work centres carry IoT triggers, so a footswitch or a barcode scan advances the operator without gloved hands on a tablet."
+    },
+    {
+      "title": "Label and report printing without a driver on every PC",
+      "body": "A printer attached to the box becomes a destination Odoo prints to directly, and a report can be pointed at a named IoT printer so it always leaves from the same machine. Zebra units are addressed with ZPL and receipt printers with ESC/POS. A delivery slip and a shipping label then come off different devices without an operator picking a printer from a dialog. That removes the familiar pattern where a label is downloaded as a PDF and collected from a printer in the wrong room."
+    },
+    {
+      "title": "Scanners, and when they need the box at all",
+      "body": "Most USB and Bluetooth scanners present as a keyboard, type the barcode into whatever field has focus and need no box. The Barcode app and the point of sale both read them that way. Configure the scanner to send a carriage return as a suffix, or consecutive scans run together into one string. The box earns its place when the scanner has to sit away from the machine running the browser, or when a scan is a work centre trigger rather than text in a field."
+    },
+    {
+      "title": "Running the box, or running without one",
+      "body": "The box is a Raspberry Pi image tied to one Odoo major version, so it is upgraded when the database is, not whenever it suits. Where a Pi is impractical, the Windows virtual IoT service gives the same endpoint on a machine already sitting at the counter. For hardware Odoo does not cover, a Python handler placed in an iot_handlers folder inside a custom module is pulled down by the box when it connects, so the driver travels with the code rather than living on an SD card that someone reflashed."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Network first, hardware second",
+      "body": "The box and the browser running Odoo have to reach each other on the same local network. Give the box a reserved DHCP address, keep it off any guest VLAN and off client isolation, and run cable rather than WiFi to a till that matters. A route from the Odoo server to the shop is beside the point, because the server never calls the box. Shop floor WiFi with roaming access points is the reason a device works in a quiet test and disappears at a trading peak."
+    },
+    {
+      "title": "The certificate step people skip",
+      "body": "Odoo is served over HTTPS, and a browser will not call a box on plain HTTP from an HTTPS page. The box requests a certificate for its own odoo-iot.com subdomain, and that request only succeeds against a database with a valid Enterprise subscription. On a trial or unlinked test database the box stays on HTTP, the browser blocks the call without an obvious error, and no device ever responds. Pair against the real subscription first, then clone for testing."
+    },
+    {
+      "title": "Confirm the acquirer supports an integrated terminal",
+      "body": "A terminal is only integrable if the bank loaded the right application onto it. The same model ships in integrated or standalone mode and only the acquirer can change that. Get the model, the protocol and the merchant account confirmed in writing before anything is ordered. Where no integration exists the terminal stays standalone and the cashier records the tender by hand, which is a workable answer as long as it is priced and trained for rather than discovered in week eleven."
+    },
+    {
+      "title": "List what prints where, then name every device",
+      "body": "Write down each document that has to come out of a machine: receipt, kitchen ticket, product label, shipping label, invoice. Each carries a paper size, a printer language and a physical location. One station usually needs an ESC/POS receipt printer and a separate label printer rather than one device attempting both. Printers on the box are handled by CUPS, so a network printer that is not detected automatically has to be added through the box's own CUPS page before Odoo will ever list it. Then name the devices to match the location, because point of sale configurations and reports reference those names, and a replacement box with different names means repointing every one of them."
+    },
+    {
+      "title": "Prove the receipt on the real paper",
+      "body": "A receipt is not a shrunken PDF. The width is fixed in millimetres, so 58mm and 80mm are two different layouts, and a logo, a QR code and a block of Arabic each cost vertical space and each render differently from one printer model to the next. Print the real receipt, on the real roll, from the real printer before the layout is signed off. Leaving this until after the fiscal fields are added is what turns a formatting detail into a go-live delay."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "One box, one point of failure",
+      "body": "A single box serving four tills means four tills stop when it stops. SD cards in a Pi wear out and unstable mains will finish one off. Keep a spare flashed card and a written pairing procedure at each site. Restoring a box is a twenty minute job for somebody who has done it before and a lost trading day for somebody reading the manual for the first time."
+    },
+    {
+      "title": "A box pairs to one database",
+      "body": "The box connects to a single Odoo database. Point a test database at the same box while training is running and the two compete for the devices, with prints landing in the wrong session and pairings dropping. Either give the test environment its own box, or accept that hardware testing happens on production hardware in a booked window with the tills closed. Deciding that in advance is cheaper than discovering it during user training."
+    },
+    {
+      "title": "Scales that cannot be read, or cannot legally be used",
+      "body": "Two separate problems get merged into one line on a plan. The first is protocol: Odoo reads a short list of scale protocols, and a counter scale with a proprietary serial output needs a handler written against it. The second is legal. Selling by weight requires a trade approved instrument in most markets, and an approved scale is a different purchase at a different price from a parcel scale. Check both before ordering, not after."
+    },
+    {
+      "title": "The browser session is part of the hardware",
+      "body": "Devices are reached from the browser, so an operator who closes the tab, opens a second session or lets a laptop sleep loses the printer. Kiosk mode, a machine set never to suspend and a station login that stays open are configuration items rather than refinements. Tablets that drop WiFi when the screen goes off produce faults that look random to the user and are entirely predictable once the cause is known."
+    },
+    {
+      "title": "Version drift between box and database",
+      "body": "The box image is built for one Odoo major version. Upgrade the database, leave the boxes on last year's image, and devices list but stop responding without a clear error. Put a reflash of every box into the upgrade weekend, count the sites honestly including the one in the back office nobody logged, and confirm each device model still has a driver in the target version before a date is promised to anyone."
+    },
+    {
+      "title": "Nobody owns the box after go-live",
+      "body": "The box sits on the customer's local network, behind their firewall, plugged into their counter. That places it outside what a hosting provider supports, whether the database runs on Odoo Online, Odoo.sh or your own server. Name the person who reflashes a card, who holds the spare, and who is called when a printer stops at 08:00 on a Saturday. Hardware support scope is worth one paragraph in the contract and saves a long argument later."
+    }
+  ],
+  "worksWith": [
+    "Point of Sale, for printers, drawers, scales, scanners, customer displays and terminals",
+    "Point of Sale Restaurant, where order printers send each line to the station that prepares it",
+    "Manufacturing work orders, for measurements, labels, photographs and footswitch triggers",
+    "Quality, where a measure type control point reads from a gauge rather than a keyboard",
+    "Inventory and Barcode, for scan driven picking and labels printed at the packing bench",
+    "Fiscal localisation modules, which decide what a compliant receipt has to carry",
+    "Acquirer terminals from Ingenico, Worldline, Adyen and Stripe, each reaching Odoo by a different route"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "The receipt is the hardware constraint. A ZATCA simplified invoice carries a QR code holding encoded TLV data, and it has to sit with Arabic and English lines on the same roll. On 58mm paper the QR either shrinks towards the edge of reliable scanning or pushes the slip to an awkward length, so specify 80mm printers at purchase rather than meeting the problem at the counter. Test Arabic on the exact model you intend to buy, because two printers with near identical datasheets do not always render it the same way. Weighing instruments are regulated goods on import and need SASO conformity through the SABER platform to clear customs, which adds weeks the plan rarely shows."
+    },
+    {
+      "country": "uae",
+      "note": "Card acceptance shapes the build more than anything else here. Terminals supplied by Network International and Magnati are not in Odoo's supported list, so most retail runs the terminal standalone and the cashier selects the payment method by hand, unless a driver is written for the exact model the bank issues. The second constraint is the mall. Landlord supplied networks often sit behind client isolation or a guest VLAN, which stops the browser reaching the box, and any change runs on the landlord's schedule rather than yours. Ask for a wired port and a reserved address in writing while the fit out is still open."
+    },
+    {
+      "country": "egypt",
+      "note": "Two costs get missed at quoting. The first is sourcing: the box, a spare SD card and a replacement printer are import items, so the spare is bought alongside the original rather than ordered the day the first one fails. The second is power quality, because an unclean cut corrupts a card and a small UPS per till costs less than one lost trading day. On compliance, the tax authority runs invoices and retail receipts as two separate schemes and the official Odoo modules address the invoice side, so a till that has to submit receipts is a software integration with its own owner and not something a printer solves."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing sits between the sale and the paper. An integrated retailer posts the sale and waits for the invoice number and QR that come back, and both have to appear on the printed slip, so the receipt layout cannot be signed off until the integrator confirms exactly which fields are returned and how long they take. Design the slow path deliberately: what the cashier does when the response does not arrive, whether anything prints in the meantime, and who reconciles those sales afterwards. That track runs through PRAL or a licensed integrator and moves at a different pace from the printers and drawers."
+    },
+    {
+      "country": "india",
+      "note": "Two rules pull the hardware plan in opposite directions. Any instrument used to price a sale must be verified and stamped under the Legal Metrology Act and re-verified on a cycle, so the scale comes from a dealer who can produce the model approval and arrange stamping, and a parcel scale bought online will not qualify. Card payments go the other way. The Razorpay and Paytm terminal integrations run over the internet, so a shop taking cards through those acquirers needs no box for payments and may need one only for the scale."
+    },
+    {
+      "country": "turkey",
+      "note": "The fiscal receipt does not come out of an Odoo printer. Consumer sales are recorded on a certified new generation payment recording device supplied by a licensed vendor, and that unit signs and prints the sale itself. Odoo has no driver for it. The box is left with the narrower jobs: kitchen tickets, product labels, the drawer and the scale, while the sale is handed to the approved device through whatever interface its vendor supports. Get that vendor into the first workshop, because the interface they offer, and what they charge for it, decides the whole till design."
+    },
+    {
+      "country": "germany",
+      "note": "The technical security element required by the Kassensicherungsverordnung is a cloud service in Odoo's German localisation, billed separately from the Odoo licence. That inverts the usual assumption that local hardware keeps a shop trading through an outage, since the box is on the counter but the signature is not. Add the obligation to offer a receipt for every sale, which is satisfied electronically in theory and by a working printer in practice, and there are three things that fail independently and look identical to the cashier. Test them as three separate failures rather than one."
+    },
+    {
+      "country": "france",
+      "note": "Certification attaches to the software, not to the hardware. The certified point of sale module hashes and chains posted orders, so swapping a printer or replacing a failed box changes nothing about your position, and the box itself is not something anyone certifies. What changes is procedure at the counter. A wrongly rung sale is corrected with a refund rather than an edit, and a second copy is produced through the reprint path so it is recorded as a duplicate, which is why the counter printer has to work rather than a saved PDF being mailed as a workaround."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Do I need an IoT box just to print a receipt?",
+      "a": "Not always. Point of Sale prints straight to a network Epson printer using the ePOS support, with no box on the network. There is a catch worth knowing before you buy. Because Odoo is served over HTTPS, the printer's own self signed certificate has to be accepted in every browser that prints to it, on every machine. The box becomes necessary for a drawer driven from the printer, for scales, for integrated Ingenico or Worldline terminals, and for label printing at a bench with no PC beside it."
+    },
+    {
+      "q": "Is Odoo IoT available in Community?",
+      "a": "No. The IoT app and the modules that bind it to Point of Sale, Manufacturing and Quality are Enterprise. Community keeps keyboard emulating scanners and direct network printing from Point of Sale, which is enough for a simple shop. Assigned devices, live scale readings, gauge input on quality checks and integrated card terminals are Enterprise, and no community module reproduces them. Worth knowing in the same breath: the Barcode app is Enterprise too, so a Community warehouse scans inside the standard Inventory screens."
+    },
+    {
+      "q": "Can I keep the scale I already own?",
+      "a": "Only if Odoo has a driver for the protocol it speaks, and that list is short. Anything outside it needs a handler written against the instrument's serial output, which is contained work once the manufacturer supplies the protocol document. Ask for that document before assuming the scale can be reused, because some manufacturers will not release it and that answer changes the hardware budget."
+    },
+    {
+      "q": "Does this work with Odoo Online and Odoo.sh, or do we need our own server?",
+      "a": "All three work, because the browser is what talks to the box, not the Odoo server. The database can sit anywhere. The box needs a route out of the building to reach that database and to request its certificate, and it has to be on the same local network as the screen driving it. What no hosting arrangement gives you is support for the box, since it lives on your network behind your firewall and every provider draws the line there."
+    },
+    {
+      "q": "Which printers are the safe ones to buy?",
+      "a": "Stay close to what the drivers are written against: Epson receipt printers speaking ESC/POS, Zebra label printers speaking ZPL. Generic clones are where the odd faults come from. Check the interface as carefully as the model, since the same printer often ships in USB, serial, Ethernet and Bluetooth variants and they are not equally well supported. Then check the dull things: roll width, local supply of consumables, and replacement time. A printer with a six week lead time is not a till printer."
+    },
+    {
+      "q": "Can we run this on Windows instead of a Raspberry Pi?",
+      "a": "Yes. The Windows virtual IoT service installs on a machine already at the counter and exposes the same endpoint, which suits a back office that has a PC and no room for another appliance. The trade is that Windows updates, sleep settings and antivirus become part of your till. A Pi does one job and is replaced from a spare card in minutes."
+    },
+    {
+      "q": "How many devices can one box handle?",
+      "a": "There is no published limit, and the practical constraint is USB power and network stability rather than software. Retail usually runs one box per till so a failure stays local to one lane. In a warehouse, one box serving several printers is normal, because a print job can wait a few seconds in a queue and a customer at a till cannot."
+    },
+    {
+      "q": "What happens at the till if the box goes offline?",
+      "a": "The session keeps taking orders, because Point of Sale runs in the browser and holds orders locally. What stops is everything needing hardware: printing, the drawer, the scale and any terminal routed through the box. Cash becomes the immediate problem, since the drawer is driven by the printer. The reverse case is happier. If the internet drops while the local network holds, the session runs offline and the box keeps printing, because those calls never leave the building."
+    },
+    {
+      "q": "Can the box read data from a production machine?",
+      "a": "Only through something that presents as a serial, USB or network device with a driver behind it. There is no Modbus or OPC UA support out of the box, no historian and no alarming. For genuine machine data, collect it in a system built for that, then feed a summarised figure or a pass and fail result into Odoo where it attaches to a work order."
+    }
+  ]
+}

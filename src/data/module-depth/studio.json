@@ -1,0 +1,175 @@
+{
+  "metaDescription": "Odoo Studio in practice: what the Custom plan builder really covers, where it stops, what an upgrade does to your views, and when to write a module.",
+  "intro": [
+    "Odoo Studio is the browser based builder inside the Odoo Enterprise range. It adds fields, rearranges views, edits PDF reports and creates automation rules without a developer touching the source. Well scoped, it removes weeks of small change requests. Badly scoped, it produces a database nobody can upgrade cleanly, because the customisation lives in database records rather than in versioned code.",
+    "The commercial detail buyers miss is that Studio is not in every Enterprise plan. It sits on the Custom plan, above Standard, alongside multi company and the external API. Community has no Studio at all, although a developer working in the technical menus can build the same fields, views, server actions and automation rules by hand. What the Custom plan buys is the editor and the speed, not a capability that exists nowhere else.",
+    "The useful way to scope it is a boundary. On one side sit changes that live inside a single database and end on a screen or a printed page: a field, a filter, a column on an invoice, a rule that stamps a date and notifies a manager. Studio owns those and does them in minutes. On the other side sit changes that have to be tested, versioned, deployed to several databases, or exchanged with a tax authority. That is module work. Mistaking the second kind for the first is what produces a rebuild eighteen months later."
+  ],
+  "whoFor": [
+    "Teams on Odoo Online, where Studio and automation rules are the only extension route, because you cannot install your own module on that platform.",
+    "Finance and operations leads who need a handful of extra fields on an order or an invoice, and a report that prints them.",
+    "Companies wanting an approval step on one specific button, such as a discount above a threshold or a vendor bill over a value.",
+    "Businesses running a small side process, an asset register, site visits, equipment loans, that does not justify buying or building an app.",
+    "Implementation teams who want to prototype screens in Studio, agree them with users in the room, then hand the export to a developer to rewrite properly.",
+    "Not for statutory e-invoicing, payroll calculation, or anything that has to call an external system and read the answer back. Not for Community or the Standard plan either, since neither includes Studio."
+  ],
+  "capabilities": [
+    {
+      "title": "Fields on existing models",
+      "body": "Studio adds fields to any model straight from the form view: monetary, selection, many2one, one2many, many2many, html, binary, date and the rest. New fields carry an x_studio_ prefix, which is what lets anyone tell custom data from standard data three years later. A related field mirrors a value from a linked record without code and covers a large share of requests, payment terms from the customer shown on the delivery order being the usual example. The technical name is fixed when the field is created and cannot be renamed afterwards in the editor, so the first ten seconds matter more than they look."
+    },
+    {
+      "title": "New apps, models and menus",
+      "body": "Studio creates a model, a menu and an app icon in a few minutes, offering a checklist of optional features at creation: chatter, a responsible user, tags, stages, dates, an image, a company field, custom sorting. Ticking those at creation is far cheaper than adding them later, because each one wires the views as well as the fields. Custom models carry an x_ prefix. This is where the small internal registers belong, the ones currently living as a spreadsheet on somebody's desktop with no access control and a single owner."
+    },
+    {
+      "title": "View editing",
+      "body": "The editor is drag and drop over form, list, kanban, calendar, pivot, graph and search views, plus the Enterprise only gantt, map and cohort views. You can add tabs and groups, reorder fields, set a domain that hides a field unless a condition holds, limit a field to a user group, and make it required or read only in that view. What it writes is an ordinary inherited view with an xpath, so a developer can take it over later or fold it into a module without starting again."
+    },
+    {
+      "title": "PDF report editor",
+      "body": "Reports are edited against a live record, so you are moving blocks on a real invoice rather than on a wireframe. Text, fields, table columns, headers, footers and conditional blocks are all reachable, and the output is QWeb, the same templating a developer writes by hand. Two limits are worth knowing before you promise a date. Layout work that fights the standard paper format is slow going. A calculated total that does not already exist on the record is better added as a field first, then dropped onto the report."
+    },
+    {
+      "title": "Automation rules",
+      "body": "Rules fire on creation, on update of named fields, on deletion, on a timed condition relative to a date field, or on an inbound webhook. Actions include updating the record, creating a linked record, sending an email or an SMS, scheduling an activity, running sandboxed Python and posting an outbound webhook. That outbound post is one way. It sends a payload and reads nothing back, which is the single technical fact that decides most integration questions before they are asked."
+    },
+    {
+      "title": "Approval rules on buttons",
+      "body": "Studio attaches an approval rule to a button, including Confirm on a quotation or Post on a vendor bill. You choose the approver group and an optional domain so the rule only applies above a value, and the record keeps who approved and when. Before treating it as a financial control, test the two cases that matter: whether the person who raised the record can also approve it under your configuration, and what happens when that same button is pressed by an import or a scheduled action rather than by a person."
+    },
+    {
+      "title": "What Studio writes underneath",
+      "body": "None of this is code generation. A Studio field is a row in ir.model.fields, a view change is an ir.ui.view record with an inherit_id and an xpath, an automation is a base.automation record pointing at a server action, and a report is a QWeb template stored in the database. That is why the work is invisible to Git until you export it, why it survives a plan change, and why a developer can read every change you made rather than guess at it."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Build in a test database",
+      "body": "Studio writes to the live database the moment you click, and there is no draft mode. On Odoo.sh that means a staging branch built from a recent production copy; on Odoo Online, a duplicate. Staging is also where you discover that adding a column to a table with two million rows takes a lock, and that a stored field then has to be filled for every existing row before anyone can use it. Export the finished result and import it into production rather than repeating the clicks and hoping they match."
+    },
+    {
+      "title": "Agree naming and ownership first",
+      "body": "The technical name is fixed at creation, so a field created carelessly is called x_studio_char_field_1a2b for the rest of its life and appears under that name in every export and every API call. Decide a convention before the first field. Keep a short register: who asked for it, which report or filter reads it, and whether it can be removed. Studio needs the Settings administration right, so the only real control on volume is how few people hold it. Left open, a database collects forty fields in six months and nobody can name the ten that matter."
+    },
+    {
+      "title": "Access rights on new models",
+      "body": "A model created in Studio starts with a permissive access line and no record rules. Set access per group before it holds real data, then add a record rule if a user should only see their own records. If you run several companies, add the company field at creation and the matching rule at the same time, otherwise one company reads another's records the first time somebody widens a filter."
+    },
+    {
+      "title": "Required on one form is not required everywhere",
+      "body": "Ticking Required in the editor writes a modifier into that view. An import, a write over the external API, an order placed on the website and any other module save straight to the model and never see it, so the field arrives empty by a route nobody tested. If it genuinely must never be empty, set it on the field itself under Settings, Technical, Fields, and fill the existing records first: Odoo cannot apply a required column to a table that still holds empty values, and it logs that failure rather than stopping. Then rerun the awkward flows. Run an import, place an order from the website, and let the nightly scheduled action create its record. A new required field with no default is the usual reason a cron job has been failing quietly for a fortnight."
+    },
+    {
+      "title": "Export at every release and keep the zip",
+      "body": "The export in Studio produces a module named studio_customization holding the fields, views, reports and rules. Commit it alongside the release it belongs to. That gives you three things: a diff showing exactly what changed since last time, a way to rebuild the customisation if a database is lost, and a starting point for the developer who eventually has to turn part of it into real code. The export carries XML IDs, so importing it again updates the same records instead of creating a second copy."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Upgrades break Studio views quietly",
+      "body": "The upgrade converts the standard modules and your data. Inherited views and custom reports are the part you verify yourself. A view whose target element was renamed or removed cannot load, and Odoo deactivates it rather than raising an error, so the field is simply absent from the form and nobody notices for a week. A smaller version of the same thing happens when a standard view changes in a patch release. Open every Studio view and print every Studio report on the upgraded test database before go live."
+    },
+    {
+      "title": "Deleting a field deletes the data",
+      "body": "Removing a Studio field drops the column. There is a warning, and people click through warnings. No undo, no soft delete, so a field that quietly held two years of customer reference numbers goes with it. Export that column to a spreadsheet before you touch it. Changing a field type usually means creating a second field and moving the values across, not converting in place."
+    },
+    {
+      "title": "Automation rules that trigger each other",
+      "body": "An update rule that writes back to the same record can retrigger itself, and two rules on linked models can bounce work between them. The symptom is slow saves and duplicated records rather than a clean error, which is why this is normally found in production and not in testing. Keep the trigger field list narrow, never leave it empty on a busy model, and put the condition on the rule itself rather than inside a code action."
+    },
+    {
+      "title": "Studio is not an integration tool",
+      "body": "Sandboxed Python in a server action has no network access. No requests library, no imports, no reading a file from disk. The two webhook features look like a way round that and are not. The inbound trigger lets an outside system post into Odoo and start a rule. The outbound action posts a payload out and ignores whatever comes back. Neither gives you a call and a reply in the same transaction. Any flow that has to send a document to a tax portal and store the identifier it returns, which is every clearance based regime, needs a module with a queue, a status field and a retry policy. An integration built on a one way webhook loses documents the first time the far end is down."
+    },
+    {
+      "title": "Nothing built in Studio is covered by a test",
+      "body": "A module carries tests that run on every upgrade and fail loudly. A Studio rule carries whatever somebody remembered to click through after the last change. Once a Studio automation is doing something finance relies on, the only safety net is a written test script a person runs against staging before each release: create the record, hit the condition, check the mail went, check the field was stamped. Write that script while you build the rule, not after the first incident."
+    }
+  ],
+  "worksWith": [
+    "Accounting, for extra fields on invoices, bills and journal items, and for the reference a reconciliation report needs",
+    "Sales and Purchase, for approval rules on order confirmation and for fields that follow a quotation through to the invoice",
+    "Inventory and Manufacturing, for references on transfers, lots and work orders that the standard model has no place for",
+    "Your country localisation, which owns the statutory fields and should be extended around, never edited through",
+    "The external API, which exposes x_studio_ fields under exactly those names as soon as they exist, and which sits on the same Custom plan as Studio",
+    "Odoo Spreadsheet and the Enterprise dashboards, which can group and pivot on a Studio field provided it is stored rather than computed on the fly",
+    "Odoo.sh staging branches and Git, where the studio_customization export belongs next to the rest of the release"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA Phase 2 clears standard invoices through Fatoora before they count, and the cleared document is UBL XML produced by the localisation, carrying a cryptographic stamp and a hash chained to the previous invoice. A Studio field reaches the screen and the printed PDF. It never reaches that XML. Two consequences follow. Bilingual layouts are report editor work, and the Arabic side has to be laid out right to left before any field is placed on it. Any approval you want on an invoice has to sit before posting, because a cleared document cannot be quietly corrected afterwards."
+    },
+    {
+      "country": "uae",
+      "note": "The published timetable starts electronic invoicing with larger businesses in 2027, submitted through an accredited service provider, so the payload mapping will belong to a connector rather than to Studio. Meanwhile Studio suits the paperwork around the invoice: trade licence number and expiry on the partner, TRN check status, a free zone flag that drives a different document layout. Payroll is an Enterprise application, and the WPS salary file the banks expect is payroll output rather than something a Studio field can produce, so a Community site reaches neither through Studio or otherwise."
+    },
+    {
+      "country": "egypt",
+      "note": "Egyptian Tax Authority submissions are signed documents that identify every line by a registered item code, either GS1 or an EGS code issued against the taxpayer. That code has to be the registered one, which is why adding a Studio field to hold your own version of it goes wrong: you end up maintaining two codes and submitting the wrong one. Keep Studio on the internal side instead, a cross reference to the customer's own part number, or a dispatch field the warehouse actually fills in."
+    },
+    {
+      "country": "india",
+      "note": "GST e-invoicing returns an IRN and a signed QR from the Invoice Registration Portal, and the e way bill is a separate document with its own validity window. Studio fields on account.move never enter the IRN payload, and HSN, place of supply and tax rate belong to the localisation. Where Studio pays for itself is the logistics around the document: transporter name, vehicle number, dispatch reference, a status field a provider updates. Those are readable over the external API the moment they exist, which is usually all a third party e way bill service needs."
+    },
+    {
+      "country": "pakistan",
+      "note": "There is no standard Odoo localisation for FBR digital invoicing, so this is a module every time: JSON to the PRAL API, an FBR invoice number and a verifiable QR code returned, and a retry path for the hours the service is unavailable. Studio still does half the job well. NTN and STRN on partners and the company, a province field driving the sales tax split, and a status field the module writes to and users filter on. Split the work along that line and the module stays small enough to maintain."
+    },
+    {
+      "country": "germany",
+      "note": "GoBD requires tax relevant records to be unalterable and the system producing them to be described in a written Verfahrensdokumentation. That has a direct effect on how Studio is used day to day: every field, rule and report change alters the described system and needs a dated entry saying what changed and why. Keep that log beside the studio_customization export and an audit becomes a document request rather than an excavation. DATEV exports read account and posting key mappings that a Studio field does not feed."
+    },
+    {
+      "country": "france",
+      "note": "Anti fraud rules require sales records to be unalterable and sequentially numbered, and the certification modules lock posted entries against modification. An automation rule cannot rewrite those values, which is the software behaving correctly rather than a limitation to design around, so put your Studio logic before posting. From 1 September 2026 every business has to be able to receive invoices through an approved platform, with the obligation to issue phased by company size, so any field you rely on commercially needs somewhere to sit in that schema too."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Making Tax Digital files the VAT return to HMRC from the software and expects digital links back to the records behind it, which rules out retyping a figure between a spreadsheet and the return. A Studio field never moves a VAT box, because the return reads tax lines rather than fields on a form. What it can carry is the evidence trail: a reference on adjustments, a reason on a credit note, an automation that files the supporting document against the period. Both the MTD submission module and Studio are Enterprise, so this is one licensing decision rather than two."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Which Odoo plan do we need for Studio?",
+      "a": "The Enterprise Custom plan. Standard does not include it, and Community has no Studio module at all. The choice is arithmetic rather than taste. Moving to Custom reprices every user on the subscription, so multiply the per user difference by your headcount and by the years you expect to run, then set that against what a developer charges to build the same fields and rules once. Small user counts usually favour the plan. Large ones start to favour a module, and Custom then gets bought for multi company or the external API, with Studio as the side benefit."
+    },
+    {
+      "q": "Can we get the same result on Odoo Community?",
+      "a": "Most of it, by hand. Developer mode exposes the technical menus for models, fields, views, server actions and automation rules, and base automation is a Community module. What is missing is the drag and drop editor, the report designer, approval rules on buttons and the one click export as a module. In exchange you get version controlled code and somebody who writes XML and Python, which is what you would want anyway once the customisation stops being cosmetic."
+    },
+    {
+      "q": "Will Studio changes survive an upgrade?",
+      "a": "Fields and their contents do. They are columns, and the upgrade carries them with the rest of your data. Automation and approval rules usually come through as well, since they are records rather than code. The fragile parts are views and reports, because both attach to standard XML that Odoo is free to rewrite between versions. Plan that work rather than discover it. Take a screenshot of every customised form and a PDF of every custom report before the upgrade, then compare them against the test database afterwards. It turns the check from a day of hunting into an hour of looking."
+    },
+    {
+      "q": "How do we move Studio work from test to production?",
+      "a": "Export the customisations. Studio produces a module named studio_customization containing the fields, views, reports and rules, and you import that zip into the target database. What it does not carry is content: records created inside your new model on the test database stay there, and configuration data has to be exported separately as CSV and imported on the other side. Rebuilding the same changes by hand in two databases guarantees drift, normally in a domain nobody rereads until it filters out the wrong records."
+    },
+    {
+      "q": "When should we stop using Studio and write a module?",
+      "a": "When it needs Python beyond a few lines, when it has to call an external system and read the reply, when it must be covered by automated tests, or when the same change has to land in more than one database. Statutory documents are module work from day one. A practical signal: if you cannot explain what a rule does to a colleague in one sentence, it has outgrown the editor and belongs in code with a name and a test."
+    },
+    {
+      "q": "Can Studio build a multi level approval?",
+      "a": "You can attach more than one approval rule to the same button, which covers a manager and then finance. What you do not get is branching by category or amount band, escalation after a delay, delegation while somebody is on leave, or a single queue showing a person everything waiting on them. Those want a module built on a state field, activities and a scheduled action. A workable middle ground is one Studio approval on the button plus a status field and activities for the rest of the chain, so the queue sits in the activity list people already open every morning."
+    },
+    {
+      "q": "What happens to our customisations if we move to a cheaper plan?",
+      "a": "The fields, views, reports and rules are ordinary database records rather than a running service, so they continue to work. What goes away is the editor that maintains them, which means the next change needs a developer in the technical menus or the export rebuilt as a proper module. Confirm the mechanics with Odoo before committing, since a downgrade is a commercial change as much as a technical one, and keep the export current so a developer can take it over in an afternoon rather than reverse engineer it."
+    },
+    {
+      "q": "Can Studio change the website or the customer portal?",
+      "a": "No. Studio edits back office views and PDF reports. The website has its own separate editor and its own pages, and the portal screens a customer sees are QWeb templates Studio does not open. So a field added to the sale order will not appear on the portal quotation page by itself. Putting it there is a template change: on Odoo Online that means a developer working in the technical views, on Odoo.sh or on premise it means a small module. Worth establishing before anyone promises a customer facing change."
+    },
+    {
+      "q": "Can a Studio field calculate a value?",
+      "a": "Yes. A field can be given compute code and the list of fields it depends on, which covers margins, day counts and concatenated references without a module. The catch is what happens next. A computed field that is not stored has no column, so it cannot be grouped in a pivot, sorted on a list, or used in a filter the database has to evaluate. Decide at the start whether the value is for reading on a form or for reporting on. That answer decides whether it has to be stored, and storing it means computing it across every existing record the first time."
+    },
+    {
+      "q": "Can Studio change how standard fields behave?",
+      "a": "It can change how they appear. Hide a standard field in one view, relabel it, reorder it, make it read only for a group, or show it only when a condition holds. What it cannot do is change what a standard field computes, what happens when a standard button is pressed, or the stages a document moves through. Two things bite. A relabel lives in the view you changed, so the original wording still shows in exports, filters and every other view. And hiding a field the standard code requires does not remove the requirement, it removes your users' way of satisfying it."
+    }
+  ]
+}

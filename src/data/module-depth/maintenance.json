@@ -1,0 +1,171 @@
+{
+  "metaDescription": "Odoo Maintenance implementation detail: the equipment register, how preventive recurrence really chains, and the effective date that decides your MTBF.",
+  "intro": [
+    "Odoo Maintenance is a Community app. It depends only on Mail, so it adds no licence cost on either edition, and it gives you an equipment register, maintenance teams, corrective and preventive requests on a kanban board, and computed MTBF and MTTR per machine. What it does not give you is a costed parts line on the request, a customer, or a meter reading. Those three absences decide most of the design work.",
+    "The register is where these projects are won or lost. Four hundred imported rows of Compressor 3, with no category, no technician and no real commissioning date, produce a board nobody opens. The category sets the default technician and holds the custom properties. The effective date on the equipment anchors every reliability figure, and it defaults to the day you import. Nothing reaches the reliability figures until a stage flagged as done stamps the close date.",
+    "Two behaviours surprise people after go live. Preventive work is a recurrence on the request rather than a frequency on the equipment, so the next job only exists once someone closes the current one. And the reliability figures are recalculated on every read and never written to the database, which limits what reporting can do with them. Both are covered below."
+  ],
+  "whoFor": [
+    "Manufacturers with equipment tied to work centres, where a maintenance window has to come out of the production plan rather than sit on a separate list. That bridge is Enterprise.",
+    "Facilities teams with a fixed base of chillers, lifts, generators and pumps on calendar intervals, where the interval is genuinely months rather than running hours.",
+    "Plants, hospitals and laboratories that have to show an auditor a dated inspection record per asset, with the procedure that was followed attached to the job.",
+    "Companies with a real spare parts store, who need the parts decision made in configuration rather than discovered by a stock count.",
+    "Not for companies selling maintenance to customers. A request carries no customer, no price and no link to a sale order.",
+    "Not for a single site with twenty assets and one technician, where a shared calendar already works and the register would go stale inside a quarter."
+  ],
+  "capabilities": [
+    {
+      "title": "The equipment register and what fills it in",
+      "body": "Each asset carries a category, a maintenance team, a technician, an owner, a vendor and vendor reference, model, serial number, location, purchase cost, warranty expiry and an effective date. Picking a category fills in the responsible technician. The team is not inherited from the category, it defaults from the company, which is the field most imports leave wrong. Serial numbers carry a unique database constraint, so the same machine imported twice is rejected rather than quietly duplicated. Install Employees and an auto-installing bridge adds assignment of an asset to a person or a department."
+    },
+    {
+      "title": "Preventive work is a recurrence on the request",
+      "body": "There is no frequency field on the equipment and no scheduled action generating jobs overnight. You raise a preventive request, tick Recurrent, and set repeat every N days, weeks, months or years, running forever or until a date. When that request reaches a stage flagged as done, Odoo copies it forward with the same equipment, technician, duration and instructions, and advances the scheduled date by one interval from the previous scheduled date. Close it two weeks late and the cadence does not drift, because the new date is measured from the old plan rather than from the day the work actually finished."
+    },
+    {
+      "title": "How MTBF and MTTR are actually computed",
+      "body": "Only corrective requests sitting in a stage flagged as done are counted. MTBF is not the average gap between failures. Odoo takes the equipment effective date, measures the days from there to the most recent failure, and divides by the number of closed corrective requests, rounded to whole days. One closed request is enough to produce a figure. MTTR is the average of close date minus request date. Estimated next failure is the latest failure plus MTBF, a straight line projection, and Expected MTBF is a target you type in yourself for comparison."
+    },
+    {
+      "title": "Properties per equipment category",
+      "body": "The register has a fixed set of fields, but each category defines its own properties, and every asset in that category then carries them on its form. Pressure rating on vessels, refrigerant charge on chillers, examination certificate reference on lifts. This is Community and needs neither Studio nor development, which answers most requests for extra fields on the asset. Properties are held as JSON, so a value you intend to measure across thousands of assets in a pivot is still better modelled as a real field."
+    },
+    {
+      "title": "Instructions on the job, worksheets on Enterprise",
+      "body": "A request can carry its method as an uploaded PDF, a public Google Slides link, or typed text, shown on the request the technician opens. For a regulated inspection the procedure travels with the job instead of living in a shared folder. What Community does not give you is a result per step, a tick box with pass or fail and a reading beside it. That is the Worksheet for Maintenance app on Enterprise, where you design a template and the technician completes it against the request."
+    },
+    {
+      "title": "Work centre maintenance takes capacity out of the plan",
+      "body": "The Manufacturing bridge is Enterprise. It allows a request to be raised for a work centre rather than for an asset, and with Block Workcenter ticked it writes time off against the work centre resource for the request duration at the scheduled date, so the scheduler cannot plan work orders into that window. If manufacturing orders already occupy the slot, Odoo refuses the block instead of double booking it. A recurring preventive request can reserve several future slots in advance, and the block is released once the request reaches a done stage."
+    },
+    {
+      "title": "Teams, activities and email intake",
+      "body": "Requests belong to a team and open as kanban, list, calendar, activity, pivot and graph, all in Community. Setting a scheduled date creates a real activity for the technician on that date, so the job lands in a personal to do list rather than only on a board somebody has to remember to open. An equipment category can hold an incoming mail alias, so a message from a site becomes a request without the sender holding a login. On Enterprise that second point carries a price, because anyone who logs in to raise a request is a paid internal user."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Design the category tree before anything else",
+      "body": "Categories drive the default technician, the properties definition, the mail alias and most of the grouping in reporting. Eight to fifteen by asset type, such as compressors, HVAC, forklifts and production lines, beats a tree that copies the org chart or the site plan. A category cannot be deleted once equipment or requests point at it, so a wrong tree becomes a merge exercise rather than a tidy up. Location, department and team are separate fields, so keep them out of the category name."
+    },
+    {
+      "title": "Import the effective date deliberately",
+      "body": "Effective date is required, it defaults to today, and it is the start of the MTBF window for that asset. Import four hundred machines without that column and every one of them looks commissioned on go live day, which makes the reliability figures describe your project rather than the plant. Use the real commissioning or purchase date. Load technician, team, location, warranty expiry and serial number in the same file, because a register holding only names and categories is inert."
+    },
+    {
+      "title": "Set the stages and the done flags",
+      "body": "The defaults are New Request, In Progress, Repaired and Scrap, and both Repaired and Scrap are flagged as done. Only a done stage writes the close date, and moving a card back out of one clears it again. Add a waiting on parts stage where that state is real, and keep the done flag off it. Decide early whether Scrap should stay flagged as done, because a scrapped machine is then counted as a completed corrective job in the same arithmetic as a repair."
+    },
+    {
+      "title": "Seed the preventive chain, one request per asset",
+      "body": "Because the recurrence lives on the request, an asset with no open preventive request has no schedule at all. Part of go live is creating that first request for every asset with the interval, duration, team and instructions already set, either by import or by a short script against the register. Doing it by hand for a few hundred assets is a week nobody budgeted, and half of them end up left on the default interval."
+    },
+    {
+      "title": "Decide how parts leave stock and how cost lands on the asset",
+      "body": "Closing a request moves no inventory and posts no journal entry by itself, so the parts route is a decision somebody has to make rather than a setting to switch on. Pick one of the three routes covered in the questions below, write it down, and configure the picking type or scrap reason it needs before the first technician touches the system. For cost per asset, create an analytic account per machine or per asset group and put the analytic distribution on the purchase order lines and the vendor bills, because the equipment record has no analytic field of its own to carry it."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Every asset commissioned on go live day",
+      "body": "Effective date defaults to today and imports rarely override it, so the whole register ends up sharing one commissioning date. MTBF is then measured from the day the data was loaded, and for the first year it describes the age of your project rather than the reliability of the machine. Setting it correctly during import costs nothing. Correcting it later is a mass update that moves every reliability figure on every screen at once."
+    },
+    {
+      "title": "The preventive chain stops without telling anyone",
+      "body": "Nothing runs on a timer. The next occurrence is created at the moment someone moves the current request into a done stage, so a card parked in In Progress means that asset has no future job at all, while the board still looks busy because the open card is sitting there. Build a filter for equipment with no open preventive request and review it weekly. This single behaviour is what turns a quiet rollout into a complaint in month three."
+    },
+    {
+      "title": "Close date is a clerical date, not a repair time",
+      "body": "Moving a card into a done stage stamps the close date with today, whatever day the spanner was actually put down. A crew that clears ten cards every Friday has recorded that ten repairs finished on Friday, and every reliability figure inherits that. The field stays editable, so the workable habit is a supervisor correcting the date as part of closing. Agree one request per failure event as well, because three cards raised for one breakdown quietly halves the apparent MTBF."
+    },
+    {
+      "title": "The reliability fields cannot be grouped or measured",
+      "body": "MTBF, MTTR, latest failure date and estimated next failure are computed when a record is read and are not stored in the database. They show on the equipment form and list, but they are not available as pivot measures, cannot be sorted on, and cannot be filtered. The worst twenty machines league table that somebody imagined during the demo is not a standard report. Either export the register and rank it outside, or add stored fields as a small development, and price that before it is promised."
+    },
+    {
+      "title": "Spare parts end up in a text field",
+      "body": "With no agreed method, technicians type part numbers into the description, because nothing on the request consumes stock. Six months on, the figures for filters, seals and bearings are wrong, reordering is not trusted, and cost per machine cannot be produced from anything. This is fixed in configuration with a transfer or a scrap step at the start, never by a report afterwards."
+    },
+    {
+      "title": "Fleet and Maintenance are two separate registers",
+      "body": "Vehicles in Odoo Fleet keep their own service and repair history and are not maintenance equipment records. No standard bridge joins the two, so a workshop that services both plant and vehicles ends up with two histories and two definitions of overdue. Decide which register owns each asset class at the start, and build a link only where the reporting genuinely needs one."
+    }
+  ],
+  "worksWith": [
+    "Manufacturing on Enterprise, for equipment on work centres and for maintenance that takes real capacity out of the plan",
+    "Employees, whose bridge installs itself and adds assignment of an asset to a person or a department",
+    "Inventory, for the spare parts transfer or scrap, and for the lot and serial numbers the equipment form matches against",
+    "Purchase and Accounting, for contractor bills and the analytic distribution that produces cost per asset",
+    "Fleet, which keeps its own vehicle service history and needs an ownership decision per asset class",
+    "Field Service on Enterprise, where the same crew also does billable work on customer sites",
+    "Worksheets on Enterprise, for inspections that need a recorded result per step rather than a free text note"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "An annual maintenance contract invoice clears through ZATCA before it is a valid document, so a signed job sheet is not a bill and the invoice has to carry Arabic. Where one invoice covers both labour and the part fitted, both lines sit inside the cleared document. A site crew on your own payroll is paid through the wage protection file."
+    },
+    {
+      "country": "uae",
+      "note": "A contract billed monthly is a continuous supply, so the tax point follows the invoice or the payment rather than the visit date, which is the opposite of how the maintenance board reads. Federal e-invoicing routes documents through an accredited service provider on a phased timetable, so confirm which wave your entity falls into before fixing the billing design. Technician pay runs through WPS and gratuity accrues per employee."
+    },
+    {
+      "country": "pakistan",
+      "note": "One maintenance invoice can touch two authorities. The service is provincial sales tax, so SRB in Sindh, PRA in Punjab, KPRA or BRA elsewhere, while the spare part fitted is federal sales tax to the FBR. Digital invoicing clears with the FBR first, so the invoice number and QR code come back from PRAL or a licensed integrator before the customer can be handed anything."
+    },
+    {
+      "country": "india",
+      "note": "Maintenance sits in the SAC 9987 service group and is taxed separately from the part fitted, so a single invoice carries a service code and a goods code. Equipment sent out to a workshop and back travels on a delivery challan, with an e-way bill above the state threshold, and above the turnover limit the invoice needs an IRN before it is issued."
+    },
+    {
+      "country": "egypt",
+      "note": "Every line of an ETA e-invoice needs a registered item code, GS1 or EGS, so the labour line and the spare part line are each coded before the document can be submitted, and it is signed with the issuer certificate. Customers withhold tax at source on service payments, so the cash that lands is short of the invoice and needs its own matching entry."
+    },
+    {
+      "country": "turkey",
+      "note": "Periodic control of work equipment, lifting gear and pressure vessels by an authorised person is a standing obligation, and the certificate and its expiry belong on the equipment record next to the recurrence that drives the next inspection. Parts dispatched to site move on an e-Irsaliye. Billing splits between e-Fatura and e-Arsiv depending on whether the counterparty is registered."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "LOLER sets thorough examination at six months for equipment that lifts people and twelve months otherwise, while PUWER covers the rest of the plant. Those are the intervals the recurrence should be built from, set in months rather than a rounded number of days. VAT on the billing side is filed under Making Tax Digital, and maintenance work on structures can fall inside the Construction Industry Scheme."
+    },
+    {
+      "country": "germany",
+      "note": "BetrSichV requires a written risk assessment that sets the inspection interval for each item of work equipment, and DGUV Vorschrift 3 sets the electrical testing cycle. The interval on the record has to trace back to that assessment rather than to a supplier leaflet, so keep the assessment reference on the asset itself. Records that feed an invoice fall under GoBD, and the ledger exports to DATEV."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Maintenance included in Community, or does it need Enterprise?",
+      "a": "The Maintenance app is Community and depends only on Mail, so the register, teams, stages, recurring preventive requests, category properties, the mail alias and the pivot and graph views cost nothing extra on either edition. Enterprise is where the neighbours live: the Manufacturing bridge that blocks a work centre, worksheets with a result per step, Field Service for billable customer work, IoT and the native mobile app. Maintenance on its own does not force an edition change."
+    },
+    {
+      "q": "Our MTTR shows as zero. Is it broken?",
+      "a": "No. Request date and close date are Date fields rather than timestamps, so anything raised and closed on the same day counts as zero days. In a plant where most faults are cleared inside a shift, the average sits near zero and looks wrong to everyone reading it. Report repair effort from the duration field in hours, which a technician types in and nothing computes, and keep MTTR for assets whose jobs genuinely run across days."
+    },
+    {
+      "q": "Which spare parts method should we pick?",
+      "a": "A scrap against the machine takes the part out of stock and writes the value off, which gives the truest cost per asset and needs discipline on scrap reasons. An internal transfer to a maintenance location is easy to control, but the value sits on the balance sheet until somebody counts it out. A direct purchase to an expense account suits contractors and consumables that never enter stock. Most plants end up running two of the three, split by part value."
+    },
+    {
+      "q": "Can we trigger a service on running hours instead of dates?",
+      "a": "Not as configuration. There is no meter on the equipment record, so service every 250 hours needs a reading field, somewhere for a technician or a machine to write it, a stored reading at the last service, and a scheduled action comparing the two to raise the request. A day or two of work where the readings are already captured, longer where they live on a clipboard. The automation is never the risk. Whether anyone still enters readings in month three is."
+    },
+    {
+      "q": "Can we invoice a customer for maintenance from this app?",
+      "a": "No. A request has no customer, no price and no link to a sale order. Selling maintenance means Sales for the contract, Subscriptions on Enterprise for the recurring fee, and Field Service on Enterprise for the visit that gets billed. Keep this register for your own assets. Mixing your plant and your customers' machines into one register is the usual reason a rebuild follows a year later."
+    },
+    {
+      "q": "Can technicians work from a phone?",
+      "a": "The web client is usable in a phone browser on both editions, and the native Odoo mobile app is Enterprise. Neither works offline, which is the question that actually matters in a plant room or a basement with no signal. Where coverage is patchy the working pattern is a printed or PDF instruction sheet, with one person closing the cards at the end of the shift."
+    },
+    {
+      "q": "Does maintenance equipment link to serial numbers in Inventory?",
+      "a": "Partly. The equipment form holds the serial as text and checks it against the lot and serial numbers in Inventory, showing that a match exists and giving a button through to it, but there is no stored relation, so a typo silently breaks the link and nothing enforces it. Equipment serials are also unique across the register. If you both sell and maintain serialised machines, decide which side is authoritative and keep the text identical, or add a real relation as a small development."
+    },
+    {
+      "q": "What actually takes the time on a maintenance implementation?",
+      "a": "The register, every time. Categories, teams, stages and recurrences are a few days of configuration. Collecting serial numbers, locations, warranty dates, a defensible interval and a true commissioning date for several hundred assets is the work, and getting technicians to close cards on the day the job finished is what decides whether any of the numbers are worth reading. Budget the asset survey, not the setup."
+    }
+  ]
+}

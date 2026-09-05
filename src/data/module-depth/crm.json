@@ -1,0 +1,176 @@
+{
+  "metaDescription": "Odoo CRM in practice: how stages, assignment rules and scoring behave in v17 to v19, what Community leaves out, and the migration that decides the project.",
+  "intro": [
+    "Odoo CRM ships in Community under the LGPL, and a lead and an opportunity are the same record. crm.lead carries a type field that says which one it currently is, so converting a lead creates nothing new. It flips the type, sets a stage and links a customer, and the chatter, the emails and the attachments survive the handover from marketing to sales. One thing catches out almost every buyer arriving from Salesforce, Zoho or an older Odoo. A stage in version 17 to 19 carries no percentage. Odoo removed that field from crm.stage and put a won flag in its place. The probability lives on the deal, computed or typed, and never on the column.",
+    "CRM projects are not decided on the kanban board. They are decided by the channels feeding leads into it, by the export from the old system carrying three spellings of the same company, by phone numbers stored with spaces so nothing matches, and by whether the sales team still moves a card in month two. The configuration is a few days of work. The data and the habits are the project.",
+    "The edition boundary runs through the conversation channels and two reporting views, not through the pipeline. Leads, stages, teams, activities, rule-based assignment, predictive scoring, SMS, the forecast graph and the pipeline analysis are all Community. The softphone, WhatsApp, Marketing Automation, Sign, Appointments and Helpdesk are Enterprise, as are the map and cohort views on the pipeline. A Community CRM is a real CRM. It is one whose calls and chat threads happen somewhere else, which is a fair trade for some businesses and a dealbreaker for others."
+  ],
+  "whoFor": [
+    "Business to business sales teams running a named pipeline where a deal takes weeks, several meetings and a written quotation.",
+    "Distributors and manufacturers whose enquiries arrive by email and phone and end as a priced quotation against a customer pricelist.",
+    "Service and project firms who need a won opportunity to become a delivery project with a budget. Project is a Community app, so that link costs nothing extra.",
+    "Companies moving off a spreadsheet or a shared mailbox, where the gain is a pipeline everyone can see and a history that stays attached to the record.",
+    "Not for high volume consumer support ticketing. That is Helpdesk, a separate Enterprise app on its own model, and pushing tickets through stages on crm.lead ends badly.",
+    "Not for a team whose core requirement is multi step campaign automation. That is Marketing Automation, an Enterprise app. Community stops at Email Marketing and single sends."
+  ],
+  "capabilities": [
+    {
+      "title": "Capture from the channels you already have",
+      "body": "Website contact and quotation request forms create records through the Website CRM module, which is Community. Each sales team can own an incoming alias, so mail to that address becomes a record with the body in the chatter and the sender matched against existing contacts. Whether an alias creates a lead or an opportunity is decided by one setting, and toggling that setting rewrites every team alias, so it is not a per team choice. Lead Mining and contact enrichment are Community modules that spend In-App Purchase credits, which makes them a running cost rather than a licence line."
+    },
+    {
+      "title": "Rule-based assignment with capacity numbers that mean something",
+      "body": "A sales team carries an assignment domain, and each member of that team can carry a second domain plus a capacity figure. The field is Average Leads Capacity on 30 days and it defaults to 30. Odoo divides it by thirty to get a daily quota, so a member left on the default receives one lead a day and no more, which is not what most people assume when they type 30. The division rounds to the nearest whole lead, so any capacity below fifteen rounds down to zero and that member is skipped on every run while the setting still reads like a deliberate number. The scheduled job that does the allocation ships disabled. You switch it on in the CRM settings, choose automatic or manual, and set the interval there rather than editing the scheduled action directly."
+    },
+    {
+      "title": "Predictive scoring, and what it actually reads",
+      "body": "Odoo fits a naive Bayes model against your own won and lost history. The stage and the sales team are always part of the calculation. Everything else comes from a fixed list you choose in the settings: country, state, source, language, tags, and the two quality flags on the email and the phone. A new database has only those two quality flags enabled, which is why untouched scoring often looks like it is grading data hygiene rather than sales. You also set the date the model starts learning from, which is how the migration cut and any unusual trading period get excluded. Open that date on day one. Installing CRM writes it as eight days before the install and leaves it there, so an untouched database is scoring against a week of history. If a salesperson types over the number, Odoo treats the deal as manual and stops updating it for as long as the typed value differs from the computed one."
+    },
+    {
+      "title": "Activities are the operating discipline",
+      "body": "Every lead carries scheduled activities with a type, a due date and an owner, and the kanban card shows a coloured clock for the next one. Filter the pipeline on overdue activities and you have the agenda for the weekly sales meeting. An opportunity with no next activity is the one that quietly dies. Meetings booked from an activity land in Calendar, and both the Google and the Microsoft calendar connectors are Community modules, so two way sync is not a reason to buy Enterprise."
+    },
+    {
+      "title": "Calls and messages, where the editions actually differ",
+      "body": "Enterprise adds a softphone that dials from the opportunity over a SIP account and logs the call against the record, plus WhatsApp built on the Meta Cloud API. SMS from the pipeline is Community and runs on In-App Purchase credits. Community sends email through the ordinary outgoing mail server and expects calls to be logged by hand, which most teams do badly after the first fortnight. The softphone runs in the browser and does not include a line, so the Enterprise licence is one half of that cost and a trunk from a telecoms operator is the other."
+    },
+    {
+      "title": "From opportunity to quotation, and the revenue figures involved",
+      "body": "A quotation raised from the opportunity keeps the link, so Sales reporting reconciles against confirmed orders rather than a number somebody typed into a field. Expected revenue and the confirmed order total are different figures and both are reported. Pricelist, taxes, currency and delivery terms come from Sales and Accounting configuration, which is where the country specific rules actually live. Switch on Recurring Revenues in the settings and the lead carries a recurring amount plus a plan with a length in months. Odoo divides one by the other into expected monthly recurring revenue and reports it beside the one off value, which stops a subscription deal being counted as though it closed once."
+    },
+    {
+      "title": "The forecast, and why it disagrees with the pipeline total",
+      "body": "The forecast is built on prorated revenue, which is expected revenue multiplied by the probability on the deal, grouped by the Expected Closing date. A deal with that date left empty does not land in any month, so it sits in the pipeline total and is absent from the forecast. That single gap explains most of the arguments about which number is right. The forecast graph and pivot and the opportunities analysis are Community. The map view of open deals and the cohort view of win rates over time come from the crm_enterprise module."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Decide whether the Leads stage is on before anyone is trained",
+      "body": "The Leads setting is off in a new database, so every capture arrives as an opportunity in the first stage of a team pipeline. That suits a team handling twenty enquiries a week. Turn it on and you get a qualification queue in front of the pipeline, which suits a team drowning in web form noise. Toggling it is not cosmetic. Odoo flips the use leads flag on every team running a pipeline and rewrites that team's alias so incoming mail creates the other record type. Nothing already captured is reclassified, so make the choice up front."
+    },
+    {
+      "title": "Design the stages, knowing what a stage actually holds",
+      "body": "A stage has a name, a sequence, an optional sales team, a won flag, a folded flag and a requirements text. The last of those is the most under used field in the module. Whatever you type into it shows as a tooltip on the stage name, which is where the exit criteria for that stage belong rather than in a training document nobody reopens. Leave the team empty and the stage is shared across the business. Set a team and no other team can see or use it, which is how one misconfigured stage hides a column from half the company. Five or six stages is usually enough and ten is always too many. Name them after something observable, such as demo delivered or proposal sent, rather than after a feeling, such as interested. Set the won flag on exactly the stages that mean won, because the reporting and the scoring model both read it. A folded stage shows as a collapsed column when it holds no records, which is a display choice, not a way to hide deals from reports."
+    },
+    {
+      "title": "Do not build a Lost column",
+      "body": "Lost is a flag with a reason, not a stage. Marking a deal lost archives the record and sets its probability to zero, and marking one won brings it back and moves it to a won stage. Teams that build a Lost column instead end up with live records parked in it, counted in the pipeline total forever. Agree the lost reason list with the sales director before go live. Six to eight closed options is the working number, including lost to a named competitor and no budget approved, because a free text box produces nothing anyone can report on."
+    },
+    {
+      "title": "Normalise phone numbers and email addresses before you import",
+      "body": "Odoo stores a sanitised phone number alongside the one that was typed, and every match runs against the sanitised value. Numbers imported with spaces, a local trunk prefix or no country code will not sanitise, so duplicate detection misses them and WhatsApp will not send to them. Sanitisation reads the country on the record, so import the country in the same pass. Fix the international format in the export file rather than in the database afterwards, and do the same for email casing and trailing spaces."
+    },
+    {
+      "title": "Decide what history actually moves",
+      "body": "Bring the open pipeline across in full, with owner, stage, expected revenue and expected closing date. Bring closed won and closed lost as records with their dates and reasons, because the win rate and the scoring model both read them, and load the lost ones archived rather than dropping them. Leave the note threads and the email history behind unless somebody can name the report that reads them. Reconstructing chatter is the most expensive part of a CRM migration and the least used afterwards."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "A pipeline that stops being true in week three",
+      "body": "This failure is not technical. Nobody moves a card, closing dates slide by a month every month, and the forecast becomes fiction. The fixes are managerial and small. Run the weekly sales meeting from the kanban rather than a spreadsheet, use the overdue activity filter as the agenda, and let the manager close anything with no activity for sixty days. Build that expectation into the rollout, because no configuration will produce it."
+    },
+    {
+      "title": "Duplicate detection does not do what the demo implied",
+      "body": "The similar records check matches on three things: the domain part of the email address, an exact sanitised phone match, and the same commercial entity. For a company domain it compares the domain alone, so two different buyers at the same customer are flagged as duplicates of each other. For the free consumer providers on Odoo's exclusion list it falls back to the full address, so two different addresses at the same provider match nothing. Each criterion also gives up when it returns too much. Past twenty matches Odoo treats that criterion as uninformative and contributes nothing from it, so the customer with forty leads against one domain shows a clean record while being the worst duplication in the database. Merging is permanent. It folds chatter, activities and attachments into the surviving record with no undo, so restrict who may merge for the first few months and clean the data before the import rather than after it."
+    },
+    {
+      "title": "Scoring switched on with nothing to learn from",
+      "body": "Predictive scoring on a fresh database returns numbers that look authoritative and carry almost no information, and a sales team that catches it once stops trusting the whole system. Leave it off until real won and lost records have accumulated past the migration cut, then set the learning start date accordingly. Review the contributing fields after a quarter. Source and tags usually carry more signal than country, and the two quality flags that ship enabled by default carry the least."
+    },
+    {
+      "title": "Mailbox and calendar integration underestimated",
+      "body": "Sales teams will not retype what they have already sent from Outlook. The mail plugin and the calendar sync are straightforward features and awkward projects, because each needs an OAuth application registered by whoever administers the Microsoft or Google tenant, and that person is rarely in the room at kick off. Raise the request in week one. Mail that never reaches the record is what turns a pipeline into a set of empty shells."
+    },
+    {
+      "title": "Team aliases with no mail plumbing behind them",
+      "body": "An alias is one field on the sales team and it works only if the infrastructure behind it does. On Odoo Online that is handled for you. On your own server or a container you configure an incoming mail server, a catchall domain and the DNS records that route the address to it, and you do that before anybody publishes the address on a website or a business card. The failure mode is quiet. Mail bounces or lands in a mailbox nobody reads, and the sales team concludes that the CRM lost their enquiry."
+    },
+    {
+      "title": "Multi-company rules that hide or leak records",
+      "body": "Leads carry a company and record rules decide who sees what. Two trading entities sharing one salesperson is the case that catches people out. Assign a lead to the wrong company and the owner cannot open it, or worse, can see a sister branch pipeline they were never meant to. Test visibility while logged in as a real user of each profile before go live rather than as the administrator, who sees everything by design."
+    }
+  ],
+  "worksWith": [
+    "Sales, where the opportunity becomes a quotation and the link back survives on the confirmed order",
+    "Contacts, which owns deduplication, the commercial entity hierarchy and phone sanitisation",
+    "Invoicing and your country localisation, where the tax, clearance and e-invoicing rules apply",
+    "Email Marketing and SMS, both Community, with Marketing Automation for multi step nurture, which is Enterprise",
+    "Website, whose contact and quotation request forms create leads through the Website CRM module",
+    "Calendar, with two way synchronisation to Google and Microsoft, both Community modules",
+    "Project for delivery after the win, which is Community, and Helpdesk or Field Service, which are Enterprise",
+    "A licensed SIP operator, because the Enterprise softphone needs a trunk that Odoo does not supply"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Telecoms are licensed, so the SIP trunk behind the Enterprise softphone has to come from a locally licensed operator rather than an offshore provider. That turns a CRM feature into a procurement item with its own lead time, and it is worth starting before the build. PDPL sets conditions on moving personal data out of the Kingdom, which pushes a lead database towards in-Kingdom hosting. Quotations go out bilingual, and ZATCA clearance happens later, at the invoice, not in CRM."
+    },
+    {
+      "country": "uae",
+      "note": "Register the customer properly while the opportunity is still open. Free zone or mainland decides which of your entities issues the quotation, and Finance will want the trade licence, the TRN and the corporate tax registration at the first invoice rather than three weeks after it. Unsolicited marketing calls and messages are regulated, so consent has to be recorded on the contact and survive the migration. Electronic invoicing runs through accredited service providers on a phased rollout, so confirm which phase a customer falls into instead of assuming a date."
+    },
+    {
+      "country": "turkey",
+      "note": "Commercial electronic messages to Turkish recipients must be registered against IYS, the national consent registry, and an opt out recorded there overrides anything sitting in your database. That is a CRM obligation rather than a mailing tool one. Whether a customer receives e-Fatura or e-Arsiv depends on their own registration with the revenue administration, so that check belongs on the contact record long before anyone raises an invoice."
+    },
+    {
+      "country": "india",
+      "note": "Promotional and transactional SMS goes out under a sender header and a message template registered on the DLT platform, so any SMS follow-up from the pipeline needs that paperwork finished before it can send at all. Capture the GSTIN and the state on the opportunity, because place of supply decides whether the quotation carries IGST or CGST and SGST, and getting it wrong means reissuing. The IRN and the e-way bill follow downstream."
+    },
+    {
+      "country": "pakistan",
+      "note": "Capture the NTN and the sales tax registration number while the opportunity is open, because FBR digital invoicing is a clearance flow and an invoice will not pass with incomplete party data. Services and goods answer to different authorities, so record which provincial revenue board applies at quotation stage rather than discovering it at invoicing. Long sales cycles quoted in rupees usually need a shorter quotation validity than a head office template assumes."
+    },
+    {
+      "country": "germany",
+      "note": "A CRM that reports activity counts and win rates per named salesperson is a technical system capable of monitoring performance, which brings the works council into scope under the Works Constitution Act. Agree the dashboards and the per user reports with them early rather than after go live, because retrofitting a works agreement is slow. Email marketing needs documented double opt in, and quotations supporting a tax relevant transaction fall under GoBD retention rules."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "There is no business to business e-invoicing mandate in force, so the CRM question here is a privacy one rather than a tax one. PECR treats corporate subscribers differently from individuals, and consumer email marketing leans on the soft opt in, so the consent state has to live on the contact record and come through the migration intact. Prove that with a sample before cutover, because an unevidenced marketing list is the part that is hard to repair later."
+    },
+    {
+      "country": "united-states",
+      "note": "Automated calls and texts need prior express written consent under the TCPA, and that consent has to sit on the contact and stay auditable for years. CAN-SPAM sets the unsubscribe window at ten business days. State privacy laws give deletion rights that reach lead records, including records already folded into a survivor by a merge, so decide early how a deletion request is carried out and evidenced once the original record no longer exists."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo CRM part of Community, or do we need Enterprise?",
+      "a": "The pipeline, the assignment engine and the scoring model are all in the LGPL module and none of them are cut down. The Enterprise gap for a sales team is telephony and WhatsApp. The honest test is to count what share of your selling happens on a call or a chat thread. Under a quarter and Community holds up fine. Over half and you are either buying Enterprise or paying a developer to wire a telephony provider in through the API, which usually costs more than the licences inside two years."
+    },
+    {
+      "q": "What is the difference between a lead and an opportunity?",
+      "a": "They are one record, crm.lead, distinguished by a type field. A lead is an unqualified enquiry, an opportunity is a deal somebody is working. Because they share a table, one report can cover both, and a custom field added for one exists on the other. The detail worth agreeing is the conversion itself. The wizard can create a new opportunity or merge the lead into an existing one, and it can create a new contact, link an existing contact, or leave the customer empty. Ten minutes on that decision prevents a duplicate contact for every enquiry."
+    },
+    {
+      "q": "Our stage percentages came from the old CRM. Where do those go in Odoo?",
+      "a": "Nowhere, and this surprises people. A stage in version 17 to 19 holds no percentage at all. The number on the deal is the probability field, either computed by the scoring model or typed by the salesperson. If your forecast depends on fixed stage weightings you have two options: turn scoring off and have the team set probability by hand as a deal advances, or keep the model and accept a forecast built on history rather than on a convention. Adding a percentage field to the stage will not make the standard forecast read it."
+    },
+    {
+      "q": "Does predictive lead scoring actually work?",
+      "a": "It ranks a queue, and only once there is closed business behind it. On a few hundred closed deals the ordering is genuinely useful. The one rule worth holding to is that the number never gates anything: no routing rule, no approval step, no commission calculation. It is a sort order for a morning, not a decision, and any salesperson can type over it. If the scores look wrong after you change the contributing fields, an Update Probabilities action recalculates across existing records instead of leaving you to wait for new ones. It is admin only, and on a large database it is slow enough to run out of hours."
+    },
+    {
+      "q": "Can we send WhatsApp messages from an opportunity?",
+      "a": "Yes, on Enterprise. The module talks to the Meta Cloud API, so you need a Meta business account, a phone number that is not already in use in the WhatsApp Business app, and message templates approved per language before anything sends. Approvals take days, and a rejected template takes longer, so start them in week one rather than at user acceptance testing. Outside the 24 hour window that opens when a customer messages you, only an approved template will go out. Free text will not."
+    },
+    {
+      "q": "Can salespeople keep working from Outlook or Gmail?",
+      "a": "There are two mechanisms and most teams need only one. The mail plugin puts a panel inside the mailbox so a salesperson can create or update a lead without leaving it, and it needs an OAuth application registered in your Microsoft or Google tenant by an administrator. That approval is often the slowest item in the build. The alternative costs nothing to configure: put the sales team alias on copy. The message lands on the record with its attachments and nobody installs anything."
+    },
+    {
+      "q": "Can we import our pipeline from Salesforce, HubSpot or Zoho?",
+      "a": "Yes, by export and import rather than through a supported connector. The work sits in the mapping. Owners to Odoo users, old stages to new stages, accounts and contacts deduplicated first, phone numbers in international format with a country on the record, and closed deals brought across with their outcome and date. Run the import into a copy of the database first and have the sales manager open twenty records at random. That review catches more than any validation script."
+    },
+    {
+      "q": "What happens when we mark an opportunity lost?",
+      "a": "The record is archived, its probability drops to zero and you pick a reason from the configured list. It leaves the pipeline without leaving the database, and both the analysis reports and the scoring model still read it, which is why deleting lost deals is a mistake rather than housekeeping. Reopening one is a restore from the archived filter. If the deal genuinely comes back as new business, create it fresh so that closing dates and cycle times stay honest."
+    },
+    {
+      "q": "Does CRM handle e-invoicing for our country?",
+      "a": "No, and it should not. CRM ends at the opportunity. The quotation belongs to Sales and the invoice to Accounting, and the localisation applies the clearance, the format and the signature there, whether that is ZATCA, FBR, GST e-invoicing or the German E-Rechnung. What CRM owns is capturing the tax identifiers on the customer early enough that Finance is not chasing a buyer for a registration number on the day the first invoice is due."
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "metaDescription": "Odoo Purchase implementation detail: RFQ to vendor bill, what three way matching really checks, landed cost, approval limits and the cutover errors.",
+  "intro": [
+    "Odoo Purchase is a four document chain. A request for quotation becomes a confirmed purchase order, the order creates a receipt in Inventory, and the receipt sits behind a vendor bill in Accounting. Odoo links those by design, so making the chain exist is not the work. The work is deciding which document is allowed to disagree with the others, by how much, and who resolves it. That single decision drives your bill control policy, your approval rules and half of month end.",
+    "The edition question is normally settled by finance, not by procurement. Purchase is a Community app, and most of what buyers assume is a paid extra is already in the free edition. What Enterprise adds around it is narrow: vendor bill scanning, the Approvals app when the authority matrix has more than one rung, Studio, and full Accounting rather than Invoicing. If your approval rule is a single value threshold and your payables volume is modest, Community runs the process end to end.",
+    "What sinks these projects is data, not process. A distributor carrying several thousand products and a few hundred vendors usually turns out to have a supplier price list nobody has audited in years, purchase units that differ from stock units across a large slice of the catalogue, and a pile of part received orders somebody wants loaded on day one. Sorting that out is the project. Configuring Purchase itself takes a couple of days."
+  ],
+  "whoFor": [
+    "Distributors and retailers buying for stock, who need reordering rules, quantity break pricing and a landed cost on every import container.",
+    "Manufacturers where component demand comes off a bill of materials and shortages have to be visible before a work order starts.",
+    "Contracting and project businesses that need committed spend against a job the moment the order is placed, not when the invoice lands.",
+    "Multi company groups where one entity raises the order and another receives the goods, and the intercompany paperwork has to follow.",
+    "It is not a sourcing platform. If your policy requires supplier registration, prequalification and sealed scored bids, that is a build, and a large one.",
+    "It is not worth configuring for a services firm with twenty supplier bills a month, where Accounting alone handles it and a purchase order adds friction without adding control."
+  ],
+  "capabilities": [
+    {
+      "title": "Quotation, comparison and blanket orders",
+      "body": "An RFQ goes to a vendor with a deadline and becomes an order on confirmation. Turning on Purchase Agreements adds two things worth having. Blanket orders hold an agreed price and quantity over a period that later orders draw down against. Alternative requests let one requirement go to several vendors from a single starting point, with the lines shown together so you keep the best line from each supplier and cancel the rest. All of it sits in Community."
+    },
+    {
+      "title": "Replenishment that runs without a buyer",
+      "body": "Reordering rules live in Inventory with a minimum, a maximum and a Buy route, and the scheduler raises the request when free stock drops through the minimum. The proposed date is built from three numbers, and buyers rarely know all three exist: the vendor delivery lead time on the price list line, Days to Purchase, and the purchase security lead time, the last two set under advanced scheduling in Inventory. Getting them wrong is why a first scheduler run either orders nothing at all or dates the entire catalogue today. The Replenishment view shows what the scheduler intends before it commits, which is the screen to hand a buyer in week one."
+    },
+    {
+      "title": "Bill control and the three way match",
+      "body": "The bill control policy, set per product and defaulted in Purchase settings, decides whether a draft vendor bill comes through on ordered quantities or received quantities. Switching on three way matching adds a flag on the bill showing whether it should be paid, computed from what the receipt says actually arrived. It informs, it does not lock. The value is that a payables clerk can see at a glance that a bill covers goods still sitting on a ship."
+    },
+    {
+      "title": "Vendor bills without retyping",
+      "body": "Create the bill from the order, or open a blank vendor bill and use Auto-Complete to pull the order into it. Odoo raises a warning when a vendor reference has already been used on another bill for that supplier, which is a check on the clerk rather than a block on posting. Bill digitisation, which reads a PDF or a photograph into a draft bill, is Enterprise and consumes in app purchase credits per document. In Community the header is typed and the lines come from the order."
+    },
+    {
+      "title": "Landed cost, so stock value is the real value",
+      "body": "Freight, duty, insurance and clearing charges are entered as a landed cost document and split across the receipts they relate to, equally or by quantity, weight, volume or current cost. Two conditions are easy to miss. The product category has to cost at FIFO or average cost, because a standard cost product will not take the adjustment, and its inventory valuation has to be automated rather than manual. For an importer this is the difference between a gross margin report the sales director can act on and one that understates cost by the whole freight bill."
+    },
+    {
+      "title": "Drop shipping, subcontracting and buying services",
+      "body": "With the dropship route enabled, a sales order line raises a purchase order that ships from the vendor straight to your customer. Odoo still records a dropship transfer from the vendor location to the customer location, so the sale is costed and traceable even though nothing touches your warehouse. Subcontracting sits in Manufacturing: you buy the finished part on an ordinary purchase order, and the resupply route sends your components to the subcontractor. Service and expensed lines buy through the same documents with no receipt step, which is how consultancy, software renewals and utilities keep an order trail and an approval."
+    },
+    {
+      "title": "Spend analysis, and what a scorecard needs on top",
+      "body": "Purchase Analysis gives spend by vendor, product, category and buyer over any period, in pivot or graph form, with drill down to the order behind any figure. Odoo also computes an on time delivery rate per vendor, from what the receipt says arrived against the date that was promised, and shows it on the vendor record. A full scorecard is not standard. Price variance against an agreed blanket price, in full rates and rejection counts are all derivable from data Odoo already holds, but they are a reporting build rather than a menu item, so scope them as one."
+    }
+  ],
+  "setup": [
+    {
+      "title": "The vendor price list is the project",
+      "body": "Each vendor line on a product carries the supplier, their own product code and description, a minimum quantity, a price, a currency, validity dates and a delivery lead time. The vendor product code prints on the RFQ, which is what gets a supplier to accept the document without a phone call. Quantity breaks are separate lines. Load it from the signed agreement rather than from last year of invoices, and diarise the review, because these lines expire quietly."
+    },
+    {
+      "title": "Purchase unit against stock unit",
+      "body": "Decide per product whether you buy in cartons, cases, kilos or metres and stock in something else. Odoo carries a separate purchase unit of measure, which only appears once Units of Measure is switched on in Inventory settings, and both units have to sit in the same category for the receipt to convert. The conversion factor has to match physical reality to several decimals or every receipt leaves a rounding residue in stock. Audit the catalogue before go live. This is where the quiet errors hide."
+    },
+    {
+      "title": "Approval, and what Odoo actually gives you",
+      "body": "Purchase settings expose one control. Set levels of approvals to two step with a minimum amount, and any order over it waits for a purchase administrator before it can be confirmed. The comparison uses the order total including tax, converted to company currency, which is not what most delegation matrices say. One level, one number, one company. Authority by department, by spend category, by project, or two signatures on the same order, needs the Approvals app in Enterprise, an automation rule on the order, or a custom flow. Write the delegation of authority matrix first, then choose, because unpicking orders approved under the wrong rule is slow work."
+    },
+    {
+      "title": "Accounts, taxes and analytic coding",
+      "body": "Vendor taxes default from the product and are then remapped by the fiscal position on the supplier record. Settle the fiscal positions for imports, reverse charge and zero rated purchases before anyone posts a bill, because the tax report is rebuilt from posted lines and correcting it afterwards is a journal by journal exercise. Analytic distribution on the order line is what carries spend to a project, department or cost centre. Set the price difference account on the product category at the same time, remembering it only comes into play with Anglo-Saxon accounting and automated valuation."
+    },
+    {
+      "title": "Cutover: open orders and nothing else",
+      "body": "Import the vendor master, the price list and the open purchase orders. For a part received order, load only the outstanding quantity, and bring the goods already on hand in through the opening stock count. Load unpaid supplier invoices as opening payables balances rather than as bills against the new orders. Closed history stays in the old system or in a flat extract, which is what an auditor actually asks for."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Three way matching does not stop a payment",
+      "body": "The should be paid flag is advisory. Odoo will post and pay a bill for goods that never arrived, because the flag informs rather than blocks. If the control has to be real, the bill needs a state somebody clears, either an approval step before posting or a payment run filtered on the flag. Finance teams hear the phrase and assume a hard stop. That assumption is how a company pays for a container it never received."
+    },
+    {
+      "title": "Prices that quietly fall back to cost",
+      "body": "An order line takes its price from the vendor line that matches supplier, quantity, currency and date. When nothing matches, and an expired validity date is the usual reason, Odoo falls back to the product cost. The request goes out at a number nobody agreed and looks entirely normal on screen. Report on supplier lines expiring in the next sixty days rather than finding out when a vendor queries the order."
+    },
+    {
+      "title": "Orders split around the approval limit",
+      "body": "One threshold is defeated by raising three orders instead of one, and standard Odoo does not detect the pattern. If the limit is a real control, report on same vendor same week orders clustered just underneath it, and treat that as an audit finding rather than a system fault. Groups buying in several currencies get a second version of this: the threshold is held in company currency, so it moves with the rate."
+    },
+    {
+      "title": "Landed cost applied too late",
+      "body": "A landed cost can only revalue stock still on hand. Post the forwarder invoice six weeks after the container was received and sold, and the portion relating to sold goods cannot go into stock, so it lands in an expense account in the wrong month. Accrue expected freight and duty at receipt and reverse the accrual when the invoice arrives. Decide this at design time, or spend a year explaining margin swings."
+    },
+    {
+      "title": "Part received orders imported at cutover",
+      "body": "This is the most common migration error on this module. The opening stock count already contains the goods that arrived, then the imported order receives them a second time. Quantity doubles, valuation doubles, and it surfaces a month later at the first physical count. Load outstanding balances only, freeze receiving during the cutover window, and reconcile the open order list against supplier statements before anyone confirms anything in the new database."
+    },
+    {
+      "title": "A vendor master that breeds duplicates",
+      "body": "Three records for one supplier, each with a different tax number and payment term, is what an unmanaged partner list looks like after two years. Purchase makes it worse, because buyers create contacts on the fly while raising an order. Set a naming convention, make the tax identification number mandatory on vendors, and run the duplicate check before the first order rather than after the first tax return."
+    }
+  ],
+  "worksWith": [
+    "Odoo Inventory, which owns receipts, reordering rules, lead times and stock valuation",
+    "Odoo Accounting, for the vendor bill, the tax lines, the payment run and the payables ageing",
+    "Odoo Manufacturing, where component demand off a bill of materials becomes purchase demand",
+    "Odoo Sales, for drop shipped lines and make to order chaining from a customer order",
+    "Odoo Quality in Enterprise, for a control point on the receipt operation that flags or blocks a bad delivery before it becomes a bill",
+    "Odoo Project and analytic accounting, for spend against a job rather than against a nominal code alone",
+    "Odoo Approvals in Enterprise, when the authority matrix has more than one level",
+    "Peppol and other e-invoicing channels, where the supplier document arrives as structured XML that has to be matched to an open order rather than keyed"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "VAT is 15% and input recovery depends on a supplier document that meets the ZATCA rules, so a bill without the vendor VAT number and a compliant tax invoice is a cost rather than a claim. VAT on imported goods is collected at customs unless the importer holds ZATCA approval to account for it on the return, while imported services are self accounted. Customs duty and clearance fees belong in a landed cost document so they reach stock value."
+    },
+    {
+      "country": "uae",
+      "note": "Corporate tax put related party buying under transfer pricing scrutiny, so intercompany and connected person purchases need an arm's length price and a document trail rather than a management decision recorded nowhere. Goods moving in or out of a designated zone follow a different VAT treatment that belongs in a fiscal position, not a manual override on the bill. Corporate tax also disallows half of entertainment spend, so hospitality bills need their own expense account from the first month rather than a disallowance reconstructed from a pile of receipts at year end."
+    },
+    {
+      "country": "pakistan",
+      "note": "Section 153 withholding applies to most supplier payments, at one rate for vendors on the FBR active taxpayer list and a higher rate for those who are not, so active taxpayer status has to sit on the vendor record and be rechecked periodically. Sales tax input is only safe where the supplier actually declared the invoice, so payables needs a monthly reconciliation against the return data rather than a filing clerk taking the bill at face value."
+    },
+    {
+      "country": "india",
+      "note": "Tax deducted at source under section 194Q, at 0.1%, applies once purchases from one vendor pass the annual threshold, so cumulative spend has to be tracked per supplier rather than per order. The overlapping collection rule on the seller side was withdrawn in 2025, which removes the old double counting argument but leaves the buyer side deduction firmly yours. Input credit still depends on the invoice appearing in GSTR-2B, so vendor bills need reconciling against it, and inbound goods above the value limit need an e-way bill."
+    },
+    {
+      "country": "bangladesh",
+      "note": "Purchases carry two deductions at source. VAT deducted at source applies on specified service procurements at rates that vary by service type, posted against the supplier bill rather than netted off later. Income tax withholding on supplies of goods runs on slab rates that step up with the contract value, with special rates for particular commodities. Nothing in the standard localisation applies either one automatically, so both are a tax mapping exercise by procurement category."
+    },
+    {
+      "country": "turkey",
+      "note": "KDV tevkifat makes the buyer withhold part of the VAT on certain goods and services and pay it to the tax office directly, so the vendor bill splits the tax between the supplier and you, at ratios set by communique rather than by the supplier. Supplier documents arrive as e-Fatura or e-Arsiv rather than as a PDF, and inbound goods travel on an e-Irsaliye. The exchange runs through a licensed integrator, so confirm what your Odoo version covers and what the integrator has to."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Construction buyers deduct CIS from subcontractor payments and file a monthly return. The UK localisation reporting that supports this sits in Enterprise, so a Community build handles the deduction and the return by hand. The domestic reverse charge applies to most construction services between VAT registered contractors, so the supplier bill carries no VAT to pay away. Importers should settle whether postponed VAT accounting is in use, because it changes the treatment on every import bill."
+    },
+    {
+      "country": "germany",
+      "note": "Since 1 January 2025 every German business has to be able to receive a structured B2B e-invoice, so supplier documents now arrive as XRechnung XML or ZUGFeRD PDF and payables has to read the data, not a scan. Test inbound reading into vendor bills on real supplier files during the project rather than assuming it. Section 14b UStG sets the retention period for those documents and GoBD expects a traceable, unalterable audit trail behind every posted bill."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Purchase in Community, or does it need Enterprise?",
+      "a": "The purchasing process runs on Community, and the parts buyers assume are paid extras mostly are not. What pushes a team onto Enterprise is usually finance rather than procurement: vendor bill scanning, the Approvals app once the authority matrix has more than one rung, Studio, and the accounting side. That last one catches people. Community gives you Invoicing, which posts bills and taxes perfectly well but ships without the aged payable report and the bank reconciliation screen, and payables notice at the first month end. Enterprise is priced per user rather than per app, so adding one Enterprise feature prices the whole user base. That arithmetic settles the argument faster than any feature list."
+    },
+    {
+      "q": "Does Odoo have a purchase requisition or internal indent?",
+      "a": "Standard Odoo starts at the request for quotation, so there is no departmental requisition that converts to an order after approval. In Enterprise, the Approvals app covers the request and sanction step ahead of the order. In Community the usual answers are the OCA purchase request module or a light custom model. Decide early, because a requisition step changes how many people need access to the system at all."
+    },
+    {
+      "q": "Can suppliers quote through a portal?",
+      "a": "A request emailed from Odoo carries a link to a portal copy of the document, and a vendor granted portal access can see their orders. What Odoo does not have is a sourcing portal where suppliers self register, upload trade licences and certificates, get prequalified and submit sealed bids. If procurement policy requires that, it is a development project in its own right, and it is worth pricing separately before the main rollout is scoped."
+    },
+    {
+      "q": "Can we stop a buyer ordering off contract or from an unapproved vendor?",
+      "a": "Not by configuration alone. The vendor lines on a product are a price source, not a restriction, and nothing stops a buyer typing a different supplier onto the order. What works is making the breach visible and cheap to catch: blanket orders on the contracted items so the agreed price is what fills in, a rule that blocks confirmation when a line has no matching vendor price line, and a weekly list of orders priced off product cost rather than off an agreement. Treat that as a small build and do it before the first audit, not after it."
+    },
+    {
+      "q": "Can we raise orders in the vendor's currency?",
+      "a": "Yes. The order takes its currency from the vendor price list line or the supplier record, the bill inherits it, and Odoo converts at the rate held for the bill date. Two things catch people out. The approval threshold is evaluated in company currency, so a fixed foreign price crosses it as the rate moves. And the gap between the rate at billing and the rate at payment posts as a realised exchange gain or loss, which needs its accounts set before the first payment run."
+    },
+    {
+      "q": "What happens when the vendor bills a different price from the order?",
+      "a": "Odoo lets you post the bill at the price the supplier actually charged. Where the difference lands depends on the costing method and on whether the goods are still on hand. Under Anglo-Saxon accounting with automated valuation it either corrects the remaining stock layer or posts to the price difference account on the product category. If that account was never set, the entry ends up somewhere nobody chose. Set it during design and reconcile it monthly, because it is an early warning on price list drift."
+    },
+    {
+      "q": "How do we handle an advance payment to a vendor?",
+      "a": "From Odoo 17 a purchase order can raise a down payment bill directly, as a percentage or a fixed amount, and the balance is netted off when the goods are billed. That covers the deposit most equipment and import suppliers ask for before production starts. Two decisions stay yours. Which account the advance sits in until the final bill arrives, since it is a prepayment and not an expense. And how the payment is reconciled when money leaves before any receipt exists, which is the point where a supplier statement and your payables ledger start to drift."
+    },
+    {
+      "q": "How do we handle a return to a vendor?",
+      "a": "Return from the receipt rather than by editing quantities on the order. That creates a return picking, reverses the stock move and its valuation, and reduces the received quantity on the line, which leaves a negative quantity to bill. From there you raise a vendor credit note against the original bill. Correcting the bill alone leaves stock and payables telling two different stories, and the count finds it later."
+    },
+    {
+      "q": "Can a confirmed purchase order still be edited?",
+      "a": "Yes, and that surprises people. A user with purchase rights can change quantities and prices on a confirmed order and the receipt follows the change. Lock the order once it has gone to the supplier if the confirmed document is meant to be the contract. Locking is reversible by an administrator, so the point is not prevention. The point is that the change becomes deliberate and leaves a trace in the log."
+    }
+  ]
+}

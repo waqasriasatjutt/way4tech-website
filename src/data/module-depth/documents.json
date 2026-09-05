@@ -1,0 +1,176 @@
+{
+ "metaDescription": "Odoo Documents in practice: why it is Enterprise only, what the OCR really does, filestore and backup limits, and per country archiving rules.",
+ "intro": [
+  "Documents is an Enterprise app, and that is the first thing to settle in a scoping call. A Community database is not without file handling. Every record carries attachments through the chatter, those attachments inherit the access rules of the record they hang on, and they are found by searching that record. What Community has no equivalent of is a filing layer that exists in its own right: a place for files that are not attached to anything yet, sitting in front of a person whose job is to decide what each one becomes.",
+  "It helps to see the app for what it is. Documents is a triage and filing layer over the attachments Odoo already stores. A file arrives by upload, by email alias or from a scanner, lands in a workspace with an owner and tags, and is then either filed or turned into a business record. The payback shows up wherever paper arrives faster than anyone files it: supplier invoices, signed delivery notes, employee contracts and permits, site photos, certificates from subcontractors.",
+  "The difficult parts of these projects are rarely in the app. They are the filestore on disk, the naming convention nobody agrees, the access model that was never designed, and the fact that a tax authority now defines what your archive has to contain. Under the clearance regimes in Saudi Arabia, Egypt, Turkey, India and Pakistan, the legal invoice is a signed XML payload and the PDF a human reads is only a rendering of it."
+ ],
+ "whoFor": [
+  "Finance teams processing a few hundred supplier bills a month that want the scan, the draft bill and the approval trail in one place instead of a shared mailbox.",
+  "HR departments holding contracts, visas, iqamas, permits and certificates where the expiry reminder matters as much as the file itself.",
+  "Companies with outside parties who need to upload rather than email, such as subcontractors sending insurance certificates or candidates sending qualifications.",
+  "Organisations already on Odoo Enterprise for Accounting, Sign or Project, where Documents adds no licence cost and the bridges are already sitting there switched off.",
+  "Not for anyone who needs a certified evidential archive with write once storage and a formal retention policy engine, because Odoo ships none of those and will not pass that audit on its own.",
+  "Not for engineering teams versioning CAD and drawings with check out locking and revision control, where a purpose built PDM system does a job Odoo does not attempt."
+ ],
+ "capabilities": [
+  {
+   "title": "Workspaces, tags and access",
+   "body": "Workspaces form a tree and access is granted on the folder, then inherited downward, so the tree is the permission design rather than a cosmetic one. In Odoo 18 and 19 that inheritance can be overridden on an individual document, which is useful and also the thing that quietly drifts. Tags belong to a workspace and are inherited by the levels beneath it, so one physical filing structure can carry several cross cutting views: status, year, branch, document type. A document has an owner, usually whoever uploaded it, and a contact, which is the partner the file relates to. That contact field is what makes a personal data request answerable two years later."
+  },
+  {
+   "title": "Turning a file into a record",
+   "body": "The value is in the sidebar actions rather than in storage. With the accounting bridge on, a PDF sitting in the bills workspace becomes a draft vendor bill without rekeying, and the scan stays attached to it. With Sign installed, a stored contract goes out for signature and the signed copy files itself back. With Project on, a file becomes a task. Each bridge is a setting that names the workspace it works against, and each is off until you turn it on."
+  },
+  {
+   "title": "Requests, share links and uploads from outside",
+   "body": "A document request creates a placeholder in the workspace with an activity assigned to a person, so a missing trade licence is visible as work rather than as an absence. Share links go further: a link can point at a single file or a whole workspace, can carry an expiry date, and can be set to accept uploads. That is how a supplier sends you a certificate without an Odoo user account and without anyone forwarding an attachment."
+  },
+  {
+   "title": "Splitting, merging and locking",
+   "body": "The PDF tool shows page thumbnails and lets you cut a scanned batch into separate documents, which is the feature that makes a shared office scanner workable. Forty pages come in as one file, you place the cuts, and each invoice lands as its own document ready for the bill action. Locking a document stops another user replacing the file underneath you. Replacing a file keeps the earlier one in the document history rather than overwriting it silently."
+  },
+  {
+   "title": "What the OCR actually does",
+   "body": "Odoo digitisation reads vendor bills and expense receipts, pulling supplier, date, totals, taxes and lines into a draft record for a human to confirm. It runs as a paid credit service, charged per document, and it improves as it is corrected. It is not a background text indexer. Nothing reads the words inside a scanned delivery note so that you can search for them later, which is why the file naming convention carries more weight here than in a general purpose document system."
+  },
+  {
+   "title": "Actions, and what actually files a document by itself",
+   "body": "Configured actions carry criteria on tags, contact and document type. When a selected file matches, the action appears as a button in the side panel and can set tags, change the owner, move the file to another workspace or create the linked record. Note what that is: a shortcut for a human, not unattended filing. Unattended filing comes from giving a workspace an email alias, so a multifunction printer or a supplier sending PDFs to a shared address lands files in the right place with a default owner and tags, and from a base automation rule for anything more conditional than that. Keep the set small either way. Long action chains are painful to debug six months on."
+  },
+  {
+   "title": "One stored file, two places it appears",
+   "body": "A document row wraps a stored attachment and can point at a business record, so the scan in the bills workspace and the scan on the vendor bill chatter are the same bytes on disk, not two copies. This is what people get wrong during a tidy up: deleting the workspace entry deletes the file the bill relies on. It also explains why the filestore does not double when a bridge is switched on, and why a duplicate hunt has to work on document rows rather than on disk usage."
+  }
+ ],
+ "setup": [
+  {
+   "title": "Design the workspace tree before anything is uploaded",
+   "body": "Access is granted per workspace, so the tree is the security design and not a cosmetic choice. Mirror the organisation and the confidentiality boundaries: finance, HR, legal, operations, each with a restricted branch. Use tags for the things that cut across, such as year, branch, or document type, because tags are cheap to change and a workspace move is not. Agree who owns each branch before go live, since an unowned workspace turns into the place everything gets dumped."
+  },
+  {
+   "title": "Decide the naming convention and enforce it",
+   "body": "Search works on the document name, the tags, the owner and the contact. There is no search inside the content of a scan. That makes the name the index, and a folder full of files called scan0001 is a folder of lost files. Pick a pattern that puts the party, the date and the reference in that order, keep it short, and make it the responsibility of whoever operates the scanner. Automated rules can retag on arrival, but they cannot invent a reference that is not there."
+  },
+  {
+   "title": "Fix the upload path before users find it",
+   "body": "Most failed uploads are not Odoo. A default nginx reverse proxy rejects anything over one megabyte until client_max_body_size is raised, which a single phone photo will exceed. Large files also need the proxy read and send timeouts raised and limit_time_real lifted in the Odoo configuration, or the request is cut off part way through. Test with the largest file the business genuinely handles, not with a small sample, and test it through the proxy rather than on port 8069."
+  },
+  {
+   "title": "Plan the filestore and the backup separately",
+   "body": "Files live on disk under the data directory, in filestore/<database>, one physical file per unique checksum, with only the metadata row in PostgreSQL. Two people uploading the same PDF consume one file. The backup route through the database manager zips the filestore into the dump, and it fails long before the disk does, usually against a proxy timeout while the zip is still being built. Past a few tens of gigabytes the working answer is a pg_dump plus a separate rsync of the filestore, restored together and never one without the other. A database restored without its filestore looks perfectly healthy and every attachment is gone."
+  },
+  {
+   "title": "Switch on only the bridges you will use",
+   "body": "Each connected app has its own setting naming the workspace it files into: accounting for vendor bills, employees for personal documents, recruitment for applications, sign for executed agreements, project for job paperwork. Turning them all on at once produces workspaces nobody asked for and a training session about features the client does not need. Start with the one department that has the pain, get their filing right, then add the next. Check the access on each new workspace after you enable it rather than before, because the HR one holds contracts and salary letters from day one."
+  },
+  {
+   "title": "Build retention rather than assuming it",
+   "body": "Odoo ships no retention policy engine. A deletion schedule is a scheduled action with a domain over document type and date, written and tested by a person, and it has to allow for the trash delay because removed items stay recoverable for thirty days. Retention also runs the other way: several of the regimes below hold records for six, seven or ten years, so a rule written to reclaim space is more likely to breach something than a rule that keeps files. A personal data erasure request is answerable only if the contact field on each document was populated, which is a filing discipline question long before it is a legal one."
+  }
+ ],
+ "pitfalls": [
+  {
+   "title": "The filestore grows faster than anyone forecast",
+   "body": "Phone photos land at three to five megabytes each. A field team of twenty uploading a dozen a day is more than a gigabyte a week, and nobody notices until the nightly backup runs past the maintenance window or the disk fills and the database stops accepting writes. Checksum deduplication helps only with genuinely identical files, and a second scan of the same page is a different file. Size the volume for two years of the real upload rate and alarm on free space."
+  },
+  {
+   "title": "Version upgrades move the goalposts",
+   "body": "Documents changed shape between Odoo 17 and 18: folders and files are handled through a single structure and access is expressed per item as well as per workspace. Files survive the upgrade. The design around them, meaning custom rules, share links and the assumption that a child workspace inherits exactly what the parent grants, deserves a full retest on a copy before anyone touches production. Budget the permission review as a task, not as a checkbox at the end."
+  },
+  {
+   "title": "Treating the PDF as the legal document",
+   "body": "Under a clearance regime the cleared XML with its stamp, reference number or seal is the invoice, and the printable copy is a rendering. Teams store the PDF, replace it later with a corrected version, and assume the archive is now right. It is not. Keep both artefacts, keep them linked to the same record, and make sure the identifier the tax authority returned is stored where an auditor can match one against the other years later."
+  },
+  {
+   "title": "One flat workspace for everything",
+   "body": "The default workspace becomes a landfill within a quarter. It is also a security problem, because permissions are granted at workspace level, so a flat store means the person who files delivery notes can see the salary letters. Restructuring later is not a drag and drop exercise: rules, share links and bridge settings all point at workspaces by name. The half hour spent on the tree at the start is the cheapest half hour in the project."
+  },
+  {
+   "title": "Digitisation credits running out quietly",
+   "body": "Bill and receipt digitisation consumes purchased credits per document. When the balance hits zero the reading stops, and what the finance team sees is not an error message but bills that suddenly arrive empty and need typing. Nobody reports it for a week. Set a low balance alert, keep a buffer, and decide up front which document types are worth the credit, because a two line utility bill rarely is and a forty line distributor invoice always is."
+  },
+  {
+   "title": "Assuming the history files itself",
+   "body": "Installing Documents and switching on the accounting bridge does not reach backwards. Attachments already sitting on posted bills stay where they are and no workspace entry appears for them, because document rows are created as files arrive from that point on. There is no shipped back fill. If the business expects to open Documents on go live day and see last year, that is a scripted job over existing attachments, and it needs the same workspace, owner, contact and tag decisions as any migration. Scope it, or set the expectation that the workspace starts empty."
+  }
+ ],
+ "worksWith": [
+  "Accounting, where a scanned supplier PDF becomes a draft vendor bill with the scan still attached",
+  "Sign, for sending a stored contract out for signature and filing the executed copy back automatically",
+  "Employees, for contracts, visas and permits where the expiry date drives the reminder",
+  "Project and Field Service, so site photos and signed job sheets sit on the task rather than in a phone",
+  "Purchase and Inventory, for delivery notes, packing lists and certificates of origin against the receipt",
+  "Odoo Spreadsheet, whose files are stored and shared through a workspace like any other document",
+  "Studio, for adding the one or two fields the business will actually filter and search on",
+  "Office multifunction printers and scanners that email into a workspace alias"
+ ],
+ "regional": [
+  {
+   "country": "saudi-arabia",
+   "note": "Under ZATCA Phase 2 the cleared UBL XML with its cryptographic stamp and QR is the invoice, and the readable PDF is a copy of it. Archive both, linked, with the ZATCA response reference. Arabic is required on the document itself. VAT records are kept for at least six years, so size the filestore for years of storage rather than months."
+  },
+  {
+   "country": "uae",
+   "note": "Two retention clocks run at the same time. VAT records are held for five years, real estate records for fifteen, and corporate tax records for seven years after the tax period, so a store that clears itself at five years fails a corporate tax review. The e-invoicing rollout adds the structured XML exchanged through an accredited service provider to what has to be kept, not just the PDF."
+  },
+  {
+   "country": "india",
+   "note": "A B2B invoice above the turnover threshold is only valid with the Invoice Reference Number and the signed QR returned by the Invoice Registration Portal, and goods move against an e-way bill with its own validity by distance. Both belong with the delivery paperwork rather than in a separate portal. GST records run seventy two months from the annual return due date."
+  },
+  {
+   "country": "pakistan",
+   "note": "FBR digital invoicing returns an invoice number in real time and that number belongs on the archived copy. The documents that cause the real arguments are the CPR payment receipts and withholding certificates supporting an input claim, so file them against the vendor bill instead of an inbox. Sales tax records are kept for six years, and inspectors ask for the vendor set, not the summary."
+  },
+  {
+   "country": "turkey",
+   "note": "e-Fatura and e-Arsiv documents are UBL-TR XML routed through the revenue administration or a licensed private integrator, and the issuer is responsible for preserving the e-Arsiv copies electronically. Commercial code retention runs to ten years, and the e-Defter ledger files join the same archive. A workspace holding only printable copies is not what an inspection asks for."
+  },
+  {
+   "country": "egypt",
+   "note": "ETA clearance requires each document to be signed with an electronic seal, and the private key sits on a token or in an HSM held by a named person. Plan for that person leaving, for the certificate expiring and for who is permitted to hold the token, because submission stops the day any of the three is unresolved. The submitted signed file is the one that counts, so store the ETA identifier next to it and a submission can be matched to an archived copy without opening the portal. B2C receipts run as a separate stream with their own documents."
+  },
+  {
+   "country": "germany",
+   "note": "GoBD is the real constraint. Records have to be unalterable, traceable and readable for the whole retention period, and you are expected to hold a Verfahrensdokumentation setting out how a document enters the system and what happens to it afterwards. That is written by the project, not by the software. German buyers have also had to be able to receive structured invoices since 1 January 2025, so the archive already mixes XRechnung XML with hybrid ZUGFeRD PDFs. Odoo keeps prior versions of a replaced file but certifies nothing, so these projects usually pair it with an audit proof archive and a DATEV handover for the tax adviser."
+  },
+  {
+   "country": "france",
+   "note": "From 1 September 2026 every business subject to French VAT has to be able to receive invoices through a registered partner platform, with the obligation to issue phased in behind it, and exchange runs through those platforms rather than through a free public portal. Factur-X arrives as a PDF/A-3 with the XML embedded, so a single stored file carries both the readable and the structured document, which is the easiest archive position of any market on this list. Destroying a scanned paper original is permitted only under set conditions, including a copy that is sealed and timestamped."
+  }
+ ],
+ "faqs": [
+  {
+   "q": "Is the Documents app available in Odoo Community?",
+   "a": "No. Documents is an Enterprise app. Community still attaches files to any record and lets you search and permission them through that record, which is enough for many businesses. What is missing is the workspace tree, share links, document requests, the PDF splitter and the one click record creation. The usual Community route is the OCA DMS modules, which cover filing and access but none of those conversions, and which need checking against the exact version you are running before anyone promises them."
+  },
+  {
+   "q": "How accurate is the bill digitisation, and what does it cost per document?",
+   "a": "It produces a draft for a person to confirm, never a posted entry, and the confirmation step is not skippable. Accuracy follows input quality: a flat 200 to 300 dpi scan of a printed invoice reads well, a phone photo of a creased thermal receipt does not, and a batch should be split into single invoices before it is sent rather than after. A credit is consumed per document whether the read was good or not, which is the argument for putting forty line distributor invoices through it and typing the two line utility bills by hand."
+  },
+  {
+   "q": "Where are the files physically stored?",
+   "a": "On the server disk, in the filestore directory belonging to that database, with only the metadata rows in PostgreSQL. Identical files share one stored copy because the path is derived from the file checksum. Storing attachments inside the database is possible through a system parameter and is a poor idea beyond a few gigabytes. Object storage needs an additional community module."
+  },
+  {
+   "q": "Does Documents cost extra on top of an Odoo Enterprise subscription?",
+   "a": "There is no separate app fee. Enterprise is priced per internal user with the apps included, so on a database already running Enterprise the marginal cost is disk plus digitisation credits, which are bought separately and burned per document. External parties uploading through a share link need no user account and add nothing to the user count. Two things do carry a price. Storage, which on Odoo Online and Odoo.sh is bounded by the plan rather than by a disk you can extend. And the plan tier, since Studio and the external API sit above the entry level plan and a scripted bulk import needs the API."
+  },
+  {
+   "q": "Can a supplier or client send us files without an Odoo user account?",
+   "a": "Yes. A share link can point at one document or a whole workspace, carry an expiry date, and be set to allow uploads, so the other party drops files directly into the right place. Keep a list of the live links and review it, because a link created for a single tender and left without an expiry outlasts the person who made it."
+  },
+  {
+   "q": "Can Documents warn us before a licence or visa expires?",
+   "a": "Indirectly, and this is worth being clear about at the start. Documents carries activities, and the employee record holds a visa expiry and a work permit expiry date of its own, so the reminder comes from an activity or a scheduled action someone configures. There is no built in policy watching an expiry field across every stored file, so the requirement has to be designed rather than switched on."
+  },
+  {
+   "q": "What happens when someone deletes a document?",
+   "a": "It moves to a trash where it can be restored, and is removed permanently after thirty days. In daily use that delay saves people from themselves. It also means a deletion request is not complete on the day the button is pressed, which matters if you have committed to an erasure deadline in a privacy policy or a client contract."
+  },
+  {
+   "q": "Can we migrate from SharePoint or a shared network drive?",
+   "a": "Yes, and the work is in the metadata rather than the copy. Files move with a script that creates the attachment and the document row together and sets workspace, owner, contact and tags, because a file with no metadata is worse in Odoo than it was on the drive: at least the drive had folders. Keep a mapping of source path to created id, because a second run creates a second set of document rows even though identical bytes are only stored once, and the duplicates are then yours to find. Folder structures grown over a decade rarely map one to one, so agree the target tree first and let dead history land in a single archive workspace nobody has to maintain."
+  }
+ ]
+}

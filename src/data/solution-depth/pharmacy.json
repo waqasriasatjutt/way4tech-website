@@ -1,0 +1,180 @@
+{
+  "metaDescription": "Odoo for pharmacy: batch and expiry tracking that survives a busy counter, the controlled drugs register Odoo does not ship, and what breaks at go live.",
+  "intro": [
+    "Odoo has no pharmacy application. What it has is stock tracked by lot with an expiration date, a removal strategy that issues the shortest dated batch first, a point of sale, purchasing with reorder rules, and invoicing. A working pharmacy is those parts plus three things Odoo does not ship: a prescription record, a controlled drugs register, and a payer claim. Most of the project cost and nearly all of the project risk sit in that second list.",
+    "The edition question is narrower than people expect. Lot and serial tracking, expiration dates, FEFO removal, reorder rules, Point of Sale, landed costs and the GS1 barcode nomenclature are all in Community. Enterprise adds the Barcode app, Quality, Documents, Sign, Studio, full Accounting on top of Community's Invoicing, and most of the certified e-invoicing modules that sit inside the country localisations. One independent branch can run Community. A chain that has to report every sale to a tax authority usually cannot.",
+    "The rest of the work decides whether the build survives its first stock count. One medicine has to be one product with one selling unit, not four rows created by four buyers over three years. Expiry has to be captured at goods in by the person unpacking the box, because nobody adds it afterwards. And the shelf price has to match whatever the regulator printed on the carton, which across most of these markets is not a number the pharmacy chooses."
+  ],
+  "whoFor": [
+    "Retail pharmacy chains of three to sixty branches that want one product master, one buying function and one view of expiry across every shelf.",
+    "Hospital and clinic pharmacies issuing to wards and to outpatients from the same stock, with ward returns coming back against the batch they left on.",
+    "Importers and pharmaceutical distributors holding batch traced stock and selling to pharmacies on credit, where recall traceability is a licence condition.",
+    "Independent single site pharmacies that have outgrown a till and a spreadsheet and want purchasing, expiry and true margin per line in one place.",
+    "Not for a pharmacy whose dispensing has to run through a national e-prescription or reimbursement network. Odoo cannot join those platforms, so the certified local software stays and Odoo sits behind it.",
+    "Not for manufacturers needing GMP batch records and validated electronic signatures. That is a validation programme with its own documentation, not an ERP configuration."
+  ],
+  "capabilities": [
+    {
+      "title": "Batch, expiry and shortest dated stock first",
+      "body": "Switch on Lots and Serial Numbers, then Expiration Dates, and every lot carries an expiration date, a best before date, a removal date and an alert date, all computed when the lot is created from lead times held on the product. Set the removal strategy to FEFO on the product category and Odoo reserves the shortest dated batch first, at the counter and on a ward issue, with nobody choosing. Track by lot, not by serial. Serial numbering a pharmacy means one move line per box and a till that crawls on a twenty line basket."
+    },
+    {
+      "title": "The counter and the prescription",
+      "body": "Point of Sale runs sessions, cash control, cashier logins and receipts, and reads a keyboard wedge scanner with no extra hardware. It posts one accounting entry per closed session rather than one per receipt, which is what keeps eight hundred sales a day out of the ledger. Odoo ships no prescription record, so a dispensing layer holds the prescriber, the patient, the medicine lines and a reference the receipt points back to. The lot prompt at the till is driven by the product, not by a till setting: anything tracked by lot asks the cashier which batch. On a queue of twelve that popup is the first thing staff ask to remove, so decide product by product what genuinely has to be tracked."
+    },
+    {
+      "title": "Controlled drugs, and what Odoo does not do",
+      "body": "There is no narcotic or controlled substance register in Community or in Enterprise, and no standard stock report is a substitute for one. What gets built is a register with a running balance per medicine and strength, the prescriber and the patient on every issue, the page reference of the physical register, a second named witness on destruction, and a lock so a posted line cannot be edited or deleted afterwards. Access is its own security group, separate from ordinary stock, because a storeman who can see quantities should not be able to post to the register. Inspectors ask for it printed, on the day, so the report matters as much as the screen."
+    },
+    {
+      "title": "Buying against expiry rather than against last month",
+      "body": "Reorder rules hold a minimum and a maximum per product per warehouse, and the replenishment view turns them into purchase orders in one pass. Vendor lines carry price breaks by quantity, a minimum order quantity and a lead time per supplier, so the order goes in at the break rather than at list price. Pack sizes are the trap. Buy in the carton and sell in the strip using a separate purchase unit of measure with the conversion on it, rather than creating a second product for the box, which splits the stock figure in half and hides it from the buyer."
+    },
+    {
+      "title": "Insurance, credit accounts and the split bill",
+      "body": "Odoo submits no claims. What it does well is separate the person collecting the medicine from the party paying for it. The insurer or corporate account becomes the invoice partner, so the receivable ages against whoever owes the money, and each payer gets a pricelist rather than a duplicate catalogue. A Point of Sale payment method with no journal behind it is a pay later method: it requires a customer and posts the balance to that partner's receivable instead of taking cash, so the patient share and the payer share settle in the same transaction at the counter."
+    },
+    {
+      "title": "Cold chain, quarantine and returns to supplier",
+      "body": "Refrigerated lines sit in their own storage location, so a fridge failure is one location to count and quarantine rather than a hunt across the shelves. Set the warehouse to two or three step receipts and every delivery lands in an input location first, reaching sellable stock only after a pharmacist has released it, which makes the check a step somebody has to complete rather than a habit. Quarantine is a location too, outside the stock the tills and picking types reserve from, so recalled, damaged or short dated batches moved there stop being sellable without being written off. A supplier return is a return picking raised from the original receipt, so it keeps the batch and the credit note references what physically went back. Temperature logging stays on a dedicated data logger, with its export attached to the lot."
+    },
+    {
+      "title": "Branches, the central store and what head office sees",
+      "body": "Each branch is a warehouse with its own stock, its own reorder rules and its own till, resupplied from a central store over a resupply route. A branch to branch transfer is a delivery and a receipt rather than a quiet adjustment, so stock lost in transit belongs to somebody. Sales, margin and stock already report per warehouse and per point of sale with no extra work. Where the profit and loss has to split by branch, an analytic plan with one account per branch, applied automatically by an analytic distribution model, does it without the overhead of a second company."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Fix the product master before anything else",
+      "body": "One medicine is one product with one selling unit, a generic name, a strength, a dosage form, and the manufacturer in a field rather than buried in the name. The GTIN goes on the barcode field, the supplier's own code on the vendor line so a purchase order matches their picking note. Duplicates arrive because two buyers create the same item with different spellings on different days. Agree the naming rule and write it down before the import file is built, not after twelve thousand rows are already loaded."
+    },
+    {
+      "title": "Turn on lot tracking before there is any stock",
+      "body": "Tracking belongs on the product before it holds a single unit. The order is create products, switch on tracking, then load opening quantities as an inventory adjustment carrying a real batch number and a real expiry on every line. Switch it on afterwards and Odoo warns you, then leaves the stock already on hand sitting with no lot and no expiry behind it, which means counting it out and back in anyway. Budget a counting weekend. This is the step that decides whether the expiry report is worth opening."
+    },
+    {
+      "title": "Configure the till around its slowest step",
+      "body": "Decide product by product what is tracked by lot, because tracking is what raises the popup and prompting on every line is what makes staff abandon the system in week two. Controlled, refrigerated and short dated ranges earn it. A shelf of shampoo does not. Set cash control on session open and close, restrict price edits and discounts to a supervisor group, and give every cashier their own login so a variance has a name against it. Close sessions daily. One left open across three days holds back its accounting entry and turns a cash query into archaeology."
+    },
+    {
+      "title": "Pricelists for regulated prices and for payers",
+      "body": "Across most of these markets the maximum retail price of a registered medicine is set by the regulator and printed on the carton, so pricing is a published file loaded against product codes rather than a decision a branch manager makes. Build that load as a repeatable import with a named owner, because the list is reissued and a stale price is a fineable one. Payer and corporate pricing is one pricelist each. Never duplicate a product to hold a second price. A catalogue rebuilt after go live invalidates every margin figure already posted against the old codes."
+    },
+    {
+      "title": "Decide the access model with the pharmacist, not with IT",
+      "body": "Cashier, storeman, pharmacist, branch manager and buyer are security groups with record rules behind them, not job titles on a slide. Cost price, margin and supplier terms are not counter information. Odoo treats data export as its own permission, so a cashier who holds it can take the whole product and customer file to a spreadsheet in two clicks. Switch it off for everyone who does not need it. Outside accounting there is no general audit log. Chatter tracking records only the fields it has been switched on for, so name them early: cost, selling price, and anything that changes a lot number."
+    },
+    {
+      "title": "Move the old data once and keep the old codes",
+      "body": "Export the legacy system to a spreadsheet, clean it there, import once: products, current batches with expiry, supplier terms, credit accounts and open balances. Keep the legacy item code as a searchable field so staff can still find a product by the number they have typed for six years. Leave transaction history in the old system as a read only archive rather than replaying it into Odoo. A replayed history never reconciles, and proving that takes weeks nobody costed."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "An expiry date nobody captures",
+      "body": "The expiry has to go in when the carton is opened at goods in, by whoever is holding it. Projects that leave it to be filled in later end up with lots dated the day of receipt and an expiry report that is confidently wrong, which is worse than no report at all. It also breaks the mechanism it was bought for, because FEFO sorts on the removal date derived from the expiry, so a lot that arrives without one is not ordered with the rest. The fix is procedural before it is technical. The receipt does not get validated without a date, and the person receiving is measured on it."
+    },
+    {
+      "title": "The DataMatrix on the pack and the scanner that cannot read it",
+      "body": "Pharmaceutical cartons carry a two dimensional GS1 DataMatrix holding the product code, the batch and the expiry in one symbol, under application identifiers 01, 10 and 17. A cheap laser scanner reads only the linear barcode, so staff key the batch by hand and quietly stop bothering. An imaging scanner plus the GS1 nomenclature turns three fields of typing into one scan, and the Enterprise Barcode app applies the same parsing to receipts, transfers and counts. This is a hardware decision that decides whether batch tracking survives contact with a real goods in bay."
+    },
+    {
+      "title": "Negative stock at the counter",
+      "body": "The till sells what is physically on the shelf, which is not always what Odoo believes is there. Odoo puts the allow negative stock option on the product category, so the choice is made per family rather than once for the whole file. Block it on controlled and refrigerated lines, where a wrong balance is a licence problem. Allow it on general sales so the queue keeps moving, then make one named person clear the exception report every day, because a negative nobody clears becomes a stock figure nobody trusts."
+    },
+    {
+      "title": "Short dated stock returned too late",
+      "body": "Suppliers take stock back inside a window, often three or six months before expiry, and after that the loss belongs to the pharmacy. Odoo computes the alert and removal dates on each lot from lead times held on the product and raises an activity when the alert date arrives, but those lead times sit empty until somebody fills them in, and an empty lead time raises nothing. Set them per category, give the resulting activities a named owner, and review them weekly rather than at stocktake."
+    },
+    {
+      "title": "Bonus stock booked at zero cost",
+      "body": "Distributors give ten plus one. Received at zero cost, the free unit drags down the average cost of the batch and the margin report flatters the product. Not received at all, the shelf count is short and the difference is written off as shrinkage. Book the bonus quantity on the receipt and spread the invoice value across the full quantity, so unit cost reflects what was actually paid. Freight, clearing and cold shipping go the same way through landed costs, which need a service product flagged as a landed cost before the option appears on the bill."
+    },
+    {
+      "title": "One molecule, four brands, one shelf",
+      "body": "Staff substitute a generic for a branded pack at the counter every day. Four brands are four products and should stay that way, but the count on the molecule is then spread over four rows, and a customer asking for a discontinued brand finds nothing. Carry the generic name and the strength as fields, put the four in one product category, and let search and reporting group them. Merging them into a single row to make searching easier destroys the traceability the licence depends on."
+    }
+  ],
+  "worksWith": [
+    "Inventory for lots, expiration dates, FEFO removal and a warehouse per branch",
+    "Point of Sale for the counter, posting one accounting entry per closed session into the same journals as the rest of the business",
+    "Purchase for reorder rules, vendor price breaks and blanket order agreements holding a contracted annual price",
+    "Invoicing on Community, or full Accounting on Enterprise, for payer and credit account receivables and their ageing",
+    "The Barcode app on Enterprise for GS1 receiving, cycle counts and internal transfers",
+    "Employees for staff records and branch assignment, with Payroll and Planning available on Enterprise only",
+    "eCommerce and the customer portal for over the counter ranges and corporate account reordering",
+    "Hospital, distributor and insurer systems over API or scheduled file exchange, one interface at a time"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "The SFDA sets and publishes the maximum retail price of a registered medicine, so the shelf price arrives as a file loaded against product codes rather than as a margin decision. ZATCA Phase 2 then splits the counter in two: a walk in sale is a simplified e-invoice carrying a QR code and reported to Fatoora after issue, while a hospital or insurer invoice is a standard invoice that has to be cleared before it is handed over. Two flows off one product file, and the certified integration ships inside the Enterprise Saudi localisation."
+    },
+    {
+      "country": "uae",
+      "note": "Registered medicines and listed medical equipment are zero rated while cosmetics, supplements and general retail are standard rated, so a single basket at a single till carries two tax treatments and the product master has to hold that difference per line. Getting it wrong surfaces as a VAT return correction, not as a display bug. Serialisation for the Tatmeen track and trace programme is scanned at goods in and reported on the programme's own portal, so capturing the pack code at receipt is a compliance step rather than a convenience."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing pushes tier one retailers to transmit each sale as it is made and print the invoice number and QR code that come back on the customer's receipt. That adds a live dependency at the till, so decide during design what a cashier does when the link is down and how those sales are transmitted afterwards. DRAP fixes the maximum retail price and prints it on the pack, and it is reissued by notification, which makes the price load a recurring operational job with an owner rather than a one off import at go live."
+    },
+    {
+      "country": "india",
+      "note": "Retail sale of Schedule H1 medicines has to be recorded in a separate bound register naming the prescriber, the patient and the drug, retained for three years, and no edition of Odoo ships that register. GST on medicines runs at more than one rate, so the tax belongs on the product rather than on a global default. E-invoicing with an IRN applies above the turnover threshold, and a branch to branch stock transfer above the value limit needs an e-way bill, which turns an internal transfer into a documented movement rather than a click."
+    },
+    {
+      "country": "egypt",
+      "note": "The ETA system separates e-invoices for registered businesses from e-receipts for walk in customers, and a pharmacy issues far more of the second. Every medicine has to be mapped to a GS1 or EGS item code before anything can be submitted, which is a data project on the product master rather than a switch in the tax settings. The payload is signed structured data rather than a PDF, and the printed slip has to show what ETA returns, so the receipt layout is part of the compliance work and not a cosmetic job at the end."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Medicines dispensed against a prescription by a registered pharmacist are zero rated while the same product sold over the counter is standard rated, so the VAT treatment follows how the item was sold rather than what it is, and the till has to carry that decision line by line. VAT returns go to HMRC under Making Tax Digital. NHS reimbursement arrives monthly as one payment covering thousands of dispensed items, so how that single receipt is reconciled back against dispensing records is a design decision taken in week one, not after go live."
+    },
+    {
+      "country": "germany",
+      "note": "Prices for prescription medicines are fixed by regulation, so margin on that half of the shelf is a legal calculation and the commercial work sits in the over the counter range. E-prescriptions travel over the telematics infrastructure, which Odoo cannot join, so certified pharmacy software stays at the dispensing point. A till taking cash needs a certified technical security device, and the Enterprise German localisation includes a Point of Sale certification module that connects to a cloud TSE provider. Expect the accountant to ask for a DATEV format export and GoBD compliant retention."
+    },
+    {
+      "country": "france",
+      "note": "Cash software has to be certified as unalterable under the anti-fraud rules, and Odoo ships a French Point of Sale certification module that makes a posted order immutable and adds the integrity checks an inspection asks for. That immutability changes daily practice: a mistake is corrected with a refund or a credit note, never by editing the order, and staff have to be trained on it before go live rather than after the first error. Reimbursement runs through the Carte Vitale and health insurance channel, which Odoo does not speak. Business to business invoicing moves to Factur-X as the mandate phases in."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Does Odoo have a pharmacy module?",
+      "a": "No. Community and Enterprise both ship stock with lots and expiration dates, Point of Sale, purchasing and invoicing. Neither ships anything that records a prescription, keeps a controlled drugs register or files a payer claim. A pharmacy build is the standard apps plus a dispensing layer, either from the Odoo apps store or built for the business. If it comes from the store, check that it writes real stock moves against real lots rather than keeping its own parallel quantity field. A parallel quantity cannot be counted, valued, audited or recalled from, and that gets discovered during an inspection rather than during a demo."
+    },
+    {
+      "q": "Community or Enterprise for a pharmacy?",
+      "a": "The functional gap is smaller than the licensing one. Everything needed to hold stock, sell it and buy it again is in Community. What usually forces Enterprise is a single country module, the certified e-invoicing integration for your tax authority, which for most countries is Enterprise only and is not something to reimplement. After that it is the Barcode app and Studio. The cost driver is user count, because every cashier who logs into a till is an internal user, so a twelve branch chain running two tills a shift is a different licence conversation from one shop. Price the country module first, then count the logins."
+    },
+    {
+      "q": "Can Odoo really track batch and expiry, or is that custom work?",
+      "a": "The tracking is standard and needs no code. What gets built around it is the reporting somebody will act on: stock valued by month of expiry rather than a flat list of lots, the short dated lines a buyer can still return inside supplier terms, and a write off routine producing a document the accountant accepts. One thing to settle early. The removal strategy decides which physical batch leaves the shelf, the costing method on the product category decides what value leaves the ledger, and the two are configured separately and do not have to agree. Odoo values by product, not by lot."
+    },
+    {
+      "q": "How are narcotics and controlled drugs handled?",
+      "a": "With a purpose built register, because no edition ships one. Three decisions determine whether it holds up. The opening balance per medicine is counted and signed by the pharmacist on the day it starts, because every later figure derives from it. The bound paper register remains the legal record in most of these markets, so the two are reconciled on a fixed weekly cadence rather than at stocktake, when nobody can remember which entry was wrong. And whoever can post to the register should not be the person who can adjust stock, which is a security question asked before anyone writes code."
+    },
+    {
+      "q": "Can the till stop a cashier selling an expired batch?",
+      "a": "FEFO reserving the shortest dated batch first prevents most of it. A hard block on the sale is a rule added on the dispensing layer, because Point of Sale does not check expiry dates on its own. The control that actually works is a scheduled sweep moving expired lots into the quarantine location, since no software stops a hand reaching a shelf. Run it nightly, and give the list of what it moved an owner in the morning."
+    },
+    {
+      "q": "How do insurance and corporate accounts get billed?",
+      "a": "Billing them is configuration. Reconciling them is the work. A payer settles a batch of scripts with one payment weeks later, short pays some lines and rejects others, so the real design question is how that remittance is matched back to individual dispensing records. Odoo holds the receivable, the payer pricelist and the partial payment against the invoice. Producing the claim file in the payer's own format, and reading the response back, is a separate integration, and it is usually the longest single item on the plan."
+    },
+    {
+      "q": "Can several branches share one database?",
+      "a": "Yes. Two questions decide the shape. Whether a branch may see another branch's stock and cost, which is a record rule rather than a settings checkbox. And whether the branches are separate legal entities with their own tax registration, which is the point at which multi company stops being optional and an internal transfer becomes a real invoice between two books. Bandwidth matters more than database size. Point of Sale keeps selling through a dropped connection and syncs afterwards, while the back office stops, so a weak link hurts the office before it hurts the till."
+    },
+    {
+      "q": "What happens in a recall?",
+      "a": "The traceability report on the lot lists every move that batch made, including which delivery or till session it left on, which answers the regulator for stock. Naming the patients who bought it only works where the sale was linked to a loyalty member or an account, so identity capture at the counter is worth arguing for before a recall rather than during one. Blocking what is left is one move of the lot into quarantine, which takes it out of reservation at every branch at once."
+    },
+    {
+      "q": "Do we still need our existing pharmacy software?",
+      "a": "Where dispensing has to run through a national e-prescription or reimbursement network, yes, and the split is clean. The certified system owns the prescription and the claim. Odoo owns stock, purchasing, pricing, payroll and accounts. The interface worth designing carefully is the one that turns a dispensed item into a stock move, on a schedule rather than per transaction. Where no such network exists, Odoo can be the only system at the counter. Settle this in the first workshop, because it decides whether the till build is in scope at all."
+    }
+  ]
+}

@@ -1,16 +1,39 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { SITE, MODULES } from '~/data/site';
+import { SITE, MODULES, COUNTRIES } from '~/data/site';
+import { moduleDepth } from '~/data/module-depth';
 
 export function getStaticPaths() {
   return MODULES.map(m => ({ params: { slug: m.slug }, props: { mod: m } }));
 }
 
 const { mod } = Astro.props;
+const depth = moduleDepth(mod.slug);
 const related = MODULES.filter(m => m.slug !== mod.slug && m.category === mod.category).slice(0, 4);
 const allOthers = MODULES.filter(m => m.slug !== mod.slug).slice(0, 6);
 
-const schema = [
+// Most mod.title values already begin with "Odoo", so the old
+// `${mod.title} - Odoo ${mod.title} Implementation` rendered
+// "Odoo Helpdesk - Odoo Odoo Helpdesk Implementation" on all 39 pages.
+// Two of the 39 do not carry the prefix ("Marketing Automation" and
+// "Email Marketing"), and simply dropping the duplication would have taken the
+// primary keyword off those two pages entirely. Add the prefix only where it is
+// missing. Base.astro appends " | Way4Tech"; the longest result is 50 chars.
+const qualifiedTitle = mod.title.startsWith('Odoo ') ? mod.title : `Odoo ${mod.title}`;
+const title = `${qualifiedTitle} Implementation`;
+
+// mod.short is a full paragraph (99-277 chars), so the previous description was
+// truncated by every search engine that rendered it.
+const description =
+  depth?.metaDescription ||
+  `${mod.tagline} Implementation, configuration, data migration and support from Way4Tech.`;
+
+// Only country slugs that actually have a page get linked, so a regional note
+// can never point at a URL that was never built.
+const countryBySlug = new Map(COUNTRIES.map((c: any) => [c.slug, c]));
+const regional = (depth?.regional || []).filter(r => countryBySlug.has(r.country));
+
+const schema: object[] = [
   {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -31,12 +54,22 @@ const schema = [
     ],
   },
 ];
+
+// FAQPage is only emitted when real questions exist. An empty mainEntity is an
+// invalid rich result and Search Console reports it as an error.
+if (depth?.faqs?.length) {
+  schema.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: depth.faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+}
 ---
-<Base
-  title={`${mod.title} - Odoo ${mod.title} Implementation`}
-  description={`${mod.short} Deployed across 18 countries by Way4Tech - Odoo Partner.`}
-  structuredData={schema}
->
+<Base title={title} description={description} structuredData={schema}>
   <section class="bg-odoo-gradient text-white">
     <div class="container-site py-16 sm:py-24">
       <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/modules/" class="hover:text-white">Odoo Modules</a> / <span class="text-white">{mod.title}</span></nav>
@@ -57,34 +90,140 @@ const schema = [
         <div class="lg:col-span-2">
           <p class="text-lg text-ink-700">{mod.short}</p>
 
+          {depth?.intro?.map(p => <p class="mt-5 text-ink-700">{p}</p>)}
+
+          {depth && depth.whoFor.length > 0 && (
+            <>
+              <h2 class="h3 mt-12">Who {mod.title} is for</h2>
+              <ul class="mt-6 space-y-3">
+                {depth.whoFor.map(w => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">&rarr;</span>
+                    <span class="text-ink-700">{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
           <h2 class="h3 mt-12">Key features</h2>
           <ul class="mt-6 grid gap-3 sm:grid-cols-2">
             {mod.features.map(f => (
               <li class="flex gap-3">
-                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">&#10003;</span>
                 <span class="text-ink-700">{f}</span>
               </li>
             ))}
           </ul>
 
-          <h2 class="h3 mt-14">How we deploy {mod.title}</h2>
-          <ol class="mt-6 space-y-6">
-            {[
-              {n:1, t:'Discovery', d:`30-minute call to map your ${mod.title.toLowerCase()} requirements.`},
-              {n:2, t:'Configuration', d:'Module setup, field customization, workflow mapping.'},
-              {n:3, t:'Data migration', d:'Clean migration from spreadsheets or legacy systems.'},
-              {n:4, t:'User training', d:'Role-based training with recorded sessions.'},
-              {n:5, t:'Go-live & hypercare', d:'Live rollout with 30 days of priority support.'},
-            ].map(x => (
-              <li class="flex gap-4">
-                <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-600 text-white text-sm font-bold">{x.n}</span>
-                <div>
-                  <div class="font-semibold">{x.t}</div>
-                  <p class="text-ink-600 mt-1">{x.d}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          {depth && depth.capabilities.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">What {mod.title} actually does</h2>
+              <div class="mt-6 space-y-8">
+                {depth.capabilities.map(c => (
+                  <div>
+                    <h3 class="font-semibold text-ink-900">{c.title}</h3>
+                    <p class="mt-2 text-ink-700">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {depth && depth.setup.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">How we configure {mod.title}</h2>
+              <div class="mt-6 space-y-8">
+                {depth.setup.map(c => (
+                  <div>
+                    <h3 class="font-semibold text-ink-900">{c.title}</h3>
+                    <p class="mt-2 text-ink-700">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {depth && depth.pitfalls.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Where {mod.title} projects go wrong</h2>
+              <div class="mt-6 space-y-6">
+                {depth.pitfalls.map(c => (
+                  <div class="rounded-2xl border border-ink-200 p-6">
+                    <h3 class="font-semibold text-ink-900">{c.title}</h3>
+                    <p class="mt-2 text-ink-700">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {!depth && (
+            <>
+              <h2 class="h3 mt-14">How we deploy {mod.title}</h2>
+              <ol class="mt-6 space-y-6">
+                {[
+                  {n:1, t:'Discovery', d:`30-minute call to map your ${mod.title.toLowerCase()} requirements.`},
+                  {n:2, t:'Configuration', d:'Module setup, field customization, workflow mapping.'},
+                  {n:3, t:'Data migration', d:'Clean migration from spreadsheets or legacy systems.'},
+                  {n:4, t:'User training', d:'Role-based training with recorded sessions.'},
+                  {n:5, t:'Go-live & hypercare', d:'Live rollout with 30 days of priority support.'},
+                ].map(x => (
+                  <li class="flex gap-4">
+                    <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-600 text-white text-sm font-bold">{x.n}</span>
+                    <div>
+                      <div class="font-semibold">{x.t}</div>
+                      <p class="text-ink-600 mt-1">{x.d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+
+          {depth && depth.worksWith.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">What it works with</h2>
+              <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+                {depth.worksWith.map(w => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-ink-100 text-ink-700 text-xs font-bold">+</span>
+                    <span class="text-ink-700">{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {regional.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">{mod.title} by country</h2>
+              <div class="mt-6 space-y-5">
+                {regional.map(r => (
+                  <div>
+                    <h3 class="font-semibold text-ink-900">
+                      <a class="hover:text-brand-600" href={`/countries/${r.country}/`}>{countryBySlug.get(r.country).title}</a>
+                    </h3>
+                    <p class="mt-2 text-ink-700">{r.note}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {depth && depth.faqs.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">{mod.title} FAQs</h2>
+              <div class="mt-6 space-y-6">
+                {depth.faqs.map(f => (
+                  <div class="rounded-2xl bg-ink-50 p-6">
+                    <h3 class="font-semibold text-ink-900">{f.q}</h3>
+                    <p class="mt-2 text-ink-700">{f.a}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {related.length > 0 && (
             <>

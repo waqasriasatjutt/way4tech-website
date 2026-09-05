@@ -1,0 +1,176 @@
+{
+  "metaDescription": "Odoo has no farm app. How blocks, seasons, harvest lots, grading, cold store and grower settlement are actually built, and what changes per country.",
+  "intro": [
+    "There is no agriculture application in Odoo. Versions 17, 18 and 19 hold no crop object, no field boundary and no growing season, and no official app adds one. A farm system is assembled out of parts that do exist. The block becomes an analytic account. The season becomes a manufacturing order or a project. Harvest intake becomes a tracked lot. Grading becomes a production run with by-products. The cold room is an ordinary stock location. Anything marketed as an Odoo farm module is third party code you will own.",
+    "One number justifies the whole build: what a hectare cost and what it returned. Seed, spray, irrigation, fuel, casual labour and tractor hours are spent across many fields, and the crop leaves as a single sale. Analytic plans carry each posting down to the block, the crop and the season at the same time, so a field that has lost money three years running stops hiding inside a healthy farm total. Everything else on this page exists to keep that report honest.",
+    "The edition split is sharper here than buyers expect. Community already carries lot tracking, expiration dates, FEFO removal, manufacturing with by-products, purchase agreements, landed costs, consignment stock, Fleet, Maintenance, Project, Timesheets and analytic accounting. Enterprise adds Quality control points, the Barcode app, IoT, Field Service, Documents, Studio and payroll. Scales, cold store sensors, weather feeds and field imagery belong to neither edition, and each one arrives as an integration with its own cost line."
+  ],
+  "whoFor": [
+    "Commercial growers running blocks, orchards, vineyards or greenhouses where the cost of a season has to settle on a field rather than on the farm as a whole.",
+    "Packhouses that receive field lots by weight and dispatch graded cartons by count, with a different unit of measure at each end of the shed.",
+    "Contract farming and grower network operations that issue inputs on advance and recover the value against a graded outturn.",
+    "Fresh produce exporters who have to assemble lot genealogy, certificates and shipping documents before the container closes.",
+    "Not for a smallholding selling at a weekly market, where the record keeping Odoo asks for costs more than the visibility it returns.",
+    "Not for precision agriculture. Odoo stores no field geometry, no satellite imagery and no variable rate prescriptions, and it will not grow into an agronomy platform."
+  ],
+  "capabilities": [
+    {
+      "title": "The block as an analytic account",
+      "body": "Odoo groups analytic accounts into plans, and a farm normally runs three or four: block, crop, season, and a fourth for a grant or subsidy scheme where public money has to be reported separately. One journal item can carry a percentage split across every plan at once, so a fuel invoice burnt over four blocks is entered once and lands on four cost centres. Planted area, variety and planting date live as custom fields on the analytic account, because Odoo holds no map of your land."
+    },
+    {
+      "title": "A season as a production order, a project, or both",
+      "body": "Two patterns survive contact with a real farm. A manufacturing order for the season consumes seed, fertiliser and chemical as components and produces the harvested crop, which gives genuine cost roll-up and forces somebody to record what was applied. A project per block with tasks and timesheets is lighter and gives the farm manager a calendar he will actually open, but records no material consumption. Most operations run both, using orders for inputs and cost, projects for spray rounds, irrigation and picking crews."
+    },
+    {
+      "title": "Intake weights, lot numbers and yield",
+      "body": "Harvest is received against a lot that names the block, the picking date and the shift, and every carton downstream inherits that ancestry. Intake quantity groups by lot and by block out of the box. Yield per hectare does not, because no standard report divides a received quantity by an area held on another record, so it is a small computed field or one spreadsheet formula written once and reused every season. Weighbridges and platform scales do not reach Odoo unaided. Either the intake clerk keys the net weight off the indicator, or the scale is wired in through an IoT box, and the IoT box is Enterprise."
+    },
+    {
+      "title": "Grading and packing with a cost share per grade",
+      "body": "One intake lot leaves the shed as Class 1, Class 2, juice and reject. That is a manufacturing order with by-products, where each by-product line on the bill of materials carries a cost share percentage, so the value of the intake divides across the grades on a ratio you decide instead of loading entirely onto the premium pack. Packing consumes cartons, liners, punnets and labels as components. Produce sold loose by weight and also packed by count is two products with a stated conversion."
+    },
+    {
+      "title": "Expiry dates, FEFO and the cold store",
+      "body": "Switching on expiration dates gives every lot four dates: expiry, best before, removal and alert, each generated from a number of days held on the product. FEFO then becomes selectable as a removal strategy, so a pick follows the oldest saleable lot rather than the nearest pallet, which is the single change that cuts write-off fastest. Cold rooms are ordinary stock locations holding real quantities, so a temperature excursion is handled by moving the affected lot to quarantine or scrapping it. Either action leaves an auditable move."
+    },
+    {
+      "title": "Grower contracts, advances and settlement",
+      "body": "Purchase agreements are enabled in the Purchase settings, and a blanket order then holds the tonnage and price agreed with a grower for the season, with each purchase order drawing the committed quantity down. Where crop is taken in but not yet bought, the consignment setting lets stock sit in your cold store under the grower's ownership, counted but not valued. Inputs issued on advance are recorded against that grower and netted at settlement. Odoo will not offset a payable against a receivable by itself, so the net is posted as a journal entry."
+    },
+    {
+      "title": "Traceability from the sprayed drum to the customer carton",
+      "body": "Where the season is modelled as a production order, the fertiliser and chemical lots consumed become components of the harvested lot, so the traceability report on a delivered carton names the batch applied to the block it came from. That is precisely what a residue query or a buyer audit asks for, produced from the entries that already carry the cost. Odoo enforces no pre-harvest interval. The gap between the last application and the picking date is checked by a person against the label, or blocked by a rule written for you."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Settle units of measure before anything else",
+      "body": "Odoo converts inside a unit category on a fixed ratio and offers no catch weight on the product. A crate that weighs between eight and eleven kilograms therefore cannot be a unit of the kilogram category. What works is trading in weight and holding the crate as its own product, with the real weight captured at dispatch. Where the invoice must follow the weighed amount line by line, that is development with a price on it. This one decision fixes every pricelist, bill and historical report."
+    },
+    {
+      "title": "Design the analytic plans once, then automate the split",
+      "body": "Agree the plans during design and stop adding them afterwards. Block, crop and season are usually enough, with a scheme plan where grant money is involved. Two plans are easy to live with. Five become an entry burden that store staff quietly skip. Analytic distribution models apply a default split by partner, partner category, product, product category or account prefix, so the supplier and product lines behind most postings tag themselves before anyone remembers to. Retro-fitting distribution across a year of posted entries is manual work nobody budgets for."
+    },
+    {
+      "title": "A lot number a supervisor can read",
+      "body": "Left to itself Odoo numbers lots from one running sequence, which tells nobody anything when a bin is standing in front of them. A number encoding block, date and shift can be read by a person on the floor, and it is either keyed at the weighbridge or generated by a small customisation. Fix the format and the tracking mode before any stock exists, because switching a product between lot and serial tracking once moves are posted means clearing that stock first."
+    },
+    {
+      "title": "Costing method, valuation and landed costs before the first receipt",
+      "body": "Set the costing method on the product category before anything is received, because changing it later revalues everything on hand. Average cost suits produce that pools in a bin. FIFO suits lots that stay distinct all the way to the customer. Landed costs need automated valuation switched on, and they push freight, cold store, inspection and clearing charges onto the receipt so a shipped carton carries its true cost. The split method on that record is equal, by quantity, by current cost, by weight or by volume, and weight is the only defensible basis once a container mixes light punnets with dense root crop."
+    },
+    {
+      "title": "Cut over between seasons, not through one",
+      "body": "There is no clean import for a half grown crop. Take the cutover in the quiet window if the calendar allows it, count what stands in the cold store and the packhouse, and start flat. Costs already spent on the standing crop can be loaded as an opening analytic balance per block so the season still compares with last year. Growers, products, certificates and pricelists load first and get checked before any stock is touched."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Yield divided by an area nobody maintains",
+      "body": "Harvest quantity is easy to capture. Planted area is not. A block gets partly replanted, a corner goes out of production, and the hectare figure in the system is still the one off the title deed. Every yield number then reads better than reality, and block against block comparison is quietly wrong. Hold planted area as a dated value per season and give one named person the job of updating it at planting, not at reporting time."
+    },
+    {
+      "title": "A single analytic account called Farm",
+      "body": "The fastest configuration is one analytic account for the whole operation, and it removes the reason for running the project. Cost per hectare, per crop and per season collapse back into the number the owner already had before the software arrived. If field staff will not enter a distribution, the fix is default distribution models and a short account list, not abandoning the plan."
+    },
+    {
+      "title": "Grading booked as an inventory adjustment",
+      "body": "When Class 2 appears as a positive adjustment and the intake as a negative one, the cost of the intake disappears into a counterpart account and margin per grade can never be reconstructed. It also cuts the lot link, so a complaint about a Class 1 carton no longer traces back to a block. Grading is a production step even when nothing is physically changed, and modelling it as one costs a minute a day on the floor."
+    },
+    {
+      "title": "Lots created at the packing line",
+      "body": "Numbering produce when it is packed rather than when it is picked throws the field away. Two blocks mix in a bin, one lot is created at the line, and the genealogy stops at the shed door. Every recall, audit and residue query then covers a whole day of picking instead of one block. Record the lot at intake and accept that the packhouse will carry more lot numbers than it would like."
+    },
+    {
+      "title": "Cold chain evidence kept outside the system",
+      "body": "Temperature charts printed from a data logger and filed in a ring binder satisfy nobody at an audit and cannot be joined to a shipment. Odoo reads no sensor on its own. Either attach the logger export to the delivery order so the evidence travels with the lot, or build the ingestion properly and pay for it. Deferring that decision is how an exporter ends up running two systems, one of them handwritten."
+    },
+    {
+      "title": "Inputs configured without inventory tracking",
+      "body": "In Odoo 17 the shortcut is the Consumable product type. In 18 and 19 it is a Goods product with Track Inventory left unticked. Either way no stock move is created, so a drum of chemical shows no quantity on hand, no lot and no expiry, and the batch applied to a block cannot be produced at an audit. Seed, fertiliser, chemical and packaging belong on tracked products with lot numbers, even though it gives the store more to key."
+    }
+  ],
+  "worksWith": [
+    "Inventory, for lot tracking, expiration dates, FEFO removal and cold rooms held as real stock locations",
+    "Manufacturing, for grading and packing runs where by-products take a defined share of the intake cost",
+    "Purchase, with blanket agreements holding the tonnage and price agreed per grower for the season",
+    "Accounting, for analytic distribution, landed costs and the valuation of stock standing in the cold store",
+    "Fleet and Maintenance, so tractor fuel, odometer readings and service cost land against the block that consumed them",
+    "Quality and Barcode on Enterprise, for intake checks and scanning on the packing line",
+    "Project and Timesheets for the labour side, with Field Service on Enterprise where an irrigation pump call-out has to be scheduled, recorded and billed",
+    "Sales and eCommerce, where a farm shop, a weekly box scheme and a wholesale pricelist draw on one stock pool"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "ZATCA Phase 2 clears a standard invoice through Fatoora before it reaches the buyer, so a packhouse invoicing on the day of dispatch needs clearance inside the daily routine. A farm gate stall issues a simplified invoice and reports it within 24 hours instead. Food carries the standard 15 percent rate, farm labour is paid through WPS, and Agricultural Development Fund support wants its own analytic plan."
+    },
+    {
+      "country": "uae",
+      "note": "Most produce work here is re-export and cold chain rather than growing. Corporate tax at 9 percent applies above the threshold, and free zone treatment has to be tested against qualifying income rather than assumed, which matters where a trading arm sits beside the farm. Transfers between those entities are related party transactions, so intercompany pricelists must agree with the tax file. E-invoicing moves to a Peppol based model."
+    },
+    {
+      "country": "pakistan",
+      "note": "FBR digital invoicing covers taxable supplies while unprocessed farm produce sits largely outside sales tax, so a business that both grows and processes runs exempt and taxable lines through one ledger. Agricultural income is taxed by the provinces rather than federally, so farm income and trading income need separate books from day one. Withholding on supplier payments needs a certificate Odoo ships nothing for."
+    },
+    {
+      "country": "india",
+      "note": "Fresh produce is largely nil rated under GST while the packed and processed line is taxable, so input credit has to be apportioned and reversed against exempt supplies. E-way bill exemptions for agricultural goods vary by state, so a lorry crossing a border needs that state's rule. Sales through an APMC mandi add commission and market fee to the settlement a grower is paid on."
+    },
+    {
+      "country": "turkey",
+      "note": "Buying from a registered farmer who issues no invoice means the buyer raises a mustahsil makbuzu and withholds tax at the rate set for that produce. Odoo has no equivalent document, and the electronic version runs through the same GIB channel as e-Fatura and e-Arsiv. Inside the mandate, crop cannot move without an accepted e-Irsaliye, so a connector outage becomes a loading bay problem."
+    },
+    {
+      "country": "egypt",
+      "note": "Every ETA invoice line needs a registered GS1 or EGS item code, so a new pack size cannot be sold until its code exists, which makes product master work a blocking task. Horticultural exports need a phytosanitary certificate and quarantine registration, and that number belongs on the shipment record. Imported seed, fertiliser and packaging clear through Nafeza against an ACID number raised before the vessel sails."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Making Tax Digital requires digital links from record to VAT return, so a figure retyped out of a spreadsheet fails the test even when the number is right. A farm shop sells zero rated food beside standard rated goods, so the rating belongs on the product. In England, delinked payments and Sustainable Farming Incentive agreements want their own analytic tagging from the first claim."
+    },
+    {
+      "country": "australia",
+      "note": "Packers and processors routinely issue recipient created tax invoices on behalf of growers, which reverses the normal document direction and needs work in Odoo. Statutory commodity levies are deducted at the first point of sale and shown on that same document. Basic food is GST free while packing, storage and freight are not, so one delivery carries both treatments."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Does Odoo have an agriculture or farm management module?",
+      "a": "No, and the third party listings suggesting otherwise are worth opening before you trust them. Most are a crop record and a few reports sitting on Inventory, written against one version, with no stated upgrade path. Ask which version it is maintained against, whether it touches stock valuation, and who fixes it when a core change breaks it. A module nobody will support is a fork of your own system."
+    },
+    {
+      "q": "Can this run on Odoo Community, and what does Enterprise actually buy?",
+      "a": "Community carries the parts that decide whether the model works at all, so nothing described above is blocked by the edition. Enterprise earns its cost on a farm in three places: scanning on the packing line, quality checks recorded at intake, and payroll for seasonal crews. A Community site can still run a wedge scanner, since it types into whatever field has focus, but there is no guided scan flow and no prompt when the wrong lot is read. Count heads before you count features. A picker who needs to record anything is an internal user on a paid seat for every month he is active, and portal access is free but cannot post a stock move."
+    },
+    {
+      "q": "How do labour and machine costs reach a block?",
+      "a": "Timesheets carry the analytic account of the project they are booked against, and the hourly cost on the employee record turns those hours into a value on the block. That field is in Community, not only Enterprise payroll. Machine time on a manufacturing order comes from the cost per hour on the work centre. The line nobody plans for is a contractor invoice covering six blocks, which needs its split entered on the bill line, not corrected months later."
+    },
+    {
+      "q": "What do field and packhouse staff actually use?",
+      "a": "The web client in a phone browser for most of them, and the mobile app where an Enterprise subscription exists. Neither works offline. A block with no signal means the picking record is written on paper and keyed afterwards, which holds up as long as the lot number is decided in the field and not at the keyboard. On the line it is the Barcode app on a mounted screen, or a wedge scanner into a plain form on Community."
+    },
+    {
+      "q": "How quickly can we answer a recall or a buyer audit?",
+      "a": "Minutes, if the lot was created at intake and never merged. The traceability report on a lot walks up to the components consumed and down to every delivery and customer, so the exercise is a filter rather than a data project. Two habits break it: bins that mix blocks under one lot, and stock corrected by inventory adjustment instead of a real transfer. Run the drill on live data during acceptance and time it."
+    },
+    {
+      "q": "How do we pay growers who deliver before a price is agreed?",
+      "a": "Receive the crop against the grower at a provisional value so stock is not carrying zero, or hold it as consigned stock under the grower's ownership until the deal is struck. Advances sit as unreconciled vendor payments. Once the outturn is graded and the price fixed, the bill is raised on final figures and the advances are matched to it. Agree with the accountant during design where the provisional to final difference posts."
+    },
+    {
+      "q": "How is a growing crop valued while it is still in the ground?",
+      "a": "At cost, and only the cost already posted. On a season run as a production order, seed, fertiliser and spray leave stock the moment they are issued and the value sits against the production location until the harvest is received with a quantity. Nothing accrues a market value for a standing crop. Fair value accounting for biological assets is outside Odoo and remains a year end journal your accountant posts."
+    },
+    {
+      "q": "Can we pull weather or satellite data into Odoo?",
+      "a": "There is no weather feature and no field imagery in Odoo. Rainfall and forecast figures come from an external service over an API and are stored against the block, so spray windows and irrigation records can be read alongside them. It is a small build with a recurring data cost. Confirm that a decision will actually change because of the data, because the usual outcome is a panel nobody opens twice."
+    },
+    {
+      "q": "How long does a farm implementation take?",
+      "a": "Configuration is measured in weeks. What sets the go live date is whether blocks, areas and crop plans exist anywhere except in the farm manager's head, and whether the packhouse will agree to record lots at intake. A single site with clean block data and one crop moves quickly. A grower network of several hundred suppliers on paper delivery notes is a different project, and the data cleaning starts before the software does."
+    }
+  ]
+}

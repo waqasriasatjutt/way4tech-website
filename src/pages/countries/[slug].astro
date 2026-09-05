@@ -305,6 +305,26 @@ const hreflangAlternates = [
 
 const metaDescription = `Odoo implementation, customization, development and support in ${plainName}. ${country.tagline}`;
 
+/* Title length.
+
+   These 18 pages are the ones the business is trying to rank, and every one of
+   them ran between 71 and 87 characters once Base.astro appended " | Way4Tech".
+   Google renders roughly 60, so the qualifier carrying the commercial keywords
+   was the exact part being cut: "Odoo Partner in United Arab Emirates:
+   Implementation, Customi...". A truncated title is also the one Google is most
+   likely to discard and rewrite itself.
+
+   The names differ by 16 characters between Oman and United Arab Emirates, so a
+   single fixed qualifier cannot fit them all. Take the longest that still fits
+   and fall back to the bare, correctly targeted phrase. */
+const TITLE_BUDGET = 60;
+const SUFFIX_LEN = ` | ${SITE.name}`.length;
+const titleStem = `Odoo Partner in ${plainName}`;
+const pageTitle =
+  [': Implementation, Customization, Support', ': Implementation & Support', '']
+    .map(q => titleStem + q)
+    .find(t => t.length + SUFFIX_LEN <= TITLE_BUDGET) || titleStem;
+
 const schema = [
   {
     '@context': 'https://schema.org',
@@ -364,7 +384,7 @@ const contactHref = `/contact/?country=${encodeURIComponent(country.title)}&sour
 const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${country.title}`);
 ---
 <Base
-  title={`Odoo Partner in ${country.title}: Implementation, Customization, Support`}
+  title={pageTitle}
   description={metaDescription}
   structuredData={schema}
   hreflang={hreflangAlternates}

@@ -1,0 +1,172 @@
+{
+  "metaDescription": "Odoo has no fund accounting, so grants and restricted funds run on analytic plans. What Community covers, what needs Enterprise, and where donor audits bite.",
+  "intro": [
+    "Odoo ships no fund accounting. There is no restricted fund ledger, no automatic release of restricted income, no fund balance carried forward and no inter-fund entry. What Odoo does ship is double-entry accounting, analytic plans, budgets, projects, timesheets, purchase agreements, expense claims, surveys and a website that can take a payment. An NGO system is those parts arranged so every transaction carries the grant, the programme and the expense classification it belongs to. That arrangement is the project.",
+    "Settle the edition question early, because it changes the shape of the build. Community gives you the ledger, invoices and vendor bills, analytic accounting with several plans, budgets, Projects, Timesheets, Expenses, Purchase Agreements, Events and Surveys. What it does not give you is the financial report suite: balance sheet, profit and loss, general ledger, partner ledger and aged balances arrive with Enterprise, or from the OCA account-financial-reporting modules, which a Community project installs, tests and upgrades itself at every version jump. Enterprise also holds consolidation, currency revaluation, the asset register, Documents, Sign, Approvals, Planning, Subscriptions and Payroll.",
+    "The rest of the work is account coding structure and discipline, and it decides whether the build survives its first donor audit. Analytic plans have to be designed before the first vendor bill. Every expense line has to carry a distribution. A grant budget runs on the award period, not your fiscal year. And Odoo will let a user post restricted money against the wrong fund without a warning, because nothing in the software knows the money was restricted."
+  ],
+  "whoFor": [
+    "National and international NGOs running several donor-funded awards at once, each with its own budget, period, currency and report format.",
+    "Foundations and grant-making trusts that need awards tracked as commitments and disbursement tranches rather than as ordinary purchases.",
+    "Faith-based and community organisations collecting regular giving, issuing numbered receipts and running one or two programmes.",
+    "Social enterprises with a trading arm funding charitable work, where the two sets of books have to stay apart for tax reasons.",
+    "Not for organisations whose regulator or auditor demands a balanced balance sheet per fund, since that is a development item rather than a configuration choice.",
+    "Not for a two-person charity with a single bank account, where a bookkeeping package costs a fraction and answers the same questions."
+  ],
+  "capabilities": [
+    {
+      "title": "Grants, funds and donors as analytic plans",
+      "body": "From Odoo 17 the analytic model is plans and distributions. Several plans apply to the same journal item at once, each carrying a percentage split, so one salary line can be 60 percent to one award and 40 percent to another while still carrying its programme and its office. A typical NGO build runs four plans: award, programme, donor budget line, and office or country. That keeps the statutory chart of accounts short and answers a donor question with a dimension instead of forty new account codes. The trade-off is structural: analytic data sits alongside the ledger, not inside it."
+    },
+    {
+      "title": "Budgets against an award, and what they will not do",
+      "body": "A budget holds a planned amount for a date range and reports actual against it. It reports. It does not block: nothing stops a bill posting past an exhausted line, and no approval fires on overspend. The model also moved between releases. In Odoo 17 a budget line pairs a budgetary position, which is a named set of accounts, with an analytic account; Odoo 18 rebuilt budgets around analytic plans directly. Design the codes against the version you are deploying, and check on that version whether confirmed purchase orders show as commitment before you promise a committed against available figure. Award budgets run on the grant period, so a 30 month award gets its own date range rather than the fiscal year, and the comparison is cumulative to date."
+    },
+    {
+      "title": "Restricted income and release to the programme",
+      "body": "Restricted money usually arrives before it is spent, and Odoo will not release it for you. The pattern that works is a deferred income account per restricted fund, with income recognised by journal entry as qualifying spend posts, the distribution carrying the fund on both sides. Somebody runs that each period, so it belongs in a written month-end checklist rather than in one head. Where the donor recognises income on receipt, the fund balance is the analytic balance, and you still need a statement of opening balance, income, spend and closing balance per fund."
+    },
+    {
+      "title": "Staff time and salary split across awards",
+      "body": "Timesheet lines are analytic lines on the project analytic account, valued at the Hourly Cost field on the employee record. That cost is one number per person, entered by hand, and it does not change itself. Employer taxes and benefits are inside it only if somebody put them there. If nobody updates it when salaries change, every award report from that month on is wrong by the difference, and the fix is a re-cost of posted history rather than one correcting entry. Done properly it gives cost per award with no payroll module at all. Payroll itself is Enterprise, and worth considering only where a localisation exists. The signed monthly effort sheet donors ask for is a report built on the hours."
+    },
+    {
+      "title": "Procurement that survives a donor audit",
+      "body": "Purchase Agreements in Community covers the two patterns donors care about. A blanket order holds an agreed price with one supplier across a period. Alternative RFQs send the same requirement to three vendors as linked quotations, compare them line by line, then award one and cancel the rest, which is the evidence a three-quote threshold rule asks for, and the RFQ, order, receipt and bill stay linked afterwards. The Approvals app is Enterprise; the Community equivalent is the purchase order approval limit, a second validation above an amount you set. Blocking an unscreened vendor is a customisation, not a setting."
+    },
+    {
+      "title": "Donations, regular giving and receipting",
+      "body": "The Odoo website includes a donation payment block that takes an arbitrary amount through a configured payment provider, and which providers you can use depends on your country. It records the money. It does not create a donor record with consent, a statutory receipt series, a fund allocation or a thank-you sequence, and those four are the actual deliverables. Recurring monthly giving uses Subscriptions on Enterprise, or, on Community, custom code that charges a saved payment token on a schedule, which is a development line item and not a setting. Either way the failed payment path has to be designed, because cards expire and donors do not tell you."
+    },
+    {
+      "title": "Beneficiaries, field data and monitoring",
+      "body": "There is no beneficiary model in Odoo. A beneficiary is a contact, or a dedicated model with its own record rules where the data is sensitive enough to keep away from general staff. The Surveys app captures structured responses but needs connectivity at the point of entry, so field teams normally stay on ODK, KoboToolbox or CommCare and the cleaned results come in over the API against the same award and programme codes as the spend. Indicator targets against actuals, disaggregated by age and sex, is a reporting build rather than a configuration setting."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Design the analytic plans before the first bill",
+      "body": "Fix the plans and the code structure in week one: award, programme, budget line, office. Build the donor budget line reference into the analytic code itself so a report can be produced in the donor format without a mapping table maintained by hand. Adding a plan later is easy. Back-filling a distribution onto eight thousand posted journal items is not, and half-coded history turns every grant report into a manual reconciliation for as long as the award runs."
+    },
+    {
+      "title": "Make the distribution mandatory, not optional",
+      "body": "Applicability rules on the analytic plan mark it optional, mandatory or unavailable per company, account prefix, product category and document type, so a vendor bill without an award cannot be validated at all. Turn that on before go-live, not after a quarter of loose coding. Then pre-fill the coding with analytic distribution models, which apply a distribution automatically from the partner, the product or the product category, and let each project carry its own analytic account onto the documents raised against it. Most lines then code themselves and only genuine exceptions reach a human at validation. The aim is that the correct entry is the path of least resistance, because a control that depends on the finance officer remembering does not survive their annual leave."
+    },
+    {
+      "title": "Two layers: statutory accounts, functional classification",
+      "body": "The chart of accounts follows the local statutory chart and nothing else. Programme, management and fundraising classification belongs on a second analytic plan, because the same salary account splits across all three and duplicating accounts to solve it produces a chart nobody can close. Agree the allocation basis, headcount or floor area or recorded time, in writing before go-live, and post it as a recurring journal entry so the split is reproducible and the auditor can review the method rather than only the result."
+    },
+    {
+      "title": "Multi-currency: decide what the award is measured in",
+      "body": "A grant awarded in euros and spent in local currency needs the award currency held on the grant record, a rate policy agreed with the donor covering award rate or monthly rate or transaction rate, and a written decision about who absorbs the difference. Odoo posts realised exchange differences on reconciliation in both editions. Revaluation of open foreign currency balances comes from the Enterprise reporting engine, so a Community project handles it as a manual period-end entry that somebody has to be trained to prepare and reverse."
+    },
+    {
+      "title": "Opening balances and the awards already running",
+      "body": "Migrate the trial balance, open payables and receivables and the fund balance per award as opening entries at a period-end cut-off. Do not attempt to reload years of historical transactions; nobody reads them and they carry every coding error the old system had. For awards mid-term, load spend to date per budget line from the last financial report the donor approved, not from your own ledger, so the burn rate agrees with the document the donor is holding from day one."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Odoo will not stop restricted money being spent wrongly",
+      "body": "Nothing in the software knows a fund is restricted. An analytic balance can go negative, a bill can be coded to an award that closed last year, and the trial balance still balances, because a wrong analytic code never unbalances anything. The controls are procedural: mandatory distribution, closed awards archived so they cannot be selected, and a monthly report of spend against remaining budget per award that a named person is required to read and sign."
+    },
+    {
+      "title": "The analytic ledger and the general ledger drift apart",
+      "body": "A distribution can be left blank, coded to one award when it should have been split, or edited after the entry is posted. Reconcile analytic totals against the expense accounts every month and chase the difference in the month it appears, while somebody still remembers the invoice. Finding a two percent gap during a donor audit two years in costs more in staff time and eligibility risk than the entire system did, and it is the finding that gets a grant partially disallowed."
+    },
+    {
+      "title": "Shared costs allocated once and never again",
+      "body": "Rent, the finance officer, the vehicle and the internet line get split across awards in a spreadsheet in month one. Then an award closes, another starts, and the spreadsheet is not updated for a year, so a finished grant keeps absorbing rent. Build the allocation as a recurring template journal entry with a documented basis, review it at every award start and close, and attach the working paper to the entry itself. Auditors ask to see the basis, not the number."
+    },
+    {
+      "title": "Donor reports in a format Odoo does not produce",
+      "body": "Institutional donors want a fixed template: their budget line codes, approved budget, this period, cumulative to date, variance, in the award currency, with a narrative column beside the figures. Nothing in the standard menus produces that shape, and the gap is usually discovered in month four with ten days left before the report is due. Scope and price the donor formats individually at the start, because two donors rarely want the same one. This is the most under-estimated item on NGO projects."
+    },
+    {
+      "title": "Beneficiary data treated as ordinary contacts",
+      "body": "Names, identity numbers, phone numbers and photographs of vulnerable people sitting in the contacts table are readable by anyone with contact access and exportable in two clicks, and anything typed into the chatter goes out to followers by email. Put sensitive fields on a separate model whose record rules name the few roles that need them, remove the export right from users who do not need it, and agree a retention rule with a deletion job behind it, because Odoo removes nothing on its own."
+    },
+    {
+      "title": "One database for the charity and the trading arm",
+      "body": "Multi-company holds two legal entities in one database with their own journals, taxes and fiscal positions, but contacts and products are shared and a user switches entity from the top bar, which is also how a cost lands in the wrong company. The failure mode is not dramatic. It is a slow divergence that surfaces at year end, when the balances between the two entities disagree and nobody can say which side is right. Reconcile the entities against each other monthly."
+    }
+  ],
+  "worksWith": [
+    "Odoo Accounting with several analytic plans, the backbone of every grant report",
+    "Project and Timesheets for programme activity and staff time charged to awards",
+    "Purchase Agreements for the multiple-quote thresholds donors impose",
+    "Expenses for field office claims coded to an award at the point of entry",
+    "Surveys for structured assessment forms where the team has connectivity",
+    "ODK, KoboToolbox or CommCare for offline field collection, pushed in over the API",
+    "Website payment providers and the donation block for online and regular giving",
+    "Documents, Sign, Approvals and Payroll on Enterprise for agreements, authorisation trails and staff pay"
+  ],
+  "regional": [
+    {
+      "country": "united-kingdom",
+      "note": "The Charity SORP under FRS 102 wants a Statement of Financial Activities with restricted, unrestricted and endowment columns. Odoo produces no SOFA, so those columns come from analytic plans. Gift Aid is claimed through HMRC Charities Online against a per-donor declaration Odoo cannot record by default. VAT-registered charities file under Making Tax Digital, and the HMRC submission sits in the UK Enterprise localisation, so a Community build files through bridging software."
+    },
+    {
+      "country": "united-states",
+      "note": "ASC 958 splits net assets into with and without donor restrictions, and Form 990 Part IX classifies every expense across programme services, management and general, and fundraising. That split is a second analytic plan, because one salary hits all three. Federal awards under 2 CFR 200 add an indirect cost rate, negotiated or the de minimis one the 2024 revision raised to fifteen percent, and past a million dollars of federal spend a single audit follows."
+    },
+    {
+      "country": "germany",
+      "note": "A gemeinnuetzig organisation accounts separately for four spheres, the ideal sphere, asset management, the Zweckbetrieb and the commercial operation, because only the last is taxed. That is one analytic plan, agreed with the Steuerberater before go-live. Donation receipts have to follow the prescribed Zuwendungsbestaetigung wording, so a custom template rather than the stock invoice layout. Books satisfy GoBD retention, and the adviser will want the DATEV export in the German Enterprise localisation."
+    },
+    {
+      "country": "india",
+      "note": "Foreign contributions fall under FCRA and must arrive in the designated State Bank of India account in New Delhi, held apart from domestic funds. That means a separate bank journal and an analytic value no domestic transaction may take, because the penalty for mixing is the registration itself. Domestic 80G giving needs Form 10BD by 31 May and a Form 10BE certificate to each donor, so donor PAN and address are captured at the point of receipt."
+    },
+    {
+      "country": "pakistan",
+      "note": "International organisations sign an MoU with the Economic Affairs Division while local bodies register with the provincial authority, each with its own reporting cycle and renewal date. Tax approval under section 2(36) and the section 100C credit depend on filing on time and on audited accounts, which puts a hard external deadline on the year-end close. Consultancy or training income faces provincial sales tax on services and FBR digital invoicing, which Odoo carries no connector for."
+    },
+    {
+      "country": "turkey",
+      "note": "Associations file the annual dernek beyannamesi through DERBIS by the end of April, while foundations report to the Directorate General of Foundations. Trading activity has to sit in a separate economic enterprise, the iktisadi isletme, which keeps its own books, registers for VAT and corporate tax, and comes under e-Fatura and e-Arsiv once it is in scope. Odoo ships no Turkish e-invoicing in either edition, so that runs through a private integrator."
+    },
+    {
+      "country": "saudi-arabia",
+      "note": "Non-profits are licensed and supervised by the National Center for the Non-Profit Sector, and the platform reporting that comes with the licence is a calendar commitment, not an Odoo output. A pure donation is outside the scope of VAT because nothing is supplied in return, while sponsorship carrying branding, a paid ticket or a training fee is a taxable supply. A VAT-registered entity is inside ZATCA phase 2, whose integration ships only in the Saudi Enterprise localisation."
+    },
+    {
+      "country": "uae",
+      "note": "A public benefit entity is exempt from corporate tax only where it is listed in the relevant Cabinet Decision, and even then it registers and files. VAT follows the substance: an unconditional grant with nothing supplied in return is outside scope, while sponsorship, ticketed events and consultancy income are standard rated, which makes the donation-versus-sponsorship judgement a tax decision. Mainland staff are paid through the Wage Protection System, in the file format the bank requires."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Does Odoo have fund accounting?",
+      "a": "No, in either edition. What auditors accept in practice is the fund carried as an analytic plan and reported as a movement statement: opening balance, income, expenditure and closing balance per fund, reconciled to the expense accounts monthly and signed by a named person. That satisfies most trustees and most institutional donors. It does not satisfy a regulator that wants a balanced balance sheet per fund with due-to and due-from entries between funds, and building that is development work. Settle which of the two you are buying before signing, not in a change request in month six."
+    },
+    {
+      "q": "Community or Enterprise for an NGO?",
+      "a": "Four things settle it. Whether you need a balance sheet and profit and loss out of the box, or will install and maintain the OCA financial reports. Whether a donor-funded asset register lives in the system, since assets are Enterprise. Whether statutory filing runs through Odoo, for example Making Tax Digital or ZATCA phase 2, both of which sit in Enterprise localisations. And whether payroll is in-house. Four donors and three currencies absorb more in report development than the licence costs."
+    },
+    {
+      "q": "Can Odoo produce a report in our donor template?",
+      "a": "Not from the standard menus, and there are three routes at different prices. Export the analytic pivot and finish it in a spreadsheet, which is fine for one or two awards and collapses at ten. Build a printable or spreadsheet report that renders the donor layout directly from the analytic data, the usual answer for a template you file every quarter. Or, on Enterprise, define the figures in the accounting report engine so the statement opens inside Odoo with drill-down."
+    },
+    {
+      "q": "How are volunteers handled?",
+      "a": "As employee records without a contract or payroll where you need their hours, or as contacts where you do not. Employee records consume no user licence, so a volunteer register costs nothing in subscription terms. Published shift rosters are Planning, an Enterprise app; attendance check-in is Community. Odoo ships no volunteer application, screening or background-check workflow, so that part is either a configured pipeline on an existing model or a small custom one."
+    },
+    {
+      "q": "Can we take donations on the website?",
+      "a": "Yes, and the work is in what happens after the card clears. The money arrives as a provider payout, net of fees and a few days later, so gross income and the fee post separately and the payout is reconciled, or the receipt never matches the ledger. Decide whether income posts per gift or per payout, and make the fund and the appeal travel with it. Capture the tax identifier or address at the point of giving, because chasing it later rarely works."
+    },
+    {
+      "q": "How many paid users will we need?",
+      "a": "Only staff logging into the back office. Portal users are free in both editions, so partner organisations, board members and grantees viewing documents, a project or an invoice cost nothing. That usually settles the field office question: give field staff a portal view and a form rather than a back office seat, and keep paid users for finance, programme management and procurement."
+    },
+    {
+      "q": "Is there a grant management module?",
+      "a": "There is no grant module in either edition. In practice an award is a project or an analytic account carrying a start date, an end date, a budget, a currency and an owner. Deliverable deadlines are activities or tasks with due dates, and the reporting calendar is a set of recurring tasks assigned to real people. It works well and it is genuinely useful, but it is a design you have to produce, not an app you install, and the design is where the consulting time goes."
+    },
+    {
+      "q": "Can the charity and its trading company share one system?",
+      "a": "Yes, through multi-company, and the real question is one database or two. One database shares contacts, products and the user list, which saves duplicate maintenance and leaves no wall between the two. Two databases keep them cleanly apart, double the administration and rule out any consolidated view. If you stay with one, switch on inter-company transactions so an invoice raised by the trading arm creates the matching bill, and keep separate fiscal positions."
+    }
+  ]
+}

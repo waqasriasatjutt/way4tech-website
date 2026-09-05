@@ -1,0 +1,172 @@
+{
+  "metaDescription": "Odoo Fleet in practice: vehicle records, driver history, contract renewals and real cost per vehicle, plus the odometer and fuel gaps you configure around.",
+  "intro": [
+    "Odoo Fleet ships in the Community edition, so the app costs nothing beyond the platform it runs on. It is a register, not a tracking system. Vehicles, the people who drive them, the agreements that expire, the services that were paid for and the odometer readings behind all of it. Ask who holds vehicle 42, what it cost last year and which policy lapses next month and it answers well. Ask where the vehicle is now and it has nothing to say.",
+    "Most fleets arrive as a spreadsheet, a folder of scanned registration cards and a workshop manager who remembers the rest. The implementation work is turning that into records with a stable key, real expiry dates and a cost trail that agrees with the ledger. The last part decides whether the project is worth anything. Costs typed into Fleet do not reach accounting, and vendor bills do not reach Fleet, unless the design connects them on purpose.",
+    "Scope matters as much as configuration. Odoo ships no telematics feed and no fuel card connector, and the fleet reports it does have read only Fleet's own records. Those bridges are all reachable through scheduled imports, automation rules and analytic accounting, but each one is a line on a build plan rather than a setting to switch on. Price them at the estimate stage. The argument in week six is always about the item nobody wrote down."
+  ],
+  "whoFor": [
+    "Companies running ten to a few hundred owned or leased vehicles where renewal dates and cost per vehicle live in a spreadsheet.",
+    "Contracting, distribution and facilities businesses whose fuel and workshop bills already post to accounting with no vehicle attached.",
+    "Employers who provide company cars and need an assignment history that stands up to a payroll or tax question years later.",
+    "Operations teams that want insurance, registration, inspection and lease dates to raise an activity before they lapse.",
+    "It is not a vehicle rental system. Renting vehicles out to customers belongs in Odoo Rental, an Enterprise app, with Fleet holding the asset record behind it.",
+    "It is not a transport management system either. Dispatch, route planning and proof of delivery are a separate build, and live location stays with your telematics provider."
+  ],
+  "capabilities": [
+    {
+      "title": "The vehicle record and its lifecycle",
+      "body": "A vehicle carries brand and model from a catalogue you maintain, plus plate, chassis number, registration date, fuel type, CO2 figure, seats, doors and a responsible manager. It also holds Catalog Value, quoted VAT inclusive, alongside Purchase Value and Residual Value, which are the fields a company car benefit calculation reads. Vehicles move through configurable states, and a fresh database ships exactly four: New Request, To Order, Registered and Downgraded. Ordered, Reserve and Waiting List exist only in Odoo's demo data, so a state your team saw during a demo can be missing on day one. One limit surprises people. The model catalogue types a vehicle as car or bike and nothing else, so trucks, vans, buses and trailers are separated using model categories and tags rather than a built in type."
+    },
+    {
+      "title": "Drivers and assignment history",
+      "body": "The driver field points at a contact, and Odoo writes an assignment log row with start and end dates each time it changes. A separate Future Driver field lets a handover be planned instead of retyped on the day it happens. Where drivers are your own staff, the bridge module is Community: it adds an employee link on the vehicle and on each assignment log row, counts the cars on the employee record and makes the plate searchable from the employee side. The log survives the driver leaving the company, which is the part a payroll or tax audit actually asks for."
+    },
+    {
+      "title": "Contracts and renewal alerts",
+      "body": "Leases, insurance policies, registration renewals, inspection certificates and tracker subscriptions are all modelled as contract records against a vehicle, each with a start date, an expiry date, a recurring amount and a frequency. A daily scheduled action walks them between New, Running and Expired, and schedules a renewal activity for the contract's responsible user. The warning window is a single number in the Fleet settings, thirty days out of the box, and it applies to every contract type equally. Thirty days suits an insurance renewal and is useless for a registration that takes a quarter. There is one window, not one per type, so the practical answer is to set it to your longest lead time and accept early noise on the rest."
+    },
+    {
+      "title": "Service entries and cost per vehicle",
+      "body": "A service entry records the date, the vendor, a vendor reference, the amount, the service type and the odometer at the time, and it carries its own stage of New, Running, Done or Cancelled. Service types are yours to define, so oil changes, tyres, accident repairs and periodic inspection each report separately. Reporting then offers a Costs analysis, a database view that unions service amounts with the spread cost of open contracts, month by month, per vehicle. Two things are worth knowing before anyone trusts that chart. Cancelled services drop out of it, as they should. Recurring contract cost is summed for daily, monthly and yearly frequencies only, so a contract you set to Weekly is absent from the figure even though the field offers Weekly. Read the whole report for what it is: management reporting built from Fleet's own records, with nothing in it posted to the general ledger."
+    },
+    {
+      "title": "Odometer readings",
+      "body": "Each vehicle keeps dated odometer readings and a unit, kilometres or miles, set per vehicle so a fleet split across regions is not quietly wrong. The latest reading shows on the vehicle and stamps onto service entries as they are logged. Readings feed cost per kilometre, service intervals and resale timing, so the design question is who supplies them and how often, not where they are stored."
+    },
+    {
+      "title": "Fuel, tolls and the accounting trail",
+      "body": "Current versions have no separate fuel log model, and the one that existed in older releases is gone. Fuel is either a service entry per fill, which suits a small fleet, or vendor bill lines from the fuel card statement, which suits everything larger. Tolls and fines arrive the same way, one statement per card or tag. The pattern that holds up is an analytic account per vehicle, with the distribution set on those bill lines so the ledger and the fleet report agree."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Choose the identity key before you import",
+      "body": "Plates change. Vehicles are transferred, plates are re-issued, and in several markets a renewal produces a new plate entirely. The chassis number is stable for the life of the vehicle, so import against it and treat the plate as an attribute that gets updated. Get this wrong and the second data load creates duplicates instead of updating what is already there."
+    },
+    {
+      "title": "Decide what counts as a vehicle",
+      "body": "Trailers, forklifts, generators, cranes and site plant all turn up on the same spreadsheet as the vans. Fleet only knows cars and bikes, so split the list before the import. Anything with a plate, a driver and a renewal date belongs in Fleet. Anything that needs work orders and a preventive schedule usually belongs in Maintenance, which is also Community, with the two tied together by a shared reference rather than by a standard field."
+    },
+    {
+      "title": "Build the analytic plan for vehicles first",
+      "body": "Create an analytic plan holding one analytic account per vehicle, or per group where per vehicle is too fine, then set that distribution on fuel, workshop, toll and insurance bills. Cost lands in the ledger and reports by vehicle, department or project without depending on anyone remembering to add a service entry. This is the decision that separates a fleet register from fleet cost control."
+    },
+    {
+      "title": "Decide how odometer readings arrive",
+      "body": "Readings are the weak point of every fleet implementation because they depend on people. Decide who owns the number and how often it lands before anything else, because that answer sets what the system can do. Monthly is enough for cost per kilometre and resale timing. Service intervals need something closer to weekly, which in practice means an automatic source: a scheduled import from a telematics API, or a reading captured as a field on each fuel card transaction. Pick one and make it the rule. A fleet whose readings are six months old cannot schedule services or defend a resale valuation, and no amount of configuration fixes that."
+    },
+    {
+      "title": "Reconcile drivers to employees once",
+      "body": "The driver field takes a contact, and a spreadsheet import will cheerfully create a second contact for an employee who already exists. Load drivers from the employee records where they are staff, keep one contact per person, and install the HR bridge so the vehicle shows on the employee. Assignment history is personal data, so agree who may read it before anyone imports it."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Renewal alerts that reach nobody",
+      "body": "The scheduled action searches only contracts that are Running, expiring inside the alert window, and with a responsible user set. No responsible user means no activity, and nothing tells you. Import nine hundred insurance and registration records with that field empty and the reminder engine everyone was sold is simply off. A contract that already carries an open renewal activity is skipped as well, so the reminder never duplicates and it never escalates either. The same silence follows a fleet administrator leaving with their contracts unreassigned. Make the count of Running contracts with no responsible user a monthly check, not a go live task."
+    },
+    {
+      "title": "Two versions of the same cost",
+      "body": "A service entry in Fleet posts nothing to the ledger, and a vendor bill creates no service entry. Teams that use both end up with a fleet report and a general ledger that disagree, then argue about which is right. Pick the source. For most clients the vendor bill is the record of truth, and Fleet holds only what carries no invoice, such as internal workshop labour."
+    },
+    {
+      "title": "Fuel card statements that nobody maps",
+      "body": "Fuel, toll and fine statements arrive per card or per tag, not per vehicle, and cards move between vehicles more often than anyone admits. Without a dated card to vehicle mapping, a month of fuel lands as one line on one supplier account and cost per vehicle stops meaning anything. Agree the recharge policy for private use at the same time, because it changes the tax treatment."
+    },
+    {
+      "title": "Cost by driver reads the current driver",
+      "body": "The Costs analysis takes the driver from the vehicle record, not from the assignment log that was in force when the cost was incurred. The service entry even stores a driver of its own, and the report ignores it in favour of the vehicle's current one. Reassign a van in March and last year's fuel and repairs follow it to whoever holds it now. As a management view that is usually tolerable. For anything touching payroll, a benefit in kind or a customer recharge, build the figure from the analytic account and the assignment dates instead, and say so before someone signs off a number."
+    },
+    {
+      "title": "Fleet is not the asset register",
+      "body": "Depreciation, net book value and disposal accounting live in the asset register inside the full Accounting app, which is Enterprise only. A vehicle therefore exists twice, as a fleet record and as an asset, and standard Odoo keeps no link between them. Put a reference on both sides at purchase and reconcile at year end. Disposal is where it bites: the fleet record carries a cancellation date for the plate, the asset needs a disposal entry, and the two rarely happen in the same month."
+    },
+    {
+      "title": "Multi-company fleets and the shared driver",
+      "body": "A vehicle belongs to a company and record rules follow, so a driver working across two entities sees part of the picture unless access is designed for it. Charging one company for a vehicle owned by another is an intercompany accounting entry that Fleet will not generate. Where entities sit in different countries, document types and renewal cycles differ, so one shared contract template is usually wrong."
+    }
+  ],
+  "worksWith": [
+    "Accounting for vendor bills and analytic distribution per vehicle, plus the Enterprise asset register behind depreciation",
+    "Purchase for fuel, tyre and workshop supplier agreements and their approval rules",
+    "HR, through the Community fleet bridge module, so company cars appear on the employee record",
+    "Expenses for driver paid fuel and for mileage claims, using an expense product priced per kilometre",
+    "Maintenance where an in-house garage runs vehicles as equipment on preventive schedules",
+    "Inventory for spare parts consumed by that garage and for van stock",
+    "Project, and Field Service on Enterprise, where vehicle cost reaches a job through the analytic account",
+    "Telematics platforms and fuel card portals through scheduled imports of odometer and transaction data"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Fuel and workshop purchases arrive as ZATCA simplified tax invoices, so input VAT recovery depends on your VAT number and the QR code being on the document itself, not on a monthly card statement summary. Istimara renewal and the periodic technical inspection are separate dated records that rarely fall in the same month, so model them as two contracts rather than one. Registration paperwork often states expiry in the Hijri calendar while Odoo stores Gregorian dates, so fix the conversion at import or every renewal alert sits about a fortnight off."
+    },
+    {
+      "country": "uae",
+      "note": "Input VAT on a motor vehicle available for personal use is not recoverable, so the tax treatment is decided per vehicle rather than per company. Salik and Darb tolls and Mawaqif parking arrive as account statements that must be mapped to vehicles by date. Registration renewal follows the annual test, and corporate tax at nine percent makes cost allocation to the right entity matter."
+    },
+    {
+      "country": "qatar",
+      "note": "There is no VAT, so cost per vehicle is a gross figure and the monthly reconciliation runs against the Woqod fuel card statement rather than a tax return. Istimara renewal follows the Fahes inspection, which suits a contract record with a dated expiry. Drivers paid through the Wage Protection System have to reconcile to a payroll employee, not just a contact."
+    },
+    {
+      "country": "india",
+      "note": "Input tax credit on motor vehicles is blocked under section 17(5) unless the vehicle carries goods, carries passengers for hire or is used for driver training, so purpose belongs on the vehicle record and drives the tax code. Registration certificate, insurance, pollution certificate and fitness renewals each need a dated record. FASTag statements reconcile per tag, and road tax varies by state."
+    },
+    {
+      "country": "pakistan",
+      "note": "Annual token tax and registration sit with the provincial Excise and Taxation department, and commercial vehicles carry a fitness certificate, so renewal records differ by province and by vehicle class. Under FBR digital invoicing, a company billing transport or vehicle time must carry the FBR invoice number and QR code. Fuel prices reset fortnightly, so a fixed per litre rate in mileage claims goes stale."
+    },
+    {
+      "country": "turkey",
+      "note": "Motor vehicle tax is assessed per vehicle and paid in two instalments, January and July, which maps onto a recurring contract record. Purchase invoices arrive as e-Fatura or e-Arsiv depending on the counterparty, and records must be archived inside Turkiye, so where the filestore holding registration scans lives becomes a design decision."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "A company car available for private use is a taxable benefit valued on list price and CO2 band, reported on P11D or payrolled, which turns the Catalog Value and CO2 fields on the vehicle record into payroll inputs rather than reference data. VAT on fuel needs either detailed mileage records or the fuel scale charge. Making Tax Digital rules out rekeying workshop invoices into a spreadsheet."
+    },
+    {
+      "country": "germany",
+      "note": "Private use of a company car is taxed at one percent of gross list price per month unless a compliant logbook is kept, and that logbook has to be contemporaneous and unalterable, which GoBD reinforces. A spreadsheet does not qualify. Vehicle cost accounts are expected to reach the tax adviser as a DATEV export, and the HU inspection is a fixed renewal date."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Fleet in Community, or does it need Enterprise?",
+      "a": "Fleet is a Community app, so the register, drivers, contracts, services and odometer readings work with no Enterprise subscription. You can even add your own attributes per vehicle model using the Properties field, without Studio. What pulls a client to Enterprise is the work around it: the full Accounting app for the asset register, Documents for a vehicle file workspace, Studio for a simplified entry form, and the payroll localisations that price company cars."
+    },
+    {
+      "q": "Can Odoo raise a service automatically every 10,000 kilometres?",
+      "a": "Not through a standard setting. Odoo holds the readings and the service history, and the threshold rule is an automation comparing the latest reading against the odometer on the last service of that type. It is a short build, usually under a day. The longer conversation is where the readings come from. A rule fed by numbers that arrive twice a year produces nothing worth having."
+    },
+    {
+      "q": "Does Odoo Fleet track vehicle location?",
+      "a": "No. There is no telematics, live location or driver behaviour scoring anywhere in Odoo. The vehicle does have a Location field, but it is free text for a garage or yard name, not a position. Keep the tracking platform you have and import odometer readings and trip totals on a schedule through its API. Odoo then holds cost, documents and assignment history, which is what tracking platforms handle badly."
+    },
+    {
+      "q": "Where do registration cards, insurance policies and inspection certificates live?",
+      "a": "On Community, as attachments in the chatter of the vehicle or the relevant contract record, which is enough for most fleets. Enterprise adds Documents for a proper workspace with approval flows. Either way the expiry date belongs in a contract record, not in the file name, because only the record raises an activity. A folder of scanned PDFs reminds nobody of anything."
+    },
+    {
+      "q": "Can drivers enter their own odometer readings?",
+      "a": "As internal users, yes, and the permissions already ship. The Fleet user group is restricted by record rule to vehicles where that user is the driver, and on those vehicles it can create and edit odometer readings while contracts and service history stay read only. The rule matches the user's own contact against the vehicle's driver, which is one more reason to keep a single contact per person. What does not exist is a portal view, so every driver you want typing readings needs an internal user: a licence each on Enterprise, and on Community an account and a password each to administer. Where that does not pay, the two patterns that hold up are a shared workshop device posting under one account, or a small external form writing in through the API as a single integration user."
+    },
+    {
+      "q": "Does Fleet handle pool car booking?",
+      "a": "No. There is an assignment date on the vehicle that indicates when it next becomes free, but no calendar, no reservation and no conflict checking. Two options work in practice: model the pool cars as rentable products in Odoo Rental on Enterprise, or build a small booking model against the vehicle. Neither is a configuration exercise, so price it as scope."
+    },
+    {
+      "q": "Can Odoo warn us before a driver's licence expires?",
+      "a": "Not on its own, and the gap is specific. The employee record has a Driving License field, but it is a file upload with no expiry date and no reminder behind it. Work permits are the counter example: they carry an expiry date and a scheduled action that raises an activity a month out, so the pattern already exists in the product and simply was not applied to licences. Copying it is small work, an expiry date and a scheduled action per document type. Do it for licences, medical certificates and any permit that grounds a driver, because those expiries stop the work in a way an insurance renewal does not."
+    },
+    {
+      "q": "Can one database run vehicles for several companies?",
+      "a": "Yes, and for a group it is the normal arrangement. Vehicles, contracts, services, odometer readings and the Costs analysis all carry a company filter, so a user with rights over several entities gets the consolidated view with no special report. The catch sits in the configuration underneath. Models, brands, service types and vehicle states have no company field at all, so they are shared across the whole database. One country renaming a service type to match its inspection regime renames it for everybody, and there is no per company list of vehicle states either. Agree that shared vocabulary early, because unpicking it later means touching every historical record that used it."
+    },
+    {
+      "q": "We lease most of the fleet. Does Odoo do the lease accounting?",
+      "a": "The operational side, yes. A lease is a contract record with a term, a recurring amount and an expiry that raises a renewal activity, and its cost reaches the fleet cost report. The accounting side, no. Standard Odoo has nowhere to hold a right of use asset against a lease liability with an unwinding schedule and an interest split, which is what IFRS 16 asks for. The Enterprise asset register depreciates an owned vehicle and will carry a right of use asset as an ordinary asset, but the liability and its interest stay a spreadsheet or a build. Settle which of the two you are buying before the demo turns into an accounting review."
+    }
+  ]
+}

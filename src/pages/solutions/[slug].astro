@@ -1,7 +1,8 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { SITE, SOLUTIONS, INDUSTRIES } from '~/data/site';
+import { SITE, SOLUTIONS, INDUSTRIES, COUNTRIES } from '~/data/site';
 import { INDUSTRY_DETAIL } from '~/data/industries-detail';
+import { solutionDepth } from '~/data/solution-depth';
 
 export function getStaticPaths() {
   return SOLUTIONS.map(s => ({ params: { slug: s.slug }, props: { sol: s } }));
@@ -23,7 +24,22 @@ const twinExists =
   Boolean(INDUSTRY_DETAIL[sol.slug]);
 const canonical = twinExists ? `${SITE.url}/industries/${sol.slug}/` : undefined;
 
-const schema = [
+// Depth is only written for the 12 slugs that have no /industries/ twin and so
+// stay self-canonical. Sending a canonicalised page more content would not help
+// it rank, because it is deliberately not the URL competing for the query.
+const depth = twinExists ? undefined : solutionDepth(sol.slug);
+
+// sol.short is a full paragraph, so appending to it produced a description that
+// every search engine truncated. It also asserted partner status, which the
+// business cannot evidence.
+const description =
+  depth?.metaDescription ||
+  `${sol.tagline} Odoo implementation, configuration and support from Way4Tech.`;
+
+const countryBySlug = new Map(COUNTRIES.map((c: any) => [c.slug, c]));
+const regional = (depth?.regional || []).filter(r => countryBySlug.has(r.country));
+
+const schema: object[] = [
   {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -42,10 +58,24 @@ const schema = [
     ],
   },
 ];
+
+// Never emit FAQPage on a page that canonicalises elsewhere: the rich result
+// would be attributed to a URL that is not the canonical one.
+if (!twinExists && depth?.faqs?.length) {
+  schema.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: depth.faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  });
+}
 ---
 <Base
   title={`Odoo for ${sol.title}`}
-  description={`${sol.short} Odoo Partner with 500+ deployments across 18 countries.`}
+  description={description}
   canonical={canonical}
   structuredData={schema}
 >
@@ -66,30 +96,136 @@ const schema = [
         <div class="lg:col-span-2">
           <p class="text-lg text-ink-700">{sol.short}</p>
 
+          {depth?.intro?.map(p => <p class="mt-5 text-ink-700">{p}</p>)}
+
+          {depth && depth.whoFor.length > 0 && (
+            <>
+              <h2 class="h3 mt-12">Who this fits</h2>
+              <ul class="mt-6 space-y-3">
+                {depth.whoFor.map(w => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">&rarr;</span>
+                    <span class="text-ink-700">{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
           <h2 class="h3 mt-12">Core features</h2>
           <ul class="mt-6 grid gap-3 sm:grid-cols-2">
             {sol.features.map(f => (
               <li class="flex gap-3">
-                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">&#10003;</span>
                 <span class="text-ink-700">{f}</span>
               </li>
             ))}
           </ul>
 
-          <h2 class="h3 mt-14">Why Way4Tech for {sol.title.toLowerCase()}</h2>
-          <div class="mt-6 grid gap-4 sm:grid-cols-2">
-            {[
-              {t:'Deep domain expertise', d:`We've deployed Odoo for ${sol.title.toLowerCase()} across multiple countries and scales.`},
-              {t:'Localization built in', d:'Tax, e-invoicing, labor law - compliant from day one.'},
-              {t:'Community-friendly', d:'Runs on Odoo Community where possible. Enterprise only if it pays off.'},
-              {t:'Long-term partnership', d:'We stay involved. 5+ year client relationships are our norm.'},
-            ].map(x => (
-              <div class="card">
-                <h3 class="font-semibold">{x.t}</h3>
-                <p class="mt-2 text-sm text-ink-600">{x.d}</p>
+          {depth && depth.capabilities.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">How Odoo covers {sol.title.toLowerCase()}</h2>
+              <div class="mt-6 space-y-8">
+                {depth.capabilities.map(c => (
+                  <div>
+                    <h3 class="font-semibold text-ink-900">{c.title}</h3>
+                    <p class="mt-2 text-ink-700">{c.body}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+
+          {depth && depth.setup.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">How the rollout runs</h2>
+              <div class="mt-6 space-y-8">
+                {depth.setup.map(c => (
+                  <div>
+                    <h3 class="font-semibold text-ink-900">{c.title}</h3>
+                    <p class="mt-2 text-ink-700">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {depth && depth.pitfalls.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Where these projects go wrong</h2>
+              <div class="mt-6 space-y-6">
+                {depth.pitfalls.map(c => (
+                  <div class="rounded-2xl border border-ink-200 p-6">
+                    <h3 class="font-semibold text-ink-900">{c.title}</h3>
+                    <p class="mt-2 text-ink-700">{c.body}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {depth && depth.worksWith.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">What it works with</h2>
+              <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+                {depth.worksWith.map(w => (
+                  <li class="flex gap-3">
+                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-ink-100 text-ink-700 text-xs font-bold">+</span>
+                    <span class="text-ink-700">{w}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {regional.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Country considerations</h2>
+              <div class="mt-6 space-y-5">
+                {regional.map(r => (
+                  <div>
+                    <h3 class="font-semibold text-ink-900">
+                      <a class="hover:text-brand-600" href={`/countries/${r.country}/`}>{countryBySlug.get(r.country).title}</a>
+                    </h3>
+                    <p class="mt-2 text-ink-700">{r.note}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {depth && depth.faqs.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Questions we get asked</h2>
+              <div class="mt-6 space-y-6">
+                {depth.faqs.map(f => (
+                  <div class="rounded-2xl bg-ink-50 p-6">
+                    <h3 class="font-semibold text-ink-900">{f.q}</h3>
+                    <p class="mt-2 text-ink-700">{f.a}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {!depth && (
+            <>
+              <h2 class="h3 mt-14">Why Way4Tech for {sol.title.toLowerCase()}</h2>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                {[
+                  {t:'Deep domain expertise', d:`We've deployed Odoo for ${sol.title.toLowerCase()} across multiple countries and scales.`},
+                  {t:'Localization built in', d:'Tax, e-invoicing, labor law - compliant from day one.'},
+                  {t:'Community-friendly', d:'Runs on Odoo Community where possible. Enterprise only if it pays off.'},
+                  {t:'Long-term partnership', d:'We stay involved. 5+ year client relationships are our norm.'},
+                ].map(x => (
+                  <div class="card">
+                    <h3 class="font-semibold">{x.t}</h3>
+                    <p class="mt-2 text-sm text-ink-600">{x.d}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <aside class="lg:col-span-1">

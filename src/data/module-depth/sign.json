@@ -1,0 +1,184 @@
+{
+  "metaDescription": "Odoo Sign in practice: Enterprise only, no per envelope charge, what the audit trail actually proves, and where a qualified signature is still required.",
+  "intro": [
+    "Odoo Sign turns a finished PDF into a signing workflow. You upload the document once, drag signature, text, date and checkbox fields onto it, assign each field to a role such as employer or tenant, then send. Each signer gets a private link, fills only their own fields in the browser, and signs by drawing, typing or uploading an image. Nobody outside the company needs an Odoo login to complete a document.",
+    "The licence position decides most evaluations. Sign is an Enterprise app, so a Community database cannot run it at all, and Enterprise does not meter signature requests. Volume is free once the subscription is paid, which is the usual reason a company already holding Enterprise stops renewing a separate signature vendor. The counterweight is that the assurance level is fixed at what the app produces, and no amount of extra spend raises it.",
+    "What Odoo produces is an ordinary electronic signature supported by an event log: who opened the link, from which IP address, at what time, and the completed file stored against the request. It is not a qualified electronic signature, and Odoo is not a licensed trust service provider. For most commercial paperwork that distinction never surfaces. For the small set of documents where a statute prescribes written form, it decides the project."
+  ],
+  "whoFor": [
+    "Companies with a steady flow of standard paperwork: non disclosure agreements, service agreements, supplier terms, delivery acceptance and policy sign offs.",
+    "HR teams issuing offer letters, contracts, probation confirmations and handbook acknowledgements to people who will never be Odoo users.",
+    "Businesses already paying for Odoo Enterprise per user while also paying an envelope based signature vendor for the same documents.",
+    "Rental, leasing and subscription operators sending the same agreement hundreds of times with three fields changing.",
+    "Not for documents where the law demands a qualified electronic signature or a witnessed wet signature, such as a German notice of termination or an English deed.",
+    "Not for document assembly either, because Sign places fields on a finished PDF and does nothing about the clauses inside it."
+  ],
+  "capabilities": [
+    {
+      "title": "Templates, roles and the field set",
+      "body": "A template is a PDF plus the fields placed on it. Field types cover signature, initial, single line and multiline text, checkbox, selection, date, name, email, phone and company. Every field belongs to a role, which is what lets one lease template serve landlord and tenant without maintaining two documents. Fields can be required or optional. Placement is stored as a position on a page, so a template is bound to that exact file."
+    },
+    {
+      "title": "Fields that fill themselves from the contact",
+      "body": "A field type can be tied to a partner field, so name, email, phone and company arrive prefilled from the record the request was raised against. That removes the most common source of bad contract data, a signer typing their own company name three different ways across three documents. Configure it before the first large send, because retrofitting means reopening every template."
+    },
+    {
+      "title": "Sending, order, reminders and expiry",
+      "body": "One document going to two parties is a single request holding one line per signer, each line with its own private link and its own completion state. Sending one template to a list of people who all occupy the same role is the other case, and there you get a separate request per person. That distinction drives the reporting later. You set a reminder in days, a validity date after which the link stops working, and a signing order when the second party should only be invited once the first has signed. Cancelling a request kills every outstanding link on it at once, which is the control you want the day a deal changes shape mid signature."
+    },
+    {
+      "title": "Authentication beyond the emailed link",
+      "body": "By default, assurance rests on possession of a link sent to a named address. That is proportionate for an internal policy acknowledgement and thin for a six figure contract. An extra verification step by SMS can be enabled per role, sending a code the signer enters before signing. SMS runs on Odoo IAP credits bought separately, so it carries a real per message cost and belongs on high value templates only."
+    },
+    {
+      "title": "The audit trail and the finished file",
+      "body": "Each request carries a log of what happened to it, created, sent, opened, signed or refused, every entry stamped with the time, the party who acted and the IP address the action came from. When the last signature lands, the field values are flattened into the PDF, that file is stored on the request, and a copy is mailed to everyone involved. Treat the log and the file as one exhibit and export both when a lawyer asks for the contract, because the picture of the signature carries almost none of the weight on its own. It follows that the access controls on your Odoo are part of the evidence."
+    },
+    {
+      "title": "Share links for documents everyone signs",
+      "body": "A template can be published as a shareable link instead of being sent to named people. Anyone opening it generates a fresh request and signs their own copy, which suits waivers, site induction forms and annual policy acknowledgements. The trade off is identity: a share link proves somebody typed a name, so pair it with an internal check when the document has to be tied to a specific person."
+    },
+    {
+      "title": "Signing in person, without the email round trip",
+      "body": "A request can be opened and completed on the device in front of you, which is how a delivery acceptance gets signed at a counter or a consent form gets signed at reception. The same flow covers a document you sign yourself before passing it on. Be honest about what the log then records: your own address and your own network rather than the signer's, so in person signing trades evidential distance for speed. Use it where the person is standing there and identity is not in question."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Inventory the documents before building anything",
+      "body": "Start with a list of every recurring document, who signs it, in what order, and whether any statute constrains it. The list almost always shows a long tail sitting behind a handful of documents that carry most of the volume, and that handful is what gets templated first. It is also where legal review happens once per document type, rather than being repeated by whoever happens to be sending that day. The documents that must stay on paper get identified here, in the first week, instead of surfacing in the first dispute."
+    },
+    {
+      "title": "Author the PDF upstream and freeze it",
+      "body": "Sign does not write documents. The PDF comes from Word, from an Odoo report, or from whatever the legal team already uses, and Sign only decorates it. Keep the source file under version control with a visible version number in the footer. When a clause changes and the text reflows, every field below the edit moves, so a revised PDF is a new template rather than an edit."
+    },
+    {
+      "title": "Roles, access levels and who may send",
+      "body": "Roles are defined once and reused across templates, so a role list mirroring how the business names parties saves rework later. Sign's access rights are not a simple build versus send split, which catches people out: the levels separate a user who only works with their own templates from one who sees the whole shared library, with an administrator above both. Decide who belongs in the shared library before you load it. Two or three named template authors is usually right, and that single decision prevents a library of forty near identical drafts."
+    },
+    {
+      "title": "Email delivery is the whole mechanism",
+      "body": "A signature request is an email carrying a link, so contracts arrive only if the sending domain passes SPF, DKIM and DMARC. Configure the outgoing mail server and the bounce address properly, then test into a Gmail account, a Microsoft 365 tenant and a corporate mail filter before go live. Requests landing in spam look like signers ignoring you, and get diagnosed far too late."
+    },
+    {
+      "title": "Decide where signed files live and for how long",
+      "body": "Completed PDFs stay on the request and, where the Documents app is in use, can be filed into a workspace with an owner and a folder structure. Nothing deletes anything on its own. Signed contracts hold personal data, so agree a retention period per document type up front, and record who is allowed to open the folder, which matters most for HR paperwork sitting beside ordinary sales agreements."
+    },
+    {
+      "title": "Set the language on the contact, not only on the PDF",
+      "body": "Two separate things carry language here. The document is a PDF whose wording is fixed when it is authored, so an Arabic or Turkish counterparty needs a translated file laid out before any field is placed. The invitation email and the signing screen follow the language held on the contact record instead, so a partner left on English gets an English interface wrapped around an Arabic contract. Set the language on the partner during onboarding and the two stop disagreeing."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Confusing the Sign app with the quotation signature",
+      "body": "Odoo has two unrelated signing mechanisms. The Sales portal lets a customer accept and sign a quotation, storing a signature image and a name against the order. The Sign app runs templates, roles and an audit trail. A requirement written as electronic signature gets delivered as whichever one the implementer assumed. Name the one you mean, because the evidence they produce is not equivalent."
+    },
+    {
+      "title": "Templates that quietly break when the wording changes",
+      "body": "Field positions are coordinates on a page. Insert a paragraph on page two and every field after it sits over the wrong line, which nobody notices until a signer reports that the date box covers a clause. Treat template updates as a controlled change: new PDF, new template, retire the old one, and read the last page before the first live send."
+    },
+    {
+      "title": "Treating the link as proof of identity",
+      "body": "The person who signs is whoever opened the email. Shared inboxes, forwarded messages and assistants managing a director's mail all break that assumption silently. For anything material, send to a personal address rather than a generic company one, enable SMS verification on that role, and keep a record of how the signer's address was established in the first place. Authority to sign is a separate question again."
+    },
+    {
+      "title": "Signing something the law will not accept electronically",
+      "body": "Terminations of employment in Germany, deeds in England, wills and property transfers in India, and several court and land registry filings across the Gulf still need ink or a qualified certificate. This is a one time legal review per country, not a judgement made per document by whoever is sending, and it belongs in the first week rather than in the first dispute."
+    },
+    {
+      "title": "No archive, no retention, no backup thinking",
+      "body": "Signed PDFs accumulate as attachments in the Odoo filestore, which grows quietly until a database backup takes an hour. They also hold personal data that a subject access request or a data protection audit will ask about. Agree a retention rule, confirm the filestore is inside the backup set, and test that a contract signed three years ago can still be found."
+    },
+    {
+      "title": "Expecting the signature to move the record",
+      "body": "A completed request signs a PDF. It does not confirm the sale order, create the employee, start the subscription or release the goods. Teams that assume otherwise find out a week later that ten signed contracts are sitting in Sign while the pipeline still shows them as quotations. Either give one person the job of working the completed list, or build the automation rule that fires when a request is signed. Decide during design, because retrofitting it means reconciling a backlog by hand."
+    }
+  ],
+  "worksWith": [
+    "Documents, which can file the finished PDF automatically instead of leaving it only on the request",
+    "Employees and Recruitment, where an offer letter or contract goes out to somebody who has no user account and no employee record yet",
+    "Sales, Subscriptions and Rental, for the agreement sitting behind the order rather than the order itself",
+    "Contacts, since roles resolve to partners and prefilled fields read from them",
+    "The outgoing mail server, because a request is only as reliable as its delivery",
+    "Odoo IAP credits, which fund the optional SMS verification step",
+    "Studio and automation rules, when a completed signature should move a record forward without a human",
+    "Mail templates, since the invitation and the completion notice are ordinary templates you can rewrite in the signer's language"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Employment contracts are authenticated on Qiwa, so the copy Odoo holds is the internal record and the platform version is the one the Ministry recognises. Keep the two identical. ZATCA Phase 2 also relies on a cryptographic stamp issued to the invoicing solution, which is a different mechanism entirely and cannot be produced by Sign. Arabic templates need the PDF laid out right to left before any field is placed."
+    },
+    {
+      "country": "uae",
+      "note": "Federal Decree-Law No. 46 of 2021 on electronic transactions and trust services gives electronic signatures legal effect and defines a higher tier tied to licensed providers. Employment terms still have to match the offer and contract filed with MOHRE, so treat the signed Odoo file as the company record rather than the regulatory one. DIFC and ADGM entities run their own contract rules."
+    },
+    {
+      "country": "pakistan",
+      "note": "The Electronic Transactions Ordinance 2002 gives electronic documents and signatures legal effect, and the Electronic Certification Accreditation Council accredits the providers whose certificates carry higher evidential weight. Odoo Sign sits below that tier, which is normally enough for commercial paperwork and employment letters. Delivery is the practical problem rather than the law, so the SMS step earns its IAP cost twice, as assurance and as a nudge."
+    },
+    {
+      "country": "india",
+      "note": "The Information Technology Act 2000 recognises two routes to a statutory electronic signature: a digital signature certificate from a licensed certifying authority, or Aadhaar based eSign through a licensed provider. Odoo Sign is neither, so it stands as evidence of agreement rather than a statutory signature. Schedule I excludes wills, powers of attorney and property conveyances, and stamp duty remains a separate state obligation."
+    },
+    {
+      "country": "turkey",
+      "note": "Law 5070 recognises the güvenli elektronik imza, a qualified signature carried on a certificate from a licensed ESHS provider, and only that form substitutes for a wet signature where writing is required. Formal notices are normally served through KEP registered electronic mail. Templates need Turkish text and Turkish date order, because a document produced only in English gets argued about later."
+    },
+    {
+      "country": "egypt",
+      "note": "Electronic signatures sit under Law 15 of 2004, with ITIDA licensing the certification service providers that issue them. The signature the ETA e-invoicing system demands is one of those, held on a token or an HSM and applied by the invoicing solution, so it is a separate mechanism from Sign and cannot be satisfied by it. Where a contract runs bilingually, fix which language governs inside the document itself, because Sign reproduces what the PDF already says and settles nothing."
+    },
+    {
+      "country": "germany",
+      "note": "Where a statute prescribes Schriftform, section 126a BGB permits an electronic substitute only with a qualified electronic signature, which Odoo does not issue. Notice of termination under section 623 BGB rules out electronic form altogether and still needs ink. Ordinary commercial agreements are fine. Signed PDFs also fall under GoBD, so they must be stored unaltered and stay readable for the retention period."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Simple electronic signatures are valid for most contracts, confirmed by the Electronic Communications Act 2000 and the Law Commission review in 2019. Deeds are the exception: they need a witness physically present when the signatory signs, and Sign has no witness role, so those go back to paper or to a specialist provider. Retention of signed personal data falls under UK GDPR."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Sign available in Community?",
+      "a": "No. Sign is an Enterprise app and Community has no equivalent with templates, roles and an audit trail. Community can still store a signed PDF as an attachment, and the accept and sign step on a portal quotation belongs to Sales rather than Sign, so that particular flow does work without Enterprise. Everything else needs it."
+    },
+    {
+      "q": "Do the people signing need an Odoo user licence?",
+      "a": "No. External signers open a link, complete their fields and never log in, so they cost nothing and there is no limit on how many of them there are. Only the staff who build templates and send requests consume a user licence. Count those by who sends rather than by who signs, which is where teams overestimate: one HR administrator can run every offer letter a company issues in a year."
+    },
+    {
+      "q": "Is there a charge per document or per envelope?",
+      "a": "No. The subscription is priced on users, not on documents, so the hundredth request in a month costs what the first one did. The single usage based line is the optional SMS verification step, which draws down Odoo IAP credits bought in advance and is charged per message at a rate that varies by destination country. Turn it on for the templates where the extra assurance is worth paying for rather than across the whole library. Storage of the completed PDFs sits inside what you already pay."
+    },
+    {
+      "q": "Is a signature made in Odoo legally binding?",
+      "a": "In most of the countries covered here an electronic signature is admissible and enforceable for ordinary commercial agreements, and the event log Odoo keeps is the evidence behind it. What Odoo does not produce is a qualified electronic signature backed by a certificate from a licensed trust service provider, which specific document types and specific countries require."
+    },
+    {
+      "q": "What happens if a signer refuses, or we spot a mistake after everyone has signed?",
+      "a": "A signer can decline rather than sign, and the reason they give is recorded against the request instead of leaving it silently unfinished. After the last signature the values are flattened into the PDF and nothing can be edited, by design, so a correction means a fresh request on a corrected document or a signed addendum referencing the original. Agree which of the two your legal team wants before the first mistake, not after."
+    },
+    {
+      "q": "Can we send the same document to two hundred people at once?",
+      "a": "Yes, and the constraint is mail throughput rather than Sign. Each recipient becomes a separate request with its own link, its own copy and its own log, so two hundred recipients is two hundred outbound emails through your mail server. Send a batch that size from a domain with no SPF and DKIM history and much of it is filed as spam, which reads back as signers ignoring you. Stagger it."
+    },
+    {
+      "q": "Can Odoo Sign replace a dedicated signature vendor completely?",
+      "a": "For internal paperwork and standard commercial agreements, usually yes, and the saving is real for a company already on Enterprise. It does not cover qualified signatures, remote online notarisation, or identity verified signing in regulated flows such as lending. Those stay with a specialist provider, and they are a small share of most document volumes."
+    },
+    {
+      "q": "Where do the signed documents physically sit?",
+      "a": "On the signature request as an attachment, which means the Odoo filestore on disk and a row in the database, not a vendor's document vault. Which country that disk sits in depends on hosting: Odoo Online and Odoo.sh each place the database in a region, on premise puts it wherever your server is. Ask the question early where a client contract or a regulator pins data to a jurisdiction."
+    },
+    {
+      "q": "We already use another signature vendor. Can we bring the history and the templates across?",
+      "a": "The completed PDFs move as files, and they are worth exporting with the vendor's own completion certificate alongside each one, because that certificate is the evidence and it does not travel inside the contract text. Store the pair against the customer or employee record. Templates do not migrate at all. There is no import for another vendor's envelope definitions, so each one is rebuilt by uploading the PDF and placing the fields again, which is the moment to prune a library that has grown duplicates. Let the old system drain rather than cutting over with documents in flight."
+    },
+    {
+      "q": "Can we use a qualified certificate or a USB signing token with Odoo Sign?",
+      "a": "Not in the standard app. Sign produces its own electronic signature and event log, and it does not drive a smart card, a token or a certificate issued by a licensed trust service provider. Where a document needs that, the usual pattern is to sign it in the provider's own tool and store the finished file against the Odoo record, keeping Sign for the rest of the document set."
+    }
+  ]
+}

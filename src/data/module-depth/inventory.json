@@ -1,0 +1,180 @@
+{
+  "metaDescription": "Odoo Inventory implementation: costing and valuation, multi step routes, lot and expiry traceability, landed costs, opening stock cutover and country rules.",
+  "intro": [
+    "Odoo Inventory is a double entry stock ledger. You cannot type in a quantity on hand. Odoo derives it from stock moves between locations, held as quants for each product, location, lot and package, and every counterparty is a real location: vendors, customers, scrap, production and inventory adjustment. Even a physical count posts a move. That design is why the numbers reconcile, and why one wrong configuration decision produces the same wrong answer everywhere at once.",
+    "The app itself is in Community. Multi warehouse, multi step routes, putaway and removal strategies, lots and serials, reordering rules, landed costs and automated valuation all work without an Enterprise subscription. Enterprise adds tooling around the ledger rather than capability inside it, so this is a warehouse floor question and not an accounting one. Nothing in the valuation chain is held back.",
+    "Most of the delivery risk sits outside the software. It sits in units of measure nobody defined, product costs nobody can source, an opening stock figure that does not agree with the trial balance, and a picking process the team has run on memory for years. Building one warehouse takes days. Getting the master data and the opening position right takes the rest of the project, and it decides whether the first month end closes."
+  ],
+  "whoFor": [
+    "Distributors, wholesalers and importers running more than one warehouse, where stock value has to agree with the accounts every month.",
+    "Manufacturers that need component availability, lot genealogy and work order consumption sitting in the same stock ledger as everything else.",
+    "Food, pharmaceutical and cosmetics businesses with expiry dates, recall obligations and first expired first out picking.",
+    "Retail and online sellers listing one pool of stock across a shop, a website and a marketplace, where a single oversell costs more than the licence.",
+    "Not for a single storeroom with a few hundred lines and one person who knows all of them, where a spreadsheet is honestly cheaper to run.",
+    "Not for a business unwilling to change how goods are received and picked, because movements recorded after the fact turn the ledger into fiction within a month."
+  ],
+  "capabilities": [
+    {
+      "title": "Locations, warehouses and multi step routes",
+      "body": "A warehouse is a tree of locations plus a set of operation types. Receipts run in one step, two with a putaway transfer, or three with a quality area between input and stock. Deliveries run as ship only, pick then ship, or pick, pack and ship. Routes also cover resupply from another warehouse, cross docking, dropshipping and make to order. Every step is a transfer a real person has to complete, so each one you add is work somebody does every day."
+    },
+    {
+      "title": "Costing methods and real time valuation",
+      "body": "Costing is set on the product category: standard, first in first out, or average. Valuation is manual, where the movement is posted by hand, or automated, where every move writes a stock valuation layer and a journal entry against the stock input, output and valuation accounts. Those layers are the audit trail. They are why the stock valuation report and the general ledger can be compared line by line instead of argued about."
+    },
+    {
+      "title": "Lot, serial and expiry traceability",
+      "body": "Tracking is switched on per product, either by lot or by unique serial. Once on, every move records which lot went where, and the traceability report walks the chain from the supplier receipt to the customer delivery. With expiration dates enabled, a lot carries removal, best before and alert dates, and the first expired first out removal strategy picks against those instead of the receipt date."
+    },
+    {
+      "title": "Replenishment rules and the scheduler",
+      "body": "A reordering rule holds a minimum, a maximum and a multiple, and the scheduler raises the purchase or manufacturing order that brings stock back up to the maximum. Vendor lead time, purchase security lead time and the visibility days on the rule decide when it fires. The replenishment view also surfaces products forecast to run short from confirmed sales orders that no rule covers yet, which is how the gaps in the rule set get found."
+    },
+    {
+      "title": "Putaway, storage categories and removal strategies",
+      "body": "Putaway rules send incoming goods to a shelf based on the product, its category, or the package type it arrives in. Storage categories cap what a location can hold, by maximum weight, by product or by number of packages, so a full aisle is skipped rather than overfilled. Removal strategies decide which units leave: first in first out, last in first out, first expired first out, closest location or least packages."
+    },
+    {
+      "title": "Packages, batch and wave picking",
+      "body": "Loose units become a package with a type that carries dimensions and weight, and an operation type set to move entire packages then moves the box without touching its contents. Batch transfers group several pickings for one picker in one trip. Wave transfers pull individual lines out of different orders so a single pass through the aisle covers them all. Package labels and delivery slips print per package, which is what the carrier and the customer both need."
+    },
+    {
+      "title": "Landed costs on imported goods",
+      "body": "Freight, duty, insurance and clearing charges are entered as a landed cost and allocated across a receipt by value, weight, volume or quantity. Odoo adjusts the stock valuation layers of that receipt so the product cost reflects what the goods really cost to get onto the shelf. This needs automated valuation with first in first out or average costing. Products on standard cost cannot carry one."
+    }
+  ],
+  "setup": [
+    {
+      "title": "Choose the step count from what has to be proved",
+      "body": "A one step receipt puts goods into sellable stock the moment it is validated. That is fast and it proves nothing about who put them away or whether anyone checked them. Two steps add an internal transfer to the shelf. Three add a quality area in between. Each extra step is real work for a real person, so add one only where the record it produces is worth the handling."
+    },
+    {
+      "title": "Units of measure defined before any product is loaded",
+      "body": "Units of measure are enabled in settings and grouped into categories, and Odoo converts freely between any two units in the same category from the factors you set. Buying in cases and selling in pieces rests on those factors and on the decimal precision Odoo keeps for quantities. Set the precision too coarse and a case of twelve split three ways leaves a fractional remainder on the shelf that nobody can pick. Odoo blocks a change of unit once stock moves exist for the product, so a unit chosen carelessly during data loading is fixed by rebuilding the product, not by editing it."
+    },
+    {
+      "title": "Decide what is actually a stocked product",
+      "body": "Odoo 17 calls it a storable product. Odoo 18 and 19 renamed the type to goods with a separate track inventory setting, and that setting is what creates quants and valuation at all. Anything left as a plain consumable moves without a ledger and will never show up in a count or a valuation report. Variants, barcodes and the pack sizes you buy and sell in belong in the same pass, because loading a catalogue twice is the expensive way to learn that a colour should have been a variant rather than sixty separate product records."
+    },
+    {
+      "title": "Agree the valuation setup with the accountant first",
+      "body": "The costing method, the manual or automated choice, and the stock input, output and valuation accounts are an accounting decision the warehouse then lives with. Under Anglo Saxon accounting the delivery moves value out of stock into an interim account and cost of goods sold is only booked when the customer invoice is posted, so every delivered but unbilled order leaves a balance sitting in interim. Continental accounting books the cost straight to the expense account at the delivery itself. Set the accounts wrong and the interim balances never clear, which surfaces at the first month end and not one day earlier."
+    },
+    {
+      "title": "Opening stock and the cutover it belongs to",
+      "body": "Opening quantities go in as an inventory adjustment on a fixed cutover date, with a cost per product, so the value Odoo calculates can be reconciled against the closing trial balance before go live. Tracked products need their lots and serials loaded with those quantities. Migrate open purchase and sales orders rather than years of movement history, and freeze the old system on the same date."
+    },
+    {
+      "title": "Agree how stock gets counted after go live",
+      "body": "Physical inventory records a counted quantity against the system quantity per location, lot and package, and applying it posts a move to the inventory adjustment location rather than editing a figure. Locations carry a counting frequency in days and a next expected date, so counts can be scheduled aisle by aisle instead of shutting the building once a year. Decide early who is allowed to apply a count, because that is the one right that changes stock value with no source document behind it."
+    }
+  ],
+  "pitfalls": [
+    {
+      "title": "Changing the costing method after go live",
+      "body": "Costing sits on the product category, so switching the method, or moving products to a category that uses a different one, changes how every future move is valued and posts a revaluation on what is currently on hand. Done mid year without the accountant expecting it, the stock account jumps and nobody can explain the entry. Decide once, before the opening balance is loaded."
+    },
+    {
+      "title": "Negative stock treated as a warning rather than a fault",
+      "body": "Core Odoo has no setting that stops a quant going negative. The delivery validates and the value comes from a cost that no longer describes anything: under average costing the running unit cost while quantity sits below zero is arithmetic rather than a purchase price, and under first in first out Odoo compensates only when the receipt finally arrives, posting a correction layer into a period that is often already closed. A hard block needs a community module such as the OCA stock_no_negative. Neither is the real fix. Negative stock nearly always means deliveries are validated before the matching receipt is posted, so repair the sequence on the floor rather than the number in the report."
+    },
+    {
+      "title": "Overselling because reservation was never configured",
+      "body": "Each operation type carries a reservation method: at confirmation, manually, or a set number of days before the scheduled date. Left on manual, orders confirm without holding anything and two customers are promised the same unit. On a website, check the out of stock behaviour as well, because Odoo will keep accepting orders for a product sitting at zero unless it is told to stop."
+    },
+    {
+      "title": "Reordering rules running without real lead times",
+      "body": "A rule with no vendor lead time assumes goods appear the day they are ordered, so the scheduler either fires late and the shelf runs dry, or fires on everything at once and the first run produces a hundred draft purchase orders. Load supplier lead times alongside the pricelists, set the security lead time deliberately, and run the scheduler on a copy of the database before anyone approves what it created."
+    },
+    {
+      "title": "Landed costs applied weeks after the goods moved",
+      "body": "A freight or clearance invoice arriving a month after the container is only partly recoverable into stock value. Odoo adjusts the layers still on hand and the remainder falls to expense, so the margin on everything already shipped stays wrong. Where clearing charges are predictable, post an estimate against the receipt and correct it later rather than waiting on the broker."
+    },
+    {
+      "title": "Adjustments used to cover a broken process",
+      "body": "An applied count difference is a stock move, and under automated valuation it is also a journal entry that writes the difference into the accounts. A team that adjusts every week is booking gains and losses nobody reviews, and the record keeps the number while losing the reason. Treat a repeated difference on the same product as a defect to trace: unrecorded scrap, goods picked but never validated, or a unit of measure conversion that was wrong from the day it was loaded."
+    }
+  ],
+  "worksWith": [
+    "Odoo Purchase, which raises the receipts and the vendor bill a landed cost is built from",
+    "Odoo Sales and eCommerce, which reserve stock and publish forecasted availability",
+    "Odoo Manufacturing, where a bill of materials consumes components from the same ledger",
+    "Odoo Accounting, where valuation layers post to the stock interim and valuation accounts",
+    "Odoo Barcode in Enterprise, the scanning interface over these same transfers",
+    "Odoo Quality in Enterprise, so a control point holds a receipt before it reaches sellable stock",
+    "Delivery method connectors for carrier rates, labels and tracking on outbound shipments",
+    "Third party logistics and marketplace systems over the API or a scheduled file exchange, so dispatch and stock levels stay in one ledger"
+  ],
+  "regional": [
+    {
+      "country": "saudi-arabia",
+      "note": "Imports clear through FASAH, and many categories need a SABER conformity certificate before release, so goods sit at the port while the purchase order shows them inbound. Customs duty belongs in the landed cost. The 15 percent import VAT does not, because it is recoverable. ZATCA Phase 2 clears the invoice, not the delivery note, so despatch and clearance stay separate events."
+    },
+    {
+      "country": "uae",
+      "note": "A designated zone warehouse and a mainland warehouse are two different tax positions, not two rows in a list. Moving goods out of the zone is an import, with duty and VAT falling due at that moment and a customs declaration behind the transfer. Corporate tax also makes the costing method and any intra group transfer price something you have to defend."
+    },
+    {
+      "country": "india",
+      "note": "Each state warehouse needs its own GSTIN, and a transfer between two of them is a supply between distinct persons, so it raises a tax invoice rather than a quiet internal move. Consignments above INR 50,000 need an e-way bill, with Part B vehicle details entered before the truck leaves, and goods sent out for job work travel on a delivery challan."
+    },
+    {
+      "country": "pakistan",
+      "note": "Most stock is imported, so the goods declaration filed through the Pakistan Single Window sets the real cost: customs duty, additional and regulatory duty, and freight, all of which belong in a landed cost against the receipt. Sales tax paid at import is recoverable and should stay out of stock value. With the rupee moving, average and first in first out costing give visibly different margins."
+    },
+    {
+      "country": "turkey",
+      "note": "Goods normally travel on an e-Irsaliye, the electronic delivery note that has to be issued and acknowledged before the vehicle leaves, which puts a compliance step inside picking rather than after invoicing. The Turkish localisation in Odoo is a chart of accounts and tax setup. e-Fatura, e-Arsiv and e-Irsaliye are not part of it in any edition, so each one runs through an integrator connector that has to be built or bought and then kept in step with the picking flow. Inflation adjustment of inventory under Turkish tax rules is calculated outside Odoo."
+    },
+    {
+      "country": "united-kingdom",
+      "note": "Goods moving from Great Britain to Northern Ireland need customs declarations and, for retail food, Not for EU labelling, so one company often runs two despatch processes from one pool of stock. Plastic Packaging Tax and packaging producer responsibility both need packaging weight and material recorded per product, master data nobody collects until the first return falls due."
+    },
+    {
+      "country": "germany",
+      "note": "HGB permits LIFO valuation and Odoo does not offer it as a costing method, so a LIFO position is calculated outside the system from the move history. GoBD expects stock records to be traceable and unalterable, which rules out editing quantities and makes a counter movement the only acceptable correction. Permanent inventory is accepted where the system genuinely supports it."
+    },
+    {
+      "country": "egypt",
+      "note": "Imports need an ACID number registered through Nafeza before the shipment leaves origin, so the receipt in Odoo depends on a reference created upstream of it and goods cannot be booked in early. Separately, the Tax Authority requires a registered GS1 or EGS item code on every invoice line, which makes the product master an invoicing dependency, not a warehouse detail."
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Is Odoo Inventory in Community, or does it need Enterprise?",
+      "a": "The app and the whole stock ledger are in Community. Enterprise adds the Barcode app, Quality control points, the IoT box for scales and label printers, Studio and the spreadsheet layer over stock reports. The split shows up on the warehouse floor rather than in the accounts. Without Barcode, pickers work the transfer form on a tablet, which is fine at low volume and slow at a few hundred lines a day. Quality checks can be imitated with an extra operation step, but the pass or fail is then not a structured record."
+    },
+    {
+      "q": "Which costing method suits a distributor?",
+      "a": "Average cost fits most distributors and keeps margin stable when purchase prices move often. First in first out suits high value or serialised goods where each unit should carry its own cost, and it is the method landed costs behave most predictably with. Standard cost only works where somebody owns the revaluation cycle and actually runs it. Nothing forces one choice across the catalogue: a category of imported goods can run first in first out while locally bought consumables run average, from day one."
+    },
+    {
+      "q": "How is opening stock loaded, and what has to reconcile?",
+      "a": "As an inventory adjustment on the cutover date, with lots or serials for anything tracked. The quantity is the easy half. Set the cost on each product before applying the count, because the valuation layer is created at the cost held in that moment and correcting it later means a revaluation entry the auditor will ask about. Historical movements are not migrated. Open purchase orders and open sales orders are, because they carry the incoming and outgoing commitments the scheduler needs."
+    },
+    {
+      "q": "What happens when a picker can only fulfil part of an order?",
+      "a": "Validate the transfer with the quantities actually done and Odoo offers a backorder, a second transfer holding the remainder and linked to the same source document. Decline it and the demand is closed, with the sales order line showing as short delivered, which is right for a customer who will not take the balance. That decision is made on the warehouse floor and it reaches the invoice, because an order set to invoice delivered quantities bills what the transfer says went out."
+    },
+    {
+      "q": "Is this a full warehouse management system?",
+      "a": "It handles locations down to bin level, putaway rules, storage capacity, packages, and batch or wave picking, which covers most single site distribution. It does not do slotting optimisation, labour standards, dock and yard scheduling, or control of conveyors and automated storage equipment. Sites that need those run a dedicated WMS for execution and keep Odoo as the system of record for ownership, cost and valuation, with an interface at receipt and despatch only."
+    },
+    {
+      "q": "Can several legal entities share stock?",
+      "a": "Each warehouse belongs to one company. Goods crossing between companies are a sale and a purchase, and Odoo can raise the matching order in the other company once inter company rules are configured. Stock cannot simply be moved across the boundary, and treating it as an internal transfer is how consolidated accounts stop balancing."
+    },
+    {
+      "q": "Can we hold stock we do not own, or stock sitting at a third party?",
+      "a": "Both, by different routes. The consignment setting puts an owner on the quant, so goods a supplier leaves on your site are visible and pickable without entering your valuation, and they are bought only when they are used. Stock you own at a customer site or a logistics provider is the reverse case: model that site as a location or its own warehouse and move goods there with an internal transfer, so the value stays on your balance sheet. Treating either as a delivery is the common mistake, because it takes out of stock goods you are still accountable for."
+    },
+    {
+      "q": "Why does the stock valuation report not agree with the stock account?",
+      "a": "Usual causes, roughly in the order they turn up: a product category left on manual valuation, a journal entry posted straight into the stock account by hand, goods received at zero cost, interim receipt or delivery accounts never cleared because the bill or invoice was not matched, and a costing method changed after go live. Valuation layers carry a date, so compare the position at the period end against the trial balance at that same date rather than against today's balance."
+    },
+    {
+      "q": "How long does an Inventory implementation take?",
+      "a": "The configuration is not the constraint. One warehouse, its routes, its operation types and its valuation setup can be built and tested in days. Product data, units of measure, costs, supplier lead times and a physical count set the calendar, and on a catalogue of a few thousand items that work runs longer than everything else put together. Take one warehouse live, close a month on it, then extend to the rest."
+    }
+  ]
+}

@@ -15,6 +15,31 @@ export const SITE = {
 };
 
 /**
+ * Search Console and analytics identifiers.
+ *
+ * The site had none of these. No verification meta tag, no DNS TXT record, no
+ * GA4, no Bing. Nothing was measuring it, which means there was no impression
+ * data, no query data, no average position, no index coverage report, and no way
+ * to submit a sitemap or ask for a URL to be recrawled. Every ranking question
+ * about this site was unanswerable, including whether any of this work helped.
+ *
+ * Each value is emitted by Base.astro only when it is a non-empty string, so an
+ * unconfigured field costs nothing and never renders an empty tag.
+ *
+ * Where to get them:
+ *   googleSiteVerification - Search Console, "HTML tag" method, the content=""
+ *     value only, not the whole tag. Verifying by DNS TXT at the Cloudflare
+ *     nameservers is the sturdier option and makes this field unnecessary.
+ *   ga4 - Google Analytics, Admin, Data Streams. Looks like G-XXXXXXXXXX.
+ *   bingSiteVerification - Bing Webmaster Tools. Bing also feeds ChatGPT search.
+ */
+export const ANALYTICS = {
+  googleSiteVerification: '',
+  ga4: '',
+  bingSiteVerification: '',
+};
+
+/**
  * WhatsApp deep link carrying the page the visitor is on.
  *
  * The bare wa.me link arrived with no context at all, so every enquiry from the

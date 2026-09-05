@@ -344,6 +344,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     // Everything below is reporting metadata. It is resolved before the create so a bad
     // lookup drops the field instead of the lead, and it is dropped wholesale on retry.
     const extra: Record<string, unknown> = {};
+
+    // The acknowledgement and every later reply quote the enquiry back to the customer, and
+    // an internal record id means nothing to them. `description` cannot be used for that: it
+    // mixes the visitor's words with referrer, landing page and utm lines that should never
+    // be shown to them, with no reliable separator. These two custom fields on crm.lead keep
+    // the customer-visible part on its own.
+    //
+    // Deliberately in `extra` rather than `vals`: if the fields are ever missing the create
+    // still succeeds on retry, and both mail templates fall back to the lead name and simply
+    // omit the quoted block.
+    if (body.service) extra.x_enquiry_service = tidy(body.service, 120);
+    extra.x_enquiry_message = message.slice(0, 4000);
+
     let countryId: number | null = null;
     try {
       if (body.country || body.country_code) {

@@ -48,6 +48,10 @@ interface Session {
   cookie?: string;
 }
 
+/* Absolute, because these URLs are read inside emails where a relative path is meaningless.
+   The apex is canonical: www and the pages.dev preview both redirect or noindex to it. */
+const SITE_ORIGIN = 'https://way4tech.com';
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -274,10 +278,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   if (!phone) {
     return json({ ok: false, error: 'A phone or WhatsApp number is required.' }, 400);
   }
-  // Deliberately loose. International numbers are written a dozen different ways and a
-  // strict pattern rejects real customers, which costs more than a badly typed number.
   if ((phone.match(/\d/g) || []).length < 7) {
     return json({ ok: false, error: 'That phone number looks too short. Please include the country code.' }, 400);
+  }
+  // The country code is not optional formatting here. A lead that arrives as 9925938505 or
+  // 03024009117 cannot be dialled or opened in WhatsApp from another country, and the team
+  // answering these sits in a different one from most of the people submitting. Leads have
+  // already come in that way and could only be answered by email.
+  if (!/^(\+|00)/.test(phone.replace(/[\s()-]/g, ''))) {
+    return json({
+      ok: false,
+      error: 'Please include your country code, starting with + (for example +971 50 123 4567). We need it to reach you on WhatsApp.',
+    }, 400);
   }
 
   if (!env.ODOO_URL || !env.ODOO_DB || !env.ODOO_USER || !env.ODOO_PASSWORD) {
@@ -356,6 +368,22 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     // omit the quoted block.
     if (body.service) extra.x_enquiry_service = tidy(body.service, 120);
     extra.x_enquiry_message = message.slice(0, 4000);
+
+    // The page on this site that answers what they asked about. Both mails link to it, which
+    // gives somebody waiting for a reply something useful to read and brings them back here.
+    // Keyed on the exact option values in the contact form's service select.
+    const SERVICE_PAGE: Record<string, string> = {
+      'New Odoo implementation': '/services/odoo-implementation/',
+      'Custom module / customization': '/services/odoo-customization/',
+      'Odoo support / maintenance': '/services/odoo-support/',
+      'Hire Odoo developer': '/services/hire-odoo-developer/',
+      'Migration / upgrade': '/services/odoo-migration/',
+      'Integration with existing systems': '/services/odoo-integration/',
+      'Product inquiry (specific module)': '/products/',
+      'Other / consultation': '/services/',
+    };
+    const page = body.service ? SERVICE_PAGE[body.service.trim()] : undefined;
+    if (page) extra.x_enquiry_url = `${SITE_ORIGIN}${page}`;
 
     let countryId: number | null = null;
     try {

@@ -95,11 +95,13 @@ const schema = [
                 -->
                 <input type="tel" name="phone" id="lead-phone" required autocomplete="tel" inputmode="tel"
                        placeholder="+971 50 123 4567"
-                       {/* No backslash escapes: the build strips them out of a plain
-                           attribute and "^\s*(\+|00)..." shipped as "^s*(+|00)...", which is
-                           invalid regex. A character class gets the same result literally.
-                           HTML pattern is implicitly anchored, so no ^ or $ is needed. */}
-                       pattern="([+]|00)[0-9 ()-]{6,}"
+                       {/* No `pattern` attribute on purpose. The build strips backslash
+                           escapes from a plain attribute, and the unescaped fallback
+                           "([+]|00)[0-9 ()-]{6,}" is not a valid regex under the `v` flag the
+                           HTML spec now requires for pattern, because ( ) and - are reserved
+                           inside a class there. An invalid pattern is discarded silently, so
+                           the check appeared to work while doing nothing. It is enforced in
+                           the submit handler below and again in functions/api/lead.ts. */}
                        title="Start with your country code, for example +971 50 123 4567"
                        class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
                 <p class="mt-1.5 text-xs text-ink-500">Start with your country code, for example +971 or +92. We need it to reach you on WhatsApp.</p>
@@ -269,11 +271,32 @@ const schema = [
       const serviceField = form.querySelector('select[name="service"]');
       if (serviceParam && serviceField) {
         const wanted = serviceParam.trim().toLowerCase();
-        const match = Array.from(serviceField.options).find(
+        let match = Array.from(serviceField.options).find(
           o => o.value.trim().toLowerCase() === wanted
             || o.text.trim().toLowerCase() === wanted
         );
+        // Nothing ever matched exactly. Every call to action on the site sends a phrase built
+        // for that page - "Deploy Odoo HR", "Odoo for Hospital Management", "Odoo Migration
+        // and Upgrade Services in Egypt" - and none of those is a dropdown option, so the
+        // select stayed on "Select a service" and the visitor's stated intent was thrown away
+        // before it ever reached Odoo.
+        if (!match) {
+          const KEYS = [
+            [/hire|developer|resource|staff/, 'Hire Odoo developer'],
+            [/migrat|upgrade/, 'Migration / upgrade'],
+            [/integrat|connector|api/, 'Integration with existing systems'],
+            [/support|maintenance|amc|sla/, 'Odoo support / maintenance'],
+            [/custom|module|studio/, 'Custom module / customization'],
+            [/implement|deploy|erp|odoo for|rollout/, 'New Odoo implementation'],
+          ];
+          const hit = KEYS.find(([re]) => re.test(wanted));
+          const wantedLabel = hit ? hit[1] : 'Other / consultation';
+          match = Array.from(serviceField.options).find(o => o.value === wantedLabel);
+        }
         if (match) serviceField.value = match.value;
+        // Sent regardless of what the dropdown resolved to. The original phrase says which
+        // page and which offer they came from, which is more specific than any option here.
+        setHidden('service_context', serviceParam.trim().slice(0, 200));
       }
       UTM_KEYS.forEach(k => setHidden(k, param(k) || touch[k] || ''));
 
@@ -282,6 +305,21 @@ const schema = [
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // The country-code rule lives here rather than in a pattern attribute, which the
+        // browser silently discards when it is not valid under the `v` flag. Without this the
+        // visitor only learned about it from a red banner after a full round trip.
+        const phoneEl = form.querySelector('input[name="phone"]');
+        const phoneRaw = (phoneEl && phoneEl.value ? phoneEl.value : '').trim();
+        const phoneDigits = (phoneRaw.match(/[0-9]/g) || []).length;
+        if (!/^(\+|00)/.test(phoneRaw.replace(/[\s()\-]/g, '')) || phoneDigits < 7) {
+          result.className = 'rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-900';
+          result.textContent = 'Please start your number with a country code, for example +971 50 123 4567. We need it to reach you on WhatsApp.';
+          result.classList.remove('hidden');
+          if (phoneEl) phoneEl.focus();
+          return;
+        }
+
         btn.disabled = true;
         btn.textContent = 'Sending...';
         const fd = new FormData(form);

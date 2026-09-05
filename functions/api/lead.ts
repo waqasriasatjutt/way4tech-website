@@ -27,6 +27,9 @@ interface LeadInput {
   email?: string;
   phone?: string;
   service?: string;
+  /** The phrase from the call to action the visitor clicked, when it was not one of the
+   *  dropdown's own options. More specific than `service`, so it is kept alongside it. */
+  service_context?: string;
   message?: string;
   source?: string;
   product?: string;
@@ -51,6 +54,24 @@ interface Session {
 /* Absolute, because these URLs are read inside emails where a relative path is meaningless.
    The apex is canonical: www and the pages.dev preview both redirect or noindex to it. */
 const SITE_ORIGIN = 'https://way4tech.com';
+
+/** Plain text into an Odoo HTML field, keeping the line breaks and neutralising markup.
+ *
+ * crm.lead.description and mail.message.body are HTML. Newlines were being posted raw, so
+ * Odoo collapsed them and every lead read as one run-on paragraph with the metadata and the
+ * customer's own words colliding on a single line. Anything tag-shaped in the message was
+ * also being swallowed by the sanitiser rather than shown. */
+function toHtml(text: string): string {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+  return escaped
+    .split('\n')
+    .map((line) => `<p style="margin:0">${line || '&nbsp;'}</p>`)
+    .join('');
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -90,7 +111,19 @@ async function odooCall(
     },
     body: JSON.stringify({ jsonrpc: '2.0', method: 'call', params }),
   });
-  const data = await resp.json<any>();
+  // Odoo does not always answer with JSON. A restart, a 502 from the proxy or a maintenance
+  // page returns HTML, and calling resp.json() on that threw a SyntaxError which the handler
+  // below passed straight to the browser, so the visitor read
+  // `Unexpected token '<', "<html>..." is not valid JSON` and their enquiry was dropped.
+  // Seen live: Odoo was restarting and a real submission came back 502.
+  let data: any;
+  try {
+    data = await resp.json<any>();
+  } catch {
+    const err = new Error(`Odoo did not return JSON (HTTP ${resp.status})`);
+    (err as any).odooUnavailable = true;
+    throw err;
+  }
   if (data.error) {
     const err = new Error(`Odoo error: ${data.error.data?.message || data.error.message}`);
     // Odoo answered and rolled the transaction back, so a retry cannot duplicate a record.
@@ -309,6 +342,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     const descLines = [
       body.service ? `Need: ${body.service}` : '',
+      body.service_context ? `Came from: ${body.service_context}` : '',
       body.product ? `Product: ${body.product}` : '',
       body.country ? `Country: ${body.country}` : '',
       body.source ? `Source: ${body.source}` : '',
@@ -346,7 +380,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       partner_name: body.company || '',
       email_from: email,
       phone,
-      description: descLines.join('\n'),
+      description: toHtml(descLines.join('\n')),
       type: 'opportunity',
       tag_ids: enquiryTagId ? [[6, 0, [enquiryTagId]]] : [],
     };
@@ -470,9 +504,21 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         method: 'message_post',
         args: [[leadId]],
         kwargs: {
-          body: chatter,
+          body: toHtml(chatter),
           message_type: 'comment',
-          subtype_xmlid: 'mail.mt_comment',
+          // mt_note, not mt_comment. This block is internal: it carries the source page, the
+          // submitted-from URL with its query string, the referrer and the utm values, which
+          // the comment at the top of the extra block says must never reach the customer.
+          //
+          // It was harmless while nobody outside the company followed the lead. The Odoo
+          // automation that subscribes the enquirer so chatter replies reach them now makes
+          // every follower a Discussions subscriber, and Odoo mails mt_comment messages to
+          // followers, so this note would have been emailed to the visitor on every single
+          // submission. mt_note is internal and generates no notification at all.
+          //
+          // message_type stays 'comment': 'comment' + mt_note is exactly what the Log note
+          // button in the web UI posts.
+          subtype_xmlid: 'mail.mt_note',
         },
       },
       c2 || session.cookie,
@@ -480,6 +526,16 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     return json({ ok: true, id: leadId });
   } catch (e: any) {
-    return json({ ok: false, error: e.message || 'Unknown error' }, 502);
+    // The visitor was being shown raw internals: Odoo tracebacks, JSON parser errors and
+    // 'Server not configured.' all rendered verbatim on the contact page. None of that means
+    // anything to them and some of it describes our infrastructure. Give them something they
+    // can act on, and keep the detail in the logs where it is useful.
+    console.error('lead endpoint failed:', e && e.message, e && e.stack);
+    return json({
+      ok: false,
+      error:
+        'We could not save your enquiry just now. Please message us on WhatsApp at ' +
+        '+92 315 411 4748 or email info@way4tech.com and we will pick it up straight away.',
+    }, 502);
   }
 };

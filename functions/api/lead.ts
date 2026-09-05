@@ -73,6 +73,18 @@ function toHtml(text: string): string {
     .join('');
 }
 
+/** Arabic-Indic (٠-٩) and Extended Arabic-Indic (۰-۹) digits to ASCII.
+ *
+ * JavaScript's \d matches neither, so a number typed in Arabic numerals counted as zero
+ * digits and was rejected as too short. The /ar/ tree is written for exactly those visitors. */
+function normaliseDigits(v: string): string {
+  return v.replace(/[٠-٩۰-۹]/g, (c) => {
+    const code = c.charCodeAt(0);
+    const base = code >= 0x06F0 ? 0x06F0 : 0x0660;
+    return String(code - base);
+  });
+}
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -294,7 +306,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const name = (body.name || '').trim();
   const email = (body.email || '').trim();
   const message = (body.message || '').trim();
-  const phone = (body.phone || '').trim();
+  const phone = normaliseDigits((body.phone || '').trim());
   if (!name || !email || !message) {
     return json({ ok: false, error: 'Name, email, and message are required.' }, 400);
   }
@@ -376,8 +388,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     const vals: Record<string, unknown> = {
       name: leadTitle,
-      contact_name: name,
-      partner_name: body.company || '',
+      contact_name: tidy(name, 120),
+      partner_name: tidy(body.company, 120),
       email_from: email,
       phone,
       description: toHtml(descLines.join('\n')),
@@ -416,7 +428,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       'Product inquiry (specific module)': '/products/',
       'Other / consultation': '/services/',
     };
-    const page = body.service ? SERVICE_PAGE[body.service.trim()] : undefined;
+    const key = body.service ? body.service.trim() : '';
+    const page = Object.prototype.hasOwnProperty.call(SERVICE_PAGE, key)
+      ? SERVICE_PAGE[key]
+      : undefined;
     if (page) extra.x_enquiry_url = `${SITE_ORIGIN}${page}`;
 
     let countryId: number | null = null;

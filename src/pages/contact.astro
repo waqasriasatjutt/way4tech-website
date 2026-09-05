@@ -1,6 +1,6 @@
 ---
 import Base from '~/layouts/Base.astro';
-import { SITE } from '~/data/site';
+import { SITE, whatsappHref } from '~/data/site';
 
 const pageUrl = `${SITE.url}/contact/`;
 
@@ -81,9 +81,26 @@ const schema = [
                 <input type="email" name="email" id="lead-email" required autocomplete="email" inputmode="email" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
               </div>
               <div>
-                <label for="lead-phone" class="block text-sm font-medium text-ink-800">Phone / WhatsApp</label>
-                <input type="tel" name="phone" id="lead-phone" autocomplete="tel" inputmode="tel" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <!--
+                  Phone used to be the one optional field on the form and 18 of the first 41
+                  leads arrived without one, so nearly half could only be answered by email.
+                  Email is exactly the channel that lands in a spam folder and gets no reply.
+                -->
+                <label for="lead-phone" class="block text-sm font-medium text-ink-800">WhatsApp number *</label>
+                <input type="tel" name="phone" id="lead-phone" required autocomplete="tel" inputmode="tel" placeholder="+92 300 1234567" class="mt-1.5 w-full rounded-lg border border-ink-200 px-4 py-2.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none" />
+                <p class="mt-1.5 text-xs text-ink-500">Include your country code. This is how we reach you fastest.</p>
               </div>
+            </div>
+
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p class="text-sm font-medium text-emerald-900">WhatsApp gets you an answer the same hour</p>
+              <p class="mt-1 text-sm leading-relaxed text-emerald-800">
+                Email filters are unpredictable and our reply often lands in spam. Leave a WhatsApp
+                number and we answer there instead, usually within minutes during working hours.
+              </p>
+              <a id="waLink" href={whatsappHref('/contact/')} target="_blank" rel="noopener" class="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                Message us on WhatsApp now
+              </a>
             </div>
 
             <div>
@@ -107,7 +124,7 @@ const schema = [
             </div>
 
             <button type="submit" class="btn-primary" id="submitBtn">Send message</button>
-            <p class="text-xs text-ink-500">We'll never share your info. Reply within 4 business hours.</p>
+            <p class="text-xs text-ink-500">We'll never share your info. Reply within 4 business hours, or in minutes on WhatsApp.</p>
 
             <noscript>
               <p class="rounded-lg border border-ink-200 bg-ink-50 p-4 text-sm text-ink-700">
@@ -170,6 +187,12 @@ const schema = [
         if (!url) return false;
         try { return new URL(url, location.href).origin !== location.origin; } catch (e) { return false; }
       };
+
+      // This script is is:inline, so it never sees the frontmatter. Reading the number off
+      // the link already rendered on the page keeps one source of truth in site.ts rather
+      // than hard-coding the WhatsApp URL a second time here.
+      const waEl = document.getElementById('waLink');
+      const waHref = (waEl && waEl.getAttribute('href')) || 'https://wa.me/923154114748';
 
       // sessionStorage throws outright in some privacy modes, so every touch is guarded.
       const readTouch = () => {
@@ -266,14 +289,26 @@ const schema = [
           const j = await resp.json().catch(() => ({}));
           if (resp.ok && j.ok) {
             result.className = 'rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-900';
-            result.textContent = 'Thanks! We got your message and will reply within 4 business hours.';
+            // No user input is interpolated here, so the markup is fixed and safe.
+            // The spam warning is deliberate: the acknowledgement mail is the message most
+            // likely to be filtered, and it is the one that tells them we are coming.
+            result.innerHTML =
+              '<strong>Thanks, we have your message.</strong>' +
+              '<p class="mt-1">A confirmation email is on its way. If it is not in your inbox within a few minutes, please check your spam folder and mark it as safe.</p>' +
+              '<p class="mt-2">For a faster answer, message us on ' +
+              '<a class="font-semibold underline" target="_blank" rel="noopener" href="' + waHref + '">WhatsApp</a>.</p>';
             form.reset();
           } else {
             throw new Error(j.error || 'Network error');
           }
         } catch (err) {
           result.className = 'rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-900';
-          result.textContent = 'Could not submit right now. Please email info@way4tech.com or WhatsApp us.';
+          // The server's own validation messages were being discarded, so a submission
+          // rejected for a missing phone number told the visitor the site was down.
+          var msg = (err && err.message) ? String(err.message) : '';
+          result.textContent = (msg && msg !== 'Network error')
+            ? msg
+            : 'Could not submit right now. Please email info@way4tech.com or WhatsApp us.';
         }
         result.classList.remove('hidden');
         btn.disabled = false;

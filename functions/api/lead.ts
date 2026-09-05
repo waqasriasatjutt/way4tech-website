@@ -257,11 +257,27 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const name = (body.name || '').trim();
   const email = (body.email || '').trim();
   const message = (body.message || '').trim();
+  const phone = (body.phone || '').trim();
   if (!name || !email || !message) {
     return json({ ok: false, error: 'Name, email, and message are required.' }, 400);
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ ok: false, error: 'Invalid email.' }, 400);
+  }
+
+  // Phone was optional and 18 of the first 41 leads arrived without one, so nearly half
+  // could only be answered by email. Email is the channel that lands in a spam folder and
+  // gets no reply, which is the whole reason those leads went cold.
+  //
+  // Checked here as well as in the browser: the field is only a required attribute on the
+  // form, and anything posting straight to this endpoint would skip it.
+  if (!phone) {
+    return json({ ok: false, error: 'A phone or WhatsApp number is required.' }, 400);
+  }
+  // Deliberately loose. International numbers are written a dozen different ways and a
+  // strict pattern rejects real customers, which costs more than a badly typed number.
+  if ((phone.match(/\d/g) || []).length < 7) {
+    return json({ ok: false, error: 'That phone number looks too short. Please include the country code.' }, 400);
   }
 
   if (!env.ODOO_URL || !env.ODOO_DB || !env.ODOO_USER || !env.ODOO_PASSWORD) {
@@ -298,15 +314,29 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       ? `Product inquiry: ${body.product} — ${body.company || name}`
       : `Contact — ${body.company || name}`;
 
+    // The Odoo automation "Website enquiry acknowledgement" fires on this tag, and only on
+    // this tag, so the acknowledgement mail never goes to a lead that arrived by inbound
+    // email or to the sales spam that reaches the same CRM.
+    //
+    // Resolved before the payload is built and carried in `vals` rather than in `extra`
+    // below, because `extra` is dropped wholesale on retry. A retried lead that lost this
+    // tag would be created silently and the customer would never be greeted.
+    let enquiryTagId: number | null = null;
+    try {
+      enquiryTagId = await findOrCreateByName(env, session, 'crm.tag', 'Website Enquiry');
+    } catch {
+      // The lead matters more than the acknowledgement. Carry on without it.
+    }
+
     const vals: Record<string, unknown> = {
       name: leadTitle,
       contact_name: name,
       partner_name: body.company || '',
       email_from: email,
-      phone: body.phone || '',
+      phone,
       description: descLines.join('\n'),
       type: 'opportunity',
-      tag_ids: [],
+      tag_ids: enquiryTagId ? [[6, 0, [enquiryTagId]]] : [],
     };
     if (env.LEAD_SALESPERSON_ID) vals.user_id = Number(env.LEAD_SALESPERSON_ID);
     if (env.LEAD_TEAM_ID) vals.team_id = Number(env.LEAD_TEAM_ID);
@@ -321,7 +351,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         if (countryId) extra.country_id = countryId;
       }
 
-      const tagIds: number[] = [];
+      // Seeded with the enquiry tag because this is a 6,0 replace, not an add. Leaving it
+      // out here would strip the tag the acknowledgement automation triggers on for every
+      // lead that also carries a country or section tag, which is most of them.
+      const tagIds: number[] = enquiryTagId ? [enquiryTagId] : [];
       const countryLabel = normaliseCountry(body.country);
       if (countryLabel) {
         const id = await findOrCreateByName(env, session, 'crm.tag', `country:${countryLabel}`);
@@ -376,7 +409,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       `Name: ${name}\n` +
       (body.company ? `Company: ${body.company}\n` : '') +
       `Email: ${email}\n` +
-      (body.phone ? `Phone: ${body.phone}\n` : '') +
+      `Phone / WhatsApp: ${phone}\n` +
       (body.service ? `Service: ${body.service}\n` : '') +
       (body.product ? `Product: ${body.product}\n` : '') +
       (body.country ? `Country: ${body.country}\n` : '') +

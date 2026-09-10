@@ -30,6 +30,11 @@ const pageUrl = `${SITE.url}/countries/${country.slug}/`;
 const countryIndex = countryIndexOf(country.slug);
 
 const plainName = plainNameOf(country.title);
+/* Shown beside the city chips, so a region whose name is already a city chip
+   (New York the state vs New York the city) is dropped: in one wrapped chip
+   row an exact repeat reads as a rendering bug. Schema keeps both, where the
+   City/AdministrativeArea distinction is real. */
+const hubRegions: string[] = (country.regions || []).filter((r: string) => !country.cities.includes(r));
 
 /* Region decides only the ordering of case studies and the sidebar country
    list. It is never printed as a claim. */
@@ -54,7 +59,29 @@ const serviceRank = (slug: string) => {
   const i = serviceOrder.indexOf(slug);
   return i === -1 ? 99 : i;
 };
-const countryServices = [...SERVICES].sort((a, b) => serviceRank(a.slug) - serviceRank(b.slug)).slice(0, 8);
+/* The .slice(0, 8) below used to drop whatever fell past position 8, and
+   because serviceOrder prepends odoo-localization plus one entry per matched
+   theme, hire-odoo-developer (last of the six crossed services) fell off any
+   market carrying two or more themes. Eight hubs - bangladesh, egypt, france,
+   india, jordan, pakistan, saudi-arabia and turkey - linked five of their six
+   crossed pages and left the hire-developer page with one less inbound link
+   than its siblings. The six crossed services are now always kept. */
+const CROSSED_SLUGS = [
+  'odoo-implementation',
+  'odoo-customization',
+  'hire-odoo-developer',
+  'odoo-migration',
+  'odoo-support',
+  'odoo-integration',
+];
+const rankedServices = [...SERVICES].sort((a, b) => serviceRank(a.slug) - serviceRank(b.slug));
+const crossedServices = rankedServices.filter(s => CROSSED_SLUGS.includes(s.slug));
+const otherServices = rankedServices.filter(s => !CROSSED_SLUGS.includes(s.slug));
+const SERVICE_SLOTS = 9;
+const countryServices = [
+  ...crossedServices,
+  ...otherServices.slice(0, Math.max(0, SERVICE_SLOTS - crossedServices.length)),
+].sort((a, b) => serviceRank(a.slug) - serviceRank(b.slug));
 
 
 
@@ -228,7 +255,7 @@ const faqs: { q: string; a: string }[] = [];
 
 faqs.push({
   q: `Do we need to be in ${country.cities[0]} to work with you?`,
-  a: `No. Odoo projects are delivered remotely by default, and location inside ${plainName} rarely changes the plan or the price. We travel on-site for discovery workshops, user training, and go-live week when the work calls for it. Cities we cover for on-site visits: ${country.cities.join(', ')}.`,
+  a: `No. Odoo projects are delivered remotely by default, and location inside ${plainName} rarely changes the plan or the price. We travel on-site for discovery workshops, user training, and go-live week when the work calls for it. Cities we cover for on-site visits: ${country.cities.join(', ')}.${hubRegions.length ? ` Regions we cover: ${hubRegions.join(', ')}.` : ''}`,
 });
 faqs.push({
   q: `Which timezone and language does a project in ${plainName} run in?`,
@@ -345,6 +372,7 @@ const schema = [
     areaServed: [
       { '@type': 'Country', name: plainName },
       ...country.cities.map((c: string) => ({ '@type': 'City', name: c })),
+      ...(country.regions || []).map((r: string) => ({ '@type': 'AdministrativeArea', name: r })),
     ],
     availableChannel: {
       '@type': 'ServiceChannel',
@@ -400,6 +428,7 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
         <p class="lede mt-6 text-ink-200">{country.tagline}</p>
         <div class="mt-6 flex flex-wrap gap-2">
           {country.cities.map((c: string) => <span class="chip !bg-white/10 !text-white">{c}</span>)}
+          {hubRegions.map((r: string) => <span class="chip !bg-white/5 !text-brand-100">{r}</span>)}
         </div>
 
         <!--
@@ -802,13 +831,14 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
             ))}
           </div>
 
-          <h2 class="h3 mt-14">Cities we serve in {plainName}</h2>
+          <h2 class="h3 mt-14">{(country.regions || []).length ? `Cities and regions we serve in ${plainName}` : `Cities we serve in ${plainName}`}</h2>
           <p class="mt-3 text-ink-700">
-            We deliver Odoo projects remotely and on-site across {plainName}. The cities below are the ones we cover for
+            We deliver Odoo projects remotely and on-site across {plainName}. The places below are the ones we cover for
             on-site work. Books run in {country.currency}, with multi-currency switched on where you trade across borders.
           </p>
           <div class="mt-5 flex flex-wrap gap-2">
             {country.cities.map((c: string) => <span class="chip">{c}</span>)}
+            {hubRegions.map((r: string) => <span class="chip !bg-brand-50 !text-brand-700">{r}</span>)}
           </div>
           <p class="mt-5 text-ink-700">
             Not on the list? Remote delivery is the default anyway, so location inside {plainName} rarely changes the plan

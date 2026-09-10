@@ -6,7 +6,7 @@ import { COUNTRY_DETAIL, SUPPORT_LABEL } from '~/data/country-detail';
 /* Country matching, the provider filters and the support badge palette are shared
    with /countries/[slug].astro and live in ~/utils/country. Imports are visible
    inside getStaticPaths; page consts are not. */
-import { countryIndexOf, native, nonNative, plainNameOf, supportClassCross } from '~/utils/country';
+import { countryIndexOf, listOf, native, nonNative, plainNameOf, seoNameOf, supportClassCross, theNameOf } from '~/utils/country';
 
 /*
  * Service crossed with market: /services/<service>/<country>/
@@ -57,20 +57,47 @@ const detail = SERVICE_DETAIL[service.slug];
 const cd = COUNTRY_DETAIL[country.slug];
 
 const plainName = plainNameOf(country.title);
+/* The searched form. "odoo uae" is typed far more than "odoo united arab
+   emirates", and these pages carried only the long name in the title and H1.
+   Body prose, breadcrumbs and schema keep the full name, so a page targeting
+   "odoo uae" still reads as being about the United Arab Emirates. */
+const seoName = seoNameOf(country.slug, country.title, plainName, (country as any).abbr);
+/* ── Cities and regions this page also answers for ──────────────────
+   country.cities/regions already exist in site.ts and already drive schema and
+   chips on the /countries/ hub pages, but never reached these 108 pages, which
+   are the ones actually titled to match "<service> in <country>" search intent.
+
+   The lists are real data. The sentence wrapping them is keyed on service slug,
+   the same pattern as STARTING_POINT, so one city list does not read identically
+   on the implementation, support and hire-developer pages for one market.
+
+   Every sentence states COVERAGE, never past work. "We have delivered projects
+   in Ajman" is a claim nobody here can stand behind city by city; "an engagement
+   runs the same way wherever the office is" is true and does the same job. */
+const cities: string[] = country.cities || [];
+const regionsAll: string[] = country.regions || [];
+/* The US lists New York as both a city and a state. In prose and in the chip
+   row, printing both reads like a mistake, so the exact duplicate is dropped.
+   Schema keeps the full list: New York the city and New York the state are
+   genuinely different areas served, and dropping the state loses the
+   state-level query it exists to answer. */
+const regions: string[] = regionsAll.filter((r: string) => !cities.includes(r));
+const theName = theNameOf(country.slug, plainName);
+
 const pageUrl = `${SITE.url}/services/${service.slug}/${country.slug}/`;
 const contactHref = `/contact/?service=${encodeURIComponent(service.title)}&country=${encodeURIComponent(country.title)}&source=services/${service.slug}/${country.slug}`;
 
 /* The headline phrase, chosen per service to match what people search rather than
    what we call the service internally. */
 const H1_SHAPE: Record<string, string> = {
-  'odoo-implementation': `Odoo Implementation Services in ${plainName}`,
-  'odoo-customization': `Odoo Customization Services in ${plainName}`,
-  'hire-odoo-developer': `Hire Odoo Developers in ${plainName}`,
-  'odoo-migration': `Odoo Migration and Upgrade Services in ${plainName}`,
-  'odoo-support': `Odoo Support and AMC in ${plainName}`,
-  'odoo-integration': `Odoo Integration Services in ${plainName}`,
+  'odoo-implementation': `Odoo Implementation Services in ${seoName}`,
+  'odoo-customization': `Odoo Customization Services in ${seoName}`,
+  'hire-odoo-developer': `Hire Odoo Developers in ${seoName}`,
+  'odoo-migration': `Odoo Migration and Upgrade Services in ${seoName}`,
+  'odoo-support': `Odoo Support and AMC in ${seoName}`,
+  'odoo-integration': `Odoo Integration Services in ${seoName}`,
 };
-const heading = H1_SHAPE[service.slug] || `${service.title} in ${plainName}`;
+const heading = H1_SHAPE[service.slug] || `${service.title} in ${seoName}`;
 
 /* The cost heading used `service.title.toLowerCase()`, which reads as
    "What changes the cost of hire odoo developer in Australia" and lower-cases
@@ -96,7 +123,15 @@ const COST_SHAPE: Record<string, string> = {
 };
 const costSubject = COST_SHAPE[service.slug] || service.title;
 
-const metaDescription = `${heading}. ${detail?.lede || service.tagline}`.slice(0, 300);
+/* This used to be `${heading}. ${lede}` capped at 300: the first half simply
+   repeated the <title>, and 56 of the 108 descriptions then ran past the ~160
+   characters Google renders. Lead with the pitch, name the market once, and
+   trim on a word boundary. */
+const metaLede = (detail?.lede || service.tagline || '').trim();
+const metaRaw = `${metaLede} ${seoName === plainName ? `In ${plainName}` : `In ${seoName}`}, with ${cities.slice(0, 3).join(', ')} covered.`;
+const metaDescription = metaRaw.length <= 158
+  ? metaRaw
+  : `${metaLede.slice(0, 155).replace(/[\s,.;:]+\S*$/, '')}.`;
 
 /* ── What makes this service harder or cheaper in THIS market ───────
    Read off the country's own verified data. Nothing is asserted here that
@@ -192,6 +227,33 @@ const STARTING_POINT: Record<string, (n: number, c: number) => string> = {
 };
 const startingPoint = STARTING_POINT[service.slug]?.(nativeCount, customCount) || '';
 
+const CITY_COVERAGE: Record<string, (ct: string[], rg: string[]) => string> = {
+  'odoo-implementation': (ct, rg) => ct.length
+    ? `An implementation is scoped the same way whether the head office is in ${ct[0]}${ct.length > 1 ? ` or ${ct[ct.length - 1]}` : ''}: one discovery workshop, one rollout plan, delivered remotely with on-site time kept for go-live week. That covers ${listOf(ct)}${rg.length ? `, and businesses anywhere in ${listOf(rg)}` : ''}.`
+    : '',
+  'odoo-customization': (ct, rg) => ct.length
+    ? `Customization does not change shape by city. The brief is written the same way for a team in ${ct[0]} as for one in ${ct.length > 1 ? ct[ct.length - 1] : ct[0]}: what the process actually is today, and where Odoo's default flow does not match it.${ct.length > 2 ? ` ${listOf(ct)}${rg.length ? `, and ${listOf(rg)},` : ''} are covered.` : rg.length ? ` ${listOf(rg)} are covered on the same basis.` : ''}`
+    : '',
+  'hire-odoo-developer': (ct, rg) => ct.length
+    ? `A developer works to your office hours wherever in ${theName} you are. That includes ${listOf(ct)}${rg.length ? `, and businesses across ${listOf(rg)}` : ''}. Nothing about the engagement depends on sitting in the same city as you.`
+    : '',
+  'odoo-migration': (ct, rg) => ct.length
+    ? `A migration carries no city-specific risk of its own. What decides the work is the modules and the custom code already in place, and that is the same for a business in ${ct[0]} as anywhere else in ${theName}.${rg.length ? ` ${listOf(rg)} are covered on the same basis.` : ''}`
+    : '',
+  'odoo-support': (ct, rg) => ct.length
+    ? `Support runs on response time, not proximity. It reaches ${listOf(ct)}${rg.length ? `, and businesses across ${listOf(rg)},` : ''} on the same SLA as everywhere else we cover in ${theName}.`
+    : '',
+  'odoo-integration': (ct, rg) => ct.length
+    ? `An integration depends on which systems sit on the other end, not on which city the business sits in. ${listOf(ct)}${rg.length ? `, and businesses across ${listOf(rg)},` : ''} are covered on the same terms.`
+    : '',
+};
+const cityCoverage = CITY_COVERAGE[service.slug]?.(cities, regions) || '';
+
+const cityFaq = cities.length ? {
+  q: `Do you work with businesses in ${cities[0]} and other parts of ${theName}?`,
+  a: `Yes. ${costSubject.charAt(0).toUpperCase()}${costSubject.slice(1)} runs remotely by default, and being based in one city inside ${theName} does not change the plan or the price. Cities we cover for on-site visits: ${cities.join(', ')}.${regions.length ? ` Regions we cover: ${regions.join(', ')}.` : ''} We travel on-site for discovery workshops and go-live week when the engagement calls for it.`,
+} : null;
+
 /* Region signal. These are English pages aimed at one market, so the honest
    pair is a self-referential en-<REGION> alternate, the same shape the
    country hubs already use. COUNTRIES declares ar-SA / de-DE / fr-FR for
@@ -211,9 +273,15 @@ const provides = (detail?.clientProvides || []).slice(0, 6);
 const CROSSED_SLUGS = ['odoo-implementation', 'odoo-customization', 'hire-odoo-developer', 'odoo-migration', 'odoo-support', 'odoo-integration'];
 const siblings = SERVICES.filter(s => CROSSED_SLUGS.includes(s.slug) && s.slug !== service.slug).slice(0, 5);
 const cIdx = countryIndexOf(country.slug);
-const otherMarkets = COUNTRIES.filter(c => c.slug !== country.slug && COUNTRY_DETAIL[c.slug])
-  .slice(cIdx % 6)
-  .slice(0, 6);
+/* This used to be `.slice(cIdx % 6).slice(0, 6)`, which truncates rather than
+   wraps: the highest reachable index was 10, so COUNTRIES[12..17] - the United
+   Kingdom, Germany, France, the United States, Canada and Australia - could
+   never appear in this block on any of the 108 pages, and those six markets
+   took zero cross-market internal links while Bahrain took 17. Rotating the
+   filtered pool gives all 18 markets a roughly equal share. */
+const marketPool = COUNTRIES.filter(c => c.slug !== country.slug && COUNTRY_DETAIL[c.slug]);
+const marketStart = marketPool.length ? (cIdx * 6) % marketPool.length : 0;
+const otherMarkets = [...marketPool.slice(marketStart), ...marketPool.slice(0, marketStart)].slice(0, 6);
 
 const localizationFaq = {
   q: `Does Odoo have an official localization for ${plainName}?`,
@@ -221,7 +289,7 @@ const localizationFaq = {
     ? `Yes. Odoo ships ${nativeCount} native item${nativeCount === 1 ? '' : 's'} for ${plainName}, covering the basics of the chart of accounts and statutory setup. ${customCount > 0 ? `${customCount} area${customCount === 1 ? ' is' : 's are'} still outside that localization and get built or bought separately.` : 'Most of what a rollout here needs is already in the box.'}`
     : `Not yet. ${plainName} has no official Odoo localization, so the chart of accounts, statutory reports and any local filing format are built as part of the project rather than switched on.`,
 };
-const faqs = [...(detail?.faqs || []).slice(0, 3), localizationFaq];
+const faqs = [...(detail?.faqs || []).slice(0, 3), localizationFaq, ...(cityFaq ? [cityFaq] : [])];
 
 
 const schema = [
@@ -235,7 +303,11 @@ const schema = [
     description: `${service.title} for businesses in ${plainName}, delivered by ${SITE.name}.`,
     url: pageUrl,
     provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-    areaServed: { '@type': 'Country', name: plainName },
+    areaServed: [
+      { '@type': 'Country', name: plainName },
+      ...cities.map(c => ({ '@type': 'City', name: c })),
+      ...regionsAll.map(r => ({ '@type': 'AdministrativeArea', name: r })),
+    ],
     availableChannel: {
       '@type': 'ServiceChannel',
       serviceUrl: `${SITE.url}/contact/`,
@@ -329,6 +401,17 @@ const schema = [
             <div class="mt-14">
               <h2 class="h3">Where {plainName} starts from</h2>
               <p class="mt-3 text-ink-700">{startingPoint}</p>
+            </div>
+          )}
+
+          {cityCoverage && (
+            <div class="mt-14">
+              <h2 class="h3">Where we deliver in {theName}</h2>
+              <p class="mt-3 text-ink-700">{cityCoverage}</p>
+              <div class="mt-5 flex flex-wrap gap-2">
+                {cities.map(c => <span class="chip">{c}</span>)}
+                {regions.map(r => <span class="chip !bg-brand-50 !text-brand-700">{r}</span>)}
+              </div>
             </div>
           )}
 

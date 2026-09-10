@@ -41,6 +41,32 @@ export function plainNameOf(title: string): string {
   return title.replace(/\s*\([^)]*\)\s*/, ' ').trim();
 }
 
+/* Three of the eighteen names take a definite article in running prose:
+   "anywhere else in the United States", not "in United States". Only needed
+   mid-sentence after a preposition. Headings and "X has 4 native items"
+   openers read correctly without it, which is why plainNameOf stays as is. */
+const TAKES_THE = new Set(['united-states', 'united-kingdom', 'uae']);
+export function theNameOf(slug: string, plainName: string): string {
+  return TAKES_THE.has(slug) ? `the ${plainName}` : plainName;
+}
+
+/* The form buyers actually type. "odoo uae" outranks "odoo united arab
+   emirates" by an order of magnitude, and the crossed pages were titled only
+   with the long form. Used in the title and H1 only; running prose, breadcrumbs
+   and schema keep the full name, so both forms are on the page. */
+export function seoNameOf(slug: string, title: string, plainName: string, abbr?: string): string {
+  if (abbr === 'KSA') return title;           // already 'Saudi Arabia (KSA)'
+  if (abbr) return `the ${abbr}`;             // the UAE, the UK, the USA
+  return plainName;
+}
+
+/* 'A, B and C' for running prose. Oxford comma deliberately omitted to match
+   the rest of the site's copy. */
+export function listOf(items: string[]): string {
+  if (items.length <= 1) return items[0] || '';
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
 /* Region grouping is used only to order case studies and the country
    list in the sidebar. It is never printed as a claim. */
 export const REGION_OF: Record<string, string> = {

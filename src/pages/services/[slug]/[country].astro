@@ -162,6 +162,17 @@ if ((cd?.payroll?.length || 0) > 0) {
   });
 }
 
+/* Region signal. These are English pages aimed at one market, so the honest
+   pair is a self-referential en-<REGION> alternate, the same shape the
+   country hubs already use. COUNTRIES declares ar-SA / de-DE / fr-FR for
+   four markets, so the language subtag is dropped and only the region is
+   taken: the page itself is English either way. */
+const regionSubtag = String(country.lang || '').split('-')[1] || '';
+const hreflangAlternates = regionSubtag
+  ? [{ lang: `en-${regionSubtag.toUpperCase()}`, href: pageUrl }]
+  : [];
+const ogLocale = regionSubtag ? `en_${regionSubtag.toUpperCase()}` : 'en_US';
+
 const phases = (detail?.phases || []).slice(0, 5);
 const risks = (detail?.failureModes || []).slice(0, 4);
 const provides = (detail?.clientProvides || []).slice(0, 6);
@@ -222,7 +233,14 @@ const schema = [
    restyle here. */
 ---
 
-<Base title={heading} description={metaDescription} structuredData={schema}>
+<Base
+  title={heading}
+  description={metaDescription}
+  canonical={pageUrl}
+  structuredData={schema}
+  hreflang={hreflangAlternates}
+  ogLocale={ogLocale}
+>
   <section class="relative overflow-hidden bg-ink-900 text-white">
     <div class="absolute inset-0" style="background-image: radial-gradient(circle at 15% 10%, rgba(135,90,123,0.55) 0%, transparent 45%), radial-gradient(circle at 85% 90%, rgba(0,160,157,0.3) 0%, transparent 50%);"></div>
     <div class="container-site relative py-16 sm:py-24">

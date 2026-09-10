@@ -22,6 +22,13 @@ export interface Props {
   ogType?: 'website' | 'article';
   publishedTime?: string | Date;
   modifiedTime?: string | Date;
+  /**
+   * og:locale. Every English page shipped en_US, including the UK, Australia,
+   * Canada, India and the Gulf, so the single locale signal Open Graph carries
+   * named the wrong market on most of the site. Pages that know their market
+   * pass it; everything else keeps en_US.
+   */
+  ogLocale?: string;
 }
 
 const {
@@ -35,6 +42,7 @@ const {
   ogType = 'website',
   publishedTime,
   modifiedTime,
+  ogLocale = 'en_US',
 } = Astro.props;
 
 // Every page declared og:type="website", so a shared blog post was never
@@ -132,6 +140,9 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
     <meta name="generator" content={Astro.generator} />
     <meta name="theme-color" content="#714B67" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href={canonicalURL} />
     <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
 
@@ -163,7 +174,7 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
       <meta property="article:modified_time" content={modifiedISO} />
     )}
     <meta property="og:site_name" content={SITE.name} />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={ogLocale} />
     <meta property="og:title" content={ov?.ogTitle || pageTitle} />
     <meta property="og:description" content={ov?.ogDescription || effDescription} />
     <meta property="og:url" content={canonicalURL} />

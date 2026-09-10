@@ -46,6 +46,27 @@ const otherIndustries = INDUSTRIES.filter(i => i.slug !== ind.slug && INDUSTRY_D
 
 const contactHref = `/contact/?source=industries/${ind.slug}`;
 
+/* Title and H1 targeting.
+   The authored metaTitle ran 61-91 characters and the H1 said
+   "Odoo rollouts for hospitals and healthcare groups", so the phrase a
+   buyer actually types ("odoo for healthcare", "healthcare ERP") was on
+   the page nowhere near the top. The stem now leads with the query and a
+   qualifier is added only if it still fits the ~60 char budget that
+   includes Base.astro's " | Way4Tech" suffix. */
+const titleStem = `Odoo for ${ind.title}`;
+const SUFFIX_LEN = ' | Way4Tech'.length;
+const QUALIFIERS = [
+  ': Modules, Rollout and Cost',
+  ': Modules and Rollout Plan',
+  ': Rollout Plan',
+  '',
+];
+const qualifier = QUALIFIERS.find(q => (titleStem + q).length + SUFFIX_LEN <= 60) ?? '';
+const pageTitle = `${titleStem}${qualifier}`;
+/* The authored h1 is kept as the deck under the H1 so none of the writing
+   is lost, it simply stops being the only heading on the page. */
+const deck = detail.h1;
+
 const schema = [
   {
     '@context': 'https://schema.org',
@@ -68,7 +89,7 @@ const schema = [
 ];
 ---
 <Base
-  title={detail.metaTitle}
+  title={pageTitle}
   description={detail.metaDescription}
   structuredData={schema}
 >
@@ -80,8 +101,9 @@ const schema = [
           <span class="text-5xl">{ind.icon}</span>
           <span class="chip !bg-white/10 !text-white">{ind.title}</span>
         </div>
-        <h1 class="h1 mt-6">{detail.h1}</h1>
-        <p class="lede mt-6 text-ink-300">{detail.summary}</p>
+        <h1 class="h1 mt-6">{titleStem}</h1>
+        <p class="mt-4 text-xl font-semibold text-white/90">{deck}</p>
+        <p class="lede mt-4 text-ink-300">{detail.summary}</p>
         <div class="mt-8 flex flex-wrap gap-3">
           <a href={contactHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Scope your rollout</a>
           {solution && (

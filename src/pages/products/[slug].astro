@@ -251,13 +251,18 @@ const productSchema: Record<string, unknown> = {
 if (heroImg) {
   productSchema.image = [new URL(heroImg, SITE.url).toString()];
 }
-if (typeof product.price === 'number' && product.price > 0) {
+// An Offer is a promise that the thing can be bought at offers.url. For the
+// modules that are built but not yet listed, that URL was this page, which
+// carries a contact form and no checkout, so the markup asserted a purchase
+// path that does not exist. Offer is now emitted only for a live store
+// listing; the rest stay a plain Product node, which is accurate.
+if (typeof product.price === 'number' && product.price > 0 && product.onStore && product.storeUrl) {
   productSchema.offers = {
     '@type': 'Offer',
     price: product.price.toFixed(2),
     priceCurrency: product.currency,
     availability: 'https://schema.org/InStock',
-    url: product.onStore && product.storeUrl ? product.storeUrl : pageUrl,
+    url: product.storeUrl,
     seller: { '@type': 'Organization', name: SITE.name, url: SITE.url },
   };
 }

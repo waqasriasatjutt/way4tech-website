@@ -162,6 +162,36 @@ if ((cd?.payroll?.length || 0) > 0) {
   });
 }
 
+/* What THIS service inherits from the market's real localization state.
+   The country page lists the native and custom items; it never says what a
+   given service actually does with them, which is the gap this fills. Every
+   number here is read from country-detail.ts, nothing is invented, and the
+   framing is per-service so the same two counts produce different sentences
+   on the implementation, support and migration pages for the same market. */
+const nativeCount = cd?.odoo?.native?.length || 0;
+const customCount = cd?.odoo?.custom?.length || 0;
+const STARTING_POINT: Record<string, (n: number, c: number) => string> = {
+  'odoo-implementation': (n, c) => n > 0
+    ? `${plainName} has ${n} native Odoo localization item${n === 1 ? '' : 's'}, so this implementation starts from a working chart of accounts and statutory basics rather than a blank one. ${c > 0 ? `${c} further item${c === 1 ? ' is' : 's are'} not covered by Odoo and go into the build plan on day one.` : 'What remains is configuration, not development.'}`
+    : `Odoo has no official localization for ${plainName} yet. The chart of accounts, statutory reports and any local filing format are built rather than switched on, and that goes into the implementation plan before the first module is installed.`,
+  'odoo-customization': (n, c) => c > 0
+    ? `${plainName} has ${n} native localization item${n === 1 ? '' : 's'} in Odoo and ${c} documented gap${c === 1 ? '' : 's'} beyond them. Customization work here usually starts at that gap list, not from a blank module.`
+    : `Odoo's coverage of ${plainName} leaves little for customization to fix on the statutory side. Work here is closer to a workflow that does not map to a standard Odoo process than to tax or reporting.`,
+  'hire-odoo-developer': (n, c) => n > 0
+    ? `A developer working on a system in ${plainName} inherits ${n} native localization module${n === 1 ? '' : 's'} and needs to know which ${c > 0 ? `of the ${c} remaining gap${c === 1 ? '' : 's'}` : 'local rule'} is theirs to close.`
+    : `A developer working on a system in ${plainName} starts without an official localization to lean on, so local tax and reporting logic is part of the brief from day one, not a later patch.`,
+  'odoo-migration': (n, c) => n > 0
+    ? `A migration in ${plainName} carries ${n} native localization module${n === 1 ? '' : 's'} forward. ${c > 0 ? `The ${c} custom piece${c === 1 ? '' : 's'} on top of them` : 'The workflow built around them'} is what actually needs re-testing, not the standard modules.`
+    : `${plainName} has no official Odoo localization to carry across a migration, so whatever was built for tax and statutory reporting on the old version has to be re-verified line by line on the new one.`,
+  'odoo-support': (n, c) => n > 0
+    ? `Support in ${plainName} covers ${n} native localization module${n === 1 ? '' : 's'}${c > 0 ? ` plus ${c} custom piece${c === 1 ? '' : 's'}` : ''}, and the custom side is usually where the support hours actually go.`
+    : `With no official Odoo localization for ${plainName}, the custom tax and reporting build is the part of the system a support contract has to know, not the part Odoo maintains centrally.`,
+  'odoo-integration': (n, c) => n > 0
+    ? `${plainName} runs ${n} native Odoo localization item${n === 1 ? '' : 's'}${c > 0 ? ` and ${c} custom one${c === 1 ? '' : 's'}` : ''}. Integrations here sit on top of whichever of those already exists, which is a different job to building on a market with no localization at all.`
+    : `${plainName} has no native Odoo localization to integrate against, so an integration here is being built alongside the tax and reporting work, not bolted onto it afterwards.`,
+};
+const startingPoint = STARTING_POINT[service.slug]?.(nativeCount, customCount) || '';
+
 /* Region signal. These are English pages aimed at one market, so the honest
    pair is a self-referential en-<REGION> alternate, the same shape the
    country hubs already use. COUNTRIES declares ar-SA / de-DE / fr-FR for
@@ -185,7 +215,14 @@ const otherMarkets = COUNTRIES.filter(c => c.slug !== country.slug && COUNTRY_DE
   .slice(cIdx % 6)
   .slice(0, 6);
 
-const faqs = (detail?.faqs || []).slice(0, 4);
+const localizationFaq = {
+  q: `Does Odoo have an official localization for ${plainName}?`,
+  a: nativeCount > 0
+    ? `Yes. Odoo ships ${nativeCount} native item${nativeCount === 1 ? '' : 's'} for ${plainName}, covering the basics of the chart of accounts and statutory setup. ${customCount > 0 ? `${customCount} area${customCount === 1 ? ' is' : 's are'} still outside that localization and get built or bought separately.` : 'Most of what a rollout here needs is already in the box.'}`
+    : `Not yet. ${plainName} has no official Odoo localization, so the chart of accounts, statutory reports and any local filing format are built as part of the project rather than switched on.`,
+};
+const faqs = [...(detail?.faqs || []).slice(0, 3), localizationFaq];
+
 
 const schema = [
   {
@@ -285,6 +322,13 @@ const schema = [
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {startingPoint && (
+            <div class="mt-14">
+              <h2 class="h3">Where {plainName} starts from</h2>
+              <p class="mt-3 text-ink-700">{startingPoint}</p>
             </div>
           )}
 

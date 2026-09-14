@@ -14,6 +14,7 @@ import {
   makeRotIdx,
   plainNameOf,
   regionOf,
+  seoNameOf,
   selectCountryProducts,
   supportClass,
   themesOf,
@@ -346,9 +347,15 @@ const metaDescription = `Odoo implementation, customization, development and sup
    and fall back to the bare, correctly targeted phrase. */
 const TITLE_BUDGET = 60;
 const SUFFIX_LEN = ` | ${SITE.name}`.length;
-const titleStem = `Odoo Partner in ${plainName}`;
+/* 'Odoo Development Company in <market>' is the shape the pages ranking above
+   us are titled with, and 'company' is the query with budget behind it.
+   'Partner' stays in the lede and the body, where it was already. The
+   qualifier names the biggest cities that still fit the title budget. */
+const seoName = seoNameOf(country.slug, country.title, plainName, (country as any).abbr);
+const titleStem = `Odoo Development Company in ${seoName}`;
+const cityQualifiers = [3, 2, 1].map(n => ': ' + country.cities.slice(0, n).join(', '));
 const pageTitle =
-  [': Implementation, Customization, Support', ': Implementation & Support', '']
+  [...cityQualifiers, '']
     .map(q => titleStem + q)
     .find(t => t.length + SUFFIX_LEN <= TITLE_BUDGET) || titleStem;
 
@@ -424,7 +431,7 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
       <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/countries/" class="hover:text-white">Countries</a> / <span class="text-white">{country.title}</span></nav>
       <div class="mt-6 max-w-3xl">
         <div class="text-6xl">{country.flag}</div>
-        <h1 class="h1 mt-6">Odoo Partner in {country.title}</h1>
+        <h1 class="h1 mt-6">Odoo Development Company in {seoName}</h1>
         <p class="lede mt-6 text-ink-200">{country.tagline}</p>
         <div class="mt-6 flex flex-wrap gap-2">
           {country.cities.map((c: string) => <span class="chip !bg-white/10 !text-white">{c}</span>)}

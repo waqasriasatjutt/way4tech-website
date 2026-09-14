@@ -4,6 +4,7 @@ import { SITE, SERVICES, COUNTRIES } from '~/data/site';
 import { SERVICE_DETAIL } from '~/data/services-detail';
 import type { ServiceDetail } from '~/data/services-detail';
 import { MODULE_CATALOG } from '~/data/modules-catalog';
+import { plainNameOf } from '~/utils/country';
 
 export function getStaticPaths() {
   return SERVICES.map(s => ({ params: { slug: s.slug }, props: { service: s } }));
@@ -151,8 +152,8 @@ const schema: object[] = [
     url: pageUrl,
     description: metaDescription,
     category: service.category,
-    provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
-    areaServed: countries.length > 0 ? countries.map(c => c.title) : SITE.locations,
+    provider: { '@id': `${SITE.url}/#organization` },
+    areaServed: countries.length > 0 ? countries.map(c => plainNameOf(c.title)) : SITE.locations,
     ...(included.length > 0
       ? {
           hasOfferCatalog: {

@@ -2,7 +2,7 @@
 import Base from '~/layouts/Base.astro';
 import { SITE, SERVICES, COUNTRIES } from '~/data/site';
 import { SERVICE_DETAIL } from '~/data/services-detail';
-import { COUNTRY_DETAIL, SUPPORT_LABEL } from '~/data/country-detail';
+import { COUNTRY_DETAIL, COUNTRY_DETAIL_REVIEWED, SUPPORT_LABEL } from '~/data/country-detail';
 /* Country matching, the provider filters and the support badge palette are shared
    with /countries/[slug].astro and live in ~/utils/country. Imports are visible
    inside getStaticPaths; page consts are not. */
@@ -128,10 +128,16 @@ const costSubject = COST_SHAPE[service.slug] || service.title;
    characters Google renders. Lead with the pitch, name the market once, and
    trim on a word boundary. */
 const metaLede = (detail?.lede || service.tagline || '').trim();
-const metaRaw = `${metaLede} ${seoName === plainName ? `In ${plainName}` : `In ${seoName}`}, with ${cities.slice(0, 3).join(', ')} covered.`;
-const metaDescription = metaRaw.length <= 158
-  ? metaRaw
-  : `${metaLede.slice(0, 155).replace(/[\s,.;:]+\S*$/, '')}.`;
+const metaTailFull = ` In ${seoName}, with ${cities.slice(0, 3).join(', ')} covered.`;
+const metaTailShort = ` In ${seoName}.`;
+/* The market name has to survive the trim: the first cut of this dropped
+   it when the lede was long, and three services then shipped one identical
+   description across all eighteen countries. */
+const metaDescription = (metaLede + metaTailFull).length <= 158
+  ? metaLede + metaTailFull
+  : (metaLede + metaTailShort).length <= 158
+    ? metaLede + metaTailShort
+    : `${metaLede.slice(0, 158 - metaTailShort.length - 1).replace(/[\s,.;:]+\S*$/, '')}.${metaTailShort}`;
 
 /* ── What makes this service harder or cheaper in THIS market ───────
    Read off the country's own verified data. Nothing is asserted here that
@@ -289,10 +295,54 @@ const localizationFaq = {
     ? `Yes. Odoo ships ${nativeCount} native item${nativeCount === 1 ? '' : 's'} for ${plainName}, covering the basics of the chart of accounts and statutory setup. ${customCount > 0 ? `${customCount} area${customCount === 1 ? ' is' : 's are'} still outside that localization and get built or bought separately.` : 'Most of what a rollout here needs is already in the box.'}`
     : `Not yet. ${plainName} has no official Odoo localization, so the chart of accounts, statutory reports and any local filing format are built as part of the project rather than switched on.`,
 };
-const faqs = [...(detail?.faqs || []).slice(0, 3), localizationFaq, ...(cityFaq ? [cityFaq] : [])];
+/* Two questions every buyer in this market asks, answered from the verified
+   country data rather than written per page. Both are unique to the market,
+   which also breaks the three-generic-FAQs-on-108-pages pattern: the generic
+   set drops to two and the market-specific set rises to four. */
+const einvoicingFaq = cd?.einvoicing?.status ? {
+  q: `Is e-invoicing mandatory in ${theName}?`,
+  // The status sentence was written to answer exactly this, mandate or not.
+  // Prefixing 'Yes, under <scheme>' contradicted it wherever a scheme exists
+  // but nothing is in force yet (the UK, Oman, Australia).
+  a: `${cd.einvoicing.status} The ${plainName} e-invoicing page carries the full detail and the sources.`,
+} : null;
+const taxFaq = cd?.tax?.[0]?.claim ? {
+  q: `What VAT or sales tax does Odoo have to handle in ${theName}?`,
+  a: cd.tax[0].claim,
+} : null;
+const faqs = [
+  ...(detail?.faqs || []).slice(0, 2),
+  localizationFaq,
+  ...(einvoicingFaq ? [einvoicingFaq] : []),
+  ...(taxFaq ? [taxFaq] : []),
+  ...(cityFaq ? [cityFaq] : []),
+];
+
+/* Review date and author. The market facts on this page come from
+   country-detail.ts, which carries its own review date; naming the reviewer
+   and the date is what separates a page someone stands behind from a
+   generated one, to a reader and to a search engine. */
+const reviewedStamp = new Date(`${COUNTRY_DETAIL_REVIEWED}T00:00:00Z`);
+const reviewedOn = Number.isNaN(reviewedStamp.getTime())
+  ? COUNTRY_DETAIL_REVIEWED
+  : reviewedStamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const orgId = `${SITE.url}/#organization`;
+const personId = `${SITE.url}/author/waqas-riasat/#person`;
 
 
 const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': pageUrl,
+    url: pageUrl,
+    name: heading,
+    isPartOf: { '@id': `${SITE.url}/#website` },
+    about: { '@id': orgId },
+    author: { '@id': personId },
+    dateModified: COUNTRY_DETAIL_REVIEWED,
+    inLanguage: 'en',
+  },
   {
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -302,7 +352,7 @@ const schema = [
        wrong place to assert a regulatory claim. */
     description: `${service.title} for businesses in ${plainName}, delivered by ${SITE.name}.`,
     url: pageUrl,
-    provider: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+    provider: { '@id': orgId },
     areaServed: [
       { '@type': 'Country', name: plainName },
       ...cities.map(c => ({ '@type': 'City', name: c })),
@@ -396,6 +446,11 @@ const schema = [
               </div>
             </div>
           )}
+
+          <p class="mt-6 text-sm text-ink-500">
+            Market facts on this page checked on {reviewedOn} by
+            <a class="font-semibold text-brand-600 hover:text-brand-700" href="/author/waqas-riasat/">Waqas Riasat</a>, Way4Tech.
+          </p>
 
           {startingPoint && (
             <div class="mt-14">

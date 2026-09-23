@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spa and Salon POS User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --paper: #f7f6f2;
+    --card: #ffffff;
+    --ink: #1f2233;
+    --ink-2: #4a4e60;
+    --ink-3: #7c8093;
+    --rule: #e3dfd6;
+    --accent: #059669;
+    --accent-soft: #e7f6ef;
+    --tip: #0891b2;
+    --tip-soft: #e5f4f8;
+    --warn: #b8771a;
+    --warn-soft: #fbf1e1;
+    --key: #f1efe9;
+    --shadow: 0 1px 2px rgba(31,34,51,.06), 0 8px 24px rgba(31,34,51,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #16171d; --card: #1f2029; --ink: #ecebf3; --ink-2: #c3c2cf; --ink-3: #8d8c9e;
+      --rule: #34364a; --accent: #34d399; --accent-soft: #103227; --tip: #67cbe0; --tip-soft: #133039;
+      --warn: #e0a751; --warn-soft: #34291a; --key: #2a2b36;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #16171d; --card: #1f2029; --ink: #ecebf3; --ink-2: #c3c2cf; --ink-3: #8d8c9e;
+    --rule: #34364a; --accent: #34d399; --accent-soft: #103227; --tip: #67cbe0; --tip-soft: #133039;
+    --warn: #e0a751; --warn-soft: #34291a; --key: #2a2b36;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: "Sora", "Segoe UI", system-ui, sans-serif; line-height: 1.2; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 4.5vw, 44px); font-weight: 700; letter-spacing: -.01em; }
+  h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 600; }
+  h3 { font-size: 18px; font-weight: 600; margin-top: 28px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  header.hero { padding: 48px 0 28px; border-bottom: 1px solid var(--rule); }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 62ch; margin-top: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; padding: 32px 0 80px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; font-size: 14px; max-height: calc(100vh - 40px); overflow-y: auto; }
+  nav.toc .toc-title { font-family: "Sora", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  nav.toc a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc .n { display: inline-block; width: 22px; color: var(--ink-3); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  main { max-width: 760px; min-width: 0; }
+  section { padding: 8px 0 36px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+  section:last-of-type { border-bottom: 0; }
+  .step-head { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .step-no { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: #fff; font-family: "Sora", sans-serif; font-weight: 700; font-size: 24px; display: grid; place-items: center; }
+  .step-head .why { color: var(--ink-3); font-size: 15px; margin-top: 4px; }
+  ol.steps { padding-left: 22px; margin: 0 0 16px; }
+  ol.steps li { margin-bottom: 10px; padding-left: 4px; }
+  ul.plain { padding-left: 22px; margin: 0 0 16px; }
+  ul.plain li { margin-bottom: 8px; }
+  kbd, .path { font-family: "IBM Plex Mono", monospace; font-size: 14px; background: var(--key); border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; color: var(--ink); }
+  .btn { display: inline-block; font-weight: 600; font-size: 14px; background: var(--accent); color: #fff; border-radius: 6px; padding: 1px 9px; white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+  figcaption { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+  .callout { border-left: 4px solid var(--tip); background: var(--tip-soft); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 18px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout .label { font-family: "Sora", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--tip); margin-bottom: 4px; }
+  .callout.warn .label { color: var(--warn); }
+  .callout p:last-child { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+  th { font-family: "Sora", sans-serif; font-size: 13px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
+  .table-wrap { overflow-x: auto; }
+  .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .checklist li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+  .checklist .box { width: 20px; height: 20px; border: 2px solid var(--warn); border-radius: 5px; margin-top: 3px; }
+  .qa { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; margin: 10px 0; background: var(--card); }
+  .qa .q { font-weight: 600; font-family: "Sora", sans-serif; }
+  .qa .a { color: var(--ink-2); margin-top: 6px; }
+  footer { border-top: 1px solid var(--rule); padding: 22px 0 48px; font-size: 14px; color: var(--ink-3); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 20px; }
+    nav.toc { position: static; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; max-height: none; }
+    nav.toc ol { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    nav.toc ol { grid-template-columns: 1fr; }
+    .step-head { grid-template-columns: 44px 1fr; }
+    .step-no { width: 44px; height: 44px; font-size: 20px; border-radius: 11px; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .layout { grid-template-columns: 1fr; padding-top: 12px; }
+    main { max-width: none; }
+    figure, .callout, .checklist li, .qa, tr { break-inside: avoid; }
+    figure img { box-shadow: none; }
+    h2, h3, .step-head { break-after: avoid; }
+    section { break-inside: auto; }
+    a { color: inherit; text-decoration: none; }
+    header.hero { padding-top: 12px; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Way4Tech Spa and Salon POS for Odoo 19</div>
+    <h1>Spa and Salon POS User Guide</h1>
+    <p class="lede">Written for the person who owns a spa or salon and the person who works the front desk. It follows one real working day: set up treatments, rooms and therapists once, then open the till, book a treatment, serve a walk-in, take payment, print the receipt, handle a cancellation, close the till and read the day's figures.</p>
+    <div class="meta">
+      <span>Version 19.0.1.1</span>
+      <span>Reading time about 20 minutes</span>
+      <span>Screenshots from the demo spa the module ships with</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#what"><span class="n">-</span>What this module does</a></li>
+      <li><a href="#before"><span class="n">1</span>Before you start</a></li>
+      <li><a href="#treatments"><span class="n">2</span>Your treatments</a></li>
+      <li><a href="#therapists"><span class="n">3</span>Your therapists</a></li>
+      <li><a href="#rooms"><span class="n">4</span>Your rooms and stations</a></li>
+      <li><a href="#turnon"><span class="n">5</span>Turn on the Spa screen</a></li>
+      <li><a href="#open"><span class="n">6</span>Opening the till</a></li>
+      <li><a href="#booking"><span class="n">7</span>Booking ahead</a></li>
+      <li><a href="#walkin"><span class="n">8</span>A walk-in customer</a></li>
+      <li><a href="#checkin"><span class="n">9</span>Check in and start</a></li>
+      <li><a href="#payment"><span class="n">10</span>Taking payment</a></li>
+      <li><a href="#receipt"><span class="n">11</span>The receipt</a></li>
+      <li><a href="#advance"><span class="n">12</span>Money down</a></li>
+      <li><a href="#track"><span class="n">13</span>Everything booked today</a></li>
+      <li><a href="#cancel"><span class="n">14</span>Cancelling a booking</a></li>
+      <li><a href="#close"><span class="n">15</span>Closing the till</a></li>
+      <li><a href="#reports"><span class="n">16</span>Revenue and commission</a></li>
+      <li><a href="#reviews"><span class="n">17</span>Ratings and commission plans</a></li>
+      <li><a href="#settings"><span class="n">18</span>Settings</a></li>
+      <li><a href="#notdo"><span class="n">-</span>What it does not do</a></li>
+      <li><a href="#faq"><span class="n">?</span>Common questions</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="what">
+      <h2>What this module does</h2>
+      <p>This module adds a Spa screen on top of the normal Odoo Point of
+      Sale till. The person at the till gets one new button. Pressing it
+      shows a grid of every room, chair and station and whether it is
+      available, reserved or in use right now, and a list of everything
+      booked for today. From the same screen the till can book a
+      treatment for later, start a walk-in on the spot, see who is
+      currently being served, and open any booking to check it in, bill
+      it or cancel it. Everything else about the till, the product
+      screen, payment and receipts, is the Odoo Point of Sale you
+      already know.</p>
+    </section>
+
+    <section id="before">
+      <div class="step-head">
+        <div class="step-no">1</div>
+        <div><h2>Before you start</h2><div class="why">Five minutes, once.</div></div>
+      </div>
+      <p>You need Odoo 19, Community or Enterprise, with Point of Sale
+      installed. Nothing else is required. Install this module from
+      Apps; it adds a Spa app to the main menu and one button to the
+      till.</p>
+      <div class="callout"><div class="label">Good to know</div><p>Install
+      with demo data on and you get a working example spa (Serenity Day
+      Spa) with fourteen treatments, five therapists, eight rooms and
+      stations, a real customer list and a week of bookings already
+      there, exactly what every screenshot in this guide shows. A
+      production database normally installs without demo data, so your
+      own Spa app opens empty and you fill it in using the steps
+      below.</p></div>
+    </section>
+
+    <section id="treatments">
+      <div class="step-head">
+        <div class="step-no">2</div>
+        <div><h2>Setting up your treatments</h2><div class="why">What you sell: a massage, a facial, a manicure.</div></div>
+      </div>
+      <p>Open <span class="path">Spa &gt; Services</span> and press
+      <span class="btn">New</span>. Fill in:</p>
+      <ul class="plain">
+        <li><b>Service Name</b>: what the customer books, for example "Deep Tissue Massage".</li>
+        <li><b>POS Category</b>: groups treatments together; optional.</li>
+        <li><b>POS Product</b>: leave empty unless this one treatment should post to its own product. Left empty, the till falls back to the product set in step 5.</li>
+        <li><b>Duration (hrs)</b>: how long the treatment takes, in hours. Half an hour is 0.5.</li>
+        <li><b>Price</b>: the price charged.</li>
+        <li><b>Advance Payment Type</b>: No Advance Payment, a Fixed Amount, or a Percentage of Price. Picking fixed or percentage opens a second field for the amount.</li>
+        <li><b>Enable Time Slots</b>: turn on if the treatment can only be booked at fixed times of day. A Time Slots tab appears where you add each slot's start and end time.</li>
+      </ul>
+      <figure>
+        <img src="images/shot_services.png" alt="The treatment catalogue: fourteen treatments across massage, facial, body, hammam and nails" loading="lazy">
+        <figcaption>The list every treatment lands on. Duration, price and whether an advance payment is required are all visible without opening a record.</figcaption>
+      </figure>
+      <figure>
+        <img src="images/shot_service_form.png" alt="One treatment open, with Enable Time Slots turned on" loading="lazy">
+        <figcaption>A single treatment's form. Enable Time Slots is the toggle on the right; turning it on opens the Time Slots tab shown behind it.</figcaption>
+      </figure>
+    </section>
+
+    <section id="therapists">
+      <div class="step-head">
+        <div class="step-no">3</div>
+        <div><h2>Setting up your therapists</h2><div class="why">Who performs the treatment.</div></div>
+      </div>
+      <p>Open <span class="path">Spa &gt; Specialists</span>, press
+      <span class="btn">New</span> and fill in the name, phone and
+      email. Enable Commission and a Commission Plan are optional; turn
+      Enable Commission on and pick a plan (step 17) if this therapist
+      earns a cut of what they sell. Avg Rating and Total Reviews fill
+      themselves in as customers leave reviews; you never type them.</p>
+      <figure>
+        <img src="images/shot_specialists.png" alt="Five therapists, each with a rolled up rating and a commission plan" loading="lazy">
+        <figcaption>The rating column is the average of every review left for that person; it is not something you set by hand.</figcaption>
+      </figure>
+    </section>
+
+    <section id="rooms">
+      <div class="step-head">
+        <div class="step-no">4</div>
+        <div><h2>Setting up your rooms and stations</h2><div class="why">Where the treatment happens.</div></div>
+      </div>
+      <p>Open <span class="path">Spa &gt; Amenities</span>. A room,
+      chair, couples suite, hammam room or nail station are all the
+      same kind of record here, called an amenity. Press
+      <span class="btn">New</span>, give it a name, a Type (Chair,
+      Room, Station or Other) and a Capacity. Status is read only: it
+      shows Available, Reserved or In Service, and changes itself as
+      bookings move through the day.</p>
+      <figure>
+        <img src="images/shot_amenities.png" alt="Eight rooms and stations, coloured by what they are doing right now" loading="lazy">
+        <figcaption>This grid, live on the till, is the reason to run a room and chair module instead of a plain appointments list. Green is available, yellow is reserved for later, red is a customer in the chair right now.</figcaption>
+      </figure>
+    </section>
+
+    <section id="turnon">
+      <div class="step-head">
+        <div class="step-no">5</div>
+        <div><h2>Turning on the Spa screen for a till</h2><div class="why">One setting, per till.</div></div>
+      </div>
+      <p>Every till (a "config" in Odoo) needs Spa Management turned on
+      before the Spa button appears on it. Open
+      <span class="path">Point of Sale &gt; Configuration &gt; Point of
+      Sale</span>, open your till, and find the Spa Management section.</p>
+      <ul class="plain">
+        <li><b>Enable Spa Management</b>: turns the Spa button on for this till.</li>
+        <li><b>Appointments to Display</b>: how many upcoming bookings the till shows at once.</li>
+        <li><b>Default Spa Service Product</b>: the product used on the order line when a treatment has no product of its own. Set this even if every treatment has one, as a safety net.</li>
+        <li><b>Show Specialists</b> / <b>Show Amenities</b>: turn either off if this till should not offer a therapist or room choice, for example a mobile till with no fixed rooms.</li>
+        <li><b>Reviews Mandatory</b>: if on, staff must leave a review before a booking can be marked done.</li>
+      </ul>
+      <figure>
+        <img src="images/shot_pos_config.png" alt="The Spa Management section on a till's settings form" loading="lazy">
+        <figcaption>Everything this module changes about a till's behaviour is on this one settings panel.</figcaption>
+      </figure>
+    </section>
+
+    <section id="open">
+      <div class="step-head">
+        <div class="step-no">6</div>
+        <div><h2>Opening the till</h2><div class="why">The same way you always have.</div></div>
+      </div>
+      <p>Open <span class="path">Point of Sale</span>, find your till's
+      card and press <span class="btn">New Session</span>. The Spa
+      screen adds nothing to opening a till.</p>
+      <figure>
+        <img src="images/shot_pos_dashboard.png" alt="The Point of Sale dashboard, showing the till ready to open" loading="lazy">
+      </figure>
+      <p>Once the till is open, look for the <b>Spa</b> button in the
+      top bar and press it. This opens the Spa screen as an overlay on
+      top of the normal product screen; nothing underneath it
+      changes.</p>
+      <figure>
+        <img src="images/shot_pos_home.png" alt="The Spa screen: the room grid on the left, today's bookings on the right" loading="lazy">
+        <figcaption>Book Appointment, Walk-In, Active and Track All sit along the top. The room grid below is the same live grid from step 4. Click an available room to start booking it; click a reserved or occupied one to see what is happening in it.</figcaption>
+      </figure>
+    </section>
+
+    <section id="booking">
+      <div class="step-head">
+        <div class="step-no">7</div>
+        <div><h2>Booking a treatment for later</h2><div class="why">A four step wizard.</div></div>
+      </div>
+      <ol class="steps">
+        <li><b>Service</b>: pick the treatment. If it has time slots, pick one.</li>
+        <li><b>Customer</b>: search by name or phone, or press <span class="btn">+ New</span> to add someone with just a name.</li>
+        <li><b>Specialist</b>: pick a therapist, or leave Any Available selected. Then pick a room, or leave Any selected. Both optional.</li>
+        <li><b>Summary</b>: everything picked, the total price, and, if the treatment takes an advance payment, how much is due now and how much remains. Press <span class="btn">Confirm Booking</span>.</li>
+      </ol>
+      <figure>
+        <img src="images/shot_pos_booking.png" alt="The four step booking wizard: service, customer, specialist and room, then a summary with the advance due" loading="lazy">
+        <figcaption>Step 4 of a Hot Stone Massage booking: total price, the advance due now and the remaining balance, computed from the treatment's own advance payment setting.</figcaption>
+      </figure>
+      <p>If the treatment carries an advance payment, confirming the booking adds that amount to the current order so it can be paid immediately.</p>
+      <div class="callout"><div class="label">Double booking is refused</div><p>Booking a room or a therapist already booked at an overlapping time is refused, with a message naming the conflicting booking, so two customers can never land in the same room by accident.</p></div>
+    </section>
+
+    <section id="walkin">
+      <div class="step-head">
+        <div class="step-no">8</div>
+        <div><h2>A customer walks in without a booking</h2><div class="why">No wait, no wizard.</div></div>
+      </div>
+      <p>From the Spa screen, press <span class="btn">Walk-In</span>.
+      Tick one or more treatments, pick the customer, optionally pick a
+      therapist and a room, and press <span class="btn">Start
+      Service</span>. This creates the booking already in progress and
+      puts every treatment ticked on the current order at once, with
+      the customer already attached, ready for payment.</p>
+      <figure>
+        <img src="images/shot_pos_cart.png" alt="A walk-in order, the treatment already on the order with the customer attached" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="checkin">
+      <div class="step-head">
+        <div class="step-no">9</div>
+        <div><h2>Checking a customer in and starting the treatment</h2><div class="why">From Active, or from the room grid.</div></div>
+      </div>
+      <p>A booking made ahead of time sits as Confirmed until the
+      customer arrives. Press <span class="btn">Active</span> to see
+      every confirmed or in-progress booking at once, with Start and
+      Done on each. Press <span class="btn">Start</span> when the
+      customer is taken through to the room; the room on the grid turns
+      from yellow (reserved) to red (in service) immediately.</p>
+      <figure>
+        <img src="images/shot_pos_running.png" alt="Every booking currently confirmed or in progress, with Start and Done on each" loading="lazy">
+      </figure>
+      <p>You can do the same from the room grid: click an occupied or
+      reserved room to open its current booking and press Start
+      Service, Complete, Add to Order or Cancel directly.</p>
+    </section>
+
+    <section id="payment">
+      <div class="step-head">
+        <div class="step-no">10</div>
+        <div><h2>Taking payment</h2><div class="why">Nothing about payment is changed by this module.</div></div>
+      </div>
+      <p>However the treatment reached the order, whether through a
+      booking, a walk-in, or Add to Order from an active booking, it is
+      now an ordinary line on the Point of Sale order. Press
+      <span class="btn">Payment</span> the same way you would for any
+      sale, pick the payment method, and validate.</p>
+      <figure>
+        <img src="images/shot_pos_payment.png" alt="The payment screen, a treatment on the order, ready to take payment" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="receipt">
+      <div class="step-head">
+        <div class="step-no">11</div>
+        <div><h2>The receipt</h2><div class="why">Names the booking, the therapist and the room.</div></div>
+      </div>
+      <p>When the sale is tied to a booking, the receipt prints the
+      booking reference, the therapist and the room underneath the
+      payment lines, so the customer leaves with more than a product
+      name and a price. A sale with no linked booking, for example
+      plain retail, prints exactly the normal Odoo receipt.</p>
+      <figure>
+        <img src="images/shot_pos_receipt.png" alt="A receipt showing the booking reference, therapist and room" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="advance">
+      <div class="step-head">
+        <div class="step-no">12</div>
+        <div><h2>Selling with money down</h2><div class="why">An advance payment, tracked to the last unit.</div></div>
+      </div>
+      <p>If a treatment is set up with an advance payment (step 2),
+      booking it adds that amount to the current order automatically,
+      so it can be taken as a deposit right away. The appointment keeps
+      track of how much has been taken and how much is still owed.</p>
+      <figure>
+        <img src="images/shot_appointment_form.png" alt="A booking with an advance payment taken, the remaining balance shown" loading="lazy">
+        <figcaption>Total Amount, Advance Payment, Advance Paid and Remaining Amount are all on the Financial side of the booking form. When the customer returns, press Add to Order from the room grid or the Active list to bill the remaining amount.</figcaption>
+      </figure>
+    </section>
+
+    <section id="track">
+      <div class="step-head">
+        <div class="step-no">13</div>
+        <div><h2>Seeing everything booked today</h2><div class="why">One tap, filtered by status.</div></div>
+      </div>
+      <p>Press <span class="btn">Track All</span>. Filter by All,
+      Confirmed, In Progress, Done or Cancelled. This is the fastest
+      way to answer "what is happening today" without leaving the
+      till.</p>
+      <figure>
+        <img src="images/shot_pos_track.png" alt="Every booking today, filtered by status" loading="lazy">
+      </figure>
+      <p>From the backend, <span class="path">Spa &gt; Appointments</span>,
+      switching to the calendar view shows the whole week at a glance
+      instead of just today, useful for a manager planning ahead rather
+      than running the floor right now.</p>
+      <figure>
+        <img src="images/shot_calendar.png" alt="The week on the backend calendar, coloured by booking status" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="cancel">
+      <div class="step-head">
+        <div class="step-no">14</div>
+        <div><h2>Cancelling a booking</h2><div class="why">The room frees itself immediately.</div></div>
+      </div>
+      <p>Click the room on the grid, or find the booking in Track All
+      or Active, and open it. If it is confirmed or in progress, press
+      <span class="btn">Cancel</span>. The room is freed immediately;
+      nothing is deleted, the booking is simply marked Cancelled and
+      stays in the records.</p>
+      <figure>
+        <img src="images/shot_pos_cancel.png" alt="A booking open from the room grid, with Cancel available" loading="lazy">
+      </figure>
+      <div class="callout warn"><div class="label">No separate "no show"</div><p>There is no separate no-show status: a booking nobody arrives for is cancelled the same way as any other cancellation.</p></div>
+    </section>
+
+    <section id="close">
+      <div class="step-head">
+        <div class="step-no">15</div>
+        <div><h2>Closing the till and reading the day's figures</h2><div class="why">A normal Odoo Point of Sale session.</div></div>
+      </div>
+      <p>Close the till the way you always have: Close Register from
+      the till, or from the backend session list. Every order and
+      payment taken through the Spa screen is a normal Point of Sale
+      order underneath, so it appears in the session's totals like any
+      other sale.</p>
+      <figure>
+        <img src="images/shot_session_summary.png" alt="A closed session, with the real orders and payments behind it" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="reports">
+      <div class="step-head">
+        <div class="step-no">16</div>
+        <div><h2>Revenue and commission by therapist</h2><div class="why">A pivot, already grouped.</div></div>
+      </div>
+      <p>Open <span class="path">Spa &gt; Appointments</span> and
+      switch to the pivot or graph view (icons at the top right of the
+      list). This groups the total revenue and the commission earned by
+      therapist and by treatment, using the figures every booking
+      already carries.</p>
+      <figure>
+        <img src="images/shot_reports.png" alt="Revenue and commission grouped by therapist" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="reviews">
+      <div class="step-head">
+        <div class="step-no">17</div>
+        <div><h2>Ratings and commission plans</h2><div class="why">One rolls up to the therapist; the other pays them.</div></div>
+      </div>
+      <p>A review is left against a therapist, a customer and, when
+      there is one, the booking itself, with a rating from one to five
+      and a comment. Turn Reviews Mandatory on (step 5) to require one
+      before a booking can be marked done.</p>
+      <figure>
+        <img src="images/shot_reviews.png" alt="Every review left so far, tied to the therapist and the customer" loading="lazy">
+      </figure>
+      <p>Commission plans (<span class="path">Spa &gt; Configuration
+      &gt; Commission Plans</span>) are a flat amount or a percentage of
+      the treatment price. Assign one to a therapist (step 3); the
+      amount is calculated automatically the moment they are put on a
+      booking. This module calculates the commission; paying it out is
+      a step you still do yourself.</p>
+      <figure>
+        <img src="images/shot_commissions.png" alt="Three commission plans: two percentage, one flat amount" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="settings">
+      <div class="step-head">
+        <div class="step-no">18</div>
+        <div><h2>Settings that change how it behaves</h2><div class="why">All on the till's own form.</div></div>
+      </div>
+      <p>Every setting that changes how the Spa screen behaves lives on
+      the till's own form (step 5): Enable Spa Management, Appointments
+      to Display, Default Spa Service Product, Show Specialists, Show
+      Amenities and Reviews Mandatory. There is no separate global
+      screen; every till can be set up differently.</p>
+    </section>
+
+    <section id="notdo">
+      <h2>What this module does not do</h2>
+      <p>Said plainly, so nothing here is a surprise after you buy it.</p>
+      <ul class="checklist">
+        <li><span class="box"></span><span><b>No customer facing booking website.</b> Every booking is made by staff, from the till. Customers cannot book themselves online.</span></li>
+        <li><span class="box"></span><span><b>No SMS or email reminders.</b> Nothing sends a reminder to a customer before their appointment.</span></li>
+        <li><span class="box"></span><span><b>No payroll.</b> Commission is calculated and reported; it is not paid out by this module.</span></li>
+        <li><span class="box"></span><span><b>No membership packages or pre-paid session bundles.</b> Each booking is priced and paid on its own, with an optional single advance payment.</span></li>
+        <li><span class="box"></span><span><b>No working hours calendar for therapists.</b> The module will not refuse to book someone outside their normal hours.</span></li>
+        <li><span class="box"></span><span><b>No separate per therapist day timeline.</b> Day to day scheduling is read off the standard Odoo calendar and Track All, not a dedicated schedule per person.</span></li>
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>Common questions</h2>
+      <div class="qa"><div class="q">Does this replace the normal Odoo Point of Sale screen?</div><div class="a">No. It adds one button that opens an overlay on top of it. The product screen, payment screens and receipts underneath are the Odoo Point of Sale you already have.</div></div>
+      <div class="qa"><div class="q">Can two bookings be made for the same room at the same time by mistake?</div><div class="a">No. Confirming a booking for a room or a therapist that already has a confirmed or in-progress booking at an overlapping time is refused, with a message naming the conflict.</div></div>
+      <div class="qa"><div class="q">What happens if a customer does not show up?</div><div class="a">Cancel the booking (step 14). There is no separate "no show" state; the room is freed immediately.</div></div>
+      <div class="qa"><div class="q">Can I sell a retail product alongside a treatment?</div><div class="a">Yes. A treatment is a normal line on a Point of Sale order, so any other product can be added to the same order and paid together.</div></div>
+      <div class="qa"><div class="q">Where do I turn Spa Management on or off?</div><div class="a">On each till's own settings form (step 5). It is set per till, not globally.</div></div>
+      <div class="qa"><div class="q">Why does a treatment need a POS Product if it already has a name and a price?</div><div class="a">It does not, if a Default Spa Service Product is set on the till (step 5). The product is what appears on the accounting side of the order; the treatment's own name, price and duration are what the till shows and uses.</div></div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">Spa and Salon POS for Odoo 19 Community and Enterprise, by Way4Tech. Support terms and contact details are on the module's Apps Store listing page.</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salon Management User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --paper: #f8f6fa; --card: #ffffff; --ink: #241a30; --ink-2: #4d4258; --ink-3: #837a8e;
+    --rule: #e6ddee; --accent: #6c3483; --accent-soft: #f1e7f7; --tip: #0891b2; --tip-soft: #e5f4f8;
+    --warn: #b8771a; --warn-soft: #fbf1e1; --key: #f1ecf5;
+    --shadow: 0 1px 2px rgba(36,26,48,.06), 0 8px 24px rgba(36,26,48,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #19141f; --card: #221b2b; --ink: #f0ebf5; --ink-2: #cabfd3; --ink-3: #948a9e;
+      --rule: #3a3046; --accent: #b285d1; --accent-soft: #2c2135; --tip: #67cbe0; --tip-soft: #133039;
+      --warn: #e0a751; --warn-soft: #34291a; --key: #2c2438;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #19141f; --card: #221b2b; --ink: #f0ebf5; --ink-2: #cabfd3; --ink-3: #948a9e;
+    --rule: #3a3046; --accent: #b285d1; --accent-soft: #2c2135; --tip: #67cbe0; --tip-soft: #133039;
+    --warn: #e0a751; --warn-soft: #34291a; --key: #2c2438;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: "Sora", "Segoe UI", system-ui, sans-serif; line-height: 1.2; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 4.5vw, 44px); font-weight: 700; letter-spacing: -.01em; }
+  h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 600; }
+  h3 { font-size: 18px; font-weight: 600; margin-top: 28px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  header.hero { padding: 48px 0 28px; border-bottom: 1px solid var(--rule); }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 62ch; margin-top: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; padding: 32px 0 80px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; font-size: 14px; max-height: calc(100vh - 40px); overflow-y: auto; }
+  nav.toc .toc-title { font-family: "Sora", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  nav.toc a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc .n { display: inline-block; width: 22px; color: var(--ink-3); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  main { max-width: 760px; min-width: 0; }
+  section { padding: 8px 0 36px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+  section:last-of-type { border-bottom: 0; }
+  .step-head { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .step-no { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: #fff; font-family: "Sora", sans-serif; font-weight: 700; font-size: 24px; display: grid; place-items: center; }
+  .step-head .why { color: var(--ink-3); font-size: 15px; margin-top: 4px; }
+  ol.steps { padding-left: 22px; margin: 0 0 16px; }
+  ol.steps li { margin-bottom: 10px; padding-left: 4px; }
+  ul.plain { padding-left: 22px; margin: 0 0 16px; }
+  ul.plain li { margin-bottom: 8px; }
+  kbd, .path { font-family: "IBM Plex Mono", monospace; font-size: 14px; background: var(--key); border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; color: var(--ink); }
+  .btn { display: inline-block; font-weight: 600; font-size: 14px; background: var(--accent); color: #fff; border-radius: 6px; padding: 1px 9px; white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+  figcaption { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+  .callout { border-left: 4px solid var(--tip); background: var(--tip-soft); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 18px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout .label { font-family: "Sora", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--tip); margin-bottom: 4px; }
+  .callout.warn .label { color: var(--warn); }
+  .callout p:last-child { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+  th { font-family: "Sora", sans-serif; font-size: 13px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
+  .table-wrap { overflow-x: auto; }
+  .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .checklist li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+  .checklist .box { width: 20px; height: 20px; border: 2px solid var(--warn); border-radius: 5px; margin-top: 3px; }
+  .qa { border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; margin: 10px 0; background: var(--card); }
+  .qa .q { font-weight: 600; font-family: "Sora", sans-serif; }
+  .qa .a { color: var(--ink-2); margin-top: 6px; }
+  footer { border-top: 1px solid var(--rule); padding: 22px 0 48px; font-size: 14px; color: var(--ink-3); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 20px; }
+    nav.toc { position: static; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; max-height: none; }
+    nav.toc ol { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    nav.toc ol { grid-template-columns: 1fr; }
+    .step-head { grid-template-columns: 44px 1fr; }
+    .step-no { width: 44px; height: 44px; font-size: 20px; border-radius: 11px; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .layout { grid-template-columns: 1fr; padding-top: 12px; }
+    main { max-width: none; }
+    figure, .callout, .checklist li, .qa, tr { break-inside: avoid; }
+    figure img { box-shadow: none; }
+    h2, h3, .step-head { break-after: avoid; }
+    section { break-inside: auto; }
+    a { color: inherit; text-decoration: none; }
+    header.hero { padding-top: 12px; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Way4Tech Salon Management for Odoo 19</div>
+    <h1>Salon Management User Guide</h1>
+    <p class="lede">Written for the person who owns a salon and the person who works the front desk. It follows one real working day: set up services, stylists and their hours, take a booking, move it through the day, bill it, print the receipt, handle a cancellation and a no-show, then check the customer file and the reports.</p>
+    <div class="meta">
+      <span>Version 19.0.1.2</span>
+      <span>Reading time about 18 minutes</span>
+      <span>Screenshots from the demo salon the module ships with</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#what"><span class="n">-</span>What this module does</a></li>
+      <li><a href="#before"><span class="n">1</span>Before you start</a></li>
+      <li><a href="#services"><span class="n">2</span>Services and prices</a></li>
+      <li><a href="#stylists"><span class="n">3</span>Your stylists</a></li>
+      <li><a href="#timeoff"><span class="n">4</span>Working hours and time off</a></li>
+      <li><a href="#booking"><span class="n">5</span>Taking a booking</a></li>
+      <li><a href="#day"><span class="n">6</span>The day, two ways</a></li>
+      <li><a href="#start"><span class="n">7</span>Start and mark done</a></li>
+      <li><a href="#bill"><span class="n">8</span>Billing the appointment</a></li>
+      <li><a href="#receipt"><span class="n">9</span>The receipt</a></li>
+      <li><a href="#cancel"><span class="n">10</span>Cancelling a booking</a></li>
+      <li><a href="#noshow"><span class="n">11</span>A no-show</a></li>
+      <li><a href="#customer"><span class="n">12</span>The customer file</a></li>
+      <li><a href="#commission"><span class="n">13</span>Commission rules</a></li>
+      <li><a href="#targets"><span class="n">14</span>Sales targets</a></li>
+      <li><a href="#portal"><span class="n">15</span>Online booking</a></li>
+      <li><a href="#settings"><span class="n">16</span>Settings</a></li>
+      <li><a href="#notdo"><span class="n">-</span>What it does not do</a></li>
+      <li><a href="#faq"><span class="n">?</span>Common questions</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="what">
+      <h2>What this module does</h2>
+      <p>This module runs the back office of a salon or beauty parlour on
+      top of Odoo: a service catalogue, appointments that move through a
+      real lifecycle from booked to paid, stylist commission calculated
+      automatically on invoice, monthly sales targets, a customer file
+      with real history, stock consumed per service, invoicing and an
+      80mm thermal receipt. Customers can also book themselves online,
+      on a public page this module adds to your website.</p>
+    </section>
+
+    <section id="before">
+      <div class="step-head">
+        <div class="step-no">1</div>
+        <div><h2>Before you start</h2><div class="why">Five minutes, once.</div></div>
+      </div>
+      <p>You need Odoo 19, Community or Enterprise. Install
+      <b>WT Salon Management</b> from Apps; it pulls in Sales,
+      Accounting, Inventory, Manufacturing, Employees, Portal and
+      Website automatically, so nothing else needs to be installed by
+      hand first.</p>
+      <div class="callout"><div class="label">Good to know</div><p>Install
+      with demo data on and you get a working example salon (Bloom &amp;
+      Blade Salon, Dubai) with eleven services, six stylists across two
+      branches, twenty six customers and a working fortnight of
+      appointments already there, spread across every stage the
+      pipeline knows, exactly what every screenshot in this guide
+      shows. A production database normally installs without demo
+      data, so your own Salon app opens empty and you fill it in using
+      the steps below.</p></div>
+      <p>Go to <span class="path">Settings &gt; Users &amp; Companies &gt;
+      Users</span>, open each user and, under <b>Salon Management</b>,
+      assign one of <b>Stylist</b>, <b>Receptionist</b> or
+      <b>Manager</b>. A stylist sees and updates only their own
+      appointments; a receptionist sees and manages every appointment
+      and the service catalogue; a manager has full access, including
+      configuration, commission rules and sales targets.</p>
+    </section>
+
+    <section id="services">
+      <div class="step-head">
+        <div class="step-no">2</div>
+        <div><h2>Setting up your services and prices</h2><div class="why">What you sell: a haircut, a colour, a manicure.</div></div>
+      </div>
+      <p>Open <span class="path">Salon &gt; Services &gt; Services</span>
+      and press <span class="btn">New</span>. Fill in:</p>
+      <ul class="plain">
+        <li><b>Service Name</b>: what the customer books, for example "Haircut &amp; Styling".</li>
+        <li><b>Category</b>: groups services together, for example Hair Services, Hair Coloring, Skin &amp; Facials.</li>
+        <li><b>Product</b>: the underlying Odoo product used on the sale order and the invoice.</li>
+        <li><b>Price</b>: the price charged, the same field as the product's own sale price.</li>
+        <li><b>Duration (hours)</b>: how long the service takes. Twenty minutes is stored as 0.3333, not 0.33, so several short services still add up to a whole number of minutes on the calendar.</li>
+        <li><b>Published on Portal</b>: shows this service on the online booking page (step 15).</li>
+      </ul>
+      <figure>
+        <img src="images/shot_service_list.png" alt="The service catalogue: eleven services across six categories" loading="lazy">
+        <figcaption>Duration and price are both visible on the list without opening a record.</figcaption>
+      </figure>
+      <p>On the <b>Available Stylists</b> tab, add the stylists
+      qualified to perform this service; leave it empty and any stylist
+      can be assigned. On <b>Materials</b>, attach a <b>Bill of
+      Materials</b> if the service consumes stock, and finishing the
+      appointment (step 7) will deduct it from your warehouse for
+      real.</p>
+      <figure>
+        <img src="images/shot_service_form.png" alt="One service open: Full Hair Color, its two qualified stylists and its Bill of Materials" loading="lazy">
+        <figcaption>Deepa Nair and Youssef Idris are the only two stylists this service offers on the booking screens. The Bill of Materials on the right is what gets consumed when this service is marked done.</figcaption>
+      </figure>
+    </section>
+
+    <section id="stylists">
+      <div class="step-head">
+        <div class="step-no">3</div>
+        <div><h2>Setting up your stylists</h2><div class="why">A stylist is an Odoo employee.</div></div>
+      </div>
+      <p>Go to <span class="path">Employees</span> and add one the
+      normal way: name, job title, department and working hours.
+      Nothing about the employee record is specific to this module; the
+      module reads the employee you already have. Back in Services, add
+      the stylist to a service's Available Stylists tab if you want the
+      booking screens to suggest only qualified people for that service
+      (step 2).</p>
+    </section>
+
+    <section id="timeoff">
+      <div class="step-head">
+        <div class="step-no">4</div>
+        <div><h2>A stylist's working hours and time off</h2><div class="why">A break, a holiday, a training day.</div></div>
+      </div>
+      <p>Go to <span class="path">Salon &gt; Staff &gt; Breaks &amp;
+      Blocked Times</span> and press <span class="btn">New</span>.
+      Fill in a free text <b>Reason</b> for the rota, the <b>Stylist</b>,
+      a <b>Type</b> (Break, Vacation, Training or Other, for the rota
+      only, the booking page refuses the slot whatever the reason), and
+      the <b>From</b> / <b>To</b> period.</p>
+      <p>The online booking page (step 15) will not offer a slot that
+      falls inside one of these. Two blocks for the same stylist that
+      overlap are refused when you try to save the second one.</p>
+      <figure>
+        <img src="images/shot_blocked_time.png" alt="Three blocked times: a holiday, a training session and a lunch break, colour coded by type" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="booking">
+      <div class="step-head">
+        <div class="step-no">5</div>
+        <div><h2>Taking a booking</h2><div class="why">The core screen, used all day.</div></div>
+      </div>
+      <p>Go to <span class="path">Salon &gt; Appointments &gt; All
+      Appointments</span> and press <span class="btn">New</span>, or use
+      <span class="path">Salon &gt; Appointments &gt; Today</span> to
+      start from today's list. Pick the <b>Customer</b> and the
+      <b>Lead Stylist</b>, set the <b>Appointment Date</b>, and add one
+      line per service on the <b>Services</b> tab; End Time and
+      Duration fill themselves in.</p>
+      <figure>
+        <img src="images/shot_appointment_confirmed.png" alt="A confirmed appointment: customer, stylist, one service, subtotal, tax and total" loading="lazy">
+        <figcaption>The header buttons only show the moves this stage actually allows. Start Service, Cancel and Print Receipt are all that make sense from Confirmed; Invoice only appears once the appointment reaches Done.</figcaption>
+      </figure>
+      <p>Press <span class="btn">Confirm</span> when the booking is
+      settled. This moves the appointment to Confirmed and creates a
+      sale order behind it automatically, so your sales figures pick it
+      up from this point on.</p>
+    </section>
+
+    <section id="day">
+      <div class="step-head">
+        <div class="step-no">6</div>
+        <div><h2>The day, two ways: calendar and kanban</h2><div class="why">Whichever a front desk actually uses.</div></div>
+      </div>
+      <p><span class="path">Salon &gt; Appointments &gt; Calendar</span>
+      shows the week, every stylist, colour coded, one row per hour.
+      Click an empty slot to book, click an appointment to open it.</p>
+      <figure>
+        <img src="images/shot_calendar.png" alt="A week of appointments across every stylist, colour coded" loading="lazy">
+      </figure>
+      <p><span class="path">Salon &gt; Appointments &gt; Kanban
+      Board</span> shows the same appointments as cards in columns: New,
+      Confirmed, In Progress, Done, with Invoiced and Cancelled folded
+      on the right. Drag a card between columns, or use the buttons on
+      the form; both move the same Stage field.</p>
+      <figure>
+        <img src="images/shot_kanban.png" alt="The kanban board: New, Confirmed, In Progress and Done as columns" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="start">
+      <div class="step-head">
+        <div class="step-no">7</div>
+        <div><h2>Starting the service and marking it done</h2><div class="why">Two buttons, and stock moves on its own.</div></div>
+      </div>
+      <p>When the customer arrives, open the appointment and press
+      <span class="btn">Start Service</span>. When the service is
+      finished, press <span class="btn">Mark Done</span>. This
+      confirms the sale order if it was still a draft, and for any
+      service line whose service carries a Bill of Materials, deducts
+      the components from your warehouse the same way a real stock
+      transfer would.</p>
+    </section>
+
+    <section id="bill">
+      <div class="step-head">
+        <div class="step-no">8</div>
+        <div><h2>Billing the appointment</h2><div class="why">Commission is calculated at the same time.</div></div>
+      </div>
+      <p>From a Done appointment, press <span class="btn">Invoice</span>
+      for a one click invoice straight from the service lines, or
+      <span class="btn">Invoice (Custom)</span> to open a wizard for
+      payment terms or to invoice through the sale order instead.
+      Either way, the appointment moves to Invoiced and commission is
+      calculated at the same time.</p>
+      <figure>
+        <img src="images/shot_appointment_form.png" alt="An invoiced appointment's Commissions tab: stylist, service, rate, base amount and the commission itself" loading="lazy">
+        <figcaption>Nothing on this tab is typed by hand. The moment an appointment is invoiced, each service line is matched against your commission rules (step 13) and a commission line is created here.</figcaption>
+      </figure>
+      <p>The invoice itself is a normal Odoo invoice: discounts and tax
+      are per line, and it posts and gets paid the same way any other
+      invoice does.</p>
+      <figure>
+        <img src="images/shot_invoice.png" alt="A posted, paid invoice for a salon appointment" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="receipt">
+      <div class="step-head">
+        <div class="step-no">9</div>
+        <div><h2>The receipt</h2><div class="why">An 80mm thermal receipt, checked against the real engine.</div></div>
+      </div>
+      <p>From any appointment, press <span class="btn">Print
+      Receipt</span> to generate an 80mm thermal receipt: the salon's
+      name and address, the reference, the customer, the stylist, every
+      service with its price, the subtotal, tax and total, and, once
+      invoiced, the invoice number and whether it has been paid.</p>
+      <figure>
+        <img src="images/shot_thermal_receipt.png" alt="A printed receipt, eleven services on one ticket, printed on a single page" loading="lazy">
+        <figcaption>This is not a mock-up. It is rendered through the same wkhtmltopdf engine Odoo 19 itself uses to print any report, and it was checked against a one line receipt and against this eleven line one: every row lines up left to label, right to amount, and the total is never orphaned onto a second, near blank page.</figcaption>
+      </figure>
+    </section>
+
+    <section id="cancel">
+      <div class="step-head">
+        <div class="step-no">10</div>
+        <div><h2>Cancelling a booking</h2><div class="why">Nothing is deleted.</div></div>
+      </div>
+      <p>Open the appointment and press <span class="btn">Cancel</span>.
+      The appointment moves to Cancelled; if a sale order exists and is
+      still a draft, it is cancelled with it. Press
+      <span class="btn">Reset to New</span> from a cancelled appointment
+      if it needs to be reopened.</p>
+    </section>
+
+    <section id="noshow">
+      <div class="step-head">
+        <div class="step-no">11</div>
+        <div><h2>A no-show</h2><div class="why">Not a separate field.</div></div>
+      </div>
+      <p>Cancel the appointment the way you would any other cancellation
+      (step 10), then set its <b>Kanban State</b> to <b>Blocked</b>.
+      The Cancelled stage's own kanban legend reads "No show" for a
+      blocked cancellation, so the board already says what happened
+      without a status you have to remember to maintain.</p>
+      <figure>
+        <img src="images/shot_no_show.png" alt="A cancelled, blocked appointment: the Cancelled stage's own way of recording a no-show" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="customer">
+      <div class="step-head">
+        <div class="step-no">12</div>
+        <div><h2>The customer file</h2><div class="why">Preferences and history, in one place.</div></div>
+      </div>
+      <p>Open any customer and click the <b>Salon</b> tab: their
+      <b>Preferred Stylist</b>, a free text <b>Salon Notes</b> field for
+      allergies or preferences, and <b>Last Visit</b>, computed from
+      their most recent closed appointment. The <b>Appointments</b>
+      smart button opens their full history.</p>
+      <figure>
+        <img src="images/shot_customer_history.png" alt="A customer's Salon tab: preferred stylist, last visit and a note on file" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="commission">
+      <div class="step-head">
+        <div class="step-no">13</div>
+        <div><h2>Commission rules and earnings</h2><div class="why">Percentage or fixed, general or specific.</div></div>
+      </div>
+      <p>Go to <span class="path">Salon &gt; Staff &gt; Commission
+      Rules</span> and press <span class="btn">New</span> for each
+      stylist. Set <b>Commission Type</b> (Percentage of Service Value
+      or Fixed Amount per Service), the <b>Rate / Amount</b>, and
+      optionally restrict <b>Applicable Services</b>. When two rules
+      could both apply, the one with the lower <b>Sequence</b> wins, so
+      give a service-specific rule a lower sequence than a general
+      one.</p>
+      <figure>
+        <img src="images/shot_commission_rules.png" alt="Commission rules: a flat percentage for one stylist, a higher rate on colour work for another" loading="lazy">
+      </figure>
+      <figure>
+        <img src="images/shot_commission_rule_form.png" alt="One rule open: 15% on every service this stylist performs" loading="lazy">
+      </figure>
+      <p>Every commission earned lands in <span class="path">Salon &gt;
+      Staff &gt; Commission Earnings</span> as a Draft line. Press
+      <span class="btn">Confirm</span> once checked, then
+      <span class="btn">Mark as Paid</span> once the stylist has been
+      paid. A paid line is never reset back to draft.</p>
+      <figure>
+        <img src="images/shot_commission_earnings.png" alt="Every commission earned, coloured by status: draft, confirmed, paid" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="targets">
+      <div class="step-head">
+        <div class="step-no">14</div>
+        <div><h2>Sales targets</h2><div class="why">Achievement reads itself.</div></div>
+      </div>
+      <p>Go to <span class="path">Salon &gt; Staff &gt; Sales
+      Targets</span> and press <span class="btn">New</span>. Pick a
+      stylist, a period and a <b>Sales Target</b> amount, and optionally
+      a <b>Bonus Type</b>. Achieved Sales, Remaining, Achievement (%)
+      and Bonus Earned are all computed live from invoiced appointments
+      in the period.</p>
+      <figure>
+        <img src="images/shot_sales_target.png" alt="A stylist's monthly target: achieved sales, remaining amount and achievement percentage" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="portal">
+      <div class="step-head">
+        <div class="step-no">15</div>
+        <div><h2>The online booking portal</h2><div class="why">A public page, no login needed.</div></div>
+      </div>
+      <p>A public page at <span class="path">/salon</span> on your own
+      website lists every published service, grouped by category, with
+      its price and duration. A customer presses Book, fills in their
+      name, email and phone, ticks one or more services, optionally
+      picks a preferred stylist, and picks a date and time.</p>
+      <figure>
+        <img src="images/shot_portal_services.png" alt="The public booking page: published services grouped by category, each with a Book button" loading="lazy">
+      </figure>
+      <figure>
+        <img src="images/shot_portal_book.png" alt="The booking form: services ticked, a preferred stylist, ready to submit" loading="lazy">
+      </figure>
+      <p>Submitting a booking checks the chosen stylist for an
+      overlapping appointment and for blocked time (step 4) before
+      creating anything, and refuses the slot with a message if either
+      conflicts. A confirmation email is sent automatically.</p>
+    </section>
+
+    <section id="settings">
+      <div class="step-head">
+        <div class="step-no">16</div>
+        <div><h2>Settings</h2><div class="why">Booking hours, in one place.</div></div>
+      </div>
+      <p>Go to <span class="path">Salon &gt; Configuration &gt;
+      Settings</span>. Opening Hour, End Hour and Slot Interval control
+      which time slots the online booking page offers; change any of
+      them and every slot the portal shows respects it immediately.</p>
+      <figure>
+        <img src="images/shot_settings.png" alt="The Salon settings block: booking start hour, end hour and slot interval" loading="lazy">
+      </figure>
+      <p><span class="path">Salon &gt; Configuration &gt; Appointment
+      Stages</span> lets you rename, reorder or add stages to the
+      pipeline itself, each with its own kanban legends and an optional
+      email template sent automatically when an appointment reaches
+      it.</p>
+      <figure>
+        <img src="images/shot_stages.png" alt="The six stages the pipeline ships with" loading="lazy">
+      </figure>
+    </section>
+
+    <section id="notdo">
+      <h2>What this module does not do</h2>
+      <p>Said plainly, so nothing here is a surprise after you buy it.</p>
+      <ul class="checklist">
+        <li><span class="box"></span><span><b>No loyalty points, packages, memberships or gift cards.</b> That commercial layer is the separate WT Enterprise Salon add-on, sold on top of this module.</span></li>
+        <li><span class="box"></span><span><b>No point of sale till.</b> This is a back office and a booking portal; taking payment at a till is a different product (WT POS Salon or WT Spa and Salon POS).</span></li>
+        <li><span class="box"></span><span><b>No SMS or WhatsApp reminders.</b> The booking confirmation email is the only automated message this module sends.</span></li>
+        <li><span class="box"></span><span><b>No dedicated per-stylist day timeline</b> beyond the calendar and kanban views already shown in step 6.</span></li>
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>Common questions</h2>
+      <div class="qa"><div class="q">Does the online booking page actually stop double booking?</div><div class="a">Yes. It checks the chosen stylist for an overlapping appointment and for blocked time before it creates anything.</div></div>
+      <div class="qa"><div class="q">What happens if a customer does not show up?</div><div class="a">Cancel the appointment and set its Kanban State to Blocked (step 11). There is no separate no-show status to configure.</div></div>
+      <div class="qa"><div class="q">Can a stylist do a service they are not listed as qualified for?</div><div class="a">Yes. Available Stylists on a service is a filter the booking screens use to suggest names, not a hard restriction; any stylist can still be assigned by hand.</div></div>
+      <div class="qa"><div class="q">Does finishing an appointment really move stock?</div><div class="a">Only for a service with a Bill of Materials attached (step 2). Marking the appointment Done creates and validates a real stock move for each component.</div></div>
+      <div class="qa"><div class="q">Can two commission rules apply to the same stylist?</div><div class="a">Yes, and the one with the lower sequence number wins (step 13).</div></div>
+      <div class="qa"><div class="q">Is the receipt safe to print on a long ticket?</div><div class="a">Yes; see step 9. It has been checked against both a one line and an eleven line appointment, rendered through Odoo's own PDF engine.</div></div>
+      <div class="qa"><div class="q">Where do I assign Stylist, Receptionist or Manager access?</div><div class="a">On each user's own form, under Settings &gt; Users &amp; Companies &gt; Users, in the Salon Management section (step 1).</div></div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">Salon Management for Odoo 19 Community and Enterprise, by Way4Tech. Support terms and contact details are on the module's Apps Store listing page.</div>
+</footer>
+</body>
+</html>

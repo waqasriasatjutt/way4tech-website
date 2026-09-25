@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shopify Connector User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --paper: #f7f6f2;
+    --card: #ffffff;
+    --ink: #1f2233;
+    --ink-2: #4a4e60;
+    --ink-3: #7c8093;
+    --rule: #e3dfd6;
+    --accent: #3d7a1f;
+    --accent-soft: #eaf3e1;
+    --tip: #2a7f74;
+    --tip-soft: #e6f3f1;
+    --warn: #b8771a;
+    --warn-soft: #fbf1e1;
+    --key: #f1efe9;
+    --shadow: 0 1px 2px rgba(31,34,51,.06), 0 8px 24px rgba(31,34,51,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #16171d; --card: #1f2029; --ink: #ecebf3; --ink-2: #c3c2cf; --ink-3: #8d8c9e;
+      --rule: #34364a; --accent: #6fc0c5; --accent-soft: #10312f; --tip: #6fc7bb; --tip-soft: #1c302d;
+      --warn: #e0a751; --warn-soft: #34291a; --key: #2a2b36;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #16171d; --card: #1f2029; --ink: #ecebf3; --ink-2: #c3c2cf; --ink-3: #8d8c9e;
+    --rule: #34364a; --accent: #6fc0c5; --accent-soft: #10312f; --tip: #6fc7bb; --tip-soft: #1c302d;
+    --warn: #e0a751; --warn-soft: #34291a; --key: #2a2b36;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: "Sora", "Segoe UI", system-ui, sans-serif; line-height: 1.2; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 4.5vw, 44px); font-weight: 700; letter-spacing: -.01em; }
+  h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 600; }
+  h3 { font-size: 18px; font-weight: 600; margin-top: 28px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  header.hero { padding: 48px 0 28px; border-bottom: 1px solid var(--rule); }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 62ch; margin-top: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; padding: 32px 0 80px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; font-size: 14px; }
+  nav.toc .toc-title { font-family: "Sora", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  nav.toc a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc .n { display: inline-block; width: 22px; color: var(--ink-3); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  main { max-width: 760px; min-width: 0; }
+  section { padding: 8px 0 36px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+  section:last-of-type { border-bottom: 0; }
+  .step-head { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .step-no { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: #fff; font-family: "Sora", sans-serif; font-weight: 700; font-size: 24px; display: grid; place-items: center; }
+  .step-head .why { color: var(--ink-3); font-size: 15px; margin-top: 4px; }
+  ol.steps { padding-left: 22px; margin: 0 0 16px; }
+  ol.steps li { margin-bottom: 10px; padding-left: 4px; }
+  ul.plain { padding-left: 22px; margin: 0 0 16px; }
+  ul.plain li { margin-bottom: 8px; }
+  kbd, .path { font-family: "IBM Plex Mono", monospace; font-size: 14px; background: var(--key); border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; color: var(--ink); }
+  .btn { display: inline-block; font-weight: 600; font-size: 14px; background: var(--accent); color: #fff; border-radius: 6px; padding: 1px 9px; white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+  figcaption { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+  .callout { border-left: 4px solid var(--tip); background: var(--tip-soft); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 18px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout .label { font-family: "Sora", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--tip); margin-bottom: 4px; }
+  .callout.warn .label { color: var(--warn); }
+  .callout p:last-child { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+  th { font-family: "Sora", sans-serif; font-size: 13px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
+  .table-wrap { overflow-x: auto; }
+  .pill { display: inline-block; font-size: 13px; font-weight: 600; color: #fff; border-radius: 5px; padding: 2px 10px; }
+  .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .checklist li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+  .checklist .box { width: 20px; height: 20px; border: 2px solid var(--accent); border-radius: 5px; margin-top: 3px; }
+  .glossary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0 4px; }
+  .glossary div { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+  .glossary b { font-family: "Sora", sans-serif; font-weight: 600; display: block; margin-bottom: 4px; }
+  footer { border-top: 1px solid var(--rule); padding: 22px 0 48px; font-size: 14px; color: var(--ink-3); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 20px; }
+    nav.toc { position: static; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; }
+    nav.toc ol { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    nav.toc ol { grid-template-columns: 1fr; }
+    .step-head { grid-template-columns: 44px 1fr; }
+    .step-no { width: 44px; height: 44px; font-size: 20px; border-radius: 11px; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .layout { grid-template-columns: 1fr; padding-top: 12px; }
+    main { max-width: none; }
+    figure, .callout, .glossary div, .checklist li, tr { break-inside: avoid; }
+    figure img { box-shadow: none; }
+    h2, h3, .step-head { break-after: avoid; }
+    section { break-inside: auto; }
+    a { color: inherit; text-decoration: none; }
+    header.hero { padding-top: 12px; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Way4Tech Shopify Connector for Odoo 19</div>
+    <h1>Shopify Connector User Guide</h1>
+    <p class="lede">How to connect a Shopify store to Odoo, decide what it may sell, bring in products, customers and orders, ship them, refund them, and prove every payout against the invoices behind it. Follow the first seven sections in order when you start; after that, sections 8 to 13 are the daily routine.</p>
+    <div class="meta">
+      <span>Version 19.0.5.9.0</span>
+      <span>Odoo 19 Community and Enterprise</span>
+      <span>Reading time about 20 minutes</span>
+      <span><a href="https://apps.odoo.com/apps/modules/19.0/wt_shopify_connector">Odoo Apps Store listing</a></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <ol><li><a href="#try"><span class="n">1</span>Try it first</a></li><li><a href="#connect"><span class="n">2</span>Connect your store</a></li><li><a href="#locations"><span class="n">3</span>Locations and stock</a></li><li><a href="#products"><span class="n">4</span>Products and prices</a></li><li><a href="#webhooks"><span class="n">5</span>Webhooks</a></li><li><a href="#accounting"><span class="n">6</span>Accounting and order rules</a></li><li><a href="#import"><span class="n">7</span>The first import</a></li><li><a href="#orders"><span class="n">8</span>Orders day to day</a></li><li><a href="#fulfilment"><span class="n">9</span>Shipping</a></li><li><a href="#refunds"><span class="n">10</span>Refunds</a></li><li><a href="#payouts"><span class="n">11</span>Payouts and fees</a></li><li><a href="#reports"><span class="n">12</span>Reports</a></li><li><a href="#running"><span class="n">13</span>Keeping it running</a></li><li><a href="#upgrade"><span class="n">14</span>Upgrading</a></li><li><a href="#help"><span class="n">15</span>If something looks wrong</a></li></ol>
+  </nav>
+
+  <main>
+    <section id="try">
+      <div class="step-head">
+        <div class="step-no">1</div>
+        <div><h2>Try it first</h2><div class="why">Five minutes, no Shopify account needed.</div></div>
+      </div>
+      <p>There are two ways to see the connector working before you point it at your shop.</p><ul class="plain"><li><b>The live demo.</b> Open <a href="https://shopify-test.way4tech.com">shopify-test.way4tech.com</a> and log in as <kbd>demo</kbd> with password <kbd>demo</kbd>. It is the Northwind Outdoor Supply store: forty orders, refunds, payouts, abandoned checkouts and a queue with a few failures left in on purpose. It resets every night, so change whatever you like.</li><li><b>Your own database.</b> Install the module, open <span class="path">Shopify &gt; Stores</span> and press <span class="btn">Load the Northwind demo store</span>. The same store is created, answered by an offline Shopify that ships inside the module. Delete the store when you are done.</li></ul><figure><img src="images/demo-store.jpg" alt="The Northwind demo store: every button works against an offline Shopify." loading="lazy"><figcaption>The Northwind demo store: every button works against an offline Shopify.</figcaption></figure>
+    </section>
+    <section id="connect">
+      <div class="step-head">
+        <div class="step-no">2</div>
+        <div><h2>Connect your store</h2><div class="why">Ten minutes, once per store.</div></div>
+      </div>
+      <ol class="steps"><li>In your Shopify admin open <b>Settings, Apps and sales channels, Develop apps</b> and create an app. Give it the Admin API scopes the connection wizard lists: products, inventory, customers, orders, fulfillments and fulfillment orders, locations, shipping, discounts, price rules and payouts, plus publications if you want to publish products from Odoo.</li><li>Install the app and copy the Admin API access token.</li><li>In Odoo open <span class="path">Shopify &gt; + Connect new store</span>. Paste the shop address and the token.</li><li>Press <span class="btn">Test Connection</span>. It shows the shop name, the plan, the currency and the API version Shopify answered with.</li><li>Choose REST or GraphQL for the store. Both run the same jobs; GraphQL is where Shopify adds new features.</li></ol><figure><img src="images/connect-store.jpg" alt="The connection wizard walks through the app, the token and the first test." loading="lazy"><figcaption>The connection wizard walks through the app, the token and the first test.</figcaption></figure><figure><img src="images/stores-form.jpg" alt="Everything about one store lives on one form, with the imports as buttons and the settings as tabs." loading="lazy"><figcaption>Everything about one store lives on one form, with the imports as buttons and the settings as tabs.</figcaption></figure>
+    </section>
+    <section id="locations">
+      <div class="step-head">
+        <div class="step-no">3</div>
+        <div><h2>Locations and stock</h2><div class="why">Decide what Shopify is allowed to sell.</div></div>
+      </div>
+      <p>Press <span class="btn">Import Locations</span> on the store and map each Shopify location to the Odoo warehouse that ships it. Orders assigned to that location ship from that warehouse, and stock for that location is read from it.</p><p>Each location pushes stock through a policy. The store carries the default on the Sync Behaviour tab; untick <b>Use store defaults</b> on a location to give it its own.</p><ul class="plain"><li><b>Quantity source.</b> Free is on hand less what confirmed deliveries have reserved, and it is the safe choice. On hand ignores reservations. Forecast adds incoming receipts and takes off outgoing deliveries.</li><li><b>Percentage.</b> Push only a share, for example 80, and keep the rest for other channels.</li><li><b>Offset.</b> A safety stock the shop never sees, taken off after the percentage.</li><li><b>Minimum.</b> Below it, zero is pushed, so the shop shows sold out rather than the last two units.</li><li><b>Also count.</b> Other warehouses summed into this location, and the stock of child companies when branches share one shop.</li></ul><figure><img src="images/inventory-policy.jpg" alt="The Locations tab: each location, its warehouse and the policy it pushes with, in one line." loading="lazy"><figcaption>The Locations tab: each location, its warehouse and the policy it pushes with, in one line.</figcaption></figure><div class="callout"><div class="label">Kits</div><p>A product sold as a kit (a bill of materials of type kit in Manufacturing) reports what its components allow. When a component moves, every kit containing it is pushed again.</p></div>
+    </section>
+    <section id="products">
+      <div class="step-head">
+        <div class="step-no">4</div>
+        <div><h2>Products and prices</h2><div class="why">One catalogue, any number of stores.</div></div>
+      </div>
+      <p>A product carries one row per Shopify store it is on. Each row has its own Shopify id, handle, status, publish state, SEO title and description, price and sync state. Open the <b>Shopify</b> tab on any product to see them.</p><figure><img src="images/product-shopify-tab.jpg" alt="The Shopify tab on a product: one row per store." loading="lazy"><figcaption>The Shopify tab on a product: one row per store.</figcaption></figure><figure><img src="images/product-flags.jpg" alt="A store row: status, published, SEO text, export as draft and exclude from sync." loading="lazy"><figcaption>A store row: status, published, SEO text, export as draft and exclude from sync.</figcaption></figure><ul class="plain"><li><b>Publish and unpublish</b> from the row, or from the list with the actions menu.</li><li><b>Export as draft</b> on the store sends new products to Shopify as drafts for someone to review.</li><li><b>Exclude from sync</b> keeps a product in Odoo only, whatever else changes.</li><li><b>Export to Shopify</b> in the actions menu of the product list adds the selected products to a store and queues the exports in batches.</li></ul><figure><img src="images/bulk-export.jpg" alt="The bulk export wizard, from the product list." loading="lazy"><figcaption>The bulk export wizard, from the product list.</figcaption></figure><p>Prices are set on the store, Sync Behaviour tab, Pricing:</p><ul class="plain"><li><b>Store pricelist</b>: the price exported for each variant. Without one, the sales price.</li><li><b>Compare-at pricelist</b>: the crossed-out price Shopify shows next to it.</li><li><b>Price import pricelist</b>: prices changed in Shopify are written as rules on this pricelist, and the product sales price stays yours.</li></ul><figure><img src="images/pricing.jpg" alt="Pricing on the store: export, compare-at and import pricelists." loading="lazy"><figcaption>Pricing on the store: export, compare-at and import pricelists.</figcaption></figure><figure><img src="images/metafields.jpg" alt="Metafields mapped by namespace and key to Odoo fields on products, variants, orders and customers." loading="lazy"><figcaption>Metafields mapped by namespace and key to Odoo fields on products, variants, orders and customers.</figcaption></figure>
+    </section>
+    <section id="webhooks">
+      <div class="step-head">
+        <div class="step-no">5</div>
+        <div><h2>Webhooks</h2><div class="why">Changes arrive in seconds.</div></div>
+      </div>
+      <p>Press <span class="btn">Register Webhooks</span> on the store. Shopify then tells Odoo about new orders, edits, payments, refunds, fulfilments, product, customer and stock changes as they happen. Every message is checked against the shop secret, and a message Shopify sends twice is counted, not imported twice.</p><p>Each topic has its own switch on the Webhooks tab. Turning one off removes it in Shopify; the schedules still catch anything it would have carried.</p><figure><img src="images/webhooks.jpg" alt="The Webhooks tab: each topic, its state, replays counted, and a switch." loading="lazy"><figcaption>The Webhooks tab: each topic, its state, replays counted, and a switch.</figcaption></figure><div class="callout warn"><div class="label">Odoo must be reachable</div><p>Webhooks need your Odoo on a public HTTPS address. Without one, the schedules still keep everything in step, just not in seconds.</p></div>
+    </section>
+    <section id="accounting">
+      <div class="step-head">
+        <div class="step-no">6</div>
+        <div><h2>Accounting and order rules</h2><div class="why">Tell it where the money goes.</div></div>
+      </div>
+      <ul class="plain"><li>On the store, <b>Accounting mapping</b>: the payout journal (a bank journal), the sales journal and the fiscal position.</li><li>On the <b>Payment Methods</b> tab: for each Shopify gateway, the journal its payments are registered in.</li><li>On the <b>Order Workflow Rules</b> tab: for each payment status, whether to confirm, invoice, post and register the payment. A sensible start: paid confirms, invoices and registers the payment; pending confirms only.</li></ul>
+    </section>
+    <section id="import">
+      <div class="step-head">
+        <div class="step-no">7</div>
+        <div><h2>The first import</h2><div class="why">Link what you have, create what you do not.</div></div>
+      </div>
+      <ol class="steps"><li>Open <span class="path">Shopify &gt; Operations &gt; Import from Shopify</span>, choose Products and tick <b>Dry run</b>. Nothing is written. The job lists, for each Shopify product, whether it would be linked to an Odoo product with the same SKU or barcode, created, or updated.</li><li>Fix anything the dry run flags, then run it for real.</li><li>Import customers. They are matched on email; switch on <b>Also match customers on phone</b> if your customers often have no email. There is no matching on name, on purpose.</li><li>Choose which orders come in, on the Sync Behaviour tab: by payment status (paid only, paid or partially paid, or authorized as well) and by fulfilment status. Then import orders since a date of your choice.</li><li>Press <span class="btn">Push Inventory to Shopify</span> once so Shopify shows what Odoo can sell.</li></ol><figure><img src="images/dry-run.jpg" alt="A dry run: what would be linked, created or updated, and nothing written." loading="lazy"><figcaption>A dry run: what would be linked, created or updated, and nothing written.</figcaption></figure><figure><img src="images/order-filters.jpg" alt="Which orders come in: payment and fulfilment status filters, order edits, shipped history and POS orders." loading="lazy"><figcaption>Which orders come in: payment and fulfilment status filters, order edits, shipped history and POS orders.</figcaption></figure>
+    </section>
+    <section id="orders">
+      <div class="step-head">
+        <div class="step-no">8</div>
+        <div><h2>Orders day to day</h2><div class="why">What happens without anyone pressing a button.</div></div>
+      </div>
+      <p>A Shopify order arrives as an Odoo sales order with its lines, the shipping line, Shopify taxes, exact discounts, the currency, delivery and invoice addresses and the risk Shopify scored. The total is checked against what Shopify charged and flagged when it differs. Then the workflow rule for its payment status runs.</p><figure><img src="images/order-from-shopify.jpg" alt="An order as Shopify charged it, invoiced and paid in the gateway journal." loading="lazy"><figcaption>An order as Shopify charged it, invoiced and paid in the gateway journal.</figcaption></figure><figure><img src="images/order-shopify-tab.jpg" alt="The Shopify tab on the order." loading="lazy"><figcaption>The Shopify tab on the order.</figcaption></figure><p>When the order is edited in the Shopify admin, the Odoo order follows: a line added becomes a new line and the delivery grows, a line removed or reduced goes down, a price changed follows. A line already delivered or invoiced is not changed, and the chatter says why: the money Shopify gives back for it arrives as a credit note through the refund import instead.</p><figure><img src="images/order-edit.jpg" alt="An order edited in Shopify: the new line and the note saying what was applied." loading="lazy"><figcaption>An order edited in Shopify: the new line and the note saying what was applied.</figcaption></figure><p>Orders from Shopify POS are marked, can be filtered, and ship from the warehouse of the till. Orders already shipped when they arrive, such as history or a 3PL shipment, come in with their delivery validated and the tracking copied.</p>
+    </section>
+    <section id="fulfilment">
+      <div class="step-head">
+        <div class="step-no">9</div>
+        <div><h2>Shipping</h2><div class="why">Ship from the right place, tell Shopify once.</div></div>
+      </div>
+      <p>Shopify assigns each order to a location. The connector reads that and ships from the warehouse mapped to it. When you validate the delivery, Shopify gets the fulfilment with the tracking reference, for exactly the quantities shipped. A tracking number changed later follows.</p><figure><img src="images/order-routing.jpg" alt="An order Shopify assigned to two locations, with the note and the warehouse chosen." loading="lazy"><figcaption>An order Shopify assigned to two locations, with the note and the warehouse chosen.</figcaption></figure><figure><img src="images/delivery-tracking.jpg" alt="A validated delivery: the fulfilment and the tracking are in Shopify." loading="lazy"><figcaption>A validated delivery: the fulfilment and the tracking are in Shopify.</figcaption></figure><ul class="plain"><li>Shipping from a different warehouse moves the fulfillment order in Shopify first.</li><li>With <b>Split deliveries by Shopify location</b> on, an order spread over two locations gets one delivery per warehouse.</li><li>With <b>Shopify fulfilments validate Odoo deliveries</b> on, a fulfilment made in Shopify validates the Odoo delivery.</li></ul>
+    </section>
+    <section id="refunds">
+      <div class="step-head">
+        <div class="step-no">10</div>
+        <div><h2>Refunds</h2><div class="why">Both ways, never more than was paid.</div></div>
+      </div>
+      <p>A refund made in Shopify becomes a draft credit note in Odoo for exactly the refunded money, and a return for the units that were restocked. Nothing is posted for you.</p><figure><img src="images/refunds-form.jpg" alt="A Shopify refund with its credit note and return." loading="lazy"><figcaption>A Shopify refund with its credit note and return.</figcaption></figure><p>A credit note posted in Odoo on a Shopify order can refund the customer in Shopify: automatically when <b>Push credit notes to Shopify</b> is on, or with the <span class="btn">Refund in Shopify</span> button on the credit note. Shopify is asked first what it still holds; a credit note above that is refused with the figures, and nothing is refunded. Units whose return is done in Odoo are restocked in Shopify.</p><figure><img src="images/refund-to-shopify.jpg" alt="A credit note refunded in Shopify: the refund id and what was restocked are on the chatter." loading="lazy"><figcaption>A credit note refunded in Shopify: the refund id and what was restocked are on the chatter.</figcaption></figure>
+    </section>
+    <section id="payouts">
+      <div class="step-head">
+        <div class="step-no">11</div>
+        <div><h2>Payouts and fees</h2><div class="why">Prove the money that reached the bank.</div></div>
+      </div>
+      <p>Each Shopify Payments payout arrives as a draft bank statement line on the payout journal, with every transaction behind it: charges, refunds, adjustments, reserves and disputes, each with the amount, the fee Shopify kept and the net.</p><figure><img src="images/payouts.jpg" alt="Payouts, with fees and how much of each is matched." loading="lazy"><figcaption>Payouts, with fees and how much of each is matched.</figcaption></figure><ol class="steps"><li>On the store, Accounting mapping, switch on <b>Book Shopify Fees</b> and choose the fee account. Each paid payout gets one draft journal entry: the fee account debited, the payout journal suspense account credited.</li><li>Switch on <b>Reconcile Payouts Automatically</b>, or press <span class="btn">Reconcile</span> on a payout. Each charge is matched to the invoice payment in the Shopify Payments journal, each refund to its credit note. Adjustments and disputes are marked for review.</li><li>Read the state: Fully Matched, Partially Matched with a note saying what is open, or Not Reconciled.</li></ol><figure><img src="images/payout-form.jpg" alt="A payout: each transaction matched to its invoice or credit note." loading="lazy"><figcaption>A payout: each transaction matched to its invoice or credit note.</figcaption></figure><figure><img src="images/payout-transactions.jpg" alt="All transactions, with amount, fee, net and the document behind each." loading="lazy"><figcaption>All transactions, with amount, fee, net and the document behind each.</figcaption></figure><div class="callout warn"><div class="label">When a payout does not add up</div><p>If the transactions do not sum to the payout amount, something Shopify listed is missing. The payout says so, stays partially matched, and gets no fee entry until the figures agree. Press <span class="btn">Refresh from Shopify</span> later, or ask Shopify support about the payout.</p></div>
+    </section>
+    <section id="reports">
+      <div class="step-head">
+        <div class="step-no">12</div>
+        <div><h2>Reports</h2><div class="why">Under Shopify &gt; Reporting.</div></div>
+      </div>
+      <ul class="plain"><li><b>Net profit by store</b>: untaxed sales, product cost at today's cost price, Shopify fees and what is left. Refunds are on their own report; read the two side by side.</li><li><b>Payout report</b>: amount, fee and net by store, month and transaction type.</li><li><b>Tax report</b>: tax collected on Shopify orders by tax, store and month, from posted invoices and credit notes.</li><li><b>Sales analysis</b> and <b>refunds by month</b>.</li></ul><figure><img src="images/net-profit.jpg" alt="Net profit by store and month." loading="lazy"><figcaption>Net profit by store and month.</figcaption></figure><figure><img src="images/payout-report.jpg" alt="The payout report." loading="lazy"><figcaption>The payout report.</figcaption></figure><figure><img src="images/tax-report.jpg" alt="The tax report." loading="lazy"><figcaption>The tax report.</figcaption></figure><figure><img src="images/sales-analysis.jpg" alt="Shopify sales analysis." loading="lazy"><figcaption>Shopify sales analysis.</figcaption></figure>
+    </section>
+    <section id="running">
+      <div class="step-head">
+        <div class="step-no">13</div>
+        <div><h2>Keeping it running</h2><div class="why">Five minutes a day.</div></div>
+      </div>
+      <p>Every call to Shopify is a job in <span class="path">Shopify &gt; Operations &gt; Queue Jobs</span>. A job that fails keeps the reason Shopify gave and retries on a schedule. When it runs out of retries, the person named under <b>Alerts</b> on the store gets an activity and an email, at most one an hour.</p><figure><img src="images/dashboard.jpg" alt="The dashboard: revenue, top products, recent orders and queue health." loading="lazy"><figcaption>The dashboard: revenue, top products, recent orders and queue health.</figcaption></figure><figure><img src="images/queue-jobs.jpg" alt="The queue." loading="lazy"><figcaption>The queue.</figcaption></figure><figure><img src="images/queue-jobs-form.jpg" alt="A job line by line, with Retry now, Requeue and Drop." loading="lazy"><figcaption>A job line by line, with Retry now, Requeue and Drop.</figcaption></figure><figure><img src="images/alerts.jpg" alt="Alerts and the daily digest on the store." loading="lazy"><figcaption>Alerts and the daily digest on the store.</figcaption></figure><p>The <b>daily digest</b> sends one email per store at the hour you choose: orders and revenue, what failed, what is waiting. The <b>log book</b> keeps every success and error for as many days as you set, and exports any period to CSV from the actions menu of the log list.</p><figure><img src="images/logs.jpg" alt="The log book." loading="lazy"><figcaption>The log book.</figcaption></figure><figure><img src="images/log-export.jpg" alt="Export the log book for a period." loading="lazy"><figcaption>Export the log book for a period.</figcaption></figure>
+    </section>
+    <section id="upgrade">
+      <div class="step-head">
+        <div class="step-no">14</div>
+        <div><h2>Upgrading</h2><div class="why">Before you press Upgrade on a live shop.</div></div>
+      </div>
+      <p>Take a database backup, replace the module folder, then <span class="path">Apps &gt; Shopify Connector &gt; Upgrade</span>. Version 19.0.5.9.0 switches off <b>Shopify fulfilments validate Odoo deliveries</b> on stores that existed before the upgrade, so no delivery starts validating itself the day you upgrade. Turn it on from the store when you want it. New stores have it on.</p>
+    </section>
+    <section id="help">
+      <div class="step-head">
+        <div class="step-no">15</div>
+        <div><h2>If something looks wrong</h2><div class="why">The usual causes, and the fix.</div></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>What you see</th><th>Why</th><th>What to do</th></tr></thead>
+        <tbody><tr><td>An order is missing.</td><td>The import filters on the store skipped it, or the job that fetched it failed.</td><td>Open the latest order import job: a skipped order has a line saying why. A failed one has the reason Shopify gave.</td></tr><tr><td>An order total is flagged.</td><td>Odoo and Shopify disagree by more than rounding, usually a tax mapped differently.</td><td>Compare the taxes on the order with Shopify&#x27;s; fix the tax mapping and import the order again.</td></tr><tr><td>An edit in Shopify did not change the order.</td><td>The line was already delivered or invoiced.</td><td>Read the chatter note. The refund Shopify issues arrives as a credit note.</td></tr><tr><td>A credit note was not refunded in Shopify.</td><td>It was above what Shopify still holds, in another currency, or the store toggle is off.</td><td>The chatter on the credit note says which. Fix it and press Refund in Shopify.</td></tr><tr><td>A payout has no fee entry.</td><td>Book Shopify Fees is off, no fee account is set, or the payout does not add up.</td><td>The note on the payout says which.</td></tr><tr><td>Shopify shows the wrong stock.</td><td>The location is not mapped to a warehouse, or its policy holds stock back.</td><td>Check the Locations tab: the policy line says exactly what is pushed.</td></tr><tr><td>Nothing arrives by itself.</td><td>Webhooks are not registered, or Odoo is not reachable from the internet.</td><td>Register Webhooks on the store; the schedules keep things moving meanwhile.</td></tr></tbody>
+      </table></div>
+      <p>Anything else: write to <a href="mailto:info@way4tech.com">info@way4tech.com</a> with the store name, the job or order number and a screenshot.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">Shopify Connector for Odoo 19 by Way4Tech. This guide describes version 19.0.5.9.0; the full reference ships in the module as doc/user_guide.md. Screens are from the Northwind demo store and may differ slightly with your company's colours.</div>
+</footer>
+</body>
+</html>

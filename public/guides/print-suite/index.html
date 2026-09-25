@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print Suite User Guide</title>
+<meta name="description" content="How to design labels, print them as PDF or ZPL, and send any Odoo 19 report straight to a printer with the Way4Tech Print Suite.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --paper: #f7f6f2;
+    --card: #ffffff;
+    --ink: #1f2233;
+    --ink-2: #4a4e60;
+    --ink-3: #7c8093;
+    --rule: #e3dfd6;
+    --accent: #0f766e;
+    --accent-soft: #e3f3f0;
+    --tip: #2a7f74;
+    --tip-soft: #e6f3f1;
+    --warn: #b8771a;
+    --warn-soft: #fbf1e1;
+    --key: #f1efe9;
+    --shadow: 0 1px 2px rgba(31,34,51,.06), 0 8px 24px rgba(31,34,51,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #16171d; --card: #1f2029; --ink: #ecebf3; --ink-2: #c3c2cf; --ink-3: #8d8c9e;
+      --rule: #34364a; --accent: #5fc7b8; --accent-soft: #173330; --tip: #6fc7bb; --tip-soft: #1c302d;
+      --warn: #e0a751; --warn-soft: #34291a; --key: #2a2b36;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #16171d; --card: #1f2029; --ink: #ecebf3; --ink-2: #c3c2cf; --ink-3: #8d8c9e;
+    --rule: #34364a; --accent: #5fc7b8; --accent-soft: #173330; --tip: #6fc7bb; --tip-soft: #1c302d;
+    --warn: #e0a751; --warn-soft: #34291a; --key: #2a2b36;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 17px; line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: "Sora", "Segoe UI", system-ui, sans-serif; line-height: 1.2; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 4.5vw, 44px); font-weight: 700; letter-spacing: -.01em; }
+  h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 600; }
+  h3 { font-size: 18px; font-weight: 600; margin-top: 28px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  header.hero { padding: 48px 0 28px; border-bottom: 1px solid var(--rule); }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 62ch; margin-top: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; padding: 32px 0 80px; }
+  nav.toc { position: sticky; top: 20px; align-self: start; font-size: 14px; }
+  nav.toc .toc-title { font-family: "Sora", sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  nav.toc a { display: block; padding: 6px 10px; border-radius: 6px; color: var(--ink-2); text-decoration: none; }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+  nav.toc .n { display: inline-block; width: 22px; color: var(--ink-3); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  main { max-width: 760px; min-width: 0; }
+  section { padding: 8px 0 36px; border-bottom: 1px solid var(--rule); margin-bottom: 36px; }
+  section:last-of-type { border-bottom: 0; }
+  .step-head { display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .step-no { width: 56px; height: 56px; border-radius: 14px; background: var(--accent); color: #fff; font-family: "Sora", sans-serif; font-weight: 700; font-size: 24px; display: grid; place-items: center; }
+  .step-head .why { color: var(--ink-3); font-size: 15px; margin-top: 4px; }
+  ol.steps { padding-left: 22px; margin: 0 0 16px; }
+  ol.steps li { margin-bottom: 10px; padding-left: 4px; }
+  ul.plain { padding-left: 22px; margin: 0 0 16px; }
+  ul.plain li { margin-bottom: 8px; }
+  kbd, .path { font-family: "IBM Plex Mono", monospace; font-size: 14px; background: var(--key); border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; white-space: nowrap; color: var(--ink); }
+  .btn { display: inline-block; font-weight: 600; font-size: 14px; background: var(--accent); color: #fff; border-radius: 6px; padding: 1px 9px; white-space: nowrap; }
+  figure { margin: 22px 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--rule); box-shadow: var(--shadow); background: #fff; }
+  figcaption { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+  .callout { border-left: 4px solid var(--tip); background: var(--tip-soft); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 18px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .callout .label { font-family: "Sora", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--tip); margin-bottom: 4px; }
+  .callout.warn .label { color: var(--warn); }
+  .callout p:last-child { margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 20px; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+  th { font-family: "Sora", sans-serif; font-size: 13px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
+  .table-wrap { overflow-x: auto; }
+  .pill { display: inline-block; font-size: 13px; font-weight: 600; color: #fff; border-radius: 5px; padding: 2px 10px; }
+  .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .checklist li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+  .checklist .box { width: 20px; height: 20px; border: 2px solid var(--accent); border-radius: 5px; margin-top: 3px; }
+  .glossary { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0 4px; }
+  .glossary div { background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; }
+  .glossary b { font-family: "Sora", sans-serif; font-weight: 600; display: block; margin-bottom: 4px; }
+  footer { border-top: 1px solid var(--rule); padding: 22px 0 48px; font-size: 14px; color: var(--ink-3); }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; gap: 20px; }
+    nav.toc { position: static; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; }
+    nav.toc ol { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    nav.toc ol { grid-template-columns: 1fr; }
+    .step-head { grid-template-columns: 44px 1fr; }
+    .step-no { width: 44px; height: 44px; font-size: 20px; border-radius: 11px; }
+  }
+  @media print {
+    nav.toc { display: none; }
+    .layout { grid-template-columns: 1fr; padding-top: 12px; }
+    main { max-width: none; }
+    figure, .callout, .glossary div, .checklist li, tr { break-inside: avoid; }
+    figure img { box-shadow: none; }
+    h2, h3, .step-head { break-after: avoid; }
+    section { break-inside: auto; }
+    a { color: inherit; text-decoration: none; }
+    header.hero { padding-top: 12px; }
+  }
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+<div class="eyebrow">Way4Tech Print Suite for Odoo 19</div>
+<h1>Print Suite User Guide</h1>
+<p class="lede">Design labels by drag and drop, print them as PDF or ZPL, and send invoices, delivery slips and labels straight to a printer without the preview. Follow the steps in order the first time.</p>
+<div class="meta"><span>Label Designer 19.0.1.0.0 and Direct Print 19.0.1.0.0</span><span>Reading time about 15 minutes</span><span>No subscription</span></div>
+</div></header>
+<div class="wrap layout">
+<nav class="toc" aria-label="Contents"><div class="toc-title">Contents</div><ol><li><a href="#words"><span class="n">0</span>The words you need</a></li><li><a href="#templates"><span class="n">1</span>Label templates</a></li><li><a href="#designer"><span class="n">2</span>Design a label</a></li><li><a href="#print-labels"><span class="n">3</span>Print labels</a></li><li><a href="#agent"><span class="n">4</span>Install the print agent</a></li><li><a href="#printers"><span class="n">5</span>Add your printers</a></li><li><a href="#rules"><span class="n">6</span>Printing rules</a></li><li><a href="#queue"><span class="n">7</span>The print queue</a></li><li><a href="#together"><span class="n">8</span>Labels straight to the printer</a></li><li><a href="#check"><span class="n">9</span>Check on your own printers</a></li></ol></nav>
+<main>
+<section id="words"><h2>The words you need</h2>
+<p>The Print Suite is two modules that also work alone: <b>Label Designer</b> designs and prints labels, <b>Direct Print</b> sends any Odoo document straight to a printer. With both installed they join on their own.</p>
+<div class="glossary">
+<div><b>Template</b>The design of one kind of label: its size, and the fields, barcodes and lines on it.</div>
+<div><b>ZPL</b>The language Zebra label printers read. The module writes it from the same design as the PDF.</div>
+<div><b>Print agent</b>A small program on a computer in your building that fetches jobs from Odoo and prints them. No cloud service.</div>
+<div><b>Rule</b>Says which printer a document goes to, for a report, a person or a workstation.</div>
+<div><b>Workstation</b>A place people print from: a front desk, a receiving desk, a packing station.</div>
+<div><b>Queue</b>Every job on its way to a printer, with its status and, when it failed, the reason.</div>
+</div></section>
+<section id="templates"><div class="step-head"><div class="step-no">1</div><div><h2>Label templates</h2><div class="why">Six ship ready to use; copy one before you change it.</div></div></div>
+<p>Open <span class="path">Inventory &gt; Configuration &gt; Labels &gt; Label Templates</span>.</p>
+<div class="table-wrap"><table><tr><th>Template</th><th>Prints for</th><th>Size</th></tr>
+<tr><td>Product 50 x 25 mm</td><td>Products</td><td>roll</td></tr>
+<tr><td>Variant 50 x 25 mm</td><td>Product variants</td><td>roll</td></tr>
+<tr><td>Lot / Serial 60 x 40 mm</td><td>Lots and serial numbers, with expiry</td><td>roll</td></tr>
+<tr><td>Package 100 x 50 mm</td><td>Packages</td><td>roll</td></tr>
+<tr><td>Location 70 x 30 mm</td><td>Locations, with a QR code</td><td>roll</td></tr>
+<tr><td>Price tag, A4 sheet 3 x 8</td><td>Product variants</td><td>24 per A4 sheet</td></tr></table></div>
+<ul class="plain">
+<li><b>Size</b> is in millimetres, to the hundredth.</li>
+<li><b>Roll</b> prints one label after another, for label printers. <b>Sheet</b> places several on an A4 or US Letter page, with columns, rows, margins and spacing.</li>
+<li><b>ZPL resolution</b> must match the Zebra: 203 or 300 dpi. A 203 dpi printer fed a 300 dpi label prints it too big.</li>
+</ul><figure><img src="images/shot_template_form.jpg" alt="A sheet template form" loading="lazy"><figcaption>The price tag sheet: 3 across, 8 down, on A4.</figcaption></figure></section>
+<section id="designer"><div class="step-head"><div class="step-no">2</div><div><h2>Design a label</h2><div class="why">Drag, drop, save. The canvas shows a real record.</div></div></div>
+<ol class="steps">
+<li>Open a template and press <span class="btn">Open Designer</span>.</li>
+<li>Add elements from the left: <b>Text</b>, <b>Barcode</b>, <b>Logo or image</b>, <b>Line</b>, <b>Box</b>, or one click on a field such as <b>Sales price with currency</b> or <b>Expiry date</b>.</li>
+<li>Drag to move, drag the blue corner to resize. Arrow keys move by 0.5 mm, with <kbd>Shift</kbd> by 5 mm; <kbd>Delete</kbd> removes.</li>
+<li>In the right panel set what it shows, a caption in front ("Exp: "), the exact position and size in millimetres, the font size, bold, alignment and, for a barcode, the symbology.</li>
+<li>Press <span class="btn">Save</span>, then <b>Preview PDF</b> or <b>Preview ZPL</b>.</li>
+</ol><figure><img src="images/shot_designer.jpg" alt="The label designer with the price tag" loading="lazy"><figcaption>The price tag on the canvas; the selected price shows in the side panel.</figcaption></figure><figure><img src="images/shot_designer_lot.jpg" alt="The lot label in the designer" loading="lazy"><figcaption>A lot label: Data Matrix and Code 128 of the lot number.</figcaption></figure><div class="callout"><div class="label">Good to know</div><p>Barcodes: EAN-13, EAN-8, UPC-A, Code 128, Code 39, QR and Data Matrix. A value the symbology cannot carry, such as an EAN with a wrong check digit, is refused with the reason and never swapped for another symbology.</p></div></section>
+<section id="print-labels"><div class="step-head"><div class="step-no">3</div><div><h2>Print labels</h2><div class="why">From products, transfers, lots, packages and locations.</div></div></div>
+<ol class="steps">
+<li>Select records and open <span class="path">Print &gt; Labels (designer)</span>, or press <span class="btn">Labels</span> on a receipt or delivery.</li>
+<li>On a transfer choose <b>One label per unit</b> (2 dozen are 24 labels; 12.5 kg is one label) or <b>One label per line</b>. <b>Labels each</b> multiplies either; every line's count can be changed.</li>
+<li>On a sheet, <b>Skip positions</b> leaves the first positions of a partly used sheet empty.</li>
+<li>Press <b>Print PDF</b>, <b>Download ZPL</b> or <b>Show ZPL</b>.</li>
+</ol><figure><img src="images/shot_print_receipt.jpg" alt="Printing labels for a receipt" loading="lazy"><figcaption>A receipt: one line per operation line with its lot or serial number. 63 labels in total.</figcaption></figure><figure><img src="images/shot_pdf_lot.jpg" alt="The lot label as PDF" loading="lazy"><figcaption>The lot label as the PDF prints it.</figcaption></figure><figure><img src="images/shot_labelary_lot.jpg" alt="The lot label as ZPL, Labelary render" loading="lazy"><figcaption>The same label as ZPL, rendered by the public Labelary service at 203 dpi.</figcaption></figure></section>
+<section id="agent"><div class="step-head"><div class="step-no">4</div><div><h2>Install the print agent</h2><div class="why">Ten minutes, once per computer that prints.</div></div></div>
+<ol class="steps">
+<li>In <span class="path">Printing &gt; Configuration &gt; Settings</span> press <b>Download the agent</b> and unzip it on a computer that sees your printers, for example to <span class="path">C:\Program Files\WT Print Agent</span>.</li>
+<li>Install Python 3.10 or newer from python.org, then in that folder run <span class="path">python -m pip install -r requirements.txt</span>.</li>
+<li>In <span class="path">Printing &gt; Configuration &gt; Print Agents</span> create the agent and press <span class="btn">Pair</span>. Run the command it shows. The code works once and for 30 minutes.</li>
+<li>Run <span class="path">powershell -ExecutionPolicy Bypass -File install-windows.ps1</span> so the agent starts with Windows. On Linux, use the systemd unit in the zip.</li>
+</ol><figure><img src="images/shot_pair.jpg" alt="The pairing dialog" loading="lazy"><figcaption>A one-time pairing code and the command to run with it.</figcaption></figure><figure><img src="images/shot_agent.jpg" alt="The print agent in Odoo" loading="lazy"><figcaption>The agent, when it was last seen, and the printers of its computer.</figcaption></figure><div class="callout"><div class="label">Good to know</div><p>The agent calls Odoo over HTTPS; Odoo never calls it. Nothing changes on your firewall, and Odoo can run in the cloud. Revoke stops an agent at once.</p></div></section>
+<section id="printers"><div class="step-head"><div class="step-no">5</div><div><h2>Add your printers</h2><div class="why">Then print a test page on each.</div></div></div>
+<ul class="plain">
+<li><b>What it prints</b>: Documents (PDF), ZPL, ESC/POS or Raw.</li>
+<li><b>Through a print agent</b>: a printer installed on the agent's computer (pick it from the list the agent reports) or a network printer by IP address and port.</li>
+<li><b>Straight from the Odoo server</b>: a network label or receipt printer the server itself reaches, on port 9100. The server only connects to the ports allowed in Settings.</li>
+</ul><figure><img src="images/shot_printers.jpg" alt="The printers list" loading="lazy"><figcaption>An office laser, two Zebras and a receipt printer.</figcaption></figure><figure><img src="images/shot_printer_form.jpg" alt="A printer form" loading="lazy"><figcaption>Press Print a test page: a PDF page with a 100 mm line to check the scale, a ZPL test label, or an ESC/POS slip.</figcaption></figure></section>
+<section id="rules"><div class="step-head"><div class="step-no">6</div><div><h2>Printing rules</h2><div class="why">Which printer, how many copies, for whom.</div></div></div>
+<p>A rule names a printer and the copies and may be narrowed to one report, one user and one workstation. When someone prints a report and a rule matches, it goes to the printer and a note says where; otherwise it downloads as usual.</p>
+<p>When several rules match, the most specific wins: a workstation counts 4, a user 2, a report 1; ties go to the lower sequence. People choose their workstation, and whether to print without preview, under <span class="path">avatar &gt; Preferences &gt; Printing</span>.</p>
+<p>With the free companions a rule can also print <b>when a transfer is validated</b> or <b>when an invoice is confirmed</b>. A document that fails to print gets a note in its chatter and never undoes the validation.</p><figure><img src="images/shot_rules.jpg" alt="Printing rules" loading="lazy"><figcaption>Rules per report, per workstation, per user, and automatic ones.</figcaption></figure><figure><img src="images/shot_sent.jpg" alt="An invoice sent to the printer" loading="lazy"><figcaption>Printing an invoice with a rule: no preview, a note says where it went.</figcaption></figure></section>
+<section id="queue"><div class="step-head"><div class="step-no">7</div><div><h2>The print queue</h2><div class="why">Everything that was printed, and what was not.</div></div></div>
+<p><span class="path">Printing &gt; Print Queue</span> lists every job with its document, printer, sender and status. A failed job is tried again after 30 seconds, 2 minutes and 10 minutes, then marked failed; select jobs and press <b>Send again</b>. A job the agent took and never confirmed goes back to the queue after 10 minutes. Printed jobs are deleted after 30 days.</p><figure><img src="images/shot_queue.jpg" alt="The print queue" loading="lazy"><figcaption>Printed, queued, cancelled and failed jobs, with the reason.</figcaption></figure><figure><img src="images/shot_job_failed.jpg" alt="A failed job" loading="lazy"><figcaption>A failed job: what, where, by whom, and why.</figcaption></figure></section>
+<section id="together"><div class="step-head"><div class="step-no">8</div><div><h2>Labels straight to the printer</h2><div class="why">With both modules installed.</div></div></div>
+<ul class="plain">
+<li>The label dialog gets a printer and <span class="btn">Send to printer</span>: a ZPL printer receives exactly the ZPL of the design, a document printer the PDF.</li>
+<li>Each template can have a <b>Default printer</b>.</li>
+<li>A rule <b>when a transfer is validated</b> can print labels instead of a report: a receipt of 12 units then prints 12 labels at the receiving desk the moment it is validated.</li>
+</ul><figure><img src="images/shot_send_labels.jpg" alt="Sending labels to a printer" loading="lazy"><figcaption>The receipt's 63 labels, ready to go to the Zebra.</figcaption></figure><figure><img src="images/shot_label_rule.jpg" alt="A label rule" loading="lazy"><figcaption>One label per unit on the receiving Zebra, for receipts.</figcaption></figure></section>
+<section id="check"><div class="step-head"><div class="step-no">9</div><div><h2>Check on your own printers</h2><div class="why">Before going live, once per printer.</div></div></div>
+<ul class="checklist">
+<li><span class="box"></span><span>Set the label size and media type (gap or black mark) in the printer's own settings, then calibrate it.</span></li>
+<li><span class="box"></span><span>Print a test page from the printer form; the 100 mm line should measure 100 mm.</span></li>
+<li><span class="box"></span><span>Print one real label from each template you use; check it is not shifted or cut.</span></li>
+<li><span class="box"></span><span>Match the template's ZPL resolution to the printer (203 or 300 dpi); adjust darkness and speed for your label stock.</span></li>
+<li><span class="box"></span><span>Scan every barcode with the scanner you use at the till or in the warehouse.</span></li>
+</ul></section>
+</main>
+</div>
+<footer><div class="wrap">Way4Tech, Odoo apps and implementation. Questions: <a href="mailto:info@way4tech.com">info@way4tech.com</a> or <a href="https://wa.me/923154114748">WhatsApp +92 315 411 4748</a>.</div></footer>
+</body>
+</html>

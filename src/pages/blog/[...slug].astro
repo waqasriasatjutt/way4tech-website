@@ -23,6 +23,9 @@ export async function getStaticPaths() {
 const { kind, post, odoo } = Astro.props;
 
 const title = kind === 'odoo' ? odoo!.title : post!.data.title;
+/* The H1 keeps the full authored headline; the <title> uses the shorter
+   metaTitle where the post supplies one. */
+const seoTitle = kind === 'odoo' ? title : (post!.data.metaTitle || title);
 const description = kind === 'odoo'
   ? (odoo!.teaser || odoo!.subtitle || odoo!.title)
   : post!.data.description;
@@ -91,7 +94,7 @@ const breadcrumbSchema = {
 };
 ---
 <Base
-  title={title}
+  title={seoTitle}
   description={description}
   ogType="article"
   publishedTime={date}

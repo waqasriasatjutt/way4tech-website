@@ -276,9 +276,55 @@ const delivery = [
   'A one-hour walkthrough with your team',
   '90 days of bug-fix support',
 ];
+/* Title budget.
+   The catalogue name is written for the apps.odoo.com listing, where a long
+   keyword-rich name helps store search. In a SERP the same name was pushing
+   titles to 103 characters once " - Odoo Module | Way4Tech" was appended, so
+   the part that identifies the module was cut off. The name now keeps its
+   qualifier only while the whole title still fits, and a name that cannot fit
+   on its own is cut at a separator rather than mid-phrase. 63 rather than 60
+   is the trim trigger because Google measures pixels, and losing a real word
+   to save one character reads worse than a title three characters long. */
+const TITLE_LIMIT = 60;
+const TITLE_SOFT_LIMIT = 63;
+const TITLE_SUFFIX_LEN = ' | Way4Tech'.length;
+const TITLE_QUALIFIERS = [' - Odoo Module', ' - Odoo', ''];
+const DANGLING_WORDS = new Set(['and','or','with','for','the','a','an','to','of','in','on','&','-','+','by','from']);
+
+function tidyStem(value) {
+  let out = value.replace(/^[\s\-–|:&,]+|[\s\-–|:&,]+$/g, '');
+  const words = out.split(' ');
+  while (words.length && DANGLING_WORDS.has(words[words.length - 1].toLowerCase())) words.pop();
+  return words.join(' ').replace(/^[\s\-–|:&,]+|[\s\-–|:&,]+$/g, '');
+}
+
+function buildProductTitle(name) {
+  for (const q of TITLE_QUALIFIERS) {
+    if ((name + q).length + TITLE_SUFFIX_LEN <= TITLE_LIMIT) return name + q;
+  }
+  if (name.length + TITLE_SUFFIX_LEN <= TITLE_SOFT_LIMIT) return name;
+
+  const budget = TITLE_SOFT_LIMIT - TITLE_SUFFIX_LEN;
+  let stem = name;
+  for (const sep of [' | ', ' - ', ': ', ' – ']) {
+    if (stem.includes(sep)) {
+      const head = stem.split(sep)[0];
+      if (head.length <= budget) { stem = head; break; }
+    }
+  }
+  if (stem.length > budget) stem = tidyStem(stem.slice(0, budget).replace(/\s+\S*$/, ''));
+  stem = tidyStem(stem);
+  for (const q of TITLE_QUALIFIERS) {
+    if ((stem + q).length + TITLE_SUFFIX_LEN <= TITLE_LIMIT) return stem + q;
+  }
+  return stem;
+}
+
+const pageTitle = buildProductTitle(product.name);
+
 ---
 <Base
-  title={`${product.name} - Odoo Module`}
+  title={pageTitle}
   description={metaDescription}
   structuredData={schema}
 >

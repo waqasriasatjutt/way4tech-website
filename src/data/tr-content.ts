@@ -187,7 +187,7 @@ export const TR_COUNTRY: TrCountry = {
   slug: 'turkey',
   enSlug: 'turkey',
   name: "Türkiye",
-  metaTitle: "Türkiye için Odoo: e-Fatura, KDV, SGK bordrosu ve entegrasyonlar",
+  metaTitle: "Türkiye için Odoo: e-Fatura, KDV ve SGK bordrosu",
   metaDescription:
     "Türkiye için Odoo yerelleştirmesi: e-Fatura ve e-Arşiv, KDV ve kurumlar vergisi, SGK bordrosu, e-Defter, sanal POS ve kargo entegrasyonları. Odoo ile hazır gelen ne, geliştirme gereken ne.",
   lede:
@@ -522,7 +522,7 @@ export const TR_TOPICS: TrTopic[] = [
     kind: 'payments',
     label: "Ödeme yöntemleri",
     h1: "Odoo sanal POS ve ödeme yöntemleri entegrasyonu",
-    metaTitle: "Odoo Sanal POS ve Ödeme Yöntemleri Entegrasyonu (Türkiye)",
+    metaTitle: "Odoo Sanal POS ve Ödeme Entegrasyonu",
     lede: "Türkiye'de önemli olan her ödeme yöntemi ve altyapısı, her birinin Odoo'ya nasıl ulaştığıyla birlikte: ürünle hazır gelen, topluluk modülü, ücretli konnektör veya geliştirme.",
     metaDescription: "Odoo ödeme entegrasyonu Türkiye: sanal POS, taksit, Troy, iyzico, PayTR, havale, FAST ve kapıda ödeme. Hangisi Odoo ile hazır, hangisi konnektör, hangisi geliştirme.",
     serviceName: "Odoo ödeme altyapısı entegrasyonu (Türkiye)",

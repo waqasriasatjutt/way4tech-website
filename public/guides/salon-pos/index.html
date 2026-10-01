@@ -143,11 +143,15 @@
       <li><a href="#turnon"><span class="n">3</span>Turn on Salon Mode</a></li>
       <li><a href="#open"><span class="n">4</span>Opening the till</a></li>
       <li><a href="#board"><span class="n">5</span>The Salon board</a></li>
+      <li><a href="#dayview"><span class="n">5a</span>The day view</a></li>
+      <li><a href="#shortcuts"><span class="n">5b</span>Keyboard shortcuts</a></li>
+      <li><a href="#checkin"><span class="n">5c</span>Arrived check-in</a></li>
       <li><a href="#booking"><span class="n">6</span>Booking ahead</a></li>
       <li><a href="#walkin"><span class="n">7</span>A walk-in customer</a></li>
       <li><a href="#load"><span class="n">8</span>Loading a booking</a></li>
       <li><a href="#payment"><span class="n">9</span>Taking payment, and tips</a></li>
       <li><a href="#receipt"><span class="n">10</span>The receipt</a></li>
+      <li><a href="#rebook"><span class="n">10a</span>Quick rebook</a></li>
       <li><a href="#refund"><span class="n">11</span>Refunding a sale</a></li>
       <li><a href="#reopen"><span class="n">12</span>Reopening an old order</a></li>
       <li><a href="#history"><span class="n">13</span>Customer history</a></li>
@@ -180,7 +184,8 @@
         <tr><th>What this is</th><td>A bridge that brings the salon back office into the Odoo till. It adds no appointment system of its own; it puts WT Salon Management's appointments, services and stylists onto the POS order, the receipt and the commission.</td></tr>
         <tr><th>What it requires</th><td>WT Salon Management. This module does nothing on a database that does not already have it installed and set up.</td></tr>
         <tr><th>Who it is for</th><td>A salon already running on WT Salon Management whose front desk wants to take money at a till.</td></tr>
-        <tr><th>Who should buy something else</th><td>A spa or a business with no back office already in place should buy WT Spa and Salon POS instead, which is self contained with its own bookings, rooms and therapists. The two are not versions of one product and should not be installed on the same database.</td></tr>
+        <tr><th>Spa or treatment rooms too</th><td>Spa POS installs on top of this module and WT Salon Management together. It adds the room grid with cleaning time, couples bookings, an intake form, a day-spa itinerary, the advance at booking and therapist reviews to this same till, and everything in this guide works on a spa till too. It is a further layer, not an alternative.</td></tr>
+        <tr><th>Loyalty, packages, gift cards</th><td>The Salon Loyalty add-on (WT Enterprise Salon) lights up in this till when it is installed (step 17).</td></tr>
       </table>
     </section>
 
@@ -189,6 +194,9 @@
         <div class="step-no">1</div>
         <div><h2>Before you start</h2><div class="why">Five minutes, once.</div></div>
       </div>
+      <p>Looking for the whole ladder, from the back office to the spa
+      layer and the loyalty add-on? See
+      <a href="https://way4tech.com/guides/salon-suite/">Which salon module do I need?</a></p>
       <p>You need Odoo 19 Community with <b>Point of Sale</b> and
       <b>WT Salon Management</b> both installed. This module adds
       nothing on its own without the second one; install it first.</p>
@@ -217,6 +225,17 @@
         <div class="step-no">2</div>
         <div><h2>Setting up your first till</h2><div class="why">Stylists, services and rooms live in WT Salon Management.</div></div>
       </div>
+      <p>The quickest way is the setup wizard in WT Salon Management, at <span class="path">Salon &gt; Configuration &gt; Setup Wizard</span>. It also opens by itself the first time the Administrator logs in. Five steps: business type, region, hours and closed days, your stylists with a colour each, and a starter list of services. Press <span class="btn">Finish</span> and, with Point of Sale installed, it creates a till in Salon Mode for you.</p>
+      <figure>
+        <img src="images/base_wizard_region.png" alt="Step 2 of the wizard: region, with the defaults it fills in" loading="lazy">
+      </figure>
+      <figure>
+        <img src="images/base_wizard_hours.png" alt="Step 3: hours, closed days and the tax the wizard used" loading="lazy">
+      </figure>
+      <figure>
+        <img src="images/base_wizard_services.png" alt="Step 5: a starter list of services, ready to edit" loading="lazy">
+      </figure>
+      <p>The region presets (Gulf, South Asia, UK and EU, North America) only set defaults you can change: the tax name and rate, a deposit percentage, the closed weekday and a few switches. Nothing is hidden from any region, and nothing is filed or charged on your behalf.</p>
       <p>A production database installs with no demo data, so before you
       open the till for the first time, WT Salon Management needs at
       least one stylist and one service already set up, and a room too
@@ -287,9 +306,11 @@
         <img src="images/shot_pos_salon_board.png" alt="The Salon board: a kanban of today's appointments, grouped and filtered" loading="lazy">
         <figcaption>Book and Walk-In sit at the top right. Filters narrow the list to Pending, All, Active, Done, Paid, Unpaid or Cancelled with one tap, and search finds an appointment by reference, customer, service or stylist. Group the kanban by stage, stylist, service, time of day, source or payment. Click any card to open its full detail on the right.</figcaption>
       </figure>
-      <p>Each card shows the room or station the visit is booked in, and
-      a card that is In Progress shows how long the service has been
-      running, from the moment Start was pressed.</p>
+      <p>Each card shows the room or station the visit is booked in, the
+      stylist as a coloured avatar with initials, and, on a card that is
+      In Progress, how long the service has been running, from the moment
+      Start was pressed. A card that has run past its time carries an
+      <b>Overdue</b> badge.</p>
       <p>The <b>Rooms</b> tab shows every room, chair and station from WT
       Salon Management with its state right now: Available, Reserved (a
       booking still to come today) or In service. Open the booking in a
@@ -298,6 +319,58 @@
       <figure>
         <img src="images/shot_pos_rooms.png" alt="The Rooms tab: every room and station with its live state" loading="lazy">
       </figure>
+    </section>
+
+    <section id="dayview">
+      <div class="step-head">
+        <div class="step-no">5a</div>
+        <div><h2>The day view</h2><div class="why">A column per stylist.</div></div>
+      </div>
+      <p>Press <kbd>V</kbd>, or the third button beside the kanban and list toggles, and the board becomes a day view: one column per stylist, time rows from the salon's opening to its closing hour, and a block for each booking in that stylist's colour. A red line marks the time now. Click a free part of a column to open <span class="btn">Book</span> already filled in with that stylist and that time. Press <kbd>V</kbd> again to go back to the cards.</p>
+      <figure>
+        <img src="images/shot_pos_day_view.png" alt="The day view: a column per stylist, a block per booking" loading="lazy">
+      </figure>
+      <div class="callout warn"><div class="label">Good to know</div><p>The day view draws a column for every employee of the company, not only stylists. Archive staff who do not take bookings and their empty columns go away. The stylist chips in the Book popup work the same way.</p></div>
+
+    </section>
+
+    <section id="shortcuts">
+      <div class="step-head">
+        <div class="step-no">5b</div>
+        <div><h2>Keyboard shortcuts</h2><div class="why">Press ? to see them.</div></div>
+      </div>
+      <p>Press <kbd>?</kbd> on the board and a cheat sheet opens over it.</p>
+      <div class="table-wrap"><table>
+        <tr><th><kbd>N</kbd></th><td>New booking</td></tr>
+        <tr><th><kbd>W</kbd></th><td>Walk-in</td></tr>
+        <tr><th><kbd>/</kbd></th><td>Search</td></tr>
+        <tr><th><kbd>T</kbd></th><td>Today</td></tr>
+        <tr><th><kbd>V</kbd></th><td>Toggle board and day view</td></tr>
+        <tr><th><kbd>R</kbd></th><td>Rooms tab</td></tr>
+        <tr><th><kbd>Arrow keys</kbd></th><td>Move between cards</td></tr>
+        <tr><th><kbd>Enter</kbd></th><td>Open the card</td></tr>
+        <tr><th><kbd>O</kbd></th><td>Load the card onto the order</td></tr>
+        <tr><th><kbd>D</kbd></th><td>Mark done</td></tr>
+        <tr><th><kbd>Esc</kbd></th><td>Close</td></tr>
+        <tr><th><kbd>?</kbd></th><td>The cheat sheet</td></tr>
+      </table></div>
+      <figure>
+        <img src="images/shot_pos_shortcuts.png" alt="The shortcut cheat sheet over the board" loading="lazy">
+      </figure>
+      <p>Shortcuts never fire while you type in a search box or a field, never with Ctrl, Alt or Cmd held, and stand down while a popup is open, so typing a customer's name in the Book popup never opens a walk-in.</p>
+
+    </section>
+
+    <section id="checkin">
+      <div class="step-head">
+        <div class="step-no">5c</div>
+        <div><h2>Arrived: checking a guest in</h2><div class="why">A flag, not a stage.</div></div>
+      </div>
+      <p>A confirmed booking whose guest has just walked in carries a <span class="btn">Check In</span> button on its card. Press it and the card shows an <b>Arrived</b> chip, so the stylist can see who is waiting. Checking in does not start the service; <span class="btn">Start</span> is still its own step. Arrived is a flag, not a new stage, so no report, filter or commission rule changes.</p>
+      <figure>
+        <img src="images/shot_pos_checkin.png" alt="A checked-in guest: the Arrived chip on the card" loading="lazy">
+      </figure>
+
     </section>
 
     <section id="booking">
@@ -370,9 +443,16 @@
         <img src="images/shot_pos_payment.png" alt="The payment screen, a salon service on the order, ready to take payment" loading="lazy">
       </figure>
       <p>If <b>Stylist Tips</b> is turned on for this till (step 3), the
-      payment screen also carries a <b>Tip</b> button. Enter the amount
-      before validating and the tip is recorded against the stylist who
-      did the work, and it prints on the receipt in the next step.</p>
+      payment screen also carries a <b>Tip</b> button. It opens three
+      presets, 10%, 15% and 20% of the bill with the amount on each, a
+      <b>Custom amount</b> box and a <b>No tip</b> link. Choose one and
+      press <span class="btn">Apply</span>: the tip is recorded against the
+      stylist who did the work and prints on the receipt in the next step.
+      A visit has one tip, which goes to the stylist of the visit.</p>
+      <figure>
+        <img src="images/shot_pos_tip.png" alt="The tip popup: three presets and a custom amount" loading="lazy">
+      </figure>
+
     </section>
 
     <section id="receipt">
@@ -388,8 +468,27 @@
       receipt, not only the on-screen preview. A sale with no linked
       appointment prints exactly the normal Odoo receipt.</p>
       <figure>
-        <img src="images/shot_pos_receipt.png" alt="A receipt showing the appointment reference, service and stylist" loading="lazy">
+        <img src="images/shot_pos_receipt.png" alt="A receipt with the logo, the stylist, the tip, the next appointment and a QR to book again" loading="lazy">
       </figure>
+      <p>The receipt adds, under the salon block: the <b>tip for the
+      stylist, by name</b>; a <b>Next appointment</b> line when the guest
+      already has a later booking; and a <b>QR code</b> that sends the
+      guest to your online booking page (it needs the booking page switched
+      on in WT Salon Management). When a visit had more than one service,
+      each service line names its own stylist. Your company logo prints at
+      the top, as on any Odoo receipt.</p>
+    </section>
+
+    <section id="rebook">
+      <div class="step-head">
+        <div class="step-no">10a</div>
+        <div><h2>Quick rebook after payment</h2><div class="why">Same again in 2, 4 or 6 weeks.</div></div>
+      </div>
+      <p>The screen after a successful payment carries a <b>Same again?</b> box with three buttons: <span class="btn">In 2 weeks</span>, <span class="btn">In 4 weeks</span> and <span class="btn">In 6 weeks</span>. One tap books the same service with the same stylist at the same time of day, through WT Salon Management, so the double-booking guard still applies. If that time is taken, the box says so and offers the nearest free time with a button to take it instead.</p>
+      <figure>
+        <img src="images/shot_pos_rebook.png" alt="Same again in 2, 4 or 6 weeks, and the booking made" loading="lazy">
+      </figure>
+
     </section>
 
     <section id="refund">
@@ -613,6 +712,8 @@
         <li><span class="box"></span><span><b>No SMS or email appointment reminders.</b></span></li>
         <li><span class="box"></span><span><b>No payroll.</b> Commission is calculated and shown in WT Salon Management's own reports; it is not paid out by this module.</span></li>
         <li><span class="box"></span><span><b>No stylist working hours calendar.</b> The module will not refuse to book someone outside their normal hours.</span></li>
+        <li><span class="box"></span><span><b>No list of stylists of its own.</b> The day view and the stylist chips use every employee of the company; archive the ones who are not stylists.</span></li>
+        <li><span class="box"></span><span><b>No tip split between two stylists.</b> One visit has one tip.</span></li>
         <li><span class="box"></span><span><b>No double-booking guard of its own.</b> WT Salon Management refuses to book a stylist twice at the same time, and that applies at the till too.</span></li>
       </ul>
     </section>

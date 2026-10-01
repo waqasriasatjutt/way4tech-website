@@ -229,7 +229,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "odoo-customization": {
-    metaTitle: "Odoo Customization: Custom Modules, Reports and Workflows",
+    metaTitle: "Odoo Customization: Custom Modules and Reports",
     metaDescription: "Custom Odoo development done so it survives the next upgrade: specification, separate modules, tests, code review and handover. What we build, what we refuse, and why.",
     lede: "Custom code is a liability you agree to carry. We keep it small, keep it in its own module, and write it so the next upgrade does not eat it.",
     intro: [
@@ -467,7 +467,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "hire-odoo-developer": {
-    metaTitle: "Hire Odoo Developers: Dedicated or Part-Time Engagements",
+    metaTitle: "Hire Odoo Developers: Dedicated or Part-Time",
     metaDescription: "How a dedicated Odoo developer engagement runs: role definition, trial period, working agreement, code standards, reporting and the exit plan. What you have to supply.",
     lede: "A dedicated developer is a capacity decision. It works when you have a backlog and someone to own it, and it fails when neither is true.",
     intro: [
@@ -583,7 +583,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "odoo-integration": {
-    metaTitle: "Odoo Integration Services: APIs, Webhooks and Connectors",
+    metaTitle: "Odoo Integration Services: APIs and Webhooks",
     metaDescription: "Odoo integration done so failures are visible: field mapping, master-of-record decisions, idempotency, retry, reconciliation and a log you can search. Phases and pitfalls.",
     lede: "Integrations are easy to demonstrate and hard to run. The work is not the connection, it is what happens on the day one side is down.",
     intro: [
@@ -824,7 +824,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
 
   /* ───────────── STRATEGY ───────────── */
   "odoo-consultancy": {
-    metaTitle: "Odoo Consultancy: Architecture, Edition and Roadmap Advice",
+    metaTitle: "Odoo Consultancy: Architecture and Roadmap",
     metaDescription: "Independent Odoo advice for founders and CTOs: edition choice, hosting model, multi-company structure, cost modelling and a phased roadmap with the trade-offs written down.",
     lede: "Advice you can act on, with the trade-offs stated. Including the times the answer is that Odoo is the wrong fit.",
     intro: [
@@ -940,7 +940,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "odoo-training": {
-    metaTitle: "Odoo Training for Users, Administrators and Developers",
+    metaTitle: "Odoo Training for Users, Admins, Developers",
     metaDescription: "Role-based Odoo training on your own configured system: curriculum design, hands-on labs, assessment, recordings and a support channel afterwards. What makes training stick.",
     lede: "Training on a demo database teaches people a system they will never use. We train on yours, with your data.",
     intro: [
@@ -1057,7 +1057,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
 
   /* ───────────── CLOUD ───────────── */
   "odoo-saas-hosting": {
-    metaTitle: "Odoo Hosting and Multi-Tenant SaaS Platform Operations",
+    metaTitle: "Odoo Hosting and Multi-Tenant SaaS Platforms",
     metaDescription: "Managed Odoo hosting and multi-tenant SaaS operations: sizing, provisioning, backups with tested restores, patching, monitoring, isolation and a documented exit path.",
     lede: "Hosting is judged on the worst day, not the average one. The questions that matter are the restore, the patch and the exit.",
     intro: [
@@ -1176,7 +1176,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "odoo-audit": {
-    metaTitle: "Odoo Health Audit: Code, Database, Security and Workflow Review",
+    metaTitle: "Odoo Health Audit: Code, Database, Security",
     metaDescription: "An independent audit of a live Odoo instance: code quality, database performance, security posture, workflow efficiency and licence exposure, with a written report and a ranked fix list.",
     lede: "An audit is worth buying when you need an independent answer, especially about work that someone else did.",
     intro: [
@@ -1295,7 +1295,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
 
   /* ───────────── COMPLIANCE ───────────── */
   "odoo-localization": {
-    metaTitle: "Odoo Localization: Country Setup, Layouts and Local Reporting",
+    metaTitle: "Odoo Localization: Country Setup and Reports",
     metaDescription: "How an Odoo localization engagement runs: requirement confirmation with your adviser, chart of accounts, document layouts, bilingual output, testing and the maintenance that follows.",
     lede: "Localization is a delivery job with an adviser attached. Your accountant states the requirement, we configure it and prove it in the system.",
     intro: [
@@ -1412,7 +1412,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "odoo-e-invoicing": {
-    metaTitle: "E-invoicing Enablement for Odoo: Build, Test and Go-Live",
+    metaTitle: "Odoo E-invoicing: Build, Test and Go-Live",
     metaDescription: "How an e-invoicing project runs in Odoo: confirming the requirement with your adviser, data readiness, sandbox testing, failure handling, archiving and the monitoring that follows.",
     lede: "E-invoicing turns invoicing into an integration. The invoice is no longer finished when you print it, and the project has to be designed around that.",
     intro: [
@@ -1531,7 +1531,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
 
   /* ───────────── HR ───────────── */
   "odoo-payroll-setup": {
-    metaTitle: "Odoo Payroll Setup: Rule Books, Parallel Runs and Handover",
+    metaTitle: "Odoo Payroll Setup: Rule Books and Parallel Runs",
     metaDescription: "How a payroll configuration project runs: rule capture from your policy and adviser, structure build, parallel runs against known payslips, bank output, and handover to your team.",
     lede: "Payroll is the one system where being nearly right is the same as being wrong. It is proved by parallel running, not by demonstration.",
     intro: [
@@ -1655,7 +1655,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
 
   /* ───────────── RETAIL ───────────── */
   "odoo-pos-deployment": {
-    metaTitle: "Odoo POS Deployment for Retail, Restaurants and Services",
+    metaTitle: "Odoo POS Deployment for Retail and Restaurants",
     metaDescription: "Rolling out Odoo POS across sites: hardware proving, menu and product setup, offline behaviour, staff training, a pilot store, and the multi-site rollout that follows.",
     lede: "A POS rollout is judged at the counter during the busiest hour. Everything in the plan works backwards from that.",
     intro: [
@@ -1776,7 +1776,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
 
   /* ───────────── DIGITAL ───────────── */
   "odoo-ecommerce": {
-    metaTitle: "Odoo eCommerce Development: Shop, Checkout and Fulfilment",
+    metaTitle: "Odoo eCommerce Development: Shop and Checkout",
     metaDescription: "Building an Odoo shop that trades: catalogue structure, checkout and payment, shipping and fulfilment, performance, migration without losing rankings, and post-launch iteration.",
     lede: "A shop is not a website. It is an operations project with a storefront on the front of it.",
     intro: [

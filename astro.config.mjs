@@ -60,6 +60,41 @@ function lastmodFor(pathname) {
 // trailing slash and the .html form.
 const SITEMAP_EXCLUDED = new Set(['/404', '/404/', '/404.html']);
 
+// A /solutions/<slug>/ page that has an /industries/<slug>/ twin declares that
+// twin canonical (see src/pages/solutions/[slug].astro). Submitting a URL that
+// canonicalises elsewhere spends crawl budget to be told to look somewhere
+// else, so those twins are kept out of the sitemap. The condition is read from
+// the same two sources the page uses, rather than listed here, so adding an
+// industry cannot leave a stale slug behind.
+const CANONICALISED_SOLUTIONS = (() => {
+  try {
+    const read = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
+
+    const site = read('./src/data/site.ts');
+    const industriesBlock = (site.match(/export const INDUSTRIES[\s\S]*?^\];/m) || [''])[0];
+    const industrySlugs = new Set(
+      [...industriesBlock.matchAll(/slug:\s*'([a-z0-9-]+)'/g)].map((m) => m[1]),
+    );
+
+    // INDUSTRY_DETAIL is spread together from these four sources.
+    const detailSlugs = new Set(
+      [
+        './src/data/industries-detail.ts',
+        './src/data/industries/services.ts',
+        './src/data/industries/trade.ts',
+        './src/data/industries/professional.ts',
+      ].flatMap((f) => [...read(f).matchAll(/^  '([a-z0-9-]+)':/gm)].map((m) => m[1])),
+    );
+
+    return new Set(
+      [...industrySlugs].filter((s) => detailSlugs.has(s)).map((s) => `/solutions/${s}/`),
+    );
+  } catch {
+    return new Set();
+  }
+})();
+
+
 // Per-section crawl hints. `index` is the section landing page, `child` is
 // everything below it. Numbers are written out in full rather than derived,
 // because 0.8 + 0.1 is not 0.9 in floating point.
@@ -144,7 +179,9 @@ export default defineConfig({
     sitemap({
       // Also stamps <lastmod> on the sitemap-index entries.
       lastmod: BUILD_TIME,
-      filter: (page) => !SITEMAP_EXCLUDED.has(pathnameOf(page)),
+      filter: (page) =>
+        !SITEMAP_EXCLUDED.has(pathnameOf(page)) &&
+        !CANONICALISED_SOLUTIONS.has(pathnameOf(page)),
       serialize: (item) => ({
         ...item,
         lastmod: lastmodFor(pathnameOf(item.url)).toISOString(),

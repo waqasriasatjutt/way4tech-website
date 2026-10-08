@@ -1,0 +1,198 @@
+---
+title: "The whole OWL lifecycle on one page"
+metaTitle: "OWL lifecycle hooks order"
+description: "Every lifecycle hook in the order it fires, what is safe inside each, and a runnable component that logs the lot so you can see it happen."
+part: 4
+partTitle: "The lifecycle"
+order: 1
+outcome: "Name every lifecycle hook, say when it fires, and choose the right one for a given job."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Nine hooks. Most code uses three. Knowing all nine is what stops you using the
+wrong one.
+
+## The order
+
+**First render:**
+
+```
+setup()
+  onWillStart()        async, awaited, nothing is rendered yet
+  onWillRender()
+  [ template renders ]
+  onRendered()
+  [ DOM inserted ]
+  onMounted()          the DOM exists
+```
+
+**Parent gives new props:**
+
+```
+onWillUpdateProps(nextProps)   async, awaited, props not yet swapped
+onWillRender()
+[ template renders ]
+onRendered()
+[ DOM patched ]
+onWillPatch()      before the patch
+onPatched()        after the patch
+```
+
+**Own state changed:**
+
+```
+onWillRender()
+[ renders ]
+onRendered()
+onWillPatch()
+onPatched()
+```
+
+**Destroyed:**
+
+```
+onWillUnmount()      DOM still present
+[ DOM removed ]
+onWillDestroy()      DOM gone
+```
+
+**Anything throws below:**
+
+```
+onError(error)
+```
+
+## What each is for
+
+| Hook | Fires | Use it for | Async |
+| --- | --- | --- | --- |
+| `onWillStart` | Once, before first render | Loading data the first render needs | Yes |
+| `onWillRender` | Before every render | Rarely. Instrumentation | No |
+| `onRendered` | After every render, before DOM | Logging, diagnostics | No |
+| `onMounted` | Once, after DOM insert | Focus, measure, charts, listeners | No |
+| `onWillUpdateProps` | Before render from new props | Reloading for a new record | Yes |
+| `onWillPatch` | Before DOM patch | Capturing scroll position | No |
+| `onPatched` | After DOM patch | Restoring scroll, re-measuring | No |
+| `onWillUnmount` | Before DOM removal | Removing listeners, timers | No |
+| `onWillDestroy` | After removal | Last resort cleanup | No |
+
+Only `onWillStart` and `onWillUpdateProps` are awaited. Returning a promise from
+any other hook does nothing useful: OWL does not wait, and the work continues
+unsupervised.
+
+## All of it, running
+
+Drop this in and open the console. Twenty minutes with this component is worth
+more than re-reading the table.
+
+```js
+// static/src/lifecycle/lifecycle_demo.js
+import {
+    Component, useState, onWillStart, onWillRender, onRendered, onMounted,
+    onWillUpdateProps, onWillPatch, onPatched, onWillUnmount, onWillDestroy,
+} from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+class Child extends Component {
+    static template = "owl_course.LifecycleChild";
+    static props = { label: String };
+
+    setup() {
+        const tag = () => `[child ${this.props.label}]`;
+        console.log(tag(), "setup");
+        onWillStart(async () => {
+            console.log(tag(), "onWillStart");
+            await new Promise(r => setTimeout(r, 300));
+            console.log(tag(), "onWillStart done");
+        });
+        onWillRender(() => console.log(tag(), "onWillRender"));
+        onRendered(() => console.log(tag(), "onRendered"));
+        onMounted(() => console.log(tag(), "onMounted"));
+        onWillUpdateProps(async (next) =>
+            console.log(tag(), "onWillUpdateProps ->", next.label));
+        onWillPatch(() => console.log(tag(), "onWillPatch"));
+        onPatched(() => console.log(tag(), "onPatched"));
+        onWillUnmount(() => console.log(tag(), "onWillUnmount"));
+        onWillDestroy(() => console.log(tag(), "onWillDestroy"));
+    }
+}
+
+export class LifecycleDemo extends Component {
+    static template = "owl_course.LifecycleDemo";
+    static components = { Child };
+    static props = {};
+
+    setup() {
+        this.state = useState({ label: "A", show: true });
+    }
+}
+
+registry.category("systray").add("owl_course.lifecycle", {
+    Component: LifecycleDemo,
+}, { sequence: 99 });
+```
+
+```xml
+<templates xml:space="preserve">
+    <t t-name="owl_course.LifecycleChild">
+        <span class="px-1" t-esc="props.label"/>
+    </t>
+
+    <t t-name="owl_course.LifecycleDemo">
+        <div class="d-flex align-items-center px-2">
+            <Child t-if="state.show" label="state.label"/>
+            <button class="btn btn-sm btn-link"
+                    t-on-click="() => this.state.label = this.state.label === 'A' ? 'B' : 'A'">
+                swap
+            </button>
+            <button class="btn btn-sm btn-link"
+                    t-on-click="() => this.state.show = !this.state.show">
+                toggle
+            </button>
+        </div>
+    </t>
+</templates>
+```
+
+Three things to notice when you run it.
+
+The 300ms wait in `onWillStart` genuinely blocks the first render. Nothing from
+that child appears until it resolves.
+
+"swap" fires `onWillUpdateProps` but **not** `onWillStart`. That hook runs once
+per component instance, ever.
+
+"toggle" off fires `onWillUnmount` then `onWillDestroy`. Toggling back on fires
+`setup` and `onWillStart` again, because it is a **new instance**. The old one
+is gone and nothing it held survives.
+
+## The two rules
+
+**Call hooks at the top of `setup`, unconditionally.** Not in an `if`, a loop,
+a callback or an async continuation. OWL binds a hook to whichever component is
+being set up, and that association only exists during `setup`.
+
+```js
+// Wrong
+setup() {
+    if (this.props.live) {
+        onMounted(() => this.connect());    // sometimes registered
+    }
+}
+
+// Right
+setup() {
+    onMounted(() => {
+        if (this.props.live) this.connect();
+    });
+}
+```
+
+**Anything you set up, tear down.** A listener, an interval, an observer, a
+websocket. `onWillUnmount` is the place.
+
+## What is next
+
+`onWillStart` on its own, because loading data before the first render is where
+most real components begin and where several avoidable mistakes live.

@@ -1,0 +1,204 @@
+---
+title: "Slots: components that take content"
+metaTitle: "OWL slots tutorial"
+description: "Default slots, named slots, slot props for passing data back out, and checking whether a slot was filled. The pattern behind every reusable shell component in Odoo."
+part: 2
+partTitle: "Components"
+order: 5
+outcome: "Build a component whose content the parent supplies, including named slots and slots that pass data back."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Props pass data. Slots pass markup. When you want a card, a dialog or a panel
+whose contents the parent decides, you want a slot.
+
+## The default slot
+
+```xml
+<!-- The reusable shell -->
+<t t-name="owl_course.Panel">
+    <div class="border rounded p-3">
+        <t t-slot="default"/>
+    </div>
+</t>
+```
+
+```js
+export class Panel extends Component {
+    static template = "owl_course.Panel";
+    static props = { slots: { type: Object, optional: true } };
+}
+```
+
+```xml
+<!-- Using it -->
+<Panel>
+    <h4>Outstanding invoices</h4>
+    <p>Nothing is overdue this month.</p>
+</Panel>
+```
+
+Everything between the tags lands where `t-slot="default"` sits.
+
+Declare `slots` in `static props`. OWL passes slot content as a prop called
+`slots`, so a component with validation turned on and no `slots` declared will
+reject its own children.
+
+## Named slots
+
+One slot is rarely enough. A panel usually wants a header, a body and a footer.
+
+```xml
+<t t-name="owl_course.Panel">
+    <div class="border rounded">
+        <div class="border-bottom p-2 fw-bold">
+            <t t-slot="header"/>
+        </div>
+        <div class="p-3">
+            <t t-slot="default"/>
+        </div>
+        <div t-if="props.slots.footer" class="border-top p-2 text-end">
+            <t t-slot="footer"/>
+        </div>
+    </div>
+</t>
+```
+
+```xml
+<Panel>
+    <t t-set-slot="header">Outstanding invoices</t>
+
+    <p>Nothing is overdue this month.</p>
+
+    <t t-set-slot="footer">
+        <button class="btn btn-sm btn-primary" t-on-click="refresh">Refresh</button>
+    </t>
+</Panel>
+```
+
+Content not inside a `t-set-slot` goes to the default slot.
+
+## Checking whether a slot was filled
+
+`props.slots` is an object keyed by slot name, so the test is simply whether the
+key exists:
+
+```xml
+<div t-if="props.slots.footer" class="border-top p-2">
+    <t t-slot="footer"/>
+</div>
+```
+
+Without that check you render an empty bordered strip whenever a parent omits
+the footer. This is the difference between a component that is pleasant to reuse
+and one everybody works around.
+
+## Slot props: passing data back out
+
+The powerful version. A slot can hand values to the markup the parent wrote.
+
+```xml
+<!-- A list that owns the data and the loop, but not the row markup -->
+<t t-name="owl_course.RecordList">
+    <ul class="list-unstyled">
+        <li t-foreach="state.records" t-as="record" t-key="record.id">
+            <t t-slot="row" record="record" index="record_index"/>
+        </li>
+    </ul>
+</t>
+```
+
+```xml
+<RecordList model="'account.move'">
+    <t t-set-slot="row" t-slot-scope="scope">
+        <strong t-esc="scope.record.name"/>
+        <span t-esc="scope.record.amount_total"/>
+    </t>
+</RecordList>
+```
+
+`t-slot-scope` names the object carrying everything the slot was given. Now
+`RecordList` owns fetching, loading state and pagination, while every caller
+decides what a row looks like. That is the shape of most genuinely reusable
+components.
+
+## Default content
+
+A slot can have a fallback used when the parent supplies nothing:
+
+```xml
+<t t-slot="empty">
+    <p class="text-muted">Nothing here yet.</p>
+</t>
+```
+
+## When not to use a slot
+
+A slot is the right tool when the parent should control **markup**. It is the
+wrong tool when the parent should control **data**.
+
+```xml
+<!-- Wrong: that is a prop -->
+<Panel>
+    <t t-set-slot="title">Invoices</t>
+</Panel>
+
+<!-- Right -->
+<Panel title="'Invoices'"/>
+```
+
+A title is a string. Passing it as a slot means it cannot be used in an
+attribute, cannot be validated, and cannot be read by the component for anything
+other than printing.
+
+The test: if the component needs to **know** the value, it is a prop. If the
+component only needs to **place** it, it is a slot.
+
+## A real shell
+
+Putting it together, this is close to how a reusable section is actually written
+in a module:
+
+```js
+export class Section extends Component {
+    static template = "owl_course.Section";
+    static props = {
+        title: { type: String },
+        collapsible: { type: Boolean, optional: true },
+        slots: { type: Object, optional: true },
+    };
+    static defaultProps = { collapsible: false };
+
+    setup() {
+        this.state = useState({ open: true });
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.Section">
+    <section class="mb-4">
+        <header class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0" t-esc="props.title"/>
+            <div t-if="props.slots.actions">
+                <t t-slot="actions"/>
+            </div>
+            <button t-if="props.collapsible" class="btn btn-sm btn-link"
+                    t-on-click="() => this.state.open = !this.state.open">
+                <t t-esc="state.open ? 'Hide' : 'Show'"/>
+            </button>
+        </header>
+        <div t-if="state.open" class="mt-2">
+            <t t-slot="default"/>
+        </div>
+    </section>
+</t>
+```
+
+The title is a prop because the component prints it and may need it. The actions
+are a slot because the component only places them.
+
+## What is next
+
+The judgement call nobody teaches: when one component should become two.

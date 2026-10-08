@@ -1,0 +1,125 @@
+---
+title: "What OWL is, and why Odoo wrote its own framework"
+metaTitle: "What is OWL in Odoo"
+description: "OWL is the component framework every Odoo screen is built from. What it replaced, why Odoo did not pick React or Vue, and the five ideas you need before writing any code."
+part: 1
+partTitle: "Getting your bearings"
+order: 1
+outcome: "Explain what OWL is, how it differs from the widget system it replaced, and why Odoo maintains its own framework."
+versions: ["19.0", "18.0", "17.0"]
+updated: 2026-10-09
+---
+
+OWL is the Odoo Web Library: a component framework, written by Odoo, that every
+screen in the backend is built from. The list view, the form view, the kanban
+board, the settings page, the systray clock. All OWL components.
+
+If you have written React, most of this will feel familiar and you will be
+productive quickly. If you have not, nothing here assumes you have.
+
+## What it replaced
+
+Before Odoo 14 the web client was built on a class hierarchy usually called the
+widget system. A widget rendered itself by building a string of HTML, inserting
+it into the page, and then hunting through its own DOM with jQuery to attach
+behaviour.
+
+That design has one fatal property: **the component does not know what changed**.
+When data moved, the usual fix was to re-render the whole widget and reattach
+everything. Code accumulated that manually patched one corner of the DOM to
+avoid the cost, and those patches are where the bugs lived.
+
+Odoo 14 introduced OWL, Odoo 15 and 16 migrated the client across, and by Odoo
+17 the old system was gone from the parts you are likely to touch. In Odoo 18
+and 19 OWL is simply how the web client works.
+
+The practical consequence for you: **tutorials written before 2022 describe a
+framework that no longer exists.** A great deal of what you will find searching
+for Odoo JavaScript is for the old system. If an example extends
+`AbstractField`, uses `this.$el`, or calls `_super`, it is for a version of Odoo
+you are not running.
+
+## Why not React or Vue
+
+A reasonable question, and the answer is not pride.
+
+**Size.** Odoo ships a very large application to every user, including users on
+poor connections in markets where that matters. OWL is small, in the region of
+20KB compressed. Adding a general purpose framework plus the ecosystem that
+usually arrives with it is weight on every page load, for every customer,
+forever.
+
+**Templates in XML.** This is the one that actually decides it. Odoo's entire
+product is built on the idea that a view can be changed without touching source
+code. An integrator inherits a view, writes an XPath, and moves a field. That
+model requires templates to be data, in XML, editable and inheritable at
+runtime. React's JSX compiles templates into JavaScript, which makes that
+impossible. OWL keeps QWeb templates as XML, so the same inheritance mechanism
+that has always worked for views keeps working for components.
+
+**Control.** Odoo supports each version for three years. A framework they own is
+a framework that cannot make a breaking change on someone else's schedule.
+
+## The five ideas
+
+Everything in this course is built from these.
+
+**A component is a class with a template.** You write a class, you give it a
+static `template` naming an XML template, and OWL renders it. No build step, no
+JSX, no bundler configuration of your own.
+
+**Templates are QWeb, in XML.** The same directives you already know from Odoo
+reports and views: `t-if`, `t-foreach`, `t-att`, plus component-specific ones
+like `t-on-click` and `t-props`.
+
+**State is reactive by being wrapped.** You call `useState` on an object and get
+a proxy back. Writing to that proxy marks the component for re-render. There is
+no `setState`, and no dependency array.
+
+**Props flow down, events flow up.** A parent passes data into a child through
+props, and a child tells a parent something happened by calling a function the
+parent passed in. Data does not flow sideways.
+
+**Services are the way out.** Anything outside your component, the server, a
+notification, a dialog, the router, is reached through a service you ask for by
+name. This is the piece that makes OWL inside Odoo different from OWL on its
+own, and it is Part 5 of this course.
+
+## What OWL is not
+
+It is worth being clear, because assuming otherwise wastes days.
+
+It is **not** a way to build the Odoo website or portal. Those are server
+rendered QWeb pages. OWL runs in the backend client, and in a few specific
+frontend bundles such as the point of sale.
+
+It is **not** a replacement for the ORM. Business logic belongs in Python. A
+component that calculates a price is a component that will disagree with the
+invoice, because the invoice is calculated in Python. Compute on the server,
+display on the client.
+
+It is **not** a reason to avoid standard views. Before writing a component, ask
+whether a list view with a well chosen domain does the job. A great deal of
+custom OWL exists because somebody did not know a standard view could do it, and
+every line of it is a line to maintain at the next upgrade.
+
+## Checking which OWL you have
+
+OWL's own version is not something you normally pin, because you get whatever
+your Odoo ships. What matters is the Odoo version. Open any backend page, then
+the browser console, and run:
+
+```js
+odoo.info
+```
+
+You will get the server version and the version info object. Everything in this
+course is written against Odoo 19 and tested against 18. Where 17 differs in a
+way that matters, the lesson says so.
+
+## What is next
+
+In the next lesson you will set up a development environment where saving a file
+changes what the browser shows, without restarting Odoo or clearing anything.
+Getting that loop right first is worth the twenty minutes, because every lesson
+after it depends on being able to try things quickly.

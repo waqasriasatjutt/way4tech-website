@@ -1,0 +1,168 @@
+---
+title: "Cleanup and onError: not leaking, and not taking the screen down"
+metaTitle: "OWL onWillUnmount and onError"
+description: "Removing listeners, timers and observers so a long backend session does not degrade, and catching errors in one component so the rest of the page survives."
+part: 4
+partTitle: "The lifecycle"
+order: 5
+outcome: "Clean up everything a component started, and contain a failure to the component that caused it."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Two jobs at the end of a component's life: give back what you took, and fail
+without taking everything else with you.
+
+## onWillUnmount
+
+Fires before the DOM is removed, so the elements still exist. This is where
+cleanup belongs.
+
+```js
+import { Component, onMounted, onWillUnmount } from "@odoo/owl";
+
+export class LiveFeed extends Component {
+    setup() {
+        this.onResize = () => this.measure();
+
+        onMounted(() => {
+            this.interval = setInterval(() => this.refresh(), 30000);
+            window.addEventListener("resize", this.onResize);
+            this.observer = new IntersectionObserver(this.onVisible.bind(this));
+            this.observer.observe(this.rootRef.el);
+        });
+
+        onWillUnmount(() => {
+            clearInterval(this.interval);
+            window.removeEventListener("resize", this.onResize);
+            this.observer?.disconnect();
+        });
+    }
+}
+```
+
+The checklist of things that need undoing:
+
+- `setInterval` and `setTimeout`
+- `addEventListener` on `window`, `document` or `body`
+- `ResizeObserver`, `IntersectionObserver`, `MutationObserver`
+- Chart, map or editor instances with a `destroy()`
+- WebSocket or EventSource connections
+- Anything you pushed into a module level array or registry
+
+The same function reference must go to both `addEventListener` and
+`removeEventListener`. Two separate inline arrows are two different functions and
+the removal does nothing.
+
+```js
+// Removes nothing
+onMounted(() => window.addEventListener("resize", () => this.measure()));
+onWillUnmount(() => window.removeEventListener("resize", () => this.measure()));
+```
+
+## Why it matters more here than on a website
+
+A public web page is unloaded every few minutes and the browser reclaims
+everything. An Odoo backend session is a single page application somebody keeps
+open all day, opening hundreds of records.
+
+A component that leaks one interval per open, left running for eight hours, is a
+browser tab consuming a core and a user complaining that "Odoo gets slow in the
+afternoon". That complaint is almost always this.
+
+The cheap diagnostic: open and close the same screen fifty times, then take a
+heap snapshot in DevTools and filter for your component's class name. If there
+are fifty of them, something is holding references.
+
+## onWillDestroy
+
+Runs after removal, whether or not the component was ever mounted. The
+difference matters in one case: a component that fails during `onWillStart`
+never mounts, so `onWillUnmount` never fires, but `onWillDestroy` does.
+
+If you allocated something in `setup` itself, release it in `onWillDestroy`. For
+anything allocated in `onMounted`, `onWillUnmount` is the right pair.
+
+## onError
+
+By default an error anywhere below surfaces as Odoo's error dialog and the
+subtree does not render. `onError` lets a component catch failures from its
+children and render something sensible instead.
+
+```js
+import { Component, useState, onError } from "@odoo/owl";
+
+export class ErrorBoundary extends Component {
+    static template = "owl_course.ErrorBoundary";
+    static props = { slots: { type: Object, optional: true } };
+
+    setup() {
+        this.state = useState({ failed: false, message: "" });
+
+        onError((error) => {
+            console.error("[ErrorBoundary]", error);
+            this.state.failed = true;
+            this.state.message = error.message || String(error);
+        });
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.ErrorBoundary">
+    <div t-if="state.failed" class="alert alert-warning m-2">
+        <p class="mb-1 fw-bold">This section could not be displayed.</p>
+        <p class="mb-0 small" t-esc="state.message"/>
+    </div>
+    <t t-else="">
+        <t t-slot="default"/>
+    </t>
+</t>
+```
+
+```xml
+<ErrorBoundary>
+    <RevenueChart data="state.chartData"/>
+</ErrorBoundary>
+```
+
+Now a chart that throws costs the user a chart, not the page.
+
+Three things to know about it.
+
+**It catches rendering and lifecycle errors in descendants.** It does not catch
+errors inside event handlers, or rejections from promises you did not return to
+a lifecycle hook. Those need their own `try/catch`.
+
+**Not re-throwing swallows the error.** Always log. A boundary that hides
+failures silently is worse than no boundary, because the bug still exists and now
+nobody can see it.
+
+**Use it sparingly.** A boundary around every component hides real faults and
+makes the application quietly wrong rather than loudly broken. Put one around
+things that are genuinely optional: a dashboard tile, a third party widget, a
+preview pane.
+
+## Errors in handlers
+
+```js
+async onConfirm() {
+    try {
+        await this.orm.call("account.move", "action_post", [[this.props.id]]);
+        this.notification.add("Posted", { type: "success" });
+    } catch (e) {
+        this.notification.add(e.message || "Could not post", { type: "danger" });
+    }
+}
+```
+
+An unhandled rejection in a handler produces an uncaught promise error. If you
+have ever seen Odoo pop a red dialog saying `UncaughtPromiseError`, that is
+this: somebody started async work and never handled the failure.
+
+The notification service used here is Part 5.
+
+## What is next
+
+Part 5. Services: how a component reaches the server, opens a dialog, or starts
+an action, and how Odoo finds code you have added.

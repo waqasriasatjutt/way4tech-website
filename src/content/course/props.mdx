@@ -1,0 +1,222 @@
+---
+title: "Props, and validating them so mistakes fail loudly"
+metaTitle: "OWL props and prop validation"
+description: "Passing data into a component, the full prop validation syntax, defaultProps, why you must never write to a prop, and the shape of prop that causes needless re-renders."
+part: 2
+partTitle: "Components"
+order: 3
+outcome: "Pass and validate props correctly, and recognise the two prop mistakes that cause most parent-child bugs."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Props are how a parent gives a child what it needs. They travel one way, down.
+
+## Passing them
+
+```xml
+<InvoiceCard
+    invoice="inv"
+    title="'Overdue'"
+    compact="true"
+    onSelect="(id) => this.select(id)"
+/>
+```
+
+The thing people trip on, and everyone trips on it once: **every attribute value
+is a JavaScript expression**, not a string.
+
+```xml
+<InvoiceCard title="Overdue"/>     <!-- looks for a variable named Overdue -->
+<InvoiceCard title="'Overdue'"/>   <!-- the string "Overdue" -->
+```
+
+That first line does not error. It passes `undefined`, and you lose twenty
+minutes.
+
+For a genuinely static string there is a shorthand:
+
+```xml
+<InvoiceCard title.translate="Overdue"/>
+```
+
+## Reading them
+
+```js
+export class InvoiceCard extends Component {
+    static template = "owl_course.InvoiceCard";
+    static props = { invoice: Object, compact: { type: Boolean, optional: true } };
+
+    get badgeClass() {
+        return this.props.invoice.overdue ? "text-danger" : "text-muted";
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.InvoiceCard">
+    <div t-att-class="badgeClass">
+        <t t-esc="props.invoice.name"/>
+    </div>
+</t>
+```
+
+`props` is available in the template directly, no `this`.
+
+## Validation
+
+The short forms:
+
+```js
+static props = {
+    invoice: Object,
+    count: Number,
+    label: String,
+    onSelect: Function,
+    tags: Array,
+    anything: true,          // any type, but the prop must be present
+    "*": true,               // allow undeclared props through
+};
+```
+
+The long form, which is what you want for anything non obvious:
+
+```js
+static props = {
+    invoice: {
+        type: Object,
+        shape: {
+            id: Number,
+            name: String,
+            amount: Number,
+            overdue: { type: Boolean, optional: true },
+        },
+    },
+    state: {
+        type: String,
+        validate: (s) => ["draft", "posted", "cancel"].includes(s),
+    },
+    tags: { type: Array, element: String },
+    onSelect: { type: Function, optional: true },
+    size: { type: [String, Number], optional: true },   // either
+    slots: { type: Object, optional: true },
+};
+```
+
+`shape` validates an object's contents. `element` validates every item of an
+array. `validate` takes a function for anything the built in types cannot
+express. A list of types means any of them.
+
+Validation runs **in developer mode only**, so it costs nothing in production
+and catches mistakes while you work. Turn developer mode on and leave it on.
+
+If a component genuinely takes arbitrary props, say so explicitly rather than
+omitting `static props`:
+
+```js
+static props = { "*": true };
+```
+
+## defaultProps
+
+```js
+static defaultProps = {
+    compact: false,
+    title: "Invoice",
+};
+```
+
+Applied when the parent omits the prop. One rule: **primitives only**.
+
+```js
+// Wrong. Every instance shares this array.
+static defaultProps = { tags: [] };
+```
+
+Every instance gets the same array object, so one component pushing to it
+changes it for all of them, including ones already rendered. Build mutable
+defaults in `setup`:
+
+```js
+setup() {
+    this.tags = this.props.tags ?? [];
+}
+```
+
+## Never write to a prop
+
+```js
+// Wrong
+this.props.invoice.name = "Changed";
+this.props.count++;
+```
+
+OWL will complain in developer mode, and it is right to. A prop belongs to the
+parent. Writing to it means two components believe they own the same value, and
+the one that renders second wins, which is a bug that moves around depending on
+render order.
+
+When a child needs to change something, it asks the parent:
+
+```js
+// Parent
+<InvoiceCard invoice="inv" onRename="(id, name) => this.rename(id, name)"/>
+
+// Child
+this.props.onRename(this.props.invoice.id, newName);
+```
+
+When a child needs its own editable copy, it takes one:
+
+```js
+setup() {
+    this.state = useState({ draftName: this.props.invoice.name });
+}
+```
+
+Note that this copy will not follow the prop if the parent changes it later.
+That is the job of `onWillUpdateProps`, in Part 4.
+
+## The prop shape that causes needless renders
+
+This one is subtle and worth knowing early.
+
+```xml
+<!-- A new object on every single render of the parent -->
+<InvoiceCard options="{ compact: true, showTotal: true }"/>
+```
+
+Each render of the parent builds a fresh object, so the child sees a prop that is
+never equal to the previous one and re-renders every time even though nothing
+changed. With a handful of children nobody notices. With a list of two hundred
+rows it is visible.
+
+Build it once instead:
+
+```js
+setup() {
+    this.cardOptions = { compact: true, showTotal: true };
+}
+```
+
+```xml
+<InvoiceCard options="cardOptions"/>
+```
+
+The same applies to inline arrow functions passed as props. They are usually
+fine, because the cost is one function allocation, but in a long list they are
+worth hoisting too.
+
+## Spreading
+
+```xml
+<InvoiceCard t-props="cardProps"/>
+```
+
+Where `cardProps` is an object. Useful when a wrapper passes most of its own
+props through, and best avoided otherwise, because it makes it impossible to see
+what a component receives by reading the template.
+
+## What is next
+
+The other direction: events, and how a child tells a parent something happened.

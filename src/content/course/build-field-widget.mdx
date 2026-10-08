@@ -1,0 +1,291 @@
+---
+title: "Build: a colour and size grid field widget"
+metaTitle: "Build an Odoo field widget OWL"
+description: "A complete widget storing a matrix of quantities in a Json field: reading and writing, validation, keyboard navigation, readonly rendering, list view behaviour and a test."
+part: 8
+partTitle: "Three builds, end to end"
+order: 2
+outcome: "Build a field widget with a real editing interface that behaves correctly in form, list and readonly."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+A grid entry widget: colours down, sizes across, quantities typed in. Apparel
+distributors need this, and it exercises every part of a field widget that a
+single input does not.
+
+## The field
+
+```python
+# models/sale_order_line.py
+from odoo import fields, models
+
+
+class SaleOrderLine(models.Model):
+    _inherit = 'sale.order.line'
+
+    size_grid = fields.Json(
+        string='Size grid',
+        help="Quantities per colour and size, as "
+             "{'Red': {'S': 2, 'M': 4}, 'Blue': {'S': 1}}.",
+    )
+```
+
+A `Json` field keeps this out of a second table. For a real product catalogue you
+would use variants and one line each, but the widget pattern is the same and this
+keeps the lesson about the client.
+
+## The widget
+
+```js
+// static/src/fields/size_grid_field.js
+import { Component, useState, onWillUpdateProps } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { standardFieldProps } from "@web/views/fields/standard_field_props";
+
+const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+
+export class SizeGridField extends Component {
+    static template = "owl_course.SizeGridField";
+    static props = {
+        ...standardFieldProps,
+        sizes: { type: Array, element: String, optional: true },
+        colourField: { type: String, optional: true },
+    };
+    static defaultProps = { sizes: DEFAULT_SIZES };
+
+    setup() {
+        this.state = useState({ grid: this.readValue(), error: null });
+
+        onWillUpdateProps((next) => {
+            // Only resync on a different record, or typing is wiped by any
+            // unrelated re-render of the form.
+            if (next.record.resId !== this.props.record.resId) {
+                this.state.grid = this.readValue(next);
+                this.state.error = null;
+            }
+        });
+    }
+
+    readValue(props = this.props) {
+        const raw = props.record.data[props.name];
+        if (!raw) return {};
+        return typeof raw === "string" ? JSON.parse(raw) : { ...raw };
+    }
+
+    get colours() {
+        const fromField = this.props.colourField
+            ? this.props.record.data[this.props.colourField]
+            : null;
+        const declared = Array.isArray(fromField)
+            ? fromField.map((c) => (Array.isArray(c) ? c[1] : c))
+            : [];
+        // Colours already carrying quantities must always be shown, or a
+        // value the user cannot see is a value they cannot correct.
+        return [...new Set([...declared, ...Object.keys(this.state.grid)])];
+    }
+
+    qty(colour, size) {
+        return this.state.grid[colour]?.[size] ?? "";
+    }
+
+    get total() {
+        return Object.values(this.state.grid)
+            .flatMap((row) => Object.values(row))
+            .reduce((sum, n) => sum + (Number(n) || 0), 0);
+    }
+
+    rowTotal(colour) {
+        return Object.values(this.state.grid[colour] || {})
+            .reduce((sum, n) => sum + (Number(n) || 0), 0);
+    }
+
+    colTotal(size) {
+        return Object.values(this.state.grid)
+            .reduce((sum, row) => sum + (Number(row[size]) || 0), 0);
+    }
+
+    onInput(colour, size, raw) {
+        const n = raw === "" ? 0 : Number(raw);
+        if (!Number.isFinite(n) || n < 0) {
+            this.state.error = "Quantities must be zero or more";
+            return;
+        }
+        this.state.error = null;
+        const row = { ...(this.state.grid[colour] || {}) };
+        if (n === 0) {
+            delete row[size];
+        } else {
+            row[size] = n;
+        }
+        const grid = { ...this.state.grid };
+        if (Object.keys(row).length) {
+            grid[colour] = row;
+        } else {
+            delete grid[colour];
+        }
+        this.state.grid = grid;
+    }
+
+    async commit() {
+        if (this.state.error) return;
+        await this.props.record.update({ [this.props.name]: this.state.grid });
+    }
+
+    onKeydown(ev) {
+        // Enter moves down a row rather than submitting the form.
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            const inputs = [...ev.target.closest("table").querySelectorAll("input")];
+            const cols = this.props.sizes.length;
+            const next = inputs[inputs.indexOf(ev.target) + cols];
+            next ? next.focus() : ev.target.blur();
+        }
+    }
+}
+
+export const sizeGridField = {
+    component: SizeGridField,
+    displayName: "Size Grid",
+    supportedTypes: ["json"],
+    supportedOptions: [
+        { label: "Sizes", name: "sizes", type: "string" },
+        { label: "Colour field", name: "colour_field", type: "field" },
+    ],
+    extractProps: ({ options }) => ({
+        sizes: options.sizes ? options.sizes.split(",").map((s) => s.trim()) : undefined,
+        colourField: options.colour_field,
+    }),
+    isEmpty: (record, name) => !Object.keys(record.data[name] || {}).length,
+};
+
+registry.category("fields").add("size_grid", sizeGridField);
+```
+
+## The template
+
+```xml
+<templates xml:space="preserve">
+<t t-name="owl_course.SizeGridField">
+    <div class="o_size_grid" style="min-width: 320px;">
+
+        <div t-if="!colours.length" class="text-muted small">
+            Pick colours on this line first.
+        </div>
+
+        <table t-else="" class="table table-sm table-bordered mb-1 text-center">
+            <thead>
+                <tr>
+                    <th class="text-start">Colour</th>
+                    <th t-foreach="props.sizes" t-as="size" t-key="size" t-esc="size"/>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr t-foreach="colours" t-as="colour" t-key="colour">
+                    <th class="text-start fw-normal" t-esc="colour"/>
+                    <td t-foreach="props.sizes" t-as="size" t-key="size" class="p-1">
+                        <span t-if="props.readonly" t-esc="qty(colour, size) or '-'"/>
+                        <input t-else="" type="number" min="0"
+                               class="form-control form-control-sm text-center border-0 p-0"
+                               t-att-value="qty(colour, size)"
+                               t-on-input="(ev) => this.onInput(colour, size, ev.target.value)"
+                               t-on-blur="commit"
+                               t-on-keydown="onKeydown"/>
+                    </td>
+                    <td class="fw-semibold" t-esc="rowTotal(colour)"/>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th class="text-start">Total</th>
+                    <th t-foreach="props.sizes" t-as="size" t-key="size" t-esc="colTotal(size)"/>
+                    <th t-esc="total"/>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div t-if="state.error" class="text-danger small" t-esc="state.error"/>
+    </div>
+</t>
+</templates>
+```
+
+## Using it
+
+```xml
+<field name="size_grid" widget="size_grid"
+       options="{'sizes': 'S,M,L,XL', 'colour_field': 'colour_ids'}"/>
+```
+
+## The decisions worth noticing
+
+**Write on blur, not on input.** `record.update` triggers onchanges. One per
+keystroke across thirty cells is thirty round trips.
+
+**Local draft state plus a guarded resync.** The `onWillUpdateProps` identity
+check is the difference between a usable widget and one that eats input.
+
+**Colours with quantities are always shown.** If someone removes a colour from
+the line, its quantities still exist in the Json. Hiding them hides data the user
+cannot then correct.
+
+**Zero deletes the key.** Storing `{"Red": {"S": 0}}` leaves rubbish in the
+field and makes `isEmpty` wrong.
+
+**Readonly renders text, not disabled inputs.** A greyed input invites typing
+that will not save.
+
+**Enter moves down.** Inside a form, Enter would otherwise submit. A grid that
+cannot be filled in from the keyboard will not be used by the people who fill in
+grids all day.
+
+## A test
+
+```js
+import { expect, test } from "@odoo/hoot";
+import { click, edit, queryAll } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { defineModels, fields, models, mountView, onRpc } from "@web/../tests/web_test_helpers";
+
+class SaleOrderLine extends models.Model {
+    _name = "sale.order.line";
+    size_grid = fields.Json();
+    _records = [{ id: 1, size_grid: { Red: { S: 2 } } }];
+}
+defineModels([SaleOrderLine]);
+
+test("typing a quantity writes the grid on blur", async () => {
+    onRpc("web_save", ({ args }) => {
+        expect(args[1].size_grid).toEqual({ Red: { S: 2, M: 3 } });
+        expect.step("saved");
+    });
+
+    await mountView({
+        type: "form",
+        resModel: "sale.order.line",
+        resId: 1,
+        arch: `<form><field name="size_grid" widget="size_grid"
+                           options="{'sizes': 'S,M'}"/></form>`,
+    });
+
+    const inputs = queryAll(".o_size_grid input");
+    await click(inputs[1]);
+    await edit("3", { confirm: "blur" });
+    await animationFrame();
+    await click(".o_form_button_save");
+    await animationFrame();
+
+    expect.verifySteps(["saved"]);
+});
+```
+
+## Exercises
+
+Add a paste handler accepting a block copied from a spreadsheet. Add a ratio pack
+button filling a row from a preset. Make the total a `fieldDependencies` driven
+comparison against the line quantity and warn when they disagree.
+
+## What is next
+
+The last build: a complete module, from folder to store listing.

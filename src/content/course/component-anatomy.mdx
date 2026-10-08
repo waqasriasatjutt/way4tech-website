@@ -1,0 +1,210 @@
+---
+title: "The anatomy of an OWL component"
+metaTitle: "OWL component structure in Odoo"
+description: "Every part of a component class: static template, props, components, defaultProps, setup, methods, and why setup exists instead of a constructor."
+part: 2
+partTitle: "Components"
+order: 1
+outcome: "Write a component class with every part in the right place, and explain why setup() replaces the constructor."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+A component is a class extending `Component` with a few static fields and a
+`setup` method. Here is one using every part worth knowing, before we take it
+apart.
+
+```js
+import { Component, useState } from "@odoo/owl";
+import { ChildCard } from "./child_card";
+
+export class InvoicePanel extends Component {
+    static template = "owl_course.InvoicePanel";
+
+    static components = { ChildCard };
+
+    static props = {
+        partnerId: { type: Number },
+        title: { type: String, optional: true },
+        onSelect: { type: Function, optional: true },
+        slots: { type: Object, optional: true },
+    };
+
+    static defaultProps = {
+        title: "Invoices",
+    };
+
+    setup() {
+        this.state = useState({ expanded: false, invoices: [] });
+    }
+
+    get hasInvoices() {
+        return this.state.invoices.length > 0;
+    }
+
+    toggle() {
+        this.state.expanded = !this.state.expanded;
+    }
+}
+```
+
+## static template
+
+The name of an XML template, as a string. Not markup, not a function.
+
+```js
+static template = "owl_course.InvoicePanel";
+```
+
+The convention `module_name.ComponentName` exists because template names are
+global across the whole client. Two modules both registering `Panel` is a
+collision that surfaces as one module mysteriously rendering the other's
+markup.
+
+## static components
+
+The child components this one may use in its template. OWL does not search
+globally; a component must be declared here or the template cannot reference it.
+
+```js
+static components = { ChildCard };
+```
+
+In the template, the key is the tag name:
+
+```xml
+<ChildCard invoice="inv"/>
+```
+
+Forgetting this produces an error naming the unknown component, which is one of
+the clearer messages you will get.
+
+## static props
+
+A description of what the parent may pass. In developer mode OWL validates
+against it and throws on a mismatch.
+
+```js
+static props = {
+    partnerId: { type: Number },
+    title: { type: String, optional: true },
+    onSelect: { type: Function, optional: true },
+};
+```
+
+Declaring props is optional and worth doing every time. The alternative is a
+typo in a parent silently passing `undefined` into a child, which then fails
+three layers away from the mistake. Props get a lesson of their own next.
+
+## static defaultProps
+
+Values used when the parent omits an optional prop.
+
+```js
+static defaultProps = { title: "Invoices" };
+```
+
+Only ever use primitives here. A default of `[]` or `{}` is a single object
+shared by every instance of the component, so one instance mutating it changes
+the default for all of them. Build those in `setup` instead.
+
+## setup()
+
+Where instance work happens. **All hooks must be called here**, directly, not
+inside a condition or a callback.
+
+```js
+setup() {
+    this.state = useState({ expanded: false, invoices: [] });
+    this.orm = useService("orm");
+    onWillStart(async () => {
+        this.state.invoices = await this.loadInvoices();
+    });
+}
+```
+
+### Why not a constructor
+
+Three reasons.
+
+OWL calls `setup()` from its own constructor **after** it has attached `props`,
+`env` and the internal machinery. A constructor of yours runs before some of
+that exists, so `this.props` may not be ready.
+
+Hooks rely on OWL knowing which component is currently being set up. That is
+established around `setup()` and nowhere else. Calling `useState` from a
+constructor throws, and the message is not obvious.
+
+And it is shorter. No `super(...arguments)` to forget.
+
+```js
+// Wrong
+constructor() {
+    super(...arguments);
+    this.state = useState({});   // throws
+}
+
+// Right
+setup() {
+    this.state = useState({});
+}
+```
+
+## Getters
+
+Plain JavaScript getters work and are the right home for derived values.
+
+```js
+get hasInvoices() {
+    return this.state.invoices.length > 0;
+}
+```
+
+In the template, no parentheses:
+
+```xml
+<div t-if="hasInvoices">...</div>
+```
+
+A getter re-runs on every render, which is exactly what you want. There is no
+memoisation and in almost all cases you do not need any. If a getter is
+genuinely expensive, cache in `setup` and invalidate deliberately rather than
+reaching for a helper.
+
+## Methods and `this`
+
+Methods are called from the template without binding:
+
+```xml
+<button t-on-click="toggle">Toggle</button>
+```
+
+OWL binds `this` for you here. Passing a method elsewhere, to `setTimeout` or to
+a child as a callback, does not bind, and `this` will be undefined:
+
+```js
+// Breaks
+setTimeout(this.toggle, 1000);
+
+// Works
+setTimeout(() => this.toggle(), 1000);
+```
+
+Arrow functions in `setup` are the simplest habit.
+
+## What belongs in a component and what does not
+
+The distinction that saves the most pain: **a component displays and collects,
+the server decides.**
+
+A component that computes a tax, applies a discount rule or decides whether a
+record may be confirmed is a component that will disagree with Python, because
+Python will do it again when the record is saved. The user sees one number, the
+invoice carries another, and the difference is impossible to explain.
+
+Call the server, display the result.
+
+## What is next
+
+The template half: QWeb directives, what is available inside a template, and the
+ones that behave differently from the QWeb you know from reports.

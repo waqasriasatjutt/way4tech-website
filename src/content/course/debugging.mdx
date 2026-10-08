@@ -1,0 +1,178 @@
+---
+title: "Debugging a minified bundle in production"
+metaTitle: "Debug Odoo JavaScript production"
+description: "Reading a stack trace that points at line 15541 of a minified file, inspecting the live component tree, and the tricks for a bug you cannot reproduce locally."
+part: 7
+partTitle: "Making it hold up"
+order: 2
+outcome: "Diagnose a client side fault on a system you cannot put into developer mode."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Everything is fine locally. A user sends you this:
+
+```
+UncaughtPromiseError > InvalidStateError
+Uncaught Promise > Failed to execute 'transaction' on 'IDBDatabase':
+The database connection is closing.
+    at https://example.com/web/assets/13337c6/web.assets_web.min.js:15541:108
+```
+
+A file you did not write, a line number that means nothing, and a machine you
+cannot touch.
+
+## Is it yours
+
+The first question, and worth answering before anything else.
+
+Minification mangles local variable names. It leaves **string literals and
+object keys alone**. So a distinctive string from your source is still in the
+bundle:
+
+```bash
+curl -s https://example.com/web/assets/13337c6/web.assets_web.min.js \
+  -o bundle.js
+grep -c "owl_course" bundle.js
+grep -o ".\{200\}my_distinctive_string.\{200\}" bundle.js
+```
+
+If your module's strings are nowhere near the failure, it is probably core or
+another module. That reframing alone saves hours.
+
+You can also pull the exact line:
+
+```bash
+awk 'NR==15541' bundle.js | cut -c 1-600
+```
+
+Minified bundles are often one enormous line, in which case use character
+offsets instead:
+
+```bash
+cut -c 15300-15800 bundle.js
+```
+
+The surrounding code usually names a function or a string that identifies the
+feature.
+
+## Pretty printing
+
+Chrome DevTools has `{}` at the bottom of the Sources panel. It reformats the
+minified file and remaps the line number, so breakpoints become possible. Slow on
+a 6MB bundle, and worth the wait.
+
+## The error dialog is your friend
+
+Odoo's dialog has "Copy the full error to clipboard". Ask the user for that
+rather than a screenshot. It carries the full stack, the Odoo version, the
+browser and the URL.
+
+The two parts people skip: **which page** it happened on, and **what they did
+just before**. "It happens when I come back to the tab after lunch" is worth more
+than the entire stack trace, because it names the trigger.
+
+That specific example above is a real one. The cause was browser tab freezing
+closing the IndexedDB connection Odoo caches RPC responses in, then Odoo asking
+the closed connection for a transaction on resume. Nothing in the stack says any
+of that. The user's description did.
+
+## Inspecting the live client
+
+With developer mode on, in the console:
+
+```js
+odoo.__WOWL_DEBUG__.root               // the root component
+odoo.__WOWL_DEBUG__.root.env.services  // every running service
+odoo.info                              // server version
+```
+
+Walk the tree to find a component and look at what it actually received:
+
+```js
+const root = odoo.__WOWL_DEBUG__.root;
+function find(node, name) {
+    if (node.component?.constructor.name === name) return node;
+    for (const child of Object.values(node.children || {})) {
+        const hit = find(child, name);
+        if (hit) return hit;
+    }
+}
+const node = find(root, "ListRenderer");
+node.component.props;
+node.component.state;
+```
+
+Arguing about whether a prop is arriving is much shorter when you can read it.
+
+## Watching the traffic
+
+The Network tab, filtered to `/web/dataset/call_kw`, shows every ORM call with
+its arguments and response. Two things it settles immediately:
+
+**Is the call being made at all?** If not, the bug is before the call.
+
+**How many times?** A dashboard making forty calls where you expected four is a
+performance bug you can see in one screenshot.
+
+Right click a request, Copy as cURL, and you can replay it from a terminal
+against the same session.
+
+## Turning dev mode on where you should not
+
+`?debug=1` on the URL enables developer mode for your session only. It changes
+nothing for other users and nothing on the server.
+
+What it does change is **asset serving**: `?debug=assets` serves unminified
+files, which is how you get readable stack traces on a system you do not
+control. It is slower for you alone, for that session. This is usually acceptable
+even on production, and it is the single most useful thing in this lesson.
+
+```
+https://example.com/odoo?debug=assets
+```
+
+## When you cannot reproduce it
+
+Add logging to the suspect path, ship it, wait. Unsatisfying and often the
+fastest route.
+
+```js
+async load(id) {
+    const seq = ++this.seq;
+    console.debug("[my_module] load", { id, seq });
+    const data = await this.orm.read("my.model", [id], this.fields);
+    console.debug("[my_module] loaded", { id, seq, current: this.seq });
+    if (seq !== this.seq) return;
+    this.state.data = data;
+}
+```
+
+`console.debug` rather than `console.log`, so it is filtered out of the default
+console view but available when someone opens Verbose.
+
+And record what you are testing. A bug that only appears with a particular
+sequence of clicks is a bug you will fail to reproduce from memory three days
+later.
+
+## The pattern behind most production-only faults
+
+Almost all of them come from one of four differences.
+
+**Data.** A production database has records with empty fields, archived parents
+and twenty years of history. Your demo data does not.
+
+**Rights.** You are an administrator. They are not. A component that reads a
+model the user cannot access fails only for them. This is the most common of the
+four by a distance.
+
+**Scale.** Ten rows locally, forty thousand there.
+
+**Timing.** Your server answers in 5ms, theirs in 400ms, so races that never
+appear locally appear constantly.
+
+When something works for you and not for them, start with rights, then data.
+
+## What is next
+
+Performance: what actually costs you, and how to measure instead of guess.

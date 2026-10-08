@@ -1,0 +1,223 @@
+---
+title: "Splitting a screen into components without making a mess"
+metaTitle: "OWL component composition"
+description: "When one component should become two, the prop drilling signal, reusable hooks for shared behaviour, and why a component per file beats a component per concept."
+part: 2
+partTitle: "Components"
+order: 6
+outcome: "Decide where a component should end, and extract shared behaviour into a hook instead of a base class."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Nobody writes a 600 line component on purpose. It happens by adding one
+reasonable thing at a time. This lesson is the judgement for when to stop.
+
+## Three signals it should be two components
+
+**It renders a list of things that each have behaviour.** A row that can be
+selected, expanded or edited has its own state. Keeping that state in the parent
+means an object keyed by row id, and that is a parent doing a child's job.
+
+**A section has state nothing else reads.** If `isFilterPanelOpen` is only ever
+touched by the filter panel, the filter panel should own it. State in the parent
+re-renders the parent, which re-renders everything.
+
+**You are scrolling to see the whole template.** Not a rule, but a reliable
+symptom.
+
+## Two signals it should stay one
+
+**The pieces share state that changes constantly.** Splitting them means
+threading props back and forth, and the split costs more than it saves.
+
+**The child would only ever have one parent and no state.** That is a sub
+template. Use `t-call`, or just leave the markup where it is. A component is a
+heavier thing than a block of markup, and a component used once with no
+behaviour is overhead with a nice name.
+
+## Prop drilling, and what it is telling you
+
+```xml
+<Dashboard currency="currency">
+    <InvoiceSection currency="currency">
+        <InvoiceList currency="currency">
+            <InvoiceRow currency="currency">
+```
+
+`InvoiceSection` and `InvoiceList` do not use `currency`. They carry it. Three
+components know about a value only one of them needs, and adding a second such
+value means touching all four files again.
+
+Two proper fixes.
+
+**For values the whole screen needs,** use the environment. `useSubEnv` adds to
+the env for a component and everything below it:
+
+```js
+// Near the top
+setup() {
+    useSubEnv({ currency: this.props.currency });
+}
+
+// Anywhere below, at any depth
+setup() {
+    this.currency = this.env.currency;
+}
+```
+
+Use this sparingly. Anything in the env is an invisible dependency: a component
+reading `this.env.currency` cannot be reused somewhere that does not provide it,
+and nothing in its signature says so. Good candidates are genuinely ambient
+things, the current company, a display mode, a formatting locale.
+
+**For values the whole application needs,** use a service. That is Part 5, and
+it is the right answer more often than the env.
+
+## Reusable hooks, not base classes
+
+The instinct from other frameworks is a base class:
+
+```js
+// Resist this
+export class LoadableComponent extends Component {
+    setup() {
+        this.state = useState({ loading: false, error: null });
+    }
+}
+```
+
+It works until a component needs two behaviours, and JavaScript has no multiple
+inheritance. Composition does not have that limit.
+
+A hook in OWL is just a function that calls other hooks. Nothing magical:
+
+```js
+// addons/owl_course/static/src/hooks/use_loader.js
+import { useState } from "@odoo/owl";
+
+export function useLoader() {
+    const state = useState({ loading: false, error: null });
+
+    async function run(fn) {
+        state.loading = true;
+        state.error = null;
+        try {
+            return await fn();
+        } catch (e) {
+            state.error = e.message || String(e);
+            throw e;
+        } finally {
+            state.loading = false;
+        }
+    }
+
+    return { state, run };
+}
+```
+
+```js
+setup() {
+    this.loader = useLoader();
+    this.orm = useService("orm");
+
+    onWillStart(() =>
+        this.loader.run(async () => {
+            this.invoices = await this.orm.searchRead("account.move", [], ["name"]);
+        }),
+    );
+}
+```
+
+```xml
+<div t-if="loader.state.loading">Loading</div>
+<div t-elif="loader.state.error" class="text-danger" t-esc="loader.state.error"/>
+```
+
+Any component can use this one and three others. The convention is a `use`
+prefix and a file under `hooks/`.
+
+**The one rule:** hooks are called at the top of `setup`, unconditionally. Not
+inside an `if`, not inside a callback, not inside a loop. OWL ties hooks to the
+component being set up, and calling one later or conditionally breaks that
+association.
+
+```js
+// Wrong
+setup() {
+    if (this.props.editable) {
+        this.state = useState({});   // sometimes called, sometimes not
+    }
+}
+
+// Right
+setup() {
+    this.state = useState({ editing: false });
+    if (this.props.editable) {
+        this.state.editing = true;
+    }
+}
+```
+
+## One component per file
+
+Each component in its own file, named after it, with its XML template beside it:
+
+```
+static/src/
+  invoice_panel/
+    invoice_panel.js
+    invoice_panel.xml
+    invoice_panel.scss
+  invoice_row/
+    invoice_row.js
+    invoice_row.xml
+  hooks/
+    use_loader.js
+```
+
+This matches how Odoo organises its own web client, which matters more than it
+sounds: when you are reading core code to work out how something is done, a
+familiar layout is half the battle.
+
+## A worked split
+
+Before, one component doing everything:
+
+```js
+export class InvoiceDashboard extends Component {
+    setup() {
+        this.state = useState({
+            invoices: [], loading: false, filter: "all",
+            expandedIds: [], editingId: null, draftName: "",
+        });
+    }
+    // twelve methods
+}
+```
+
+After:
+
+```js
+// InvoiceDashboard: owns data and the filter
+export class InvoiceDashboard extends Component {
+    static components = { FilterBar, InvoiceList };
+    setup() {
+        this.loader = useLoader();
+        this.state = useState({ invoices: [], filter: "all" });
+    }
+}
+
+// FilterBar: owns nothing, reports upward
+// InvoiceList: owns the loop
+// InvoiceRow: owns expanded and editing, for itself
+```
+
+`expandedIds` and `editingId` disappear entirely. They existed only because the
+parent was tracking state on behalf of children that should have had it. That is
+the usual outcome of a good split: not moved code, deleted code.
+
+## What is next
+
+Part 3, reactivity. Why a change to state redraws the screen, and the three
+ways people switch that off without realising.

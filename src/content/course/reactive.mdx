@@ -1,0 +1,193 @@
+---
+title: "reactive(), and sharing state between components"
+metaTitle: "OWL reactive() and shared state"
+description: "The primitive underneath useState, how to build a reactive store several components subscribe to, and the subscription rule that decides whether a component follows it."
+part: 3
+partTitle: "Reactivity"
+order: 2
+outcome: "Build a shared reactive store and subscribe components to it correctly."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+`useState` is a thin wrapper. The primitive is `reactive`, and understanding it
+is what lets you share state across components that are not parent and child.
+
+## reactive()
+
+```js
+import { reactive } from "@odoo/owl";
+
+const store = reactive({ count: 0 });
+
+store.count++;   // nothing happens, nobody is listening
+```
+
+`reactive(obj)` returns a proxy. Alone it does nothing useful, because no one
+has asked to be told about changes.
+
+The second argument is a callback fired when any key **that this particular
+proxy has read** changes:
+
+```js
+const store = reactive({ count: 0 }, () => console.log("changed"));
+store.count;      // read it, so now we are subscribed to count
+store.count = 1;  // logs "changed"
+```
+
+That read first is the part people miss. The subscription is created by reading,
+not by wrapping.
+
+`useState(obj)` is `reactive(obj, () => render(this))` plus cleanup when the
+component is destroyed. That is genuinely all it is.
+
+## Sharing state across a screen
+
+Say a filter bar and three panels all care about the selected period, and they
+are nowhere near each other in the tree.
+
+```js
+// static/src/stores/period_store.js
+import { reactive } from "@odoo/owl";
+
+export const periodStore = reactive({
+    period: "month",
+    from: null,
+    to: null,
+
+    set(period) {
+        this.period = period;
+        const now = new Date();
+        if (period === "month") {
+            this.from = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (period === "year") {
+            this.from = new Date(now.getFullYear(), 0, 1);
+        }
+        this.to = now;
+    },
+});
+```
+
+Now any component subscribes with `useState`:
+
+```js
+import { Component, useState } from "@odoo/owl";
+import { periodStore } from "../stores/period_store";
+
+export class FilterBar extends Component {
+    static template = "owl_course.FilterBar";
+    setup() {
+        this.period = useState(periodStore);
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.FilterBar">
+    <select t-model="period.period" t-on-change="() => this.period.set(this.period.period)">
+        <option value="month">This month</option>
+        <option value="year">This year</option>
+    </select>
+</t>
+```
+
+```js
+export class RevenuePanel extends Component {
+    setup() {
+        this.period = useState(periodStore);
+        this.orm = useService("orm");
+        this.state = useState({ total: 0 });
+
+        useEffect(
+            () => { this.reload(); },
+            () => [this.period.from, this.period.to],
+        );
+    }
+}
+```
+
+Calling `useState` on an already reactive object is the correct and intended
+way to subscribe a component to it. Every component that does so re-renders when
+the keys it read change, and only those.
+
+## The rule that decides whether it works
+
+**A component follows only the keys it read during its own render.**
+
+```js
+setup() {
+    // Subscribed to nothing. Read in setup, not in a render.
+    this.total = periodStore.total;
+}
+```
+
+```xml
+<!-- Subscribed to total, because the template read it -->
+<t t-esc="period.total"/>
+```
+
+If a value is used in the template, you are subscribed. If it is read once in
+`setup` into a plain property, you are not, and it will never update.
+
+## A module scope store is a singleton
+
+`periodStore` above is created once when the file loads, and shared by the whole
+client for the life of the page. That is usually what you want for UI state.
+
+It is usually **not** what you want for anything per record or per view. A store
+holding "the invoice currently open" will be wrong the moment someone opens two
+browser tabs' worth of state in one client, and will leak values between
+unrelated screens. For that, keep state in the component or use a service with a
+proper lifecycle.
+
+## When a store is the wrong answer
+
+Reach for a shared store when:
+
+- several components far apart need the same value
+- the value is genuinely application wide, such as a display mode or a filter
+
+Do not reach for one when:
+
+- the components are parent and child. Props are clearer and the dependency is
+  visible in the template.
+- the value is per record. Component state, or the record itself.
+- you need the server. That is a service, Part 5.
+
+A store is an invisible dependency, exactly like the env. A component importing
+`periodStore` cannot be reused anywhere that does not want that store, and
+nothing in its props says so. Worth the trade sometimes, worth noticing always.
+
+## Services versus stores
+
+Odoo's own answer to shared state is the service registry, and once you have
+read Part 5 you will usually prefer it: services get a lifecycle, dependencies,
+and access to `env`, and they are how Odoo's own code does this. A module scope
+`reactive` object is the lighter option for pure UI state with no dependencies.
+
+A service can hold a reactive object and get both:
+
+```js
+import { reactive } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+const periodService = {
+    start() {
+        return reactive({ period: "month", from: null, to: null });
+    },
+};
+
+registry.category("services").add("owl_course.period", periodService);
+```
+
+```js
+setup() {
+    this.period = useState(useService("owl_course.period"));
+}
+```
+
+That is the shape worth copying for anything real.
+
+## What is next
+
+Derived values. OWL has no `computed()`, and the reason it does not need one.

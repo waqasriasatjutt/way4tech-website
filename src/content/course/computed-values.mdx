@@ -1,0 +1,188 @@
+---
+title: "Derived values without a computed() helper"
+metaTitle: "OWL computed values and getters"
+description: "Why OWL has no computed(), how getters cover almost every case, when to cache, and useEffect for the work that genuinely has to happen when a value changes."
+part: 3
+partTitle: "Reactivity"
+order: 3
+outcome: "Derive values correctly with getters, and use useEffect only where a getter cannot work."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Coming from Vue you will look for `computed()`. Coming from React you will look
+for `useMemo`. OWL has neither, and in almost every case a plain getter is the
+answer.
+
+## Getters
+
+```js
+export class InvoiceList extends Component {
+    setup() {
+        this.state = useState({ invoices: [], filter: "all", search: "" });
+    }
+
+    get visibleInvoices() {
+        let out = this.state.invoices;
+        if (this.state.filter === "overdue") {
+            out = out.filter(i => i.overdue);
+        }
+        if (this.state.search) {
+            const q = this.state.search.toLowerCase();
+            out = out.filter(i => i.name.toLowerCase().includes(q));
+        }
+        return out;
+    }
+
+    get total() {
+        return this.visibleInvoices.reduce((s, i) => s + i.amount, 0);
+    }
+}
+```
+
+```xml
+<p><t t-esc="visibleInvoices.length"/> invoices, <t t-esc="total"/> total</p>
+<div t-foreach="visibleInvoices" t-as="invoice" t-key="invoice.id">...</div>
+```
+
+This is correct and complete. The getter runs during render, so every state key
+it touches is subscribed, and changing the filter re-renders and recomputes.
+Nothing to declare, no dependency list to keep in sync, no stale value possible.
+
+## But it runs on every render
+
+Yes. That is usually fine and worth being honest about why.
+
+A render only happens when subscribed state changed. Filtering a few hundred
+objects in memory is sub-millisecond work. The cost people imagine here is
+almost always smaller than the cost of the cache they write to avoid it, which
+then goes stale.
+
+Do measure before optimising. If a getter really is expensive, over thousands of
+rows or doing heavy string work, cache deliberately:
+
+```js
+setup() {
+    this.state = useState({ rows: [], sortBy: "name" });
+    this._cache = { key: null, value: null };
+}
+
+get sortedRows() {
+    const key = `${this.state.rows.length}:${this.state.sortBy}`;
+    if (this._cache.key !== key) {
+        this._cache.key = key;
+        this._cache.value = [...this.state.rows].sort(/* ... */);
+    }
+    return this._cache.value;
+}
+```
+
+Note the cache key must capture everything the result depends on. Getting that
+wrong is exactly the stale value problem, which is why this is the last resort
+rather than the default.
+
+## Never mutate inside a getter
+
+```js
+// Wrong, in two separate ways
+get sortedInvoices() {
+    return this.state.invoices.sort((a, b) => a.date - b.date);
+}
+```
+
+`Array.prototype.sort` sorts **in place**. So this writes to reactive state
+during a render, which schedules another render, which runs the getter, which
+writes again. Some versions will catch this and complain; the ones that do not
+give you a loop that pins a CPU core.
+
+Copy first:
+
+```js
+get sortedInvoices() {
+    return [...this.state.invoices].sort((a, b) => a.date - b.date);
+}
+```
+
+The same applies to `reverse`, `splice`, `push` and `fill`. A getter reads. If it
+writes, it is not a getter.
+
+## When a getter cannot do it
+
+A getter produces a value. When a change must cause an **action**, calling the
+server, focusing an input, starting a timer, you need `useEffect`.
+
+```js
+import { useEffect } from "@odoo/owl";
+
+setup() {
+    this.orm = useService("orm");
+    this.state = useState({ partnerId: null, invoices: [] });
+
+    useEffect(
+        () => {
+            if (this.state.partnerId) {
+                this.loadInvoices(this.state.partnerId);
+            }
+        },
+        () => [this.state.partnerId],
+    );
+}
+```
+
+The first argument is the effect. The second returns the dependency array, and
+the effect runs after render whenever those values change by reference equality.
+
+An effect can return a cleanup function, run before the next effect and on
+destroy:
+
+```js
+useEffect(
+    () => {
+        const id = setInterval(() => this.refresh(), 30000);
+        return () => clearInterval(id);
+    },
+    () => [this.state.autoRefresh],
+);
+```
+
+A dependency function returning `[]` runs the effect once after the first
+render. Omitting the second argument entirely runs it after **every** render,
+which is almost never what you want and is an easy way to build a loop if the
+effect writes state.
+
+## The trap: an effect that writes what it depends on
+
+```js
+// Infinite loop
+useEffect(
+    () => { this.state.count = this.state.count + 1; },
+    () => [this.state.count],
+);
+```
+
+Obvious written out like that, less obvious when the write is three function
+calls deep inside a reload. If a screen is spinning and the CPU is busy, this is
+the first thing to look for.
+
+This is the same class of fault as a stored compute in Python that writes a
+field it also depends on. The symptom differs, the mistake is identical: a cycle
+nobody drew on purpose.
+
+## Choosing
+
+| You want | Use |
+| --- | --- |
+| A value derived from state | A getter |
+| A value derived from props | A getter |
+| An expensive value, measured | A getter with an explicit cache |
+| Server work when a value changes | `useEffect` |
+| DOM work after render | `useEffect`, or `onMounted` for once |
+| Something once before first render | `onWillStart`, Part 4 |
+
+Default to the getter. Reach for `useEffect` when the thing you need is not a
+value.
+
+## What is next
+
+The five reactivity bugs that actually happen, and how to tell which one you
+have in under a minute.

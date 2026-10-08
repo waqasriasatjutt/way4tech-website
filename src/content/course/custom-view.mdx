@@ -1,0 +1,242 @@
+---
+title: "A view type of your own"
+metaTitle: "Custom Odoo view type OWL"
+description: "Registering a view type with its own ArchParser, Model, Renderer and Controller, declaring it to the server, and an honest account of what you take on by doing it."
+part: 6
+partTitle: "Extending Odoo itself"
+order: 7
+outcome: "Build a custom view type end to end, and judge when not to."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+A custom view type is the heaviest thing in this course. Read the previous
+lesson first, because four times out of five the answer is there.
+
+## What you are taking on
+
+A standard list view gives you, free and maintained: sorting, grouping,
+pagination, filters and the search panel, optional columns, multi-row editing,
+export, record selection, keyboard navigation, mobile layout, access rule
+handling and the record dirty state.
+
+Write your own view and you have none of it. You will reimplement the half your
+users notice, badly, and maintain it across upgrades.
+
+Write one when the **shape** of the display genuinely has no standard
+equivalent: a planning board with time on one axis, a seating chart, a shop
+floor plan. Not when a list is "a bit ugly".
+
+## The four pieces
+
+```js
+// static/src/views/board/board_view.js
+import { registry } from "@web/core/registry";
+import { BoardController } from "./board_controller";
+import { BoardRenderer } from "./board_renderer";
+import { BoardArchParser } from "./board_arch_parser";
+import { RelationalModel } from "@web/model/relational_model/relational_model";
+
+export const boardView = {
+    type: "board",
+    display_name: "Board",
+    icon: "fa fa-columns",
+    multiRecord: true,
+
+    Controller: BoardController,
+    Renderer: BoardRenderer,
+    ArchParser: BoardArchParser,
+    Model: RelationalModel,
+
+    buttonTemplate: "owl_course.BoardButtons",
+
+    props(genericProps, view) {
+        const { arch, relatedModels, resModel } = genericProps;
+        const archInfo = new view.ArchParser().parse(arch, relatedModels, resModel);
+        return {
+            ...genericProps,
+            Model: view.Model,
+            Renderer: view.Renderer,
+            archInfo,
+        };
+    },
+};
+
+registry.category("views").add("board", boardView);
+```
+
+Reuse `RelationalModel`. Writing your own model means reimplementing loading,
+grouping, pagination and record state, and it is almost never necessary.
+
+## The arch parser
+
+Turns the XML into something your renderer can use.
+
+```js
+// board_arch_parser.js
+import { XMLParser } from "@web/core/utils/xml";
+
+export class BoardArchParser extends XMLParser {
+    parse(arch, relatedModels, resModel) {
+        const fieldNames = new Set();
+        let groupBy = null;
+        let titleField = null;
+
+        this.visitXML(arch, (node) => {
+            if (node.tagName === "board") {
+                groupBy = node.getAttribute("group_by");
+                titleField = node.getAttribute("title_field");
+            }
+            if (node.tagName === "field") {
+                fieldNames.add(node.getAttribute("name"));
+            }
+        });
+
+        if (!groupBy) {
+            throw new Error("A board view needs a group_by attribute");
+        }
+        fieldNames.add(groupBy);
+        if (titleField) fieldNames.add(titleField);
+
+        return {
+            groupBy,
+            titleField: titleField || "display_name",
+            fieldNames: [...fieldNames],
+        };
+    }
+}
+```
+
+Throwing on a missing required attribute is right. A view that renders blank
+because an attribute was misspelled is far more expensive to debug than one that
+refuses to load with a message.
+
+## The controller
+
+```js
+// board_controller.js
+import { Component, useState } from "@odoo/owl";
+import { Layout } from "@web/search/layout";
+import { useService } from "@web/core/utils/hooks";
+import { useModelWithSampleData } from "@web/model/model";
+
+export class BoardController extends Component {
+    static template = "owl_course.BoardView";
+    static components = { Layout };
+    static props = ["*"];
+
+    setup() {
+        this.action = useService("action");
+        this.orm = useService("orm");
+
+        this.model = useModelWithSampleData(this.props.Model, {
+            resModel: this.props.resModel,
+            fields: this.props.fields,
+            activeFields: this.props.archInfo.fieldNames,
+            groupBy: [this.props.archInfo.groupBy],
+            domain: this.props.domain,
+            context: this.props.context,
+        });
+
+        this.state = useState({ dragging: null });
+    }
+
+    get display() {
+        return { controlPanel: {} };
+    }
+
+    openRecord(record) {
+        this.action.switchView("form", { resId: record.resId });
+    }
+
+    async moveRecord(record, groupValue) {
+        await this.orm.write(this.props.resModel, [record.resId], {
+            [this.props.archInfo.groupBy]: groupValue,
+        });
+        await this.model.load();
+    }
+}
+```
+
+`this.action.switchView("form", ...)` keeps the breadcrumb, unlike `doAction`
+with a fresh action. Use it whenever you are moving within the same action.
+
+## Telling the server the view type exists
+
+Odoo validates `view_mode`, so a type it does not know is rejected.
+
+```python
+from odoo import fields, models
+
+class IrUiView(models.Model):
+    _inherit = 'ir.ui.view'
+
+    type = fields.Selection(selection_add=[('board', 'Board')])
+
+
+class IrActionsActWindowView(models.Model):
+    _inherit = 'ir.actions.act_window.view'
+
+    view_mode = fields.Selection(selection_add=[('board', 'Board')],
+                                 ondelete={'board': 'cascade'})
+
+
+class BaseModel(models.AbstractModel):
+    _inherit = 'base'
+
+    @api.model
+    def _get_view_cache_key(self, view_id=None, view_type='form', **options):
+        return super()._get_view_cache_key(view_id, view_type, **options)
+```
+
+Then a view and an action:
+
+```xml
+<record id="view_project_task_board" model="ir.ui.view">
+    <field name="model">project.task</field>
+    <field name="arch" type="xml">
+        <board group_by="stage_id" title_field="name">
+            <field name="name"/>
+            <field name="user_ids"/>
+        </board>
+    </field>
+</record>
+
+<record id="action_task_board" model="ir.actions.act_window">
+    <field name="name">Task Board</field>
+    <field name="res_model">project.task</field>
+    <field name="view_mode">board,list,form</field>
+</record>
+```
+
+## Things people forget
+
+**Sample data.** `useModelWithSampleData` gives Odoo's "no content" experience,
+showing plausible fake records on an empty database so the screen is not blank.
+Users notice its absence.
+
+**The search view.** Filters and the search panel come from the control panel.
+Pass `domain` through to your model or filters will appear to do nothing.
+
+**Access rights.** Your renderer must respect `record.isReadonly` rather than
+offering drag and drop to someone who cannot write. The server will refuse the
+write anyway, but only after the card has already moved on screen.
+
+**Mobile.** A board at 390px wide is a different design, not the same one
+narrower.
+
+## The honest summary
+
+Custom view types are the right tool a few times in a career. Most of what looks
+like a case for one is a case for a kanban view with a good template, or a client
+action, which gives you a blank canvas with none of the obligations of pretending
+to be a view.
+
+If after all that you still need one, read `addons/web/static/src/views/kanban/`
+end to end first. It is the closest standard analogue and it will answer most of
+the questions this lesson cannot.
+
+## What is next
+
+Part 7. Tests, debugging a minified bundle, performance, and the faults that
+only show up in production.

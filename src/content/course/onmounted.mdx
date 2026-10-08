@@ -1,0 +1,196 @@
+---
+title: "onMounted, refs, and working with the real DOM"
+metaTitle: "OWL onMounted and useRef"
+description: "Where the DOM finally exists: focusing inputs, measuring elements, initialising a chart library, and the onWillPatch and onPatched pair for keeping scroll position."
+part: 4
+partTitle: "The lifecycle"
+order: 3
+outcome: "Safely touch the DOM from a component, and integrate a third party library that needs a real element."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+`onMounted` fires once, after the component's DOM is in the document. It is the
+first moment a ref has an element.
+
+## Refs
+
+```xml
+<t t-name="owl_course.SearchBox">
+    <input type="text" t-ref="input" t-model="state.query"/>
+</t>
+```
+
+```js
+import { Component, useState, useRef, onMounted } from "@odoo/owl";
+
+export class SearchBox extends Component {
+    static template = "owl_course.SearchBox";
+
+    setup() {
+        this.state = useState({ query: "" });
+        this.inputRef = useRef("input");
+
+        onMounted(() => this.inputRef.el?.focus());
+    }
+}
+```
+
+`useRef` returns an object with an `el` property. It is **null** whenever the
+element is not currently rendered, so always use `?.`. A `t-if` above the
+element, or a render where it is absent, and `.el` is null without warning.
+
+The ref object itself is stable. The `el` inside it is not, and you should never
+cache it:
+
+```js
+// Wrong
+setup() {
+    this.inputRef = useRef("input");
+    onMounted(() => { this.el = this.inputRef.el; });
+}
+// Later, after a patch, this.el may be a detached node
+```
+
+Read `this.inputRef.el` each time.
+
+## Measuring
+
+```js
+onMounted(() => {
+    const rect = this.containerRef.el.getBoundingClientRect();
+    this.state.columns = Math.max(1, Math.floor(rect.width / 240));
+});
+```
+
+Measuring in `onMounted` is correct. Measuring in `setup` or `onWillStart` is
+not, because there is nothing to measure.
+
+If you need to react to later size changes, use a `ResizeObserver` and clean it
+up:
+
+```js
+setup() {
+    this.containerRef = useRef("container");
+    this.state = useState({ width: 0 });
+
+    onMounted(() => {
+        this.observer = new ResizeObserver((entries) => {
+            this.state.width = entries[0].contentRect.width;
+        });
+        this.observer.observe(this.containerRef.el);
+    });
+
+    onWillUnmount(() => this.observer?.disconnect());
+}
+```
+
+Odoo also ships `useService("ui")` for sizes and breakpoints, which is usually
+better than measuring yourself. Part 5.
+
+## Third party libraries
+
+The common real job: a chart, a map, an editor, anything that wants a DOM node.
+
+```js
+import { Component, useRef, onMounted, onWillUnmount, useEffect } from "@odoo/owl";
+import { loadJS } from "@web/core/assets";
+
+export class RevenueChart extends Component {
+    static template = "owl_course.RevenueChart";
+    static props = { data: Object };
+
+    setup() {
+        this.canvasRef = useRef("canvas");
+
+        onWillStart(() => loadJS("/web/static/lib/Chart/Chart.js"));
+
+        onMounted(() => this.renderChart());
+
+        useEffect(
+            () => { this.chart && this.updateChart(); },
+            () => [this.props.data],
+        );
+
+        onWillUnmount(() => this.chart?.destroy());
+    }
+
+    renderChart() {
+        this.chart = new Chart(this.canvasRef.el, {
+            type: "bar",
+            data: this.props.data,
+        });
+    }
+
+    updateChart() {
+        this.chart.data = this.props.data;
+        this.chart.update();
+    }
+}
+```
+
+Three things make this correct.
+
+`loadJS` in `onWillStart` loads the library before first render, and Odoo caches
+it so a second component does not fetch it twice.
+
+`onWillUnmount` destroys the chart. Chart libraries attach window listeners and
+hold canvas contexts. Without this you leak one chart per open, and in a backend
+session that is a lot.
+
+The chart is updated through its own API rather than by re-rendering. OWL does
+not know what is inside that canvas, and letting it patch around a library's DOM
+is how you get two libraries fighting over the same nodes.
+
+Whenever a library owns a subtree, give it a node and keep OWL out of it. Do not
+put `t-if` or `t-foreach` inside the element you handed over.
+
+## onWillPatch and onPatched
+
+A patch is OWL updating existing DOM rather than creating it. The pair exists so
+you can capture something before and restore it after.
+
+The real use case is scroll position:
+
+```js
+setup() {
+    this.listRef = useRef("list");
+
+    onWillPatch(() => {
+        const el = this.listRef.el;
+        this.scrollState = el
+            ? { top: el.scrollTop, atBottom: el.scrollHeight - el.scrollTop === el.clientHeight }
+            : null;
+    });
+
+    onPatched(() => {
+        const el = this.listRef.el;
+        if (!el || !this.scrollState) return;
+        el.scrollTop = this.scrollState.atBottom ? el.scrollHeight : this.scrollState.top;
+    });
+}
+```
+
+That is a message list that stays pinned to the bottom when new messages arrive,
+but does not yank the user back down if they have scrolled up to read. Odoo's own
+chatter does exactly this.
+
+`onPatched` runs after **every** patch, which is every re-render after the first.
+Keep it cheap, and never write reactive state in it without a guard, or you have
+the loop from the previous part.
+
+## onMounted versus useEffect
+
+```js
+onMounted(() => this.init());                        // once
+
+useEffect(() => this.sync(), () => [this.props.id]); // when id changes
+```
+
+`onMounted` for one time setup. `useEffect` for anything that must follow a
+value. An effect with `() => []` as its dependencies is effectively `onMounted`,
+and using `onMounted` is clearer when that is what you mean.
+
+## What is next
+
+`onWillUpdateProps`: reacting when the parent hands you a different record.

@@ -1,0 +1,184 @@
+---
+title: "onWillStart: loading data before anything renders"
+metaTitle: "OWL onWillStart hook"
+description: "How to load data before the first render, why it blocks the parent, when a loading state is better, and the race condition that shows one record's data under another record's name."
+part: 4
+partTitle: "The lifecycle"
+order: 2
+outcome: "Load data before first render safely, and decide when blocking the render is the wrong choice."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+`onWillStart` runs once, before the first render, and OWL waits for it. It is
+where a component fetches what it cannot render without.
+
+```js
+import { Component, useState, onWillStart } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class PartnerCard extends Component {
+    static template = "owl_course.PartnerCard";
+    static props = { partnerId: Number };
+
+    setup() {
+        this.orm = useService("orm");
+        this.state = useState({ partner: null });
+
+        onWillStart(async () => {
+            const [partner] = await this.orm.read(
+                "res.partner", [this.props.partnerId], ["name", "email", "city"],
+            );
+            this.state.partner = partner;
+        });
+    }
+}
+```
+
+The template can assume the data is there. No `t-if="state.partner"` guard, no
+flash of an empty card.
+
+## It blocks the parent
+
+This is the part worth thinking about before using it.
+
+OWL will not mount a component until its `onWillStart` resolves, and a parent
+will not mount until all its children have. So three cards each taking 400ms,
+rendered as siblings, delay the whole screen.
+
+They do at least run in parallel. Three siblings fetch at the same time and the
+parent waits for the slowest, not the sum. But a child of a child of a child
+serialises, because each level only starts after its parent rendered.
+
+**Blocking is right when** the component is small, the data is quick, and a
+partial render would be meaningless.
+
+**Blocking is wrong when** the data is slow, optional, or the user could usefully
+see the rest of the screen. Then render immediately and load into state:
+
+```js
+setup() {
+    this.orm = useService("orm");
+    this.state = useState({ rows: [], loading: true });
+
+    onWillStart(async () => {
+        // Only the small, essential bit blocks
+        this.state.columns = await this.loadColumns();
+    });
+
+    onMounted(() => {
+        // The slow part does not
+        this.loadRows();
+    });
+}
+
+async loadRows() {
+    try {
+        this.state.rows = await this.orm.searchRead("account.move", [], ["name"]);
+    } finally {
+        this.state.loading = false;
+    }
+}
+```
+
+A screen that appears in 100ms with a spinner in one panel beats a blank screen
+for two seconds, even though the second is "finished" sooner.
+
+## Loading several things
+
+```js
+onWillStart(async () => {
+    const [partners, currencies, settings] = await Promise.all([
+        this.orm.searchRead("res.partner", [], ["name"]),
+        this.orm.searchRead("res.currency", [], ["name", "symbol"]),
+        this.orm.call("res.config.settings", "get_values", []),
+    ]);
+    Object.assign(this.state, { partners, currencies, settings });
+});
+```
+
+`Promise.all`, not three awaits in sequence. Three sequential round trips to an
+Odoo server on a slow connection is a visible delay for no reason.
+
+## It runs once, ever
+
+```js
+onWillStart(async () => {
+    this.state.partner = await this.load(this.props.partnerId);
+});
+```
+
+Change `partnerId` from the parent and this does **not** run again. The component
+instance persists, props change, and the card keeps showing the first partner.
+
+That is `onWillUpdateProps`, two lessons away. It is the single most common
+misunderstanding of this hook, and the symptom is a detail panel that never
+follows the record you select.
+
+## The race condition
+
+This one is worth internalising because it produces a bug that looks like bad
+data rather than bad code.
+
+A user clicks partner 1, then quickly clicks partner 2. Two fetches are in
+flight. If the first resolves last, the component ends up showing partner 1's
+data while the header says partner 2.
+
+Guard with a sequence number:
+
+```js
+setup() {
+    this.orm = useService("orm");
+    this.state = useState({ partner: null });
+    this.loadSeq = 0;
+
+    onWillStart(() => this.load(this.props.partnerId));
+    onWillUpdateProps((next) => this.load(next.partnerId));
+}
+
+async load(partnerId) {
+    const seq = ++this.loadSeq;
+    const [partner] = await this.orm.read("res.partner", [partnerId], ["name"]);
+    if (seq !== this.loadSeq) {
+        return;              // a newer load started, this result is stale
+    }
+    this.state.partner = partner;
+}
+```
+
+Any component that loads in response to something the user can change quickly
+needs this. Search boxes especially.
+
+## Errors
+
+A rejection in `onWillStart` propagates and the component does not mount. By
+default it surfaces as the Odoo error dialog, which for a genuine server fault is
+correct.
+
+When failure is expected and survivable, handle it and render something useful:
+
+```js
+onWillStart(async () => {
+    try {
+        this.state.rates = await this.fetchRates();
+    } catch (e) {
+        this.state.ratesError = true;     // render the card without rates
+    }
+});
+```
+
+Do not swallow errors silently. A card that renders empty with nothing in the
+console is worse than one that fails loudly, because nobody can tell it is
+broken.
+
+## Do not use it for
+
+**DOM work.** There is no DOM yet. `useRef(...).el` is null. That is `onMounted`.
+
+**Side effects on the server.** `onWillStart` can run more often than you expect
+during development, and a component that writes on mount is a component that
+writes twice when someone adds a wrapper.
+
+## What is next
+
+`onMounted`, where the DOM finally exists.

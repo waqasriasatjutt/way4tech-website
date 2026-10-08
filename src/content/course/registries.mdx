@@ -1,0 +1,165 @@
+---
+title: "Registries: how Odoo finds the code you added"
+metaTitle: "Odoo registry categories OWL"
+description: "The registry is a map of named things Odoo reads at boot. Every category you will use, how sequence and force work, and how to inspect one at runtime."
+part: 5
+partTitle: "Services and registries"
+order: 5
+outcome: "Register anything in the right category, control its position, and inspect a registry live."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Your module is loaded, but nothing calls it. The registry is how Odoo discovers
+what you added.
+
+```js
+import { registry } from "@web/core/registry";
+
+registry.category("systray").add("my_module.clock", { Component: Clock });
+```
+
+It is a map of named sub-maps. Odoo reads them when it needs the things inside.
+
+## The categories you will use
+
+| Category | Holds | Covered in |
+| --- | --- | --- |
+| `services` | Services | Next lesson |
+| `fields` | Field widgets | Part 6 |
+| `views` | View types | Part 6 |
+| `actions` | Client actions | Part 6 |
+| `systray` | Top right icons | Part 1 |
+| `main_components` | Components mounted at the root | Below |
+| `user_menuitems` | Items in the user dropdown | |
+| `favoriteMenu` | Items in the search Favourites menu | |
+| `formatters` / `parsers` | Value display and input | |
+| `view_widgets` | `<widget>` tags inside a view | |
+| `error_handlers` | Handling specific server errors | |
+| `error_dialogs` | Dialog per error type | |
+| `command_provider` | Entries in the command palette | |
+| `cogMenu` | Items in the cog menu of a view | |
+
+## add, and its options
+
+```js
+registry.category("systray").add(
+    "my_module.clock",         // key, namespace it
+    { Component: Clock },      // value, shape depends on the category
+    { sequence: 10, force: true },
+);
+```
+
+**The key must be unique within the category.** Prefix it with your module name.
+Two modules both adding `clock` is a real collision, and the failure is one
+module silently not appearing.
+
+**`sequence`** orders entries. Lower comes first. Categories that care about
+order read it; others ignore it.
+
+**`force: true`** replaces an existing key instead of throwing. Without it,
+adding a key that exists is an error. Use `force` deliberately: it means
+overriding another module, and if that module is reinstalled or reordered the
+result depends on load order.
+
+## Reading and reacting
+
+```js
+const systray = registry.category("systray");
+
+systray.get("my_module.clock");          // throws if absent
+systray.get("my_module.clock", null);    // default if absent
+systray.contains("my_module.clock");     // boolean
+systray.getAll();                        // values, sequence ordered
+systray.getEntries();                    // [key, value] pairs
+systray.remove("my_module.clock");
+```
+
+Registries emit events, which is how the client picks up something added after
+boot:
+
+```js
+registry.category("services").addEventListener("UPDATE", (ev) => {
+    console.log("service registry changed", ev.detail);
+});
+```
+
+You rarely need this. It matters when something registers lazily.
+
+## main_components
+
+For a component that must exist on screen regardless of the current view: a
+global banner, an overlay, a connection indicator.
+
+```js
+import { registry } from "@web/core/registry";
+import { OfflineBanner } from "./offline_banner";
+
+registry.category("main_components").add("my_module.offline_banner", {
+    Component: OfflineBanner,
+    props: {},
+});
+```
+
+Mounted once at the root, outside the action manager, so it survives navigation.
+Keep these few and keep them cheap: they render for every user on every page.
+
+## Registering at module scope
+
+```js
+// Runs when the file loads
+registry.category("systray").add("my_module.clock", { Component: Clock });
+```
+
+This is the normal pattern and it is fine. The caveat is doing anything beyond
+registering at module scope. **Do not read a registry at module scope**, because
+whether the entry you want is there depends on bundle order:
+
+```js
+// Fragile
+const existing = registry.category("fields").get("char");
+```
+
+Read it inside `setup` or a function, by which time everything has loaded.
+
+## Inspecting at runtime
+
+In developer mode, in the console:
+
+```js
+odoo.loader.modules.get("@web/core/registry").registry.category("fields").getEntries()
+```
+
+That lists every registered field widget with its key. It is the fastest way to
+find the exact name of a widget you want to extend, and to confirm your own
+registration actually happened.
+
+Shorter, if you are inside a component in the debugger:
+
+```js
+odoo.__WOWL_DEBUG__.root.env.services
+```
+
+## When registering silently does nothing
+
+Three causes, in order.
+
+**The file never loaded.** Check it:
+
+```js
+Object.keys(odoo.loader.modules).filter(m => m.includes("my_module"))
+```
+
+Nothing listed means a bundle problem. Back to Part 1.
+
+**The key already existed and threw.** Look for the error at boot. It appears
+early and scrolls away.
+
+**Wrong category name.** `registry.category("systrays")` creates a new, empty
+category called `systrays` rather than erroring. Nothing reads it, nothing
+complains, nothing appears. Spelling matters and there is no safety net.
+
+## What is next
+
+Writing a service of your own, which is where shared state and shared behaviour
+belong.

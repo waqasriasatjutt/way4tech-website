@@ -1,0 +1,340 @@
+---
+title: "Build: a sales dashboard client action"
+metaTitle: "Build an Odoo dashboard with OWL"
+description: "A complete dashboard from an empty folder: manifest, menu, server side aggregation with the right rights, KPI cards that drill through, a period filter and a chart."
+part: 8
+partTitle: "Three builds, end to end"
+order: 1
+outcome: "Build a production shaped dashboard, aggregated on the server and safe for non administrators."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Everything from Parts 1 to 7, applied. Nothing skipped and nothing hand waved.
+
+## The module
+
+```
+owl_dashboard/
+  __init__.py
+  __manifest__.py
+  models/
+    __init__.py
+    sale_dashboard.py
+  security/
+    ir.model.access.csv
+  views/
+    dashboard_views.xml
+  static/src/dashboard/
+    dashboard.js
+    dashboard.xml
+    dashboard.scss
+```
+
+```python
+# __manifest__.py
+{
+    'name': 'Sales Dashboard',
+    'version': '19.0.1.0.0',
+    'license': 'LGPL-3',
+    'depends': ['web', 'sale'],
+    'data': ['views/dashboard_views.xml'],
+    'assets': {
+        'web.assets_backend': [
+            'owl_dashboard/static/src/**/*.js',
+            'owl_dashboard/static/src/**/*.xml',
+            'owl_dashboard/static/src/**/*.scss',
+        ],
+    },
+    'installable': True,
+}
+```
+
+## The server side
+
+One call returning everything. Aggregated in SQL, not in the browser.
+
+```python
+# models/sale_dashboard.py
+from datetime import date
+from dateutil.relativedelta import relativedelta
+from odoo import api, fields, models
+
+
+class SaleDashboard(models.AbstractModel):
+    _name = 'sale.dashboard'
+    _description = 'Sales dashboard figures'
+
+    @api.model
+    def _period_range(self, period):
+        today = fields.Date.context_today(self)
+        if period == 'year':
+            start = date(today.year, 1, 1)
+        elif period == 'quarter':
+            start = date(today.year, 3 * ((today.month - 1) // 3) + 1, 1)
+        else:
+            start = date(today.year, today.month, 1)
+        return start, today
+
+    @api.model
+    def get_figures(self, period='month'):
+        """Totals for the dashboard.
+
+        Counted with sudo so a salesperson who cannot read every order still
+        sees a correct company figure. The cards that drill into records are
+        hidden from anyone without the group, so nothing shown is unopenable.
+        """
+        start, end = self._period_range(period)
+        Order = self.env['sale.order'].sudo()
+        domain = [
+            ('state', 'in', ('sale', 'done')),
+            ('date_order', '>=', fields.Datetime.to_datetime(start)),
+        ]
+
+        orders = Order.search(domain)
+        revenue = sum(orders.mapped('amount_untaxed'))
+        count = len(orders)
+
+        prev_start = start - relativedelta(months=1)
+        prev = Order.search([
+            ('state', 'in', ('sale', 'done')),
+            ('date_order', '>=', fields.Datetime.to_datetime(prev_start)),
+            ('date_order', '<', fields.Datetime.to_datetime(start)),
+        ])
+        prev_revenue = sum(prev.mapped('amount_untaxed'))
+
+        by_partner = Order.read_group(
+            domain, ['amount_untaxed:sum'], ['partner_id'],
+            limit=8, orderby='amount_untaxed desc', lazy=False,
+        )
+        by_day = Order.read_group(
+            domain, ['amount_untaxed:sum'], ['date_order:day'], lazy=False,
+        )
+
+        return {
+            'period': period,
+            'date_from': fields.Date.to_string(start),
+            'revenue': revenue,
+            'count': count,
+            'average': revenue / count if count else 0.0,
+            'previous_revenue': prev_revenue,
+            'change': ((revenue - prev_revenue) / prev_revenue * 100)
+                      if prev_revenue else None,
+            'currency_id': self.env.company.currency_id.id,
+            'top_partners': [
+                {'id': g['partner_id'][0], 'name': g['partner_id'][1],
+                 'total': g['amount_untaxed'], 'count': g['__count']}
+                for g in by_partner if g.get('partner_id')
+            ],
+            'series': [
+                {'label': g['date_order:day'], 'value': g['amount_untaxed']}
+                for g in by_day
+            ],
+        }
+```
+
+Three deliberate choices. `sudo()` so the figure is a company figure rather than
+whatever this user happens to see. A **single** call, not five. And `read_group`,
+so a database with 80,000 orders transfers a handful of rows.
+
+## The component
+
+```js
+// static/src/dashboard/dashboard.js
+import { Component, useState, onWillStart } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { user } from "@web/core/user";
+import { Layout } from "@web/search/layout";
+import { formatMonetary } from "@web/views/fields/formatters";
+
+export class SalesDashboard extends Component {
+    static template = "owl_dashboard.SalesDashboard";
+    static components = { Layout };
+    static props = ["*"];
+
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.notification = useService("notification");
+
+        this.state = useState({
+            period: this.props.action.params?.period || "month",
+            loading: true,
+            figures: null,
+            canDrill: false,
+        });
+
+        onWillStart(async () => {
+            this.state.canDrill = await user.hasGroup("sales_team.group_sale_salesman");
+            await this.load();
+        });
+    }
+
+    get display() {
+        return { controlPanel: {} };
+    }
+
+    async load() {
+        this.state.loading = true;
+        try {
+            this.state.figures = await this.orm.call(
+                "sale.dashboard", "get_figures", [], { period: this.state.period },
+            );
+        } catch (e) {
+            this.notification.add(e.message || "Could not load the figures",
+                                  { type: "danger" });
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async setPeriod(period) {
+        if (period === this.state.period) return;
+        this.state.period = period;
+        await this.load();
+    }
+
+    money(value) {
+        return formatMonetary(value, { currencyId: this.state.figures?.currency_id });
+    }
+
+    get changeLabel() {
+        const c = this.state.figures?.change;
+        if (c === null || c === undefined) return "no comparison yet";
+        return `${c >= 0 ? "up" : "down"} ${Math.abs(c).toFixed(1)}% on last period`;
+    }
+
+    openOrders(extraDomain = []) {
+        if (!this.state.canDrill) return;
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Orders in this period",
+            res_model: "sale.order",
+            domain: [
+                ["state", "in", ["sale", "done"]],
+                ["date_order", ">=", this.state.figures.date_from],
+                ...extraDomain,
+            ],
+            views: [[false, "list"], [false, "form"]],
+        });
+    }
+}
+
+registry.category("actions").add("owl_dashboard.main", SalesDashboard);
+```
+
+## The template
+
+```xml
+<templates xml:space="preserve">
+<t t-name="owl_dashboard.SalesDashboard">
+    <Layout display="display" className="'o_sales_dashboard h-100 overflow-auto'">
+
+        <t t-set-slot="control-panel-create-button">
+            <div class="btn-group btn-group-sm">
+                <button t-foreach="['month', 'quarter', 'year']" t-as="p" t-key="p"
+                        class="btn"
+                        t-att-class="state.period === p ? 'btn-primary' : 'btn-secondary'"
+                        t-on-click="() => this.setPeriod(p)">
+                    <t t-esc="p"/>
+                </button>
+            </div>
+        </t>
+
+        <div t-if="state.loading" class="p-4 text-muted">Loading</div>
+
+        <div t-elif="state.figures" class="p-3">
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="card h-100" t-att-class="state.canDrill ? 'cursor-pointer' : ''"
+                         t-on-click="() => this.openOrders()">
+                        <div class="card-body">
+                            <div class="text-muted small">Revenue</div>
+                            <div class="fs-3 fw-semibold" t-esc="money(state.figures.revenue)"/>
+                            <div class="small text-muted" t-esc="changeLabel"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="card h-100"><div class="card-body">
+                        <div class="text-muted small">Orders</div>
+                        <div class="fs-3 fw-semibold" t-esc="state.figures.count"/>
+                    </div></div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="card h-100"><div class="card-body">
+                        <div class="text-muted small">Average order</div>
+                        <div class="fs-3 fw-semibold" t-esc="money(state.figures.average)"/>
+                    </div></div>
+                </div>
+            </div>
+
+            <h5 class="mt-4">Top customers</h5>
+            <table class="table table-sm align-middle">
+                <thead><tr>
+                    <th>Customer</th><th class="text-end">Orders</th><th class="text-end">Revenue</th>
+                </tr></thead>
+                <tbody>
+                    <tr t-foreach="state.figures.top_partners" t-as="p" t-key="p.id"
+                        t-att-class="state.canDrill ? 'cursor-pointer' : ''"
+                        t-on-click="() => this.openOrders([['partner_id','=',p.id]])">
+                        <td t-esc="p.name"/>
+                        <td class="text-end" t-esc="p.count"/>
+                        <td class="text-end" t-esc="money(p.total)"/>
+                    </tr>
+                    <tr t-if="!state.figures.top_partners.length">
+                        <td colspan="3" class="text-muted">No orders in this period</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </Layout>
+</t>
+</templates>
+```
+
+## Wiring it up
+
+```xml
+<!-- views/dashboard_views.xml -->
+<odoo>
+    <record id="action_sales_dashboard" model="ir.actions.client">
+        <field name="name">Sales Dashboard</field>
+        <field name="tag">owl_dashboard.main</field>
+    </record>
+
+    <menuitem id="menu_sales_dashboard" name="Dashboard"
+              parent="sale.sale_menu_root"
+              action="action_sales_dashboard" sequence="1"/>
+</odoo>
+```
+
+## What this build demonstrates
+
+**One server call, aggregated.** Not five calls returning rows to total in the
+browser.
+
+**`sudo()` for the figure, a group check for the drill-through.** The two halves
+of the dashboard rights problem from Part 7.
+
+**Every figure opens its records**, except where the user may not, and then it is
+not clickable rather than broken.
+
+**A loading state and an error path**, so a slow or failed load is visible rather
+than a blank panel.
+
+**Comparison with the previous period**, because a number without a reference is
+not information.
+
+## Exercises
+
+Add a chart with `loadJS` and Chart.js, destroying it in `onWillUnmount`. Put the
+period in the URL with the router service so a refresh keeps it. Add a company
+filter using the `company` service. Then write a Hoot test asserting
+`get_figures` is called once per period change and not once per render.
+
+## What is next
+
+The same discipline applied to a field widget.

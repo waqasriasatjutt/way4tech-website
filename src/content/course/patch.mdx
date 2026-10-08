@@ -1,0 +1,182 @@
+---
+title: "patch(): changing a component you do not own"
+metaTitle: "Odoo OWL patch component"
+description: "How to extend core components with patch, calling super, patching prototypes versus statics, inheriting a QWeb template with xpath, and the rules that keep a patch alive across upgrades."
+part: 6
+partTitle: "Extending Odoo itself"
+order: 1
+outcome: "Patch a core component's behaviour and template without copying core code."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Most real Odoo work is not new screens. It is changing an existing one. `patch`
+is how.
+
+```js
+import { patch } from "@web/core/utils/patch";
+import { ListRenderer } from "@web/views/list/list_renderer";
+
+patch(ListRenderer.prototype, {
+    setup() {
+        super.setup();
+        console.log("list renderer set up");
+    },
+});
+```
+
+`super` works. Odoo's patch utility rebuilds the prototype chain specifically so
+it does, which means your patch can extend behaviour rather than replace it.
+
+## Prototype or static
+
+```js
+// Instance methods and getters
+patch(ListRenderer.prototype, { ... });
+
+// Static fields: props, template, components, defaultProps
+patch(ListRenderer, { ... });
+```
+
+Getting this wrong is a common first mistake. Patching `components` onto the
+prototype does nothing, because OWL reads it from the class.
+
+```js
+import { MyCell } from "./my_cell";
+
+patch(ListRenderer, {
+    components: { ...ListRenderer.components, MyCell },
+});
+```
+
+Note the spread. Overwriting `components` wholesale removes everything core put
+there and the view stops rendering.
+
+## Always call super
+
+```js
+patch(FormController.prototype, {
+    async onRecordSaved(record) {
+        await super.onRecordSaved(record);     // do not skip this
+        this.doMyThing(record);
+    },
+});
+```
+
+Omitting `super` silently removes core behaviour. The symptom arrives weeks
+later as "saving stopped doing X", and nothing points at your module.
+
+The exception is deliberately replacing behaviour, and then it deserves a
+comment saying so and why.
+
+## Patching a getter
+
+```js
+patch(ListRenderer.prototype, {
+    get displayRowCount() {
+        return super.displayRowCount && !this.props.list.isGrouped;
+    },
+});
+```
+
+Getters patch like methods, `super` included.
+
+## Extending the template
+
+You cannot patch XML with `patch`. Templates are inherited the way every other
+QWeb template in Odoo is, with `t-inherit` and xpath.
+
+```xml
+<!-- static/src/list_renderer_patch.xml -->
+<templates xml:space="preserve">
+
+    <t t-name="my_module.ListRendererPatch"
+       t-inherit="web.ListRenderer"
+       t-inherit-mode="extension">
+
+        <xpath expr="//table" position="before">
+            <div t-if="props.list.records.length > 100" class="alert alert-info">
+                Showing the first page of a large list.
+            </div>
+        </xpath>
+
+    </t>
+
+</templates>
+```
+
+`t-inherit-mode="extension"` modifies the existing template in place, so every
+component using it gets your change and you do not have to repoint anything.
+This is what you want almost always.
+
+`t-inherit-mode="primary"` creates a **new** template based on the old one,
+leaving the original untouched. Use it when you want a variant for your own
+component only, and then your component's `static template` names the new one.
+
+Positions are `before`, `after`, `inside`, `replace` and `attributes`, exactly
+as in view inheritance.
+
+```xml
+<xpath expr="//button[@name='action_post']" position="attributes">
+    <attribute name="class" add="btn-lg" separator=" "/>
+</xpath>
+```
+
+## Finding what to patch
+
+The honest answer is reading core source. There is no index.
+
+In the browser, with developer mode on, select an element and use
+`odoo.__WOWL_DEBUG__.root` to walk the live component tree and see class names.
+That gives you the component; then find its file in the Odoo source by name.
+
+In the source, `addons/web/static/src/` is where the framework lives:
+
+```
+views/list/list_renderer.js
+views/form/form_controller.js
+views/fields/            every standard field widget
+core/                    services, dialogs, registries
+search/                  the search view and its panels
+```
+
+Reading the component you intend to patch, properly, before patching it, is not
+optional. Patching a method whose contract you guessed is how you ship a module
+that breaks on the next point release.
+
+## Rules that keep a patch working
+
+**Patch the smallest thing.** One method, not a whole controller. The less of
+core your patch depends on, the less of core can change underneath it.
+
+**Never copy a core method and edit it.** A copied method is frozen at the
+version you copied it from. Every fix Odoo makes to it afterwards is a fix you
+do not get, and nothing tells you.
+
+**Guard your additions.** A patch that assumes a field exists on every model
+will break on a model where it does not:
+
+```js
+patch(FormController.prototype, {
+    get myFlag() {
+        return "x_my_field" in this.props.fields;
+    },
+});
+```
+
+**Namespace what you add.** A method called `refresh` on a core prototype will
+collide with someone else's. `myModuleRefresh` will not.
+
+**Test on an upgrade before shipping.** Patches are the first thing to break
+between major versions, and discovering it on a client's production is expensive.
+
+## When not to patch
+
+If your change is "this screen should look different for my model", a patch to a
+shared component affects every model. Prefer a custom view or a field widget,
+which are scoped by definition. Those are the next lessons.
+
+## What is next
+
+Field widgets: the most common and most scoped way to change how Odoo renders
+something.

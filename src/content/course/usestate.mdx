@@ -1,0 +1,197 @@
+---
+title: "useState, and what actually causes a re-render"
+metaTitle: "OWL useState explained"
+description: "How useState works through proxies, why only reads during render are tracked, what happens with nested objects and arrays, and the three writes that change a value without redrawing anything."
+part: 3
+partTitle: "Reactivity"
+order: 1
+outcome: "Explain exactly when OWL re-renders, and predict whether a given write will update the screen."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+OWL's reactivity is small enough to understand completely, which is unusual and
+worth taking advantage of. Once you have the model in your head, almost every
+"why did it not update" question answers itself.
+
+## The mechanism
+
+```js
+this.state = useState({ count: 0 });
+```
+
+`useState` wraps the object in a `Proxy` and returns the proxy. Two things
+happen through it.
+
+**On read, during a render:** OWL records that this component read this key.
+That is a subscription.
+
+**On write:** OWL looks up which components subscribed to that key and schedules
+them for re-render.
+
+Two consequences follow immediately, and they explain most surprises.
+
+**Reads outside a render are not tracked.** Reading `this.state.count` in a
+click handler subscribes to nothing, because no render was in progress.
+
+**A component only re-renders for keys it actually read.** If your template never
+mentions `state.verbose`, writing to `state.verbose` re-renders nothing. This is
+a feature, not a bug, and it is why OWL is fast without you doing anything.
+
+## Writes that work
+
+```js
+this.state.count++;
+this.state.name = "new";
+this.state.items.push(item);
+this.state.items.splice(0, 1);
+this.state.user.address.city = "Dubai";
+delete this.state.draft;
+```
+
+Nested objects are wrapped on access, so deep writes are tracked. Array methods
+work because they are implemented as writes to indices and `length`, both of
+which the proxy sees.
+
+## Writes that do not
+
+Three. These are the whole lesson.
+
+### 1. Replacing the state object
+
+```js
+// Wrong
+this.state = { count: 0 };
+```
+
+You threw away the proxy and replaced it with a plain object. Nothing is
+observed any more, and nothing you do afterwards updates the screen. Mutate the
+proxy instead:
+
+```js
+this.state.count = 0;
+Object.assign(this.state, { count: 0, name: "" });
+```
+
+### 2. Destructuring out of state
+
+```js
+// Wrong
+const { count } = this.state;
+count++;                        // a local number, unrelated to state
+```
+
+Destructuring copies the value out. For a primitive, the copy has no connection
+to the proxy at all.
+
+Destructuring an **object** out of state is more subtle: the reference you get is
+still the reactive proxy for that sub-object, so writing to its properties works.
+Reassigning the variable does not.
+
+```js
+const { user } = this.state;
+user.name = "Changed";   // works, still the proxy
+user = { name: "x" };    // changes a local variable, nothing else
+```
+
+Keep it simple: write through `this.state`.
+
+### 3. Holding a reference taken before
+
+```js
+setup() {
+    this.items = this.state.items;   // taken once
+}
+later() {
+    this.state.items = [];            // state now points at a different array
+    this.items.push(x);               // pushing to the old one
+}
+```
+
+The screen renders `state.items`, which is now empty. You are pushing into an
+array nothing reads.
+
+## Reads must happen during render
+
+This catches people with conditional templates.
+
+```xml
+<div t-if="state.showDetail">
+    <t t-esc="state.detailText"/>
+</div>
+```
+
+While `showDetail` is false, the template never reads `detailText`, so the
+component is not subscribed to it. Writing `state.detailText` changes nothing on
+screen. Setting `showDetail = true` re-renders, that render reads `detailText`,
+and the subscription now exists.
+
+This is correct behaviour and almost never a problem, because the thing you
+change alongside the hidden value is usually the flag itself. It is worth
+knowing when a value seems to update late.
+
+## One state object or several
+
+Both work:
+
+```js
+this.state = useState({ loading: false, items: [], filter: "all" });
+
+// or
+this.ui = useState({ loading: false });
+this.data = useState({ items: [] });
+```
+
+Separate objects give finer subscriptions, so a component that only reads
+`this.ui` does not re-render when `this.data` changes. In practice one object
+per component is fine and clearer. Split when a child reads only part of it.
+
+## Watching it work
+
+```js
+import { Component, useState, onRendered } from "@odoo/owl";
+
+export class Counter extends Component {
+    static template = "owl_course.Counter";
+    setup() {
+        this.state = useState({ count: 0, hidden: 0 });
+        onRendered(() => console.log("rendered", this.state.count));
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.Counter">
+    <div>
+        <button t-on-click="() => this.state.count++">Count: <t t-esc="state.count"/></button>
+        <button t-on-click="() => this.state.hidden++">Hidden</button>
+    </div>
+</t>
+```
+
+Clicking the first button logs. Clicking the second logs nothing, every time,
+because the template never reads `hidden`. That is the subscription model in one
+experiment, and it is worth running once.
+
+## Renders are batched
+
+Several writes in one synchronous block produce one render:
+
+```js
+async load() {
+    this.state.loading = true;      // no render yet
+    this.state.error = null;        // no render yet
+    const data = await this.fetch();
+    this.state.items = data;        // render after the microtask
+    this.state.loading = false;     // batched with the line above
+}
+```
+
+You never need to think about batching, but it does mean you cannot read the DOM
+immediately after a write and expect it to have updated. If you genuinely must,
+`await this.render()` or use `onRendered`.
+
+## What is next
+
+`reactive()`, the primitive underneath `useState`, and how to share reactive
+state between components without passing props everywhere.

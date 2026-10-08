@@ -1,0 +1,242 @@
+---
+title: "Writing your own service"
+metaTitle: "Create a custom Odoo service OWL"
+description: "A service with dependencies, reactive state several components share, a cache, and polling that cleans up. The right home for anything that outlives a component."
+part: 5
+partTitle: "Services and registries"
+order: 6
+outcome: "Write, register and use a service with dependencies and shared reactive state."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+When two components need the same data, or something must outlive any single
+component, write a service.
+
+## The smallest one
+
+```js
+// static/src/services/greeting_service.js
+import { registry } from "@web/core/registry";
+
+export const greetingService = {
+    start(env) {
+        return {
+            greet(name) {
+                return `Hello, ${name}`;
+            },
+        };
+    },
+};
+
+registry.category("services").add("owl_course.greeting", greetingService);
+```
+
+```js
+setup() {
+    this.greeting = useService("owl_course.greeting");
+}
+```
+
+A service is an object with a `start`. Whatever `start` returns is what
+`useService` gives out.
+
+## Dependencies
+
+```js
+export const rateService = {
+    dependencies: ["orm", "notification"],
+
+    start(env, { orm, notification }) {
+        return {
+            async load(currency) {
+                try {
+                    return await orm.call("res.currency", "get_rate", [[], currency]);
+                } catch (e) {
+                    notification.add("Could not load rates", { type: "danger" });
+                    return null;
+                }
+            },
+        };
+    },
+};
+```
+
+Declared dependencies are started first and handed to you destructured. Not
+declaring one and reaching for `env.services.orm` anyway usually works and
+occasionally does not, depending on start order. Declare them.
+
+`start` may be async, and the client waits for it. Keep that work small, because
+it delays the whole web client booting.
+
+## Shared reactive state
+
+The pattern worth copying. A service holding a `reactive` object gives every
+component the same state, with updates.
+
+```js
+// static/src/services/dashboard_filter_service.js
+import { reactive } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+export const dashboardFilterService = {
+    dependencies: ["orm"],
+
+    start(env, { orm }) {
+        const state = reactive({
+            period: "month",
+            companyIds: [],
+            from: null,
+            to: null,
+        });
+
+        function setPeriod(period) {
+            const now = new Date();
+            state.period = period;
+            state.to = now;
+            state.from = period === "year"
+                ? new Date(now.getFullYear(), 0, 1)
+                : new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+
+        setPeriod("month");
+
+        return { state, setPeriod };
+    },
+};
+
+registry.category("services").add("owl_course.dashboard_filter", dashboardFilterService);
+```
+
+```js
+import { useState } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+setup() {
+    this.filters = useService("owl_course.dashboard_filter");
+    this.filterState = useState(this.filters.state);   // subscribe
+}
+```
+
+```xml
+<p>Showing <t t-esc="filterState.period"/></p>
+```
+
+`useService` gets the service. `useState` on its state subscribes **this**
+component. Both steps are needed: without the `useState`, you read values that
+never update.
+
+Every component doing this shares one object, so a filter bar calling
+`setPeriod` re-renders every panel that read `period`, with no props and no
+events.
+
+## A cache
+
+```js
+export const partnerCacheService = {
+    dependencies: ["orm"],
+
+    start(env, { orm }) {
+        const cache = new Map();
+        const inFlight = new Map();
+
+        async function get(id) {
+            if (cache.has(id)) {
+                return cache.get(id);
+            }
+            if (inFlight.has(id)) {
+                return inFlight.get(id);      // do not fetch twice
+            }
+            const promise = orm
+                .read("res.partner", [id], ["name", "email"])
+                .then(([rec]) => {
+                    cache.set(id, rec);
+                    inFlight.delete(id);
+                    return rec;
+                });
+            inFlight.set(id, promise);
+            return promise;
+        }
+
+        return { get, invalidate: (id) => cache.delete(id), clear: () => cache.clear() };
+    },
+};
+```
+
+The `inFlight` map is the part people leave out. Without it, twenty rows asking
+for the same partner at once produce twenty identical requests, because none of
+them has finished to populate the cache yet.
+
+A cache needs an invalidation story. Here it is manual, which is honest. A cache
+with no way to invalidate is a bug waiting for someone to edit a record.
+
+## Polling, cleanly
+
+```js
+export const alertService = {
+    dependencies: ["orm", "notification"],
+
+    start(env, { orm, notification }) {
+        const state = reactive({ count: 0 });
+        let timer = null;
+
+        async function poll() {
+            try {
+                state.count = await orm.silent.searchCount(
+                    "my.alert", [["acknowledged", "=", false]],
+                );
+            } catch {
+                // a failed poll is not worth interrupting anyone over
+            }
+        }
+
+        function start(ms = 60000) {
+            stop();
+            poll();
+            timer = setInterval(poll, ms);
+        }
+
+        function stop() {
+            if (timer) { clearInterval(timer); timer = null; }
+        }
+
+        start();
+        return { state, start, stop, poll };
+    },
+};
+```
+
+Two deliberate choices. `orm.silent` so background polling does not flicker the
+loading indicator. And a failed poll is swallowed, because the network dropping
+for a second should not throw a dialog at someone mid sentence.
+
+A service lives for the whole page, so this interval is never cleaned up. That
+is correct here, and it is also why you should not create services casually:
+every one of them is permanent.
+
+## Service or store
+
+A plain `reactive` object at module scope is lighter and fine for pure UI state
+with no dependencies.
+
+Use a service when you need the ORM or another service, when something must
+start at boot, or when you want it replaceable in tests. In Odoo code, a service
+is the convention, and matching the convention is worth something on its own.
+
+## Testing
+
+Because components ask by name, a test can register a different implementation:
+
+```js
+registry.category("services").add("owl_course.dashboard_filter", {
+    start: () => ({ state: reactive({ period: "year" }), setPeriod() {} }),
+}, { force: true });
+```
+
+The component under test is unchanged. That is the whole argument for services
+over imports, and Part 7 uses it properly.
+
+## What is next
+
+Part 6. Changing Odoo itself: patching components you do not own, and adding
+field widgets, client actions and view types.

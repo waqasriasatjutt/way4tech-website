@@ -1,0 +1,188 @@
+---
+title: "Performance: what actually costs you"
+metaTitle: "Odoo OWL performance optimisation"
+description: "The round trip is almost always the problem, not the rendering. Measuring properly, batching, aggregating on the server, and the few render optimisations worth doing."
+part: 7
+partTitle: "Making it hold up"
+order: 3
+outcome: "Find the real cost in a slow screen and fix it, instead of optimising rendering that was never the problem."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Almost every slow Odoo screen is slow for one of three reasons, and rendering is
+rarely one of them.
+
+1. Too many server calls
+2. One server call doing too much work
+3. Too much data crossing the wire
+
+Measure before changing anything.
+
+## Measuring
+
+**The Network tab**, filtered to `call_kw`. Count the requests on one page load.
+Four is normal, forty is the bug.
+
+**The server log** with timing on:
+
+```bash
+odoo --log-level=debug_sql
+```
+
+Or in Odoo, developer mode, the bug menu, "Activate profiler". It gives you SQL
+counts and timings per request, which is where the real answer usually is.
+
+**The Performance tab** for actual rendering cost. Record, interact, stop. If
+scripting time is small and the gaps are waiting on the network, no amount of
+component optimisation will help.
+
+## The N+1 in the browser
+
+The commonest fault, and the easiest to write by accident:
+
+```js
+// 200 round trips
+for (const line of this.state.lines) {
+    const [product] = await this.orm.read("product.product", [line.product_id[0]], ["name"]);
+    line.productName = product.name;
+}
+```
+
+```js
+// 1
+const ids = [...new Set(this.state.lines.map(l => l.product_id[0]).filter(Boolean))];
+const products = await this.orm.read("product.product", ids, ["name"]);
+const byId = Object.fromEntries(products.map(p => [p.id, p]));
+for (const line of this.state.lines) {
+    line.productName = byId[line.product_id[0]]?.name || "";
+}
+```
+
+Note the `Set`. Twenty lines for the same product should fetch it once.
+
+The same mistake inside a field widget is worse, because the widget renders per
+row and you get one request per row with no loop in sight. `fieldDependencies` is
+the fix there, from Part 6.
+
+## Aggregate on the server
+
+```js
+// Transfers every order to total them
+const orders = await this.orm.searchRead("sale.order", domain, ["amount_total"]);
+const total = orders.reduce((s, o) => s + o.amount_total, 0);
+```
+
+```js
+// Transfers one number
+const [group] = await this.orm.readGroup("sale.order", domain, ["amount_total:sum"], []);
+const total = group.amount_total;
+```
+
+On a database with 80,000 orders the first version transfers megabytes and may
+hit the server's memory limits. It also works perfectly on your demo data with
+40 records, which is why it ships.
+
+**A dashboard should never read rows it does not display.**
+
+## Ask for fewer fields
+
+```js
+// Reads everything the view would
+await this.orm.searchRead("account.move", domain, []);
+
+// Reads what you render
+await this.orm.searchRead("account.move", domain, ["name", "amount_total", "state"]);
+```
+
+An empty field list means all of them, including `html` fields that may be
+enormous. Always name them.
+
+## Parallel, not sequential
+
+```js
+// 3 round trips in series
+const a = await this.orm.searchRead(...);
+const b = await this.orm.searchRead(...);
+const c = await this.orm.call(...);
+
+// 1 round trip of wall time
+const [a, b, c] = await Promise.all([
+    this.orm.searchRead(...),
+    this.orm.searchRead(...),
+    this.orm.call(...),
+]);
+```
+
+Only when they genuinely do not depend on each other.
+
+## Debounce what the user types
+
+```js
+import { useDebounced } from "@web/core/utils/timing";
+
+setup() {
+    this.search = useDebounced((query) => this.load(query), 300);
+}
+```
+
+```xml
+<input t-on-input="(ev) => this.search(ev.target.value)"/>
+```
+
+Without this, a twelve character search is twelve searches, eleven of which are
+discarded. Odoo ships `useDebounced` and `useThrottleForAnimation`; use them
+rather than writing your own.
+
+## Render cost, when it is real
+
+It genuinely matters above a few hundred DOM nodes updating at once.
+
+**Stable `t-key`.** A key that changes every render rebuilds the entire list
+instead of patching it. Keying on `index` or on a freshly generated id is the
+usual culprit.
+
+**Do not build objects in the template.** A new object literal passed as a prop
+is a new reference each render, so the child re-renders too:
+
+```xml
+<!-- new object every render -->
+<Row config="{ compact: true }"/>
+```
+
+Hoist it into `setup`.
+
+**Paginate.** Two thousand rows in the DOM is slow in any framework. Odoo's own
+lists paginate at 80 for a reason.
+
+**Keep expensive work out of getters that run per row.** A getter called inside
+`t-foreach` runs once per item, per render.
+
+## Loading libraries
+
+```js
+import { loadJS, loadCSS } from "@web/core/assets";
+
+onWillStart(async () => {
+    await loadJS("/my_module/static/lib/heavy.js");
+});
+```
+
+Rather than putting a large library in the bundle, where every user downloads it
+on every page whether or not they open your screen. `loadJS` caches, so a second
+component does not fetch it again.
+
+## The order to look
+
+1. Count the requests. Fix the count first.
+2. Look at the slowest request. Usually SQL, usually a missing index or a search
+   on a non stored computed field.
+3. Look at the payload size. Trim the fields.
+4. Only then look at rendering.
+
+Most people start at step four, which is why most optimisation work changes
+nothing measurable.
+
+## What is next
+
+Writing OWL that survives the next version of Odoo.

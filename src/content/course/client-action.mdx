@@ -1,0 +1,213 @@
+---
+title: "Client actions: a full screen of your own"
+metaTitle: "Odoo client action OWL tutorial"
+description: "Registering a client action, wiring it to a menu, the control panel and breadcrumbs, reading params and context, and keeping state in the URL."
+part: 6
+partTitle: "Extending Odoo itself"
+order: 5
+outcome: "Build a client action with a proper control panel, reachable from a menu and from Python."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+A client action is a screen OWL owns completely. No model, no view, no record.
+Dashboards, wizards with custom interfaces, planning boards.
+
+## The JavaScript
+
+```js
+// static/src/dashboard/dashboard.js
+import { Component, useState, onWillStart } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { Layout } from "@web/search/layout";
+
+export class SalesDashboard extends Component {
+    static template = "owl_course.SalesDashboard";
+    static components = { Layout };
+    static props = ["*"];
+
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.state = useState({ period: "month", rows: [], total: 0 });
+
+        onWillStart(() => this.load());
+    }
+
+    get display() {
+        return {
+            controlPanel: {},
+        };
+    }
+
+    async load() {
+        const groups = await this.orm.readGroup(
+            "sale.order",
+            [["state", "in", ["sale", "done"]], ...this.periodDomain],
+            ["amount_total:sum"],
+            ["partner_id"],
+            { limit: 10, orderby: "amount_total desc", lazy: false },
+        );
+        this.state.rows = groups;
+        this.state.total = groups.reduce((s, g) => s + (g.amount_total || 0), 0);
+    }
+
+    get periodDomain() {
+        const now = new Date();
+        const from = this.state.period === "year"
+            ? new Date(now.getFullYear(), 0, 1)
+            : new Date(now.getFullYear(), now.getMonth(), 1);
+        return [["date_order", ">=", from.toISOString().slice(0, 10)]];
+    }
+
+    async setPeriod(period) {
+        this.state.period = period;
+        await this.load();
+    }
+
+    openPartner(group) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: `Orders, ${group.partner_id[1]}`,
+            res_model: "sale.order",
+            domain: group.__domain,
+            views: [[false, "list"], [false, "form"]],
+        });
+    }
+}
+
+registry.category("actions").add("owl_course.sales_dashboard", SalesDashboard);
+```
+
+```xml
+<t t-name="owl_course.SalesDashboard">
+    <Layout display="display" className="'o_dashboard h-100'">
+        <t t-set-slot="control-panel-create-button">
+            <div class="btn-group btn-group-sm" role="group">
+                <button class="btn" t-att-class="state.period === 'month' ? 'btn-primary' : 'btn-secondary'"
+                        t-on-click="() => this.setPeriod('month')">This month</button>
+                <button class="btn" t-att-class="state.period === 'year' ? 'btn-primary' : 'btn-secondary'"
+                        t-on-click="() => this.setPeriod('year')">This year</button>
+            </div>
+        </t>
+
+        <div class="p-3">
+            <h2 class="mb-3">Top customers</h2>
+            <table class="table table-sm">
+                <thead>
+                    <tr><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Total</th></tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="state.rows" t-as="row" t-key="row.partner_id[0]"
+                        class="cursor-pointer" t-on-click="() => this.openPartner(row)">
+                        <td t-esc="row.partner_id[1]"/>
+                        <td class="text-end" t-esc="row.__count"/>
+                        <td class="text-end" t-esc="row.amount_total"/>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr><th colspan="2" class="text-end">Total</th><th class="text-end" t-esc="state.total"/></tr>
+                </tfoot>
+            </table>
+        </div>
+    </Layout>
+</t>
+```
+
+## The Layout component
+
+`Layout` gives you Odoo's control panel: the breadcrumb, the title area and the
+slots for buttons. Without it your screen floats with no header and looks
+foreign.
+
+`display` controls what appears. `{ controlPanel: {} }` is the usual minimum.
+Setting `controlPanel: false` removes it entirely, which also removes the
+breadcrumb, so the user cannot navigate back. Rarely right.
+
+## Making it reachable
+
+```xml
+<!-- views/dashboard_views.xml -->
+<odoo>
+    <record id="action_sales_dashboard" model="ir.actions.client">
+        <field name="name">Sales Dashboard</field>
+        <field name="tag">owl_course.sales_dashboard</field>
+    </record>
+
+    <menuitem id="menu_sales_dashboard"
+              name="Dashboard"
+              parent="sale.sale_menu_root"
+              action="action_sales_dashboard"
+              sequence="1"/>
+</odoo>
+```
+
+The `tag` must match the registry key exactly. A mismatch gives "the action could
+not be found", which is at least a clear error.
+
+From Python:
+
+```python
+def open_dashboard(self):
+    return {
+        'type': 'ir.actions.client',
+        'tag': 'owl_course.sales_dashboard',
+        'name': 'Sales Dashboard',
+        'params': {'default_period': 'year'},
+    }
+```
+
+## Params and context
+
+```js
+setup() {
+    const params = this.props.action.params || {};
+    const context = this.props.action.context || {};
+
+    this.state = useState({
+        period: params.default_period || context.default_period || "month",
+    });
+}
+```
+
+`this.props.action` is the whole action. `params` is what Python sent,
+`context` is the usual Odoo context. Declaring `static props = ["*"]` is the
+simple way to accept everything the action manager passes; a client action
+receives several props you do not control.
+
+## Keeping state in the URL
+
+So a refresh does not lose the view, and the screen can be linked to.
+
+```js
+setup() {
+    this.router = useService("router");
+    const initial = this.router.current.hash.period || "month";
+    this.state = useState({ period: initial });
+}
+
+setPeriod(period) {
+    this.state.period = period;
+    this.router.pushState({ period });
+    this.load();
+}
+```
+
+Worth doing for anything a user might bookmark or send to a colleague.
+
+## A dashboard rule worth keeping
+
+**Every figure must open the records behind it.** A total with no drill-down is
+a number people either trust blindly or ignore, and both are bad.
+
+The corollary, learned expensively: **compute the figures with the right rights**.
+A dashboard that counts a model the reader cannot access will hard error for
+them, while working perfectly for you as an administrator. Either aggregate
+server side with `sudo()` and return the totals, or hide the card from groups
+that cannot open what is behind it. Showing a number nobody can click is the
+worst of both.
+
+## What is next
+
+Extending the standard views rather than replacing them.

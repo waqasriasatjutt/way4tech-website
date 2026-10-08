@@ -1,0 +1,230 @@
+---
+title: "Notifications, dialogs and confirmation"
+metaTitle: "OWL notification and dialog services"
+description: "Toasts with actions, the confirmation dialog, mounting your own component as a modal, and why window.confirm does nothing inside Odoo."
+part: 5
+partTitle: "Services and registries"
+order: 3
+outcome: "Show toasts and dialogs, including a dialog containing your own component."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Two services cover almost all user feedback: `notification` for things that do
+not need an answer, `dialog` for things that do.
+
+## Notifications
+
+```js
+setup() {
+    this.notification = useService("notification");
+}
+
+save() {
+    this.notification.add("Saved", { type: "success" });
+}
+```
+
+Types are `success`, `warning`, `danger`, and the default `info`.
+
+```js
+this.notification.add("The invoice was posted", {
+    title: "Done",
+    type: "success",
+    sticky: false,       // auto dismiss, the default
+});
+```
+
+`sticky: true` stays until dismissed. Use it only for something the user must
+act on, because a pile of sticky toasts is its own problem.
+
+### Buttons on a toast
+
+```js
+this.notification.add("3 invoices posted", {
+    type: "success",
+    buttons: [{
+        name: "View them",
+        onClick: () => this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "account.move",
+            domain: [["id", "in", ids]],
+            views: [[false, "list"], [false, "form"]],
+        }),
+    }],
+});
+```
+
+This is the right pattern after a bulk operation: confirm it happened and offer
+the way to see the result.
+
+### Removing one yourself
+
+```js
+const close = this.notification.add("Uploading", { sticky: true });
+await this.upload();
+close();
+```
+
+## Confirmation
+
+`window.confirm` does not work in the Odoo client. It is blocking, it cannot be
+styled, and in several embedded contexts it never appears. Use the dialog
+service.
+
+```js
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+
+setup() {
+    this.dialog = useService("dialog");
+}
+
+askThenDelete(id) {
+    this.dialog.add(ConfirmationDialog, {
+        title: "Delete this invoice",
+        body: "This cannot be undone.",
+        confirmLabel: "Delete",
+        confirm: () => this.doDelete(id),
+        cancel: () => {},
+    });
+}
+```
+
+`confirm` and `cancel` are callbacks, not a returned promise. If you prefer
+`await`, wrap it once:
+
+```js
+// static/src/hooks/use_confirm.js
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { useService } from "@web/core/utils/hooks";
+
+export function useConfirm() {
+    const dialog = useService("dialog");
+    return (title, body, confirmLabel = "Confirm") =>
+        new Promise((resolve) => {
+            dialog.add(ConfirmationDialog, {
+                title, body, confirmLabel,
+                confirm: () => resolve(true),
+                cancel: () => resolve(false),
+            });
+        });
+}
+```
+
+```js
+setup() {
+    this.confirm = useConfirm();
+}
+
+async onDelete(id) {
+    if (await this.confirm("Delete this invoice", "This cannot be undone.")) {
+        await this.doDelete(id);
+    }
+}
+```
+
+That hook pays for itself the second time you need it.
+
+## Your own component in a dialog
+
+Any component can be a dialog. Wrap its template in the `Dialog` component.
+
+```js
+import { Component } from "@odoo/owl";
+import { Dialog } from "@web/core/dialog/dialog";
+
+export class PickDateDialog extends Component {
+    static template = "owl_course.PickDateDialog";
+    static components = { Dialog };
+    static props = {
+        close: Function,                       // supplied by the dialog service
+        onPick: { type: Function, optional: true },
+        title: { type: String, optional: true },
+    };
+    static defaultProps = { title: "Pick a date" };
+
+    setup() {
+        this.state = useState({ date: "" });
+    }
+
+    confirm() {
+        this.props.onPick?.(this.state.date);
+        this.props.close();
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.PickDateDialog">
+    <Dialog title="props.title" size="'md'">
+        <input type="date" class="form-control" t-model="state.date"/>
+        <t t-set-slot="footer">
+            <button class="btn btn-primary" t-on-click="confirm">Use this date</button>
+            <button class="btn btn-secondary" t-on-click="() => this.props.close()">Cancel</button>
+        </t>
+    </Dialog>
+</t>
+```
+
+```js
+this.dialog.add(PickDateDialog, {
+    title: "Invoice date",
+    onPick: (date) => this.setDate(date),
+});
+```
+
+Two things to note. The service passes a `close` prop automatically, and your
+component must declare and call it. And the `Dialog` component provides the
+chrome, header, footer slot, sizing and escape handling, so you do not build a
+modal yourself.
+
+Sizes are `sm`, `md`, `lg`, `xl` and `fs` for fullscreen.
+
+## Closing from outside
+
+```js
+const remove = this.dialog.add(MyDialog, { ... });
+// later
+remove();
+```
+
+Useful when a dialog should close because something else finished.
+
+## Blocking the interface
+
+```js
+setup() {
+    this.ui = useService("ui");
+}
+
+async heavyThing() {
+    this.ui.block();
+    try {
+        await this.orm.call("my.model", "slow_method", [[]]);
+    } finally {
+        this.ui.unblock();
+    }
+}
+```
+
+Always in a `finally`. A blocked interface that never unblocks because something
+threw is a page the user has to reload.
+
+In practice you rarely need this: the ORM service already shows a loading
+indicator for calls the user triggered.
+
+## What to use when
+
+| Situation | Use |
+| --- | --- |
+| It worked | `notification` success, not sticky |
+| It worked, here is the result | `notification` with a button |
+| It failed, they can carry on | `notification` danger |
+| It failed, they cannot carry on | Let the error dialog show |
+| Needs a yes or no | `ConfirmationDialog` |
+| Needs input | Your own component in a `Dialog` |
+| Long operation | ORM's own indicator, or `ui.block` |
+
+## What is next
+
+The action service: opening views, running server actions and navigating.

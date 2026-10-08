@@ -1,0 +1,244 @@
+---
+title: "The ORM service: reading and writing records from OWL"
+metaTitle: "Odoo OWL ORM service"
+description: "searchRead, read, write, create, unlink, call and readGroup from JavaScript, passing context and domains, and the three habits that keep a dashboard fast."
+part: 5
+partTitle: "Services and registries"
+order: 2
+outcome: "Query and modify Odoo records from a component, and call your own Python methods safely."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The ORM service is your connection to the database. It mirrors the Python ORM
+closely enough that if you know one you can guess the other.
+
+```js
+import { useService } from "@web/core/utils/hooks";
+
+setup() {
+    this.orm = useService("orm");
+}
+```
+
+Every method returns a promise.
+
+## searchRead
+
+The one you will use most. Search and read in a single round trip.
+
+```js
+const invoices = await this.orm.searchRead(
+    "account.move",                                   // model
+    [["move_type", "=", "out_invoice"],
+     ["state", "=", "posted"]],                       // domain
+    ["name", "partner_id", "amount_total"],           // fields
+    { limit: 50, offset: 0, order: "invoice_date desc" },
+);
+```
+
+Domains are the same lists as in Python, with JavaScript syntax. The `|` and `&`
+prefix operators work identically:
+
+```js
+["|", ["state", "=", "draft"], ["state", "=", "sent"]]
+```
+
+A many2one field comes back as `[id, display_name]`:
+
+```js
+invoice.partner_id       // [7, "Deco Addict"]
+invoice.partner_id[1]    // "Deco Addict"
+```
+
+A false many2one is `false`, not `[false, false]`, so guard it:
+
+```js
+const name = invoice.partner_id ? invoice.partner_id[1] : "";
+```
+
+## read
+
+When you already have ids.
+
+```js
+const partners = await this.orm.read("res.partner", [3, 7, 11], ["name", "email"]);
+```
+
+Order of results is not guaranteed to match the ids you passed. If you need a
+lookup, build a map.
+
+## write, create, unlink
+
+```js
+await this.orm.write("res.partner", [7], { city: "Dubai" });
+
+const id = await this.orm.create("res.partner", [{ name: "New Co", is_company: true }]);
+
+await this.orm.unlink("res.partner", [7]);
+```
+
+`create` takes a **list** of value objects and returns a list of ids, matching
+`@api.model_create_multi` on the server.
+
+## call
+
+Anything that is not plain CRUD. This is how you reach your own Python.
+
+```js
+const result = await this.orm.call(
+    "account.move",          // model
+    "action_post",           // method
+    [[invoiceId]],           // positional args: first is usually the ids
+    { context: { from_dashboard: true } },   // keyword args
+);
+```
+
+The argument shape catches everyone once. The third parameter is an **array of
+positional arguments**, and the first positional argument is the recordset ids,
+itself an array. So a method taking no arguments beyond `self` is called with
+`[[id]]`, not `[id]`.
+
+On the Python side:
+
+```python
+def action_post(self):
+    for move in self:
+        ...
+```
+
+Returning an action dictionary works and is often the cleanest pattern:
+
+```python
+def open_report(self):
+    return {
+        'type': 'ir.actions.act_window',
+        'res_model': 'account.move',
+        'view_mode': 'list,form',
+        'domain': [('partner_id', '=', self.partner_id.id)],
+    }
+```
+
+```js
+const action = await this.orm.call("res.partner", "open_report", [[partnerId]]);
+this.action.doAction(action);
+```
+
+## readGroup
+
+Aggregates, without pulling every row to the browser.
+
+```js
+const groups = await this.orm.readGroup(
+    "account.move",
+    [["state", "=", "posted"]],       // domain
+    ["amount_total:sum"],             // fields to aggregate
+    ["partner_id"],                   // group by
+    { lazy: false },
+);
+// [{ partner_id: [7, "Deco Addict"], amount_total: 15400, __count: 12 }, ...]
+```
+
+Group by a date part with a colon:
+
+```js
+await this.orm.readGroup("account.move", [], ["amount_total:sum"], ["invoice_date:month"]);
+```
+
+**Use this instead of fetching rows and summing in JavaScript.** A dashboard that
+reads ten thousand invoices to show one total is a dashboard that will time out
+on a real database, and the fix is always this method.
+
+In Odoo 18 and 19 you will also meet `formattedReadGroup` and `webReadGroup` in
+core code. `readGroup` remains available and is the one to learn first.
+
+## searchCount and nameSearch
+
+```js
+const n = await this.orm.searchCount("account.move", [["state", "=", "draft"]]);
+
+const matches = await this.orm.nameSearch("res.partner", "deco", {
+    operator: "ilike", limit: 8,
+});
+```
+
+## Context
+
+Context flows to the server and affects defaults, languages and plenty of
+business logic.
+
+```js
+await this.orm.searchRead("product.product", [], ["name"], {
+    context: { lang: "ar_001", active_test: false },
+});
+```
+
+`active_test: false` includes archived records, which is the answer when a count
+in your dashboard disagrees with a count in a list view.
+
+Odoo merges the user context automatically. You are adding to it, not replacing
+it.
+
+## Silent calls
+
+```js
+await this.orm.silent.call("my.model", "ping", []);
+```
+
+`silent` suppresses the loading indicator. Right for background polling, wrong
+for anything the user initiated, because then the interface looks frozen.
+
+## Three habits that keep it fast
+
+**Ask for the fields you need.** `searchRead` with a long field list on a wide
+model transfers far more than you use. Name them explicitly, always.
+
+**Aggregate on the server.** `readGroup`, not a loop in the browser.
+
+**Batch.** One call for fifty records, not fifty calls:
+
+```js
+// Slow: fifty round trips
+for (const id of ids) {
+    await this.orm.read("res.partner", [id], ["name"]);
+}
+
+// Fast: one
+const partners = await this.orm.read("res.partner", ids, ["name"]);
+```
+
+For `display_name` specifically there is a dedicated service that batches and
+caches for you:
+
+```js
+this.nameService = useService("name");
+const names = await this.nameService.loadDisplayNames("res.partner", ids);
+```
+
+## Errors
+
+A server error rejects the promise. Unhandled, it becomes Odoo's error dialog,
+which for a genuine fault is right. For anything expected, handle it:
+
+```js
+try {
+    await this.orm.call("account.move", "action_post", [[id]]);
+} catch (e) {
+    this.notification.add(e.message || "Could not post this invoice", { type: "danger" });
+}
+```
+
+Odoo's `UserError` and `ValidationError` arrive with the message you wrote in
+Python, so raising a clear one server side gives you a clear one client side for
+free.
+
+## The rule worth repeating
+
+**Decisions belong in Python.** Fetching three fields to decide in JavaScript
+whether an invoice may be posted means that rule now exists in two places, and
+one of them will be forgotten at the next change. Call a method, let the server
+decide, show the answer.
+
+## What is next
+
+Telling the user something happened: notifications, dialogs and confirmation.

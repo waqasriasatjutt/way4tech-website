@@ -1,0 +1,275 @@
+---
+title: "Build: a complete module, folder to shipped"
+metaTitle: "Complete Odoo module with OWL"
+description: "An approvals module with models, security, a systray counter, a client action, a field widget and tests. Plus the release checklist that separates a demo from something you can sell."
+part: 8
+partTitle: "Three builds, end to end"
+order: 3
+outcome: "Assemble a complete, shippable module using every technique in this course."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The final build. An approvals module: requests that need signing off, a counter
+in the systray, a review screen, and a field widget showing the chain. Everything
+in this course, in one place.
+
+## Layout
+
+```
+wt_approvals/
+  __init__.py
+  __manifest__.py
+  models/
+    __init__.py
+    approval_request.py
+    approval_step.py
+  security/
+    approval_security.xml
+    ir.model.access.csv
+  views/
+    approval_views.xml
+    approval_menus.xml
+  data/
+    approval_data.xml
+  static/src/
+    systray/approvals_systray.js
+    systray/approvals_systray.xml
+    review/review_action.js
+    review/review_action.xml
+    fields/chain_field.js
+    fields/chain_field.xml
+    services/approval_service.js
+  static/tests/
+    approvals.test.js
+```
+
+## The manifest
+
+```python
+{
+    'name': 'Approvals',
+    'summary': 'Requests, an approval chain, and a review screen',
+    'version': '19.0.1.0.0',
+    'license': 'LGPL-3',
+    'author': 'Your Name',
+    'category': 'Productivity',
+    'depends': ['base', 'mail', 'web'],
+    'data': [
+        'security/approval_security.xml',
+        'security/ir.model.access.csv',
+        'data/approval_data.xml',
+        'views/approval_views.xml',
+        'views/approval_menus.xml',
+    ],
+    'assets': {
+        'web.assets_backend': [
+            'wt_approvals/static/src/**/*.js',
+            'wt_approvals/static/src/**/*.xml',
+            'wt_approvals/static/src/**/*.scss',
+        ],
+        'web.assets_unit_tests': [
+            'wt_approvals/static/tests/**/*.test.js',
+        ],
+    },
+    'installable': True,
+    'application': True,
+}
+```
+
+**Security files load first.** An access rule that loads after the views it
+protects is a window where the data is open.
+
+## The model
+
+```python
+# models/approval_request.py
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
+
+
+class ApprovalRequest(models.Model):
+    _name = 'approval.request'
+    _description = 'Approval request'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _order = 'create_date desc'
+
+    name = fields.Char(required=True, tracking=True)
+    amount = fields.Monetary(tracking=True)
+    currency_id = fields.Many2one(
+        'res.currency', default=lambda s: s.env.company.currency_id)
+    company_id = fields.Many2one(
+        'res.company', required=True, default=lambda s: s.env.company)
+    requester_id = fields.Many2one(
+        'res.users', required=True, default=lambda s: s.env.user)
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('to_approve', 'To approve'),
+        ('approved', 'Approved'),
+        ('refused', 'Refused'),
+    ], default='draft', required=True, tracking=True)
+    step_ids = fields.One2many('approval.step', 'request_id', copy=True)
+    pending_step_id = fields.Many2one(
+        'approval.step', compute='_compute_pending_step', store=True)
+
+    @api.depends('step_ids.state', 'step_ids.sequence')
+    def _compute_pending_step(self):
+        for request in self:
+            pending = request.step_ids.filtered(lambda s: s.state == 'pending')
+            request.pending_step_id = pending.sorted('sequence')[:1]
+
+    def action_submit(self):
+        for request in self:
+            if request.state != 'draft':
+                raise UserError(_("%s has already been submitted.", request.name))
+            if not request.step_ids:
+                raise UserError(
+                    _("%s has no approvers, so there is nobody to send it to.",
+                      request.name))
+            request.state = 'to_approve'
+
+    def action_approve(self):
+        for request in self:
+            step = request.pending_step_id
+            if not step:
+                raise UserError(_("Nothing is waiting on %s.", request.name))
+            if step.approver_id != self.env.user:
+                raise UserError(
+                    _("%s is waiting on %s, not on you.",
+                      request.name, step.approver_id.name))
+            step.state = 'approved'
+            if not request.step_ids.filtered(lambda s: s.state == 'pending'):
+                request.state = 'approved'
+
+    @api.model
+    def pending_count(self):
+        """Counted as the reader, deliberately: this is their queue."""
+        return self.search_count([
+            ('state', '=', 'to_approve'),
+            ('pending_step_id.approver_id', '=', self.env.uid),
+        ])
+```
+
+Note the counter is **not** sudo here. It is a personal queue, so the reader's own
+rights are exactly right. Contrast with the dashboard build, where a company
+figure needed `sudo()`. Knowing which you are building is the whole decision.
+
+The state guards live in Python. The client calls these methods and shows the
+result; it does not decide.
+
+## The service
+
+Shared between the systray and the review screen, so one poll serves both.
+
+```js
+// static/src/services/approval_service.js
+import { reactive } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+export const approvalService = {
+    dependencies: ["orm"],
+
+    start(env, { orm }) {
+        const state = reactive({ count: 0, loading: false });
+        let timer = null;
+
+        async function refresh() {
+            state.loading = true;
+            try {
+                state.count = await orm.silent.call(
+                    "approval.request", "pending_count", [],
+                );
+            } catch {
+                // A failed poll is not worth a dialog.
+            } finally {
+                state.loading = false;
+            }
+        }
+
+        refresh();
+        timer = setInterval(refresh, 120000);
+
+        return { state, refresh, stop: () => clearInterval(timer) };
+    },
+};
+
+registry.category("services").add("wt_approvals.approvals", approvalService);
+```
+
+## The systray
+
+```js
+import { Component, useState } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+
+export class ApprovalsSystray extends Component {
+    static template = "wt_approvals.Systray";
+    static props = {};
+
+    setup() {
+        this.approvals = useService("wt_approvals.approvals");
+        this.counter = useState(this.approvals.state);
+        this.action = useService("action");
+    }
+
+    open() {
+        this.action.doAction("wt_approvals.action_review");
+    }
+}
+
+registry.category("systray").add("wt_approvals.systray", {
+    Component: ApprovalsSystray,
+}, { sequence: 55 });
+```
+
+Both components subscribe to the same reactive state, so approving in the review
+screen updates the badge with no events and no props.
+
+## The release checklist
+
+This is the part that separates something that works on your machine from
+something you can sell or hand over.
+
+**Install on an empty database.** Not your development one. A missing dependency
+or a data file in the wrong order only shows here.
+
+**Install, then upgrade from the previous version.** If you have shipped before,
+`-u` from the last released version. Fresh install passing proves nothing about
+upgrades.
+
+**Log in as the lowest privileged user** who will use it and open every screen.
+This is the single most productive test in this list.
+
+**Open the console on every screen.** Silent client errors do not reach the
+server log.
+
+**Check the asset bundle built**, with no warnings about templates that failed to
+inherit.
+
+**Test on a phone width.** Odoo's backend is used on phones more than people
+expect.
+
+**Run the tests**, and have some.
+
+**Check every string is translatable.** `_t()` in JavaScript, `_()` in Python.
+
+**Bump the manifest version** in the same commit as any model, field or view
+change.
+
+**Read your own `__manifest__.py` description** as a buyer would.
+
+## Where to go next
+
+You now have the whole framework: components, reactivity, the lifecycle,
+services, registries, every extension point, tests and the faults that only
+appear in production.
+
+The most useful next step is not another tutorial. It is reading
+`addons/web/static/src/` with a question in mind. Every pattern in this course
+came from there, and the source is the only documentation that is never out of
+date.
+
+Build something small and ship it. The faults in Part 7 are all things that pass
+review and fail in use, and the only reliable way to learn them is to have one of
+them happen to you.

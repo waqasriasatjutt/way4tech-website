@@ -1,0 +1,169 @@
+---
+title: "onWillUpdateProps: reacting when the parent changes its mind"
+metaTitle: "OWL onWillUpdateProps hook"
+description: "The hook that fixes the detail panel which never follows the selected record. How to reload on a prop change without destroying what the user is typing, and when to force a new instance instead."
+part: 4
+partTitle: "The lifecycle"
+order: 4
+outcome: "Reload a component when its props change, without discarding user input or racing itself."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The bug: you click a row, the detail panel shows it. You click another row, and
+the panel does not change.
+
+The cause: the data was loaded in `onWillStart`, which runs once per instance,
+and clicking a different row did not create a new instance. It passed new props
+to the existing one.
+
+## The hook
+
+```js
+import { Component, useState, onWillStart, onWillUpdateProps } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class PartnerDetail extends Component {
+    static template = "owl_course.PartnerDetail";
+    static props = { partnerId: Number };
+
+    setup() {
+        this.orm = useService("orm");
+        this.state = useState({ partner: null });
+
+        onWillStart(() => this.load(this.props.partnerId));
+        onWillUpdateProps((nextProps) => this.load(nextProps.partnerId));
+    }
+
+    async load(partnerId) {
+        const [partner] = await this.orm.read(
+            "res.partner", [partnerId], ["name", "email", "city"],
+        );
+        this.state.partner = partner;
+    }
+}
+```
+
+Both hooks call the same function. That pairing is the standard shape and worth
+making a habit.
+
+## It receives the next props, not the current ones
+
+```js
+onWillUpdateProps((nextProps) => {
+    console.log(this.props.partnerId);   // the OLD value, still
+    console.log(nextProps.partnerId);    // the new one
+});
+```
+
+The hook runs **before** `this.props` is swapped, so you can compare them. Using
+`this.props` by mistake here means reloading the record you already had, every
+time, which looks like the hook not working at all.
+
+## Only reload when it matters
+
+The hook fires on **any** prop change, including ones that have nothing to do
+with your data.
+
+```js
+onWillUpdateProps((nextProps) => {
+    if (nextProps.partnerId !== this.props.partnerId) {
+        this.load(nextProps.partnerId);
+    }
+});
+```
+
+Without that check, a parent re-render that passes a new inline object or a new
+arrow function triggers a server call. On a screen that re-renders often, that is
+a request per keystroke.
+
+## It is awaited, so it blocks
+
+Like `onWillStart`, returning a promise makes OWL wait before rendering with the
+new props. The old content stays on screen while the new data loads.
+
+That is usually what you want: no flash of empty panel. It does mean a slow load
+leaves the user looking at stale content with no sign anything is happening. For
+anything above a couple of hundred milliseconds, show it:
+
+```js
+onWillUpdateProps((nextProps) => {
+    if (nextProps.partnerId === this.props.partnerId) return;
+    this.state.loading = true;
+    // not awaited, so the render happens now with loading = true
+    this.load(nextProps.partnerId).finally(() => this.state.loading = false);
+});
+```
+
+Returning nothing means OWL does not wait, the render happens immediately, and
+your loading flag is visible.
+
+## Do not clobber what the user is typing
+
+The trap when a component holds an editable copy:
+
+```js
+// Wrong
+onWillUpdateProps((nextProps) => {
+    this.state.draftName = nextProps.record.name;
+});
+```
+
+The parent re-renders for an unrelated reason, this fires, and three characters
+the user just typed vanish.
+
+Resync only on identity change:
+
+```js
+onWillUpdateProps((nextProps) => {
+    if (nextProps.record.id !== this.props.record.id) {
+        this.state.draftName = nextProps.record.name;
+        this.state.dirty = false;
+    }
+});
+```
+
+Better still, do not hold a copy. Edit through a callback prop and let the owner
+of the data own it.
+
+## The same race as before
+
+Two prop changes in quick succession, two loads in flight, the slower one
+resolving last and overwriting the newer data. The same sequence guard applies:
+
+```js
+async load(partnerId) {
+    const seq = ++this.loadSeq;
+    const [partner] = await this.orm.read("res.partner", [partnerId], ["name"]);
+    if (seq !== this.loadSeq) return;
+    this.state.partner = partner;
+}
+```
+
+Any list where a user can click quickly needs this.
+
+## Sometimes you want a new instance instead
+
+If a component's internal state is meaningless once the record changes,
+resyncing is fiddly and a fresh instance is simpler. Force one with `t-key`:
+
+```xml
+<PartnerDetail partnerId="state.selectedId" t-key="state.selectedId"/>
+```
+
+Changing the key destroys the old component and builds a new one. `setup` and
+`onWillStart` run again, and no stale state can survive because nothing survives.
+
+The cost is losing scroll position, focus, and anything expensive the component
+set up, and a full unmount and mount is heavier than a patch.
+
+**Use `t-key`** when the component has a lot of internal state that is only valid
+for one record, such as a form with dirty tracking and validation.
+
+**Use `onWillUpdateProps`** when the component is mostly a view of data, which is
+most of the time.
+
+## What is next
+
+The end of the lifecycle: cleanup, and catching errors so one broken component
+does not take out the screen.

@@ -1,0 +1,57 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import { getCollection } from 'astro:content';
+import { COURSE_BASE, COURSE_DESCRIPTION, COURSE_TITLE } from '~/data/owl-course';
+
+const lessons = (await getCollection('course')).filter(l => !l.data.draft);
+const url = new URL('/learn/', SITE.url).toString();
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Learn Odoo development',
+  description: 'Free, practical courses in Odoo development from a team that ships modules.',
+  url,
+  publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+};
+---
+
+<Base
+  title="Learn Odoo Development | Free Courses"
+  description="Free, practical Odoo development courses written against running systems by a team that ships and maintains modules."
+  canonical={url}
+  structuredData={schema}
+>
+  <div class="mx-auto max-w-4xl px-4 py-10 sm:py-14">
+
+    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">Learn Odoo development</h1>
+
+    <p class="mt-4 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
+      Courses written from the work, not from the documentation. Free, no sign
+      up, and every example runs.
+    </p>
+
+    <div class="mt-10 space-y-5">
+
+      <a href={`${COURSE_BASE}/`} class="group block rounded-lg border border-slate-200 p-6 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500">
+        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-500">
+          Course &middot; {lessons.length} lessons
+        </p>
+        <h2 class="mt-2 text-xl font-semibold group-hover:underline">{COURSE_TITLE}</h2>
+        <p class="mt-2 text-slate-600 dark:text-slate-300">{COURSE_DESCRIPTION}</p>
+      </a>
+
+      <div class="rounded-lg border border-dashed border-slate-300 p-6 dark:border-slate-700">
+        <h2 class="text-lg font-semibold text-slate-700 dark:text-slate-200">More courses coming</h2>
+        <p class="mt-2 text-slate-600 dark:text-slate-300">
+          Odoo ORM and server development, and report writing with QWeb. In the
+          meantime the <a href="/blog/" class="underline">blog</a> covers both in
+          pieces.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</Base>

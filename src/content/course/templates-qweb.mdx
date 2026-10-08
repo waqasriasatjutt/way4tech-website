@@ -1,0 +1,200 @@
+---
+title: "QWeb templates in OWL: every directive you will use"
+metaTitle: "OWL QWeb template directives"
+description: "t-if, t-foreach with t-key, t-att, t-esc versus t-out, t-on, t-model, t-ref and t-call, plus the differences from the QWeb you know from Odoo reports."
+part: 2
+partTitle: "Components"
+order: 2
+outcome: "Write any OWL template, choose correctly between t-esc and t-out, and avoid the t-foreach key bug."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+OWL templates are QWeb, the same language Odoo uses for reports and views, with
+extra directives for components. If you have written an Odoo report you already
+know half of this.
+
+One thing to settle first: **a template has exactly one root element.** Wrap
+siblings in a `<t>` if you need to return several.
+
+## Printing values
+
+```xml
+<t t-esc="partner.name"/>        <!-- escaped text, the default choice -->
+<t t-out="record.body_html"/>    <!-- raw HTML, only for trusted content -->
+```
+
+`t-esc` escapes. Use it everywhere unless you have a reason not to.
+
+`t-out` injects HTML without escaping. It is the correct tool for a field that
+genuinely holds markup, such as an email body from `html` field, and a security
+hole anywhere else. If the value can contain anything a user typed, `t-esc`.
+
+Inline interpolation also works in attributes and text:
+
+```xml
+<div>Total: {{ record.amount }}</div>
+```
+
+## Conditionals
+
+```xml
+<div t-if="state.loading">Loading</div>
+<div t-elif="state.error">Something went wrong</div>
+<div t-else="">Nothing to report</div>
+```
+
+`t-else` needs an empty value, `t-else=""`. The branches must be adjacent
+siblings; anything between them breaks the chain.
+
+To test without emitting an element, use `<t>`:
+
+```xml
+<t t-if="hasInvoices">
+    <InvoiceList invoices="state.invoices"/>
+</t>
+```
+
+## Loops, and the key
+
+```xml
+<ul>
+    <li t-foreach="state.invoices" t-as="invoice" t-key="invoice.id">
+        <t t-esc="invoice.name"/>
+    </li>
+</ul>
+```
+
+**`t-key` is required and it matters.** OWL uses it to decide which DOM nodes to
+keep when the list changes. Get it wrong and you get the single most confusing
+class of bug in this framework: you delete the second row and the third row's
+text appears in the second row's position, or an input keeps the value typed
+into a row that has gone.
+
+Use a stable, unique identifier. A database id is ideal.
+
+**Do not use the index** unless the list is genuinely fixed and never reordered:
+
+```xml
+<!-- Wrong whenever the list can change -->
+<li t-foreach="items" t-as="item" t-key="item_index">
+```
+
+Inside the loop you also get `item_index`, `item_first`, `item_last` and
+`item_value`, named from your `t-as`.
+
+Looping an object iterates its keys:
+
+```xml
+<t t-foreach="Object.entries(totals)" t-as="entry" t-key="entry[0]">
+    <t t-esc="entry[0]"/>: <t t-esc="entry[1]"/>
+</t>
+```
+
+## Attributes
+
+```xml
+<div t-att-title="invoice.name">...</div>
+<div t-attf-class="badge badge-{{ invoice.state }}">...</div>
+<div t-att="dynamicAttributes">...</div>
+```
+
+`t-att-x` sets one attribute from an expression. `t-attf-x` builds a string with
+`{{ }}` interpolation, which is what you want for classes. `t-att` spreads an
+object of attributes.
+
+For conditional classes there is a cleaner form taking an object:
+
+```xml
+<div t-att-class="{ 'text-danger': invoice.overdue, 'fw-bold': invoice.isNew }">
+```
+
+Static and dynamic classes combine, so `class="card"` alongside `t-att-class`
+works as expected.
+
+## Events
+
+```xml
+<button t-on-click="onSave">Save</button>
+<button t-on-click="() => this.remove(invoice.id)">Remove</button>
+<form t-on-submit.prevent="onSubmit">...</form>
+<input t-on-keydown.stop="onKey"/>
+```
+
+Modifiers `.prevent`, `.stop` and `.capture` do what their DOM equivalents do and
+save you writing it in the handler. Events get their own lesson next.
+
+## Two way binding
+
+```xml
+<input type="text" t-model="state.search"/>
+<input type="checkbox" t-model="state.onlyOverdue"/>
+<select t-model="state.period">
+    <option value="month">This month</option>
+</select>
+```
+
+`t-model` only works against reactive state, so the target must be something
+from `useState`. Pointing it at a plain property fails quietly: typing updates
+nothing and nothing re-renders.
+
+## Refs
+
+```xml
+<input t-ref="searchInput"/>
+```
+
+```js
+setup() {
+    this.searchInput = useRef("searchInput");
+    onMounted(() => this.searchInput.el?.focus());
+}
+```
+
+`useRef` returns an object whose `.el` is the DOM node, or null when the element
+is not rendered. Always use `?.` because a `t-if` can remove it at any time.
+
+## Sub templates
+
+```xml
+<t t-call="owl_course.InvoiceRow">
+    <t t-set="invoice" t-value="currentInvoice"/>
+</t>
+```
+
+`t-call` renders another template inline, sharing scope. It is useful for
+repeated markup inside a single component. For anything with its own behaviour,
+use a child component instead.
+
+## Local variables
+
+```xml
+<t t-set="total" t-value="state.invoices.length"/>
+<p>There are <t t-esc="total"/> invoices</p>
+```
+
+## What is different from report QWeb
+
+Worth knowing if you came from writing Odoo reports.
+
+**`t-key` is required** on `t-foreach`. Reports do not need it because they
+render once to a PDF and never update.
+
+**`t-field` does not exist.** There is no record to read a field from. OWL
+templates work on plain JavaScript values.
+
+**Components exist.** `<MyComponent prop="value"/>` has no equivalent in report
+QWeb.
+
+**Expressions are JavaScript**, not Python. `invoice.name or 'Draft'` works
+because JavaScript has `or` through `||`... actually it does not: write
+`invoice.name || 'Draft'`. This is a genuine and frequent slip when moving
+between the two.
+
+**Rendering repeats.** A report template runs once. A component template runs
+on every state change, so anything expensive inside it costs on every render.
+
+## What is next
+
+Props: passing data into a component, validating it, and the rule about never
+writing to it.

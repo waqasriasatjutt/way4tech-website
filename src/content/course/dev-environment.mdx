@@ -1,0 +1,180 @@
+---
+title: "A development setup where saving a file changes the page"
+metaTitle: "Odoo OWL development environment setup"
+description: "Run Odoo in Docker, mount your addons, turn off asset caching with dev=assets, and get to a loop where you save a file and reload the browser. Including the four things that make changes not appear."
+part: 1
+partTitle: "Getting your bearings"
+order: 2
+outcome: "Run Odoo locally with a loop where saving a JavaScript or XML file shows up on reload, and diagnose it when it does not."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The single biggest cost when learning OWL is not the concepts. It is spending
+four minutes to find out whether a one line change worked. Fix that first.
+
+## Odoo in Docker
+
+You want a throwaway Odoo you can break. Two files.
+
+```yaml
+# docker-compose.yml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  odoo:
+    image: odoo:19
+    depends_on: [db]
+    ports:
+      - "8069:8069"
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - odoo-data:/var/lib/odoo
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    command: >
+      odoo
+      --addons-path=/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons
+      --dev=assets,xml,qweb
+      --limit-time-cpu=600
+      --limit-time-real=1200
+
+volumes:
+  pgdata:
+  odoo-data:
+```
+
+```bash
+mkdir -p addons
+docker compose up -d
+```
+
+Open `http://localhost:8069`, create a database, and let it finish.
+
+## The flag that matters
+
+`--dev=assets,xml,qweb` is the whole reason this works.
+
+**`assets`** stops Odoo serving the bundled, minified JavaScript from the
+database. Instead it serves your source files individually, so your code appears
+on reload with your own variable names and line numbers. Without this, your
+change sits in a file nobody reads until the bundle is regenerated.
+
+**`xml`** reloads QWeb templates from disk on every request rather than from the
+database, so editing a `.xml` template does not need a module upgrade.
+
+**`qweb`** does the same for the QWeb templates rendered server side.
+
+The cost is speed. Loading hundreds of separate files is slower than one bundle,
+and the first page load with `--dev=assets` is noticeably heavy. That is a fair
+trade while developing and completely wrong in production.
+
+Raising `limit-time-real` matters too: unbundled asset loading is slow enough
+that the default worker timeout can kill a request mid-load, which looks like a
+random failure rather than a timeout.
+
+## The smallest module that can hold JavaScript
+
+Three files inside `addons/`.
+
+```python
+# addons/owl_course/__manifest__.py
+{
+    'name': 'OWL Course Scratchpad',
+    'version': '19.0.1.0.0',
+    'license': 'LGPL-3',
+    'depends': ['web'],
+    'assets': {
+        'web.assets_backend': [
+            'owl_course/static/src/**/*.js',
+            'owl_course/static/src/**/*.xml',
+            'owl_course/static/src/**/*.scss',
+        ],
+    },
+    'installable': True,
+}
+```
+
+```python
+# addons/owl_course/__init__.py
+```
+
+That second file is empty and must exist. A directory without `__init__.py` is
+not a Python package and Odoo will not load it.
+
+Now install it: Apps, remove the "Apps" filter, Update Apps List, search
+`OWL Course Scratchpad`, Install.
+
+## Four reasons your change does not appear
+
+In order of how often each one is the answer.
+
+**1. The browser cached the old file.** A normal reload is not enough. Use
+Ctrl+Shift+R, or open DevTools, go to Network, and tick "Disable cache" while
+DevTools is open. This is the answer more often than everything else combined.
+
+**2. The file is not in the bundle.** The glob in your manifest decides what
+loads. A file at `static/src/js/thing.js` matches `static/src/**/*.js`, but a
+file you put at `static/thing.js` does not. Confirm it by opening a backend page
+and running this in the console:
+
+```js
+Object.keys(odoo.loader.modules).filter(m => m.includes('owl_course'))
+```
+
+If your file is not in that list, Odoo is not loading it, and nothing you change
+inside it will ever matter.
+
+**3. The manifest changed and the module was not upgraded.** Asset declarations
+live in the manifest, and the manifest is read at install or upgrade.
+**Adding a new glob needs a module upgrade.** Editing a file that an existing
+glob already matches does not.
+
+```bash
+docker compose exec odoo odoo -u owl_course -d <yourdb> --stop-after-init
+docker compose restart odoo
+```
+
+**4. There is a JavaScript error earlier in the bundle.** One module that throws
+on load can stop later ones registering. Open the console and read the first
+error, not the last one. The last error is usually a consequence.
+
+## Making errors readable
+
+Two settings worth changing on day one.
+
+Turn on developer mode: Settings, scroll to the bottom, Activate the developer
+mode. You get the debug menu, technical menus, and far better error dialogs.
+
+In DevTools, under Sources, enable "Pause on uncaught exceptions". When
+something throws inside a lifecycle hook, the stack at the moment of the throw
+tells you which component it was. The error dialog afterwards frequently does
+not.
+
+## A loop worth having
+
+The working rhythm for the rest of this course:
+
+1. Edit a `.js` or `.xml` file under `static/src/`
+2. Hard reload the browser
+3. Read the console
+
+No restart, no upgrade, no cache clearing. If you ever find yourself restarting
+Odoo to see a JavaScript change, something above is wrong and it is worth
+stopping to find out which, because you will pay that cost on every change for
+the rest of the project.
+
+## What is next
+
+Before writing a component, it is worth understanding what an asset bundle
+actually is, because almost every "my code is not running" problem is a bundle
+problem. That is the next lesson.

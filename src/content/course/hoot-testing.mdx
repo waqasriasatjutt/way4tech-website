@@ -1,0 +1,210 @@
+---
+title: "Testing OWL components with Hoot"
+metaTitle: "Odoo Hoot test framework OWL"
+description: "Odoo 18 and 19 replaced QUnit with Hoot. Writing a component test, mounting with a mocked server, querying the DOM, mocking services, and what is worth testing at all."
+part: 7
+partTitle: "Making it hold up"
+order: 1
+outcome: "Write and run a Hoot test for a component, with a mocked server and mocked services."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Odoo 18 replaced QUnit with **Hoot**, its own test framework. Odoo 17 and earlier
+use QUnit, and the two look different enough that mixing tutorials will waste
+your afternoon.
+
+## Where tests live
+
+```python
+'assets': {
+    'web.assets_unit_tests': [
+        'owl_course/static/tests/**/*.test.js',
+    ],
+},
+```
+
+Files end `.test.js`. Run them at `/web/tests` in the browser, with developer
+mode on. The filter box takes a module name or a test name.
+
+## A first test
+
+```js
+// static/tests/stars_field.test.js
+import { expect, test } from "@odoo/hoot";
+import { click, queryAll, queryFirst } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { defineModels, fields, models, mountView, onRpc } from "@web/../tests/web_test_helpers";
+
+class Product extends models.Model {
+    name = fields.Char();
+    rating = fields.Integer();
+
+    _records = [
+        { id: 1, name: "Chair", rating: 3 },
+        { id: 2, name: "Desk", rating: 0 },
+    ];
+}
+
+defineModels([Product]);
+
+test("stars render the current value", async () => {
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `
+            <form>
+                <field name="rating" widget="stars"/>
+            </form>`,
+    });
+
+    expect(queryAll(".fa-star")).toHaveLength(3);
+    expect(queryAll(".fa-star-o")).toHaveLength(2);
+});
+
+test("clicking a star writes the value", async () => {
+    onRpc("web_save", ({ args }) => {
+        expect(args[1].rating).toBe(5);
+        expect.step("saved");
+    });
+
+    await mountView({
+        type: "form",
+        resModel: "product",
+        resId: 1,
+        arch: `<form><field name="rating" widget="stars"/></form>`,
+    });
+
+    await click(queryAll(".fa-star-o")[1]);     // the fifth star
+    await animationFrame();
+    await click(".o_form_button_save");
+    await animationFrame();
+
+    expect.verifySteps(["saved"]);
+});
+```
+
+## The pieces
+
+**`defineModels`** declares fake models with fields and records. No database, no
+Python, and tests run in milliseconds.
+
+**`mountView`** mounts a real Odoo view with an arch you write inline. This is
+the important one: you test your widget inside a genuine form view, with the
+record, the dirty state and the save button all real.
+
+**`onRpc`** intercepts a server call. You assert on the arguments and decide what
+comes back.
+
+**`animationFrame`** waits for OWL to finish rendering. Forgetting it is the
+single most common cause of a flaky Odoo test. After any interaction that
+triggers a render, await it.
+
+**`expect.step` and `expect.verifySteps`** assert that things happened in order.
+The usual way to prove a server call was made exactly once.
+
+## Mounting a component on its own
+
+For a component that is not a field widget:
+
+```js
+import { expect, test } from "@odoo/hoot";
+import { click } from "@odoo/hoot-dom";
+import { animationFrame } from "@odoo/hoot-mock";
+import { mountWithCleanup } from "@web/../tests/web_test_helpers";
+import { Counter } from "@owl_course/counter/counter";
+
+test("counter increments", async () => {
+    await mountWithCleanup(Counter, { props: { start: 2 } });
+
+    expect("button").toHaveText("Count: 2");
+    await click("button");
+    await animationFrame();
+    expect("button").toHaveText("Count: 3");
+});
+```
+
+`mountWithCleanup` unmounts afterwards, so one test cannot leak into the next.
+
+## Mocking a service
+
+Because components ask for services by name, replacing one is easy, and this is
+the practical payoff of Part 5.
+
+```js
+import { mockService } from "@web/../tests/web_test_helpers";
+
+test("shows a notification on failure", async () => {
+    mockService("notification", {
+        add(message, options) {
+            expect.step(`${options.type}: ${message}`);
+        },
+    });
+
+    onRpc("action_post", () => { throw makeServerError({ message: "No period" }); });
+
+    await mountView({ /* ... */ });
+    await click(".o_post_button");
+    await animationFrame();
+
+    expect.verifySteps(["danger: No period"]);
+});
+```
+
+## Querying
+
+`@odoo/hoot-dom` gives CSS selectors plus a few extras:
+
+```js
+queryFirst(".o_field_widget");
+queryAll("tr.o_data_row");
+queryOne(".o_form_view");           // throws unless exactly one matches
+queryText(".o_breadcrumb");
+
+await click(".btn-primary");
+await edit("new value");
+await fill("text");
+await press("Enter");
+await hover(".o_row");
+```
+
+`queryOne` is worth preferring. A selector that silently matches three elements
+is a test that passes for the wrong reason.
+
+## What to test
+
+Be selective. Tests you regret writing are tests that assert markup.
+
+**Worth testing:** a widget writes the right value; a component calls the server
+once, not per keystroke; an error path shows the message; a guard actually
+guards; the race condition resolves to the newest result.
+
+**Not worth testing:** that a div has a class; that a label says what the arch
+says; anything that will change the first time a designer touches it.
+
+For a module you sell or maintain, the test that pays for itself most reliably
+is the one asserting a server call is made with the exact arguments you expect.
+That is what breaks silently on upgrade.
+
+## Running them
+
+Open `/web/tests`, filter, and watch. In CI:
+
+```bash
+odoo --test-enable --test-tags /my_module --stop-after-init -d test_db -i my_module
+```
+
+JavaScript tests run through the browser, so a headless browser is needed in CI.
+Odoo's own tooling does this with Chrome headless.
+
+## Odoo 17 and earlier
+
+QUnit, with `QUnit.module`, `QUnit.test`, `assert.strictEqual`, `getFixture` and
+`makeView`. The ideas map across; the names do not. If you support both, the
+tests are the one place you will genuinely need two versions.
+
+## What is next
+
+Debugging what you cannot reproduce: a minified bundle on somebody else's
+machine.

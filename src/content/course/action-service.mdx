@@ -1,0 +1,206 @@
+---
+title: "The action service: opening views and navigating"
+metaTitle: "Odoo OWL action service doAction"
+description: "doAction with an inline action, by XML id, opening a form or a filtered list, running a report, and getting a value back when the user closes the dialog."
+part: 5
+partTitle: "Services and registries"
+order: 4
+outcome: "Open any view or action from a component, and react to what happens when it closes."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The action service is how a component sends the user somewhere.
+
+```js
+setup() {
+    this.action = useService("action");
+}
+```
+
+## Opening one record
+
+```js
+this.action.doAction({
+    type: "ir.actions.act_window",
+    res_model: "account.move",
+    res_id: 42,
+    views: [[false, "form"]],
+    target: "current",
+});
+```
+
+`views` is a list of `[view_id, view_type]`. `false` as the id means "the default
+view for this model", which is almost always what you want.
+
+There is a shorthand for exactly this case:
+
+```js
+this.action.doAction({
+    type: "ir.actions.act_window",
+    res_model: "account.move",
+    res_id: 42,
+    views: [[false, "form"]],
+}, {
+    onClose: () => this.reload(),
+});
+```
+
+## Opening a filtered list
+
+```js
+this.action.doAction({
+    type: "ir.actions.act_window",
+    name: "Overdue invoices",
+    res_model: "account.move",
+    domain: [
+        ["move_type", "=", "out_invoice"],
+        ["payment_state", "!=", "paid"],
+        ["invoice_date_due", "<", today],
+    ],
+    views: [[false, "list"], [false, "form"]],
+    context: { search_default_filter_overdue: 1 },
+});
+```
+
+`name` becomes the breadcrumb. Set it, or the user sees a generic title and
+cannot tell where they are.
+
+`context` keys beginning `search_default_` activate filters already defined in
+the search view, which is cleaner than widening the domain because the user can
+then see and remove the filter.
+
+This is the single most useful thing a dashboard tile does: **every number should
+open the records behind it.** A figure the user cannot click to verify is a
+figure they will not trust.
+
+## By XML id
+
+```js
+await this.action.doAction("account.action_move_out_invoice_type");
+```
+
+With extra context or domain:
+
+```js
+await this.action.doAction("account.action_move_out_invoice_type", {
+    additionalContext: { search_default_partner_id: partnerId },
+});
+```
+
+Prefer the XML id when the action already exists. You inherit its views, filters
+and access, and you do not duplicate a definition that may change.
+
+## In a dialog
+
+```js
+this.action.doAction({
+    type: "ir.actions.act_window",
+    res_model: "res.partner",
+    res_id: partnerId,
+    views: [[false, "form"]],
+    target: "new",            // opens as a modal
+}, {
+    onClose: (result) => this.reload(),
+});
+```
+
+`target: "new"` is how wizards appear. `onClose` fires when the dialog closes,
+whatever closed it, which makes it the right place to refresh.
+
+## Getting something back from a wizard
+
+The standard round trip. Python returns an action to open the wizard, the wizard
+does its work and returns something, `onClose` receives it.
+
+```python
+class InvoiceWizard(models.TransientModel):
+    _name = 'owl.course.wizard'
+
+    date = fields.Date(required=True)
+
+    def action_apply(self):
+        self.ensure_one()
+        # do the work
+        return {'type': 'ir.actions.act_window_close', 'infos': {'applied': True}}
+```
+
+```js
+this.action.doAction({
+    type: "ir.actions.act_window",
+    res_model: "owl.course.wizard",
+    views: [[false, "form"]],
+    target: "new",
+}, {
+    onClose: (infos) => {
+        if (infos?.applied) {
+            this.notification.add("Applied", { type: "success" });
+            this.reload();
+        }
+    },
+});
+```
+
+The `infos` dictionary is how a wizard tells the caller what happened. Without
+it, `onClose` cannot distinguish "the user did the thing" from "the user pressed
+escape", and refreshing on both is the usual lazy compromise.
+
+## Reports
+
+```js
+this.action.doAction({
+    type: "ir.actions.report",
+    report_type: "qweb-pdf",
+    report_name: "account.report_invoice",
+    context: { active_ids: [invoiceId], active_model: "account.move" },
+});
+```
+
+Or, more simply, call a Python method that returns `report_action` and pass the
+result to `doAction`. That keeps the report name in Python where it belongs.
+
+## Server actions and URLs
+
+```js
+await this.action.doAction("my_module.action_server_do_thing");
+
+this.action.doAction({
+    type: "ir.actions.act_url",
+    url: "/web/content/42?download=true",
+    target: "self",
+});
+```
+
+## Reloading the current view
+
+```js
+await this.action.doAction({ type: "ir.actions.client", tag: "reload" });
+```
+
+Heavy, and usually avoidable. If you are inside a view's own component, that
+view has a `load` or `model.load` you should use instead. Reloading the whole
+client throws away breadcrumbs and scroll position.
+
+## Restoring and the breadcrumb
+
+```js
+this.action.restore();                 // back to the previous breadcrumb
+this.env.config.breadcrumbs;           // the current trail, readable
+```
+
+`restore()` is the right thing to call after an operation that finished a flow,
+rather than pushing a new action that duplicates a breadcrumb entry.
+
+## doAction is async
+
+```js
+await this.action.doAction(...);
+// now the action has been handled
+```
+
+Awaiting matters when you want to do something after, and especially when the
+next line would otherwise race with a view swap.
+
+## What is next
+
+Registries: how Odoo finds the component, service, field or view you added.

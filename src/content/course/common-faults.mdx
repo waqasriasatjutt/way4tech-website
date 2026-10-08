@@ -1,0 +1,176 @@
+---
+title: "The faults that reach production"
+metaTitle: "Real Odoo OWL bugs and fixes"
+description: "Six faults from live systems: a dashboard that errors for everyone but the administrator, an uncaught cache rejection, a race that shows the wrong record, and three more."
+part: 7
+partTitle: "Making it hold up"
+order: 5
+outcome: "Recognise the fault patterns that pass review and testing but fail on a real system."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+These are not invented. Each is a fault that passed review, passed tests, and
+failed on a live system. The pattern matters more than the specific bug.
+
+## 1. The dashboard that errors for everyone but you
+
+A board showing counts across eight models. Perfect for the developer, an access
+error for the first ordinary user who opened it.
+
+A board computes with the **reader's own rights**. Counting a model the reader
+cannot read is not an empty result, it is a hard error, and one such model takes
+the whole screen down.
+
+Two halves to the fix.
+
+Count with elevated rights on the server, returning only totals:
+
+```python
+@api.model
+def dashboard_counts(self):
+    return {
+        'invoices': self.env['account.move'].sudo().search_count([...]),
+        'orders': self.env['sale.order'].sudo().search_count([...]),
+    }
+```
+
+Then, and this is the half people skip: **a figure you show must be a figure the
+user can open**. Counting with `sudo()` and leaving a card that drills into
+records they cannot read swaps an error dialog for a dead end. Hide the card
+behind the group instead.
+
+The general rule: **you are an administrator, your users are not.** Test every
+screen as the lowest privileged role that will use it. It is the most productive
+hour in any build.
+
+## 2. The uncaught cache rejection
+
+```
+UncaughtPromiseError > InvalidStateError
+Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.
+```
+
+Appearing across many systems, always after a tab had been left idle.
+
+Odoo caches RPC responses in IndexedDB. A browser freezing an idle tab closes
+that connection itself. On return, Odoo asks the closed connection for a
+transaction, which throws, and two places in core do not catch it: `invalidate()`
+is called with no `.catch()`, and the version check chains `.then()` with no
+rejection handler.
+
+The user sees a red dialog for what is only a cache miss.
+
+The lesson is general and cheap: **a cache failure must never be user visible.**
+Anywhere you have an optional optimisation, the failure path is "carry on without
+it", and that means an explicit catch.
+
+```js
+try {
+    return await this.cache.read(key);
+} catch {
+    return null;        // a miss, not an error
+}
+```
+
+## 3. The panel showing the wrong record
+
+Click a customer, the detail panel loads. Click another quickly, and the panel
+shows the first customer's invoices under the second customer's name.
+
+Two requests in flight, the slower resolving last. Covered in Part 4, and it
+reaches production constantly because it never happens on a fast local server.
+
+```js
+async load(id) {
+    const seq = ++this.seq;
+    const data = await this.orm.read("res.partner", [id], this.fields);
+    if (seq !== this.seq) return;
+    this.state.data = data;
+}
+```
+
+Any component that loads from something a user can change quickly needs this.
+Search boxes, master-detail panels, anything with a dropdown.
+
+## 4. The required value that cannot fill itself
+
+Not OWL, but it is the same shape of mistake and it cost a release.
+
+A line model had a `rate` field that was both **required** and a **stored
+compute**. Creating a line through the ORM failed every time: the INSERT happens
+before the compute runs, so the NOT NULL constraint fires on a column the compute
+was about to fill.
+
+```python
+@api.model_create_multi
+def create(self, vals_list):
+    for vals in vals_list:
+        if not vals.get('rate') and vals.get('job_id'):
+            vals['rate'] = self._default_rate(vals['job_id'])
+    return super().create(vals_list)
+```
+
+The family this belongs to is worth memorising, because all three are invisible
+in review:
+
+- A **required** field that is also a **stored compute** cannot fill itself on
+  create.
+- A compute that **writes a field it also depends on** never re-triggers, so the
+  value stays at whatever the first pass produced. A contract that stored zero
+  and invoiced nothing came from exactly this.
+- An **unstored compute with no `@api.depends`** is never invalidated, so it
+  returns a stale value forever.
+
+## 5. The leak that makes the afternoon slow
+
+A component adding a `resize` listener in `onMounted` and never removing it.
+Users reported Odoo "getting slow after a few hours".
+
+Each open added a listener holding a reference to a destroyed component. A
+session opening two hundred records had two hundred of them.
+
+```js
+onWillUnmount(() => window.removeEventListener("resize", this.onResize));
+```
+
+Diagnose by opening and closing a screen fifty times, taking a heap snapshot and
+filtering on the component's class name. Fifty instances means fifty leaks.
+
+This matters far more in Odoo than on a website because a backend session stays
+open all day.
+
+## 6. The time that was already in the past
+
+A workshop booking stamped the closing hour onto the day the vehicle arrived. A
+car booked at 20:00 got a promised time of 17:00 the same day, which is in the
+past, so the constraint refused the record. Every evening booking failed, and
+nobody noticed until a customer tried one.
+
+```python
+promised = taken_in.replace(hour=closing_hour, minute=0)
+if promised <= taken_in:
+    promised += timedelta(days=1)
+```
+
+The general fault: **a calculation tested only in the middle of the day.** Dates,
+times and timezones need their edges tested deliberately, because the normal case
+always works.
+
+## The pattern behind all six
+
+None would be found by reading the code. Each needed a condition the developer
+did not have: a different user, an idle tab, a slow network, a database
+constraint, a long session, an unusual hour.
+
+Which is the argument for the four habits in this course that cost the least and
+save the most:
+
+- **Test as the lowest privileged user**, not as administrator
+- **Catch what is optional**, so a cache or a poll failing is invisible
+- **Guard every async load** with a sequence number
+- **Clean up everything** you started
+
+## What is next
+
+Part 8. Three complete builds, from an empty folder, with nothing skipped.

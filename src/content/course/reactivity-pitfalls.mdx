@@ -1,0 +1,181 @@
+---
+title: "Five reactivity bugs, and how to tell which one you have"
+metaTitle: "OWL reactivity bugs and fixes"
+description: "The screen does not update, it updates twice, it loops, a list goes wrong after a delete, or an old value comes back. A diagnosis for each, in the order to check them."
+part: 3
+partTitle: "Reactivity"
+order: 4
+outcome: "Diagnose a reactivity fault from its symptom in under a minute."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Reactivity bugs look alike and have different causes. This is the checklist, by
+symptom.
+
+## 1. The value changes but the screen does not
+
+By far the most common. Confirm the value really changed:
+
+```js
+onRendered(() => console.log("render", JSON.stringify(this.state)));
+```
+
+If the log never fires, no render was scheduled. Four causes, in order.
+
+**The state object was replaced.**
+
+```js
+this.state = { items: [] };          // wrong, proxy discarded
+this.state.items = [];               // right
+```
+
+**The value was never wrapped.**
+
+```js
+setup() { this.items = []; }         // plain property, not observed
+setup() { this.state = useState({ items: [] }); }
+```
+
+**The template never read it.** A value only rendered inside a `t-if` that is
+currently false has no subscription. Usually harmless; it resolves when the flag
+flips.
+
+**You wrote through a stale reference.**
+
+```js
+this.rows = this.state.rows;   // taken at setup
+this.state.rows = newRows;     // state now points elsewhere
+this.rows.push(x);             // pushing into the old array
+```
+
+## 2. The list goes wrong after a delete or a reorder
+
+Rows show the wrong text. An input keeps a value from a row that was removed. A
+checkbox ticks the wrong line.
+
+This is `t-key`.
+
+```xml
+<!-- Wrong whenever the list can change -->
+<li t-foreach="rows" t-as="row" t-key="row_index">
+
+<!-- Right -->
+<li t-foreach="rows" t-as="row" t-key="row.id">
+```
+
+OWL reuses DOM nodes by key. Keyed by position, deleting the second item means
+the third item's data arrives in a DOM node that still holds the second item's
+state. Keyed by id, OWL knows which node to drop.
+
+If rows have no natural id, create one when you build the list, and do it once
+rather than in the getter, or every render will produce new keys and rebuild the
+entire list.
+
+## 3. The screen renders twice for one change
+
+Usually harmless, occasionally a real cost. Two causes.
+
+**Two components both subscribe and both render.** Correct behaviour. Only worth
+addressing if it is expensive.
+
+**A getter or an effect writes state during render.** This is real:
+
+```js
+get sorted() {
+    return this.state.rows.sort(...);   // sorts in place, writes state
+}
+```
+
+The write schedules another render. Copy before sorting.
+
+## 4. It loops and the tab goes hot
+
+An effect that writes something in its own dependency list:
+
+```js
+useEffect(
+    () => { this.state.total = this.compute(); },
+    () => [this.state.total],
+);
+```
+
+Or a `useEffect` with no dependency function at all that writes state, since it
+then runs after every render and causes the next one.
+
+Find it by logging in the effect. The first effect that logs forever is the one.
+
+Fix by making the written value a getter instead. If a value can be derived, it
+should not be stored.
+
+## 5. An old value comes back
+
+Two components are editing the same object and one holds a copy.
+
+```js
+setup() {
+    // A snapshot, taken once, now independent of the prop
+    this.state = useState({ name: this.props.record.name });
+}
+```
+
+The parent updates `record.name`. This component still shows the old name,
+because it copied the value at setup and nothing has run since.
+
+This is the correct use for `onWillUpdateProps`, which is the next part:
+
+```js
+onWillUpdateProps((nextProps) => {
+    this.state.name = nextProps.record.name;
+});
+```
+
+Be deliberate here. Overwriting local state from props will also throw away
+whatever the user was typing, so the usual pattern is to resync only when the
+underlying record identity changes:
+
+```js
+onWillUpdateProps((nextProps) => {
+    if (nextProps.record.id !== this.props.record.id) {
+        this.state.name = nextProps.record.name;
+    }
+});
+```
+
+## Tools
+
+**Log every render.** The fastest diagnostic in the framework:
+
+```js
+onRendered(() => console.log("[InvoiceList] rendered"));
+```
+
+Too many logs means too many renders. No logs means no subscription.
+
+**Look at the live tree.** In developer mode:
+
+```js
+odoo.__WOWL_DEBUG__.root
+```
+
+That is the root component. `.component`, `.children` and `.props` let you walk
+the live tree and inspect what a component actually received, which often
+settles an argument about whether a prop is arriving at all.
+
+**Check the value is really the proxy.**
+
+```js
+console.log(this.state);  // a Proxy in devtools, not a plain object
+```
+
+If devtools shows a plain `Object`, it is not reactive and that is your bug.
+
+## The one sentence version
+
+A component re-renders when a key it read during its own render is written
+through the proxy it read it from. Every bug in this lesson is one of those four
+words failing: *read*, *during render*, *written*, *through the proxy*.
+
+## What is next
+
+Part 4. The lifecycle, in the order it fires, and what is safe inside each hook.

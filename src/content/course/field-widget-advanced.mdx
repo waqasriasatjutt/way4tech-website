@@ -1,0 +1,232 @@
+---
+title: "A field widget with its own editing interface"
+metaTitle: "Advanced Odoo field widget OWL"
+description: "A star rating, a JSON editor and a relational widget: handling complex values, fetching related records, dirty state, and keeping a widget usable in a list row."
+part: 6
+partTitle: "Extending Odoo itself"
+order: 3
+outcome: "Build a field widget whose value is not a simple input, including one that reads related records."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The previous lesson covered the shape. This one covers the cases where the value
+is not a number in a box.
+
+## A star rating
+
+Small, and it shows the complete pattern for a widget with no input element.
+
+```js
+// static/src/fields/stars_field.js
+import { Component, useState } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { standardFieldProps } from "@web/views/fields/standard_field_props";
+
+export class StarsField extends Component {
+    static template = "owl_course.StarsField";
+    static props = {
+        ...standardFieldProps,
+        max: { type: Number, optional: true },
+    };
+    static defaultProps = { max: 5 };
+
+    setup() {
+        this.state = useState({ hovered: 0 });
+    }
+
+    get value() {
+        return this.props.record.data[this.props.name] || 0;
+    }
+
+    get stars() {
+        return Array.from({ length: this.props.max }, (_, i) => i + 1);
+    }
+
+    isFilled(n) {
+        return n <= (this.state.hovered || this.value);
+    }
+
+    async set(n) {
+        if (this.props.readonly) return;
+        // Clicking the current value clears it, which users expect
+        await this.props.record.update({
+            [this.props.name]: n === this.value ? 0 : n,
+        });
+    }
+}
+
+registry.category("fields").add("stars", {
+    component: StarsField,
+    displayName: "Stars",
+    supportedTypes: ["integer", "float", "selection"],
+    extractProps: ({ options }) => ({ max: options.max || 5 }),
+});
+```
+
+```xml
+<t t-name="owl_course.StarsField">
+    <div class="d-inline-flex gap-1"
+         t-on-mouseleave="() => this.state.hovered = 0">
+        <span t-foreach="stars" t-as="n" t-key="n"
+              class="cursor-pointer"
+              t-att-class="isFilled(n) ? 'text-warning' : 'text-muted'"
+              t-on-mouseenter="() => this.state.hovered = props.readonly ? 0 : n"
+              t-on-click="() => this.set(n)">
+            <i class="fa" t-att-class="isFilled(n) ? 'fa-star' : 'fa-star-o'"/>
+        </span>
+    </div>
+</t>
+```
+
+Three details that make it feel right: hover preview via local state, clicking
+the current value clears it, and hover is suppressed when readonly.
+
+## A JSON field with a proper editor
+
+For a `Json` field, or `Text` holding JSON. The point here is local draft state
+plus validation before writing.
+
+```js
+export class JsonField extends Component {
+    static template = "owl_course.JsonField";
+    static props = { ...standardFieldProps };
+
+    setup() {
+        this.state = useState({ text: this.format(), error: null, dirty: false });
+
+        onWillUpdateProps((next) => {
+            // Only resync when the record itself changed, or we would wipe
+            // what the user is typing on every unrelated re-render.
+            if (next.record.resId !== this.props.record.resId) {
+                this.state.text = this.format(next);
+                this.state.error = null;
+                this.state.dirty = false;
+            }
+        });
+    }
+
+    format(props = this.props) {
+        const raw = props.record.data[props.name];
+        if (!raw) return "";
+        try {
+            return JSON.stringify(typeof raw === "string" ? JSON.parse(raw) : raw, null, 2);
+        } catch {
+            return String(raw);
+        }
+    }
+
+    onInput(ev) {
+        this.state.text = ev.target.value;
+        this.state.dirty = true;
+        try {
+            JSON.parse(ev.target.value || "{}");
+            this.state.error = null;
+        } catch (e) {
+            this.state.error = e.message;
+        }
+    }
+
+    async commit() {
+        if (this.state.error || !this.state.dirty) return;
+        await this.props.record.update({
+            [this.props.name]: JSON.parse(this.state.text || "{}"),
+        });
+        this.state.dirty = false;
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.JsonField">
+    <div>
+        <textarea class="form-control font-monospace" rows="10"
+                  t-att-readonly="props.readonly"
+                  t-att-value="state.text"
+                  t-on-input="onInput"
+                  t-on-blur="commit"/>
+        <div t-if="state.error" class="text-danger small mt-1">
+            <t t-esc="state.error"/>
+        </div>
+    </div>
+</t>
+```
+
+The two things worth taking from this one. **Write on blur, not on input**,
+because `record.update` triggers onchanges and you do not want one per keystroke.
+And the `onWillUpdateProps` guard, which is the pitfall from Part 4 appearing in
+real code.
+
+## Reading related records
+
+Sometimes a widget needs more than its own value.
+
+```js
+export class PartnerPreviewField extends Component {
+    static template = "owl_course.PartnerPreviewField";
+    static props = { ...standardFieldProps };
+
+    setup() {
+        this.orm = useService("orm");
+        this.state = useState({ partner: null });
+
+        onWillStart(() => this.load());
+        onWillUpdateProps((next) => this.load(next));
+    }
+
+    async load(props = this.props) {
+        const value = props.record.data[props.name];
+        const id = Array.isArray(value) ? value[0] : value;
+        if (!id) {
+            this.state.partner = null;
+            return;
+        }
+        const seq = ++this.seq;
+        const [partner] = await this.orm.read(
+            "res.partner", [id], ["name", "email", "phone", "city"],
+        );
+        if (seq !== this.seq) return;       // a newer load won
+        this.state.partner = partner;
+    }
+}
+```
+
+In a list view this runs per row, which means one request per row. For anything
+beyond a handful, either add the fields to the view with `fieldDependencies` and
+read them from the record, or use the `name` service which batches.
+
+`fieldDependencies` is almost always the better answer:
+
+```js
+registry.category("fields").add("partner_preview", {
+    component: PartnerPreviewField,
+    supportedTypes: ["many2one"],
+    fieldDependencies: [
+        { name: "partner_email", type: "char", related: "partner_id.email" },
+    ],
+});
+```
+
+No request at all, because the view fetched it with everything else.
+
+## Dirty state and saving
+
+A widget does not save. It calls `record.update()`, the record becomes dirty, and
+the form's save button does the rest. Do not call `record.save()` from a widget
+unless the widget genuinely is the save action, because it bypasses the user's
+expectation that nothing is written until they say so.
+
+## Surviving a list row
+
+Widgets render in lists too, and this is where they usually look wrong.
+
+Keep the readonly rendering compact. Give the editable rendering a sensible
+`min-width`. Do not use a fixed height that breaks row alignment. And check it in
+a grouped list, where rows render inside a group header's table.
+
+Test in all three of form, list and kanban before shipping. It takes five
+minutes and catches most of what a reviewer would send back.
+
+## What is next
+
+Systray items and the command palette: small additions that appear everywhere.

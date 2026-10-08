@@ -1,0 +1,190 @@
+---
+title: "Your first OWL component, on a page you can actually see"
+metaTitle: "First Odoo OWL component tutorial"
+description: "Write a component, register it in the systray, and get it rendering in the Odoo backend. Every line explained, including the import paths people get wrong."
+part: 1
+partTitle: "Getting your bearings"
+order: 4
+outcome: "Write a working OWL component, register it so Odoo renders it, and read the console when it does not appear."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Time to put something on the screen. We will use the systray, the row of icons
+at the top right of the backend, because it is visible on every page and needs
+no view, no action and no menu.
+
+## The two files
+
+```js
+// addons/owl_course/static/src/systray/hello.js
+import { Component } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+export class HelloSystray extends Component {
+    static template = "owl_course.HelloSystray";
+    static props = {};
+
+    setup() {
+        this.name = "world";
+    }
+}
+
+registry.category("systray").add("owl_course.hello", {
+    Component: HelloSystray,
+}, { sequence: 100 });
+```
+
+```xml
+<!-- addons/owl_course/static/src/systray/hello.xml -->
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="owl_course.HelloSystray">
+        <div class="o_mail_systray_item d-flex align-items-center px-2">
+            Hello, <t t-esc="name"/>
+        </div>
+    </t>
+
+</templates>
+```
+
+Hard reload. Top right of the screen, next to the clock and the activity icons:
+`Hello, world`.
+
+## Every line of that
+
+**`import { Component } from "@odoo/owl";`** OWL itself. Note it is `@odoo/owl`,
+not `@web/...`. This is the single most common import mistake, and it fails in a
+confusing way because the module loader resolves the path to nothing rather than
+erroring loudly.
+
+**`import { registry } from "@web/core/registry";`** The registry is how Odoo
+finds things you added. More in Part 5.
+
+**`static template = "owl_course.HelloSystray";`** A string naming an XML
+template, not the template itself. The name must match `t-name` exactly, and by
+convention it is prefixed with the module name to avoid collisions. Get this
+wrong and you get a clear error telling you the template was not found, which is
+one of the friendlier failures in this framework.
+
+**`static props = {};`** Declares this component takes no props. Not strictly
+required, but in developer mode OWL validates props, and declaring them means a
+typo in a parent becomes an error rather than silence. Part 2 covers this.
+
+**`setup()`** Where your initialisation goes. Not `constructor`. OWL calls
+`setup()` from the constructor after it has prepared the component, and all the
+hooks you will meet later must be called inside it. Writing a constructor
+instead works until the first time you need a hook, then fails for reasons that
+are hard to see.
+
+**`registry.category("systray").add(...)`** Puts the component in the list the
+systray renders. The key should be namespaced. The `sequence` controls position:
+lower numbers sit further right.
+
+## About the XML file
+
+`<templates xml:space="preserve">` is the required root. The `xml:space`
+attribute stops whitespace being collapsed, which matters when your markup
+contains inline elements separated by spaces.
+
+One file can hold many templates, each a `<t t-name="...">`. Most people keep
+one XML file next to each JS file.
+
+The template must be declared in the bundle. Our glob
+`owl_course/static/src/**/*.xml` already covers it. If your component renders
+nothing and the console says the template is missing, check that glob first.
+
+## Making it actually do something
+
+A static string is not very convincing. Let us add state that changes.
+
+```js
+import { Component, useState } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+
+export class HelloSystray extends Component {
+    static template = "owl_course.HelloSystray";
+    static props = {};
+
+    setup() {
+        this.state = useState({ count: 0 });
+    }
+
+    increment() {
+        this.state.count++;
+    }
+}
+
+registry.category("systray").add("owl_course.hello", {
+    Component: HelloSystray,
+}, { sequence: 100 });
+```
+
+```xml
+<t t-name="owl_course.HelloSystray">
+    <div class="o_mail_systray_item d-flex align-items-center px-2">
+        <button class="btn btn-sm btn-link" t-on-click="increment">
+            Clicked <t t-esc="state.count"/> times
+        </button>
+    </div>
+</t>
+```
+
+Click it. The number goes up, and nothing in your code told the page to redraw.
+
+That is the whole point of the framework, and it is worth pausing on. You wrote
+`this.state.count++`. You did not call a render function. `useState` returned a
+proxy, the proxy noticed the write, and OWL scheduled a re-render of the one
+component that reads that value. Part 3 is entirely about the ways people
+accidentally break this.
+
+## Why `this.state` and not `this.count`
+
+Change it to a plain property and watch it stop working:
+
+```js
+setup() {
+    this.count = 0;        // not reactive
+}
+increment() {
+    this.count++;          // the value changes, the screen does not
+}
+```
+
+The value really does increase. Nothing watches it. Only objects wrapped in
+`useState` are observed, and only reads that happened during rendering are
+tracked.
+
+## When nothing appears
+
+Work through these in order.
+
+**Console shows an error.** Read the first one. A template not found means the
+`t-name` does not match `static template`. An import failing usually means
+`@odoo/owl` was written as something else.
+
+**Console is clean and nothing rendered.** Your file is probably not in the
+bundle:
+
+```js
+Object.keys(odoo.loader.modules).filter(m => m.includes("owl_course"))
+```
+
+Empty means Odoo never loaded it. Check the manifest glob and whether the module
+is actually installed.
+
+**The file is loaded but the systray is empty.** Check the registry at runtime:
+
+```js
+odoo.__WOWL_DEBUG__.root.env.services  // services are here
+```
+
+Easier: put a `console.log` at the top of the file. If it does not print, the
+file is not loading, and no amount of staring at the component will help.
+
+## What is next
+
+You have a component on screen reacting to a click. Part 2 takes the component
+apart properly: templates, props, events, slots, and where to draw the line
+between one component and two.

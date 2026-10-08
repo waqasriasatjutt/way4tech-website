@@ -1,0 +1,149 @@
+---
+title: "Asset bundles: how your JavaScript actually reaches the browser"
+metaTitle: "Odoo asset bundles explained"
+description: "Which bundle to put code in, how the manifest glob works, what prepend and replace do, and why a module upgrade is sometimes needed and sometimes not."
+part: 1
+partTitle: "Getting your bearings"
+order: 3
+outcome: "Put a file in the right bundle, control its load order, and know whether a change needs an upgrade or just a reload."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Almost every "why is my code not running" question is a bundle question. Ten
+minutes here saves hours later.
+
+## What a bundle is
+
+Odoo does not serve your files one by one in production. It concatenates every
+file declared for a bundle, minifies the result, stores it as an attachment, and
+serves that single file. The URL you see in a stack trace looks like this:
+
+```
+/web/assets/13337c6/web.assets_backend.min.js
+```
+
+That hash changes whenever the bundle is rebuilt. It is also why a production
+stack trace points at line 15541 of a file you never wrote.
+
+## The bundles you will use
+
+| Bundle | Loads on | Use it for |
+| --- | --- | --- |
+| `web.assets_backend` | The backend client, after login | Almost everything in this course |
+| `web.assets_frontend` | The public website and portal | Portal pages, website widgets |
+| `web.assets_common` | Both | Shared helpers, rarely needed |
+| `web.assets_backend_lazy` | Backend, loaded on demand | Large, rarely opened screens |
+| `web.assets_tests` | Test runs only | Hoot tests, covered in Part 7 |
+| `point_of_sale._assets_pos` | The POS client | POS customisation only |
+
+If you are unsure, it is `web.assets_backend`.
+
+A frequent and expensive mistake is putting backend code in
+`web.assets_frontend`. It will load on the website for anonymous visitors, where
+the services it expects do not exist, and it will throw on every public page
+while working perfectly for you as a logged in developer.
+
+## Declaring files
+
+```python
+'assets': {
+    'web.assets_backend': [
+        'owl_course/static/src/**/*.js',
+        'owl_course/static/src/**/*.xml',
+        'owl_course/static/src/**/*.scss',
+    ],
+},
+```
+
+Paths start with the module name, not with a slash. Globs work, `**` matches any
+depth, and **the order of this list is the load order**.
+
+Order matters more than people expect. If `a.js` imports from `b.js`, the module
+loader resolves that regardless of order, because Odoo's loader understands
+dependencies. But if `a.js` reads a registry at module scope and `b.js` writes
+to that registry, order decides what `a.js` sees. Avoid doing work at module
+scope for exactly this reason.
+
+## Operations beyond adding
+
+A plain string appends. Three other forms exist, and two of them are worth
+knowing.
+
+```python
+'web.assets_backend': [
+    # Append, the normal case
+    'my_module/static/src/js/thing.js',
+
+    # Load before everything already in the bundle
+    ('prepend', 'my_module/static/src/scss/variables.scss'),
+
+    # Put mine immediately before a specific file
+    ('before', 'web/static/src/views/list/list_renderer.js',
+               'my_module/static/src/js/patch_first.js'),
+
+    # Swap one file for another, including a core file
+    ('replace', 'web/static/src/some/file.js',
+                'my_module/static/src/js/my_file.js'),
+
+    # Take a file out of the bundle entirely
+    ('remove', 'web/static/src/some/file.js'),
+],
+```
+
+`prepend` is the right tool for SCSS variables that later stylesheets must see.
+
+`replace` and `remove` are powerful and almost always the wrong answer. If you
+remove a core file, every other module expecting it breaks, and you own that
+file's behaviour forever including through upgrades. **Patch the component
+instead**, which is Part 6. In nine years of building modules we have used
+`replace` on a core file perhaps twice, and regretted it once.
+
+## Upgrade, or just reload?
+
+This is the rule people get wrong.
+
+**Changing the contents of a file that is already matched by a glob:**
+no upgrade. Save, hard reload, done. Odoo reads the file from disk.
+
+**Adding a file that an existing glob already matches,** such as a new `.js`
+under `static/src/`: no upgrade with `--dev=assets`, because the glob is
+re-evaluated. Without that flag, the bundle must be regenerated.
+
+**Changing the manifest itself,** adding a new glob, a new bundle, a new
+dependency: **upgrade required.** The manifest is read at install and upgrade,
+not on every request.
+
+```bash
+odoo -u my_module -d mydb --stop-after-init
+```
+
+## Forcing a rebuild when you are stuck
+
+Occasionally a bundle attachment goes stale and nothing you do changes what the
+browser gets. The blunt fix, in developer mode: Settings, Technical, Database
+Structure, Attachments, filter on `.assets_`, select all, delete. Odoo
+regenerates them on the next request.
+
+That is safe. They are derived files. It is also the right thing to try before
+spending an hour on a bug that is not in your code.
+
+## Reading a production stack trace
+
+When a user sends you an error from a minified bundle, the file and line are
+useless on their own, but not worthless. Fetch the bundle and look at it:
+
+```bash
+curl -s https://yoursite.com/web/assets/13337c6/web.assets_backend.min.js \
+  | head -c 2000000 | grep -o 'someDistinctiveString'
+```
+
+Minification mangles local variable names but **leaves string literals and
+object keys alone**. A distinctive string from your source will still be there.
+That is usually enough to tell whether an error is in your module or in core,
+which is the first question worth answering.
+
+## What is next
+
+You now have a module, a bundle and a reload loop. In the next lesson you will
+put a component on the screen.

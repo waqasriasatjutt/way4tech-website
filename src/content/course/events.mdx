@@ -1,0 +1,182 @@
+---
+title: "Events: how a child talks back to a parent"
+metaTitle: "OWL events and callback props"
+description: "DOM events with t-on, modifiers, and why OWL 2 removed custom component events in favour of callback props. Includes the trigger() pattern you will find in old tutorials and must not copy."
+part: 2
+partTitle: "Components"
+order: 4
+outcome: "Handle DOM events, pass callbacks upward correctly, and recognise OWL 1 event code that no longer works."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Props go down. Something has to come back up. In OWL 2 that something is a
+function.
+
+## DOM events
+
+```xml
+<button t-on-click="onSave">Save</button>
+<input t-on-input="onType"/>
+<form t-on-submit.prevent="onSubmit">...</form>
+<div t-on-click.stop="onClick">...</div>
+```
+
+The handler receives the DOM event:
+
+```js
+onType(ev) {
+    this.state.query = ev.target.value;
+}
+```
+
+`this` is bound for you when the handler is a method name.
+
+### Modifiers
+
+| Modifier | Effect |
+| --- | --- |
+| `.prevent` | `event.preventDefault()` |
+| `.stop` | `event.stopPropagation()` |
+| `.capture` | Listen during capture rather than bubble |
+| `.self` | Only when the event started on this element, not a child |
+| `.synthetic` | Attach at the root rather than the element |
+
+They chain: `t-on-click.stop.prevent="handler"`.
+
+`.prevent` on a form submit is the common one. Without it the browser navigates
+and your single page application reloads itself.
+
+### Passing arguments
+
+```xml
+<button t-on-click="() => this.remove(invoice.id)">Remove</button>
+```
+
+Inline arrow functions in templates are normal and expected here. If you need
+the event as well:
+
+```xml
+<button t-on-click="(ev) => this.remove(ev, invoice.id)">Remove</button>
+```
+
+## Component events: the thing that changed
+
+If you find a tutorial doing this, it is OWL 1, and it does not work:
+
+```js
+// OWL 1. Does not exist any more.
+this.trigger("invoice-selected", { id: 42 });
+```
+
+```xml
+<!-- OWL 1. Does not exist any more. -->
+<InvoiceCard t-on-invoice-selected="onInvoiceSelected"/>
+```
+
+OWL 2 removed it deliberately. The reasons are worth understanding because they
+explain the replacement.
+
+A bubbling custom event is invisible in the code. Reading a child, you cannot
+tell who listens. Reading a parent, you cannot tell what might arrive. It also
+crosses component boundaries it has no business crossing, so a component three
+levels up can quietly depend on a grandchild's internals.
+
+## Callback props, the replacement
+
+The parent passes a function. The child calls it.
+
+```js
+// Parent
+export class InvoiceList extends Component {
+    static template = "owl_course.InvoiceList";
+    static components = { InvoiceCard };
+
+    setup() {
+        this.state = useState({ selectedId: null });
+    }
+
+    onSelect(id) {
+        this.state.selectedId = id;
+    }
+}
+```
+
+```xml
+<t t-name="owl_course.InvoiceList">
+    <div>
+        <InvoiceCard
+            t-foreach="state.invoices" t-as="invoice" t-key="invoice.id"
+            invoice="invoice"
+            onSelect="(id) => this.onSelect(id)"
+        />
+    </div>
+</t>
+```
+
+```js
+// Child
+export class InvoiceCard extends Component {
+    static template = "owl_course.InvoiceCard";
+    static props = {
+        invoice: Object,
+        onSelect: { type: Function, optional: true },
+    };
+
+    select() {
+        this.props.onSelect?.(this.props.invoice.id);
+    }
+}
+```
+
+Note `?.` on the call. The prop is optional, so a parent that does not care
+simply does not pass it, and the child does not need to know.
+
+The naming convention across Odoo's own code is `onSomething`. Follow it.
+
+## Why this is better
+
+You can read a component's `static props` and know everything it can do to the
+outside world. You can read a template and see exactly what a child will call.
+Nothing travels through layers that did not opt in.
+
+The cost is that passing a callback through four levels is tedious. That is a
+real cost, and when you hit it, it is usually a signal that the state belongs in
+a service rather than in a component four levels up. Part 5.
+
+## Listening outside the component
+
+Sometimes you need an event on `document` or `window`, for a keyboard shortcut
+or an outside click.
+
+```js
+import { Component, onMounted, onWillUnmount } from "@odoo/owl";
+
+export class Dropdown extends Component {
+    setup() {
+        this.onDocClick = (ev) => {
+            if (!this.rootRef.el?.contains(ev.target)) {
+                this.state.open = false;
+            }
+        };
+        onMounted(() => document.addEventListener("click", this.onDocClick));
+        onWillUnmount(() => document.removeEventListener("click", this.onDocClick));
+    }
+}
+```
+
+**Every listener added by hand must be removed.** Not removing it is a genuine
+leak: the component is destroyed, the closure survives, and it keeps a reference
+to a dead component. In a backend session where a user opens hundreds of
+records, these accumulate.
+
+Keep the same function reference for both calls. `addEventListener` with an
+inline arrow and `removeEventListener` with a different inline arrow removes
+nothing.
+
+For keyboard shortcuts specifically, Odoo has a `hotkey` service that handles
+registration and cleanup. Prefer it. Part 5.
+
+## What is next
+
+Slots: letting a parent put its own markup inside your component.

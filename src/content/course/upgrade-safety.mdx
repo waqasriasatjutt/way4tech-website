@@ -1,0 +1,145 @@
+---
+title: "Writing OWL that survives the next Odoo version"
+metaTitle: "Odoo upgrade safe JavaScript"
+description: "What breaks between major versions and why, the habits that reduce it, how to find what changed, and a practical upgrade routine for a module you maintain."
+part: 7
+partTitle: "Making it hold up"
+order: 4
+outcome: "Write client code that is cheap to carry across versions, and upgrade a module methodically."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Odoo ships a major version every year and supports each for three. A module you
+sell will cross versions, and the client side crosses them worse than the Python
+does.
+
+## Why the client breaks more
+
+Python has decades of stable public API. The web client does not make the same
+promise: there is no documented public surface, so any internal can change.
+
+Worse, breakage is **silent**. A removed Python method is an ImportError at
+startup. A renamed JavaScript method means your patch extends something that no
+longer exists, nothing throws at boot, and a button simply stops doing anything.
+
+## What actually breaks
+
+In rough order of how often it bites.
+
+**Patched methods that were renamed or removed.** `super()` calls a method that
+is gone.
+
+**Templates whose xpath no longer matches.** The markup moved, and your
+`t-inherit` fails. Sometimes loudly, sometimes by inserting your block somewhere
+absurd.
+
+**Import paths.** Files move between directories regularly.
+
+**Props changing shape.** A component that took `record` now takes `recordProps`.
+
+**Services renamed or merged.** `useService("user")` becoming a direct `user`
+import between 16 and 17 is a good example.
+
+**Test framework replaced.** QUnit to Hoot in 18 rewrote every test.
+
+## Habits that reduce it
+
+**Patch the smallest surface.** One method rather than a controller. Every core
+method you touch is a thing that can change.
+
+**Prefer registries to patches.** A field widget, a view widget or a cog menu
+entry uses a documented extension point. These are far more stable than
+prototype patches, because Odoo treats them as API in practice.
+
+**Never copy core code.** A copied method is frozen at the version you copied it
+from, and every fix Odoo makes afterwards is one you silently do not get.
+
+**Prefer XML inheritance to JavaScript.** An xpath that stops matching is easier
+to find and fix than a patch that quietly extends nothing.
+
+**Namespace everything.** `myModuleRefresh`, not `refresh`. A collision with a
+future core method is a bug that makes no sense.
+
+**Keep a version matrix.** Say in the readme which Odoo versions a module is
+tested against, and mean it.
+
+## Finding what changed
+
+The release notes will not tell you. The diff will.
+
+```bash
+git clone --branch 19.0 --depth 1 https://github.com/odoo/odoo.git odoo-19
+git clone --branch 18.0 --depth 1 https://github.com/odoo/odoo.git odoo-18
+
+diff -ru odoo-18/addons/web/static/src/views/list \
+         odoo-19/addons/web/static/src/views/list | head -200
+```
+
+For a specific method you patch:
+
+```bash
+grep -n "onRecordSaved" -r odoo-19/addons/web/static/src/ | head
+```
+
+Gone or renamed, you will see it immediately. This is twenty minutes that
+replaces a week of discovering breakage one bug report at a time.
+
+## A routine for upgrading a module
+
+1. **Install unchanged on the new version first.** Note every error at boot.
+   Some will be Python, some assets.
+2. **Grep every core import** in your JavaScript against the new source. Fix the
+   paths.
+3. **Grep every patched method name.** Confirm each still exists with the same
+   signature.
+4. **Load every screen your module touches** with the console open. Silent
+   failures only show here.
+5. **Run the tests.** Expect to rewrite them if crossing 17 to 18.
+6. **Check the templates.** Every `t-inherit` with an xpath that no longer
+   matches will usually log a warning at asset build; read the log rather than
+   trusting the page.
+7. **Diff a real database.** Your demo data hides most problems.
+
+## The Python side, briefly
+
+Two rules that cause the most pain when ignored, and both come from shipping
+modules rather than from documentation.
+
+**Bump the manifest version in the same commit as any model, field or view
+change.** On a platform that upgrades on deploy, a changed field with an
+unchanged version means the new code runs against the old column and production
+crashes on something that does not exist.
+
+**An upgrade that adds a stored computed field does not cascade to fields that
+depend on it.** Odoo writes the protected values without notifying dependents, so
+downstream stored computes keep their old values and look correct until someone
+checks. If an upgrade changes a stored compute, recompute its dependents
+explicitly in a post-migration step.
+
+## Version differences worth knowing
+
+| Change | Version |
+| --- | --- |
+| OWL 2, `trigger` removed, callback props | 16 |
+| `user` imported directly, not a service | 17 |
+| New view architecture, `RelationalModel` | 16 and 17 |
+| QUnit replaced by Hoot | 18 |
+| `record.update()` takes an object | 17 |
+| Unit of measure category model removed | 19 |
+
+Anything written before 2022 is for OWL 1 and will not work.
+
+## The honest position
+
+You cannot make client side Odoo code upgrade proof. You can make it cheap to
+fix: small patches, documented extension points, no copied core, tests that fail
+loudly, and a version matrix you actually maintain.
+
+A module with twelve tightly scoped patches takes a day to move between versions.
+One with three copied core components takes a fortnight, and you will not know
+which parts are broken until a customer tells you.
+
+## What is next
+
+The faults that reach production, taken from real systems.

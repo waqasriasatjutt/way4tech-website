@@ -1,0 +1,157 @@
+---
+title: "What a service is, and the ones you will use every day"
+metaTitle: "Odoo OWL services explained"
+description: "Services are Odoo's dependency injection: long lived singletons a component asks for by name. The full list of the ones that matter, with what each is for."
+part: 5
+partTitle: "Services and registries"
+order: 1
+outcome: "Explain what a service is, reach one from a component, and name the right service for a given job."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+A component is a short lived thing that renders. A service is a long lived thing
+that does. Anything outside your component, the server, a notification, the
+router, the current user, is reached through a service.
+
+```js
+import { useService } from "@web/core/utils/hooks";
+
+setup() {
+    this.orm = useService("orm");
+    this.notification = useService("notification");
+}
+```
+
+`useService` looks the service up by name and returns it. It must be called in
+`setup`, like every hook.
+
+## Why not just import a module
+
+Three reasons, and they are the reasons dependency injection exists anywhere.
+
+**Lifecycle.** A service is started once, when the web client boots, and lives
+until the page is closed. It can hold connections, caches and subscriptions that
+no component should own.
+
+**Replaceability.** Because components ask for `"orm"` by name rather than
+importing a file, a module can replace the implementation. Tests do exactly
+this, swapping the real ORM for a mock, and your component is unchanged.
+
+**Dependencies.** A service declares what it needs and the loader starts things
+in the right order.
+
+## The ones worth knowing
+
+| Name | What it does |
+| --- | --- |
+| `orm` | Read and write records. The one you will use most |
+| `notification` | The toast messages in the corner |
+| `dialog` | Modal dialogs, including confirmation |
+| `action` | Open views, run actions, navigate |
+| `router` | Read and change the URL |
+| `user` | Current user, groups, context |
+| `company` | Active company and company switching |
+| `rpc` | Raw calls to a controller route |
+| `http` | Plain HTTP requests |
+| `title` | The browser tab title |
+| `ui` | Blocking UI, size and breakpoints |
+| `hotkey` | Keyboard shortcuts, registered and cleaned up |
+| `effect` | The rainbow man |
+| `field` | Field definitions and formatters |
+| `name` | `display_name` lookups, batched and cached |
+| `popover` | Popovers anchored to an element |
+| `localization` | Date, time and number formats for the user |
+
+The ORM, notification, dialog and action services account for most real code.
+
+## Seeing them live
+
+In developer mode:
+
+```js
+odoo.__WOWL_DEBUG__.root.env.services
+```
+
+That is every service currently running, by name. It is the fastest way to check
+whether a service you expect exists, and to poke at one while developing.
+
+## Services in the env
+
+`useService("x")` is sugar for `this.env.services.x` with a check that it
+exists. You will see `this.env.services` directly in older code and in places
+that are not components. Prefer `useService`, because its error when a service
+is missing is clear, whereas reading a missing key gives you `undefined` and a
+failure later.
+
+## A first useful one: user
+
+```js
+import { user } from "@web/core/user";
+
+setup() {
+    this.canApprove = user.hasGroup("account.group_account_manager");
+}
+```
+
+Note that in Odoo 17 and later `user` is imported directly rather than taken
+from `useService("user")`, and `hasGroup` returns a promise:
+
+```js
+setup() {
+    this.state = useState({ canApprove: false });
+    onWillStart(async () => {
+        this.state.canApprove = await user.hasGroup("account.group_account_manager");
+    });
+}
+```
+
+**Hiding a button from someone who lacks a group is a convenience, not
+security.** Anyone can call the method from the console. The access rules and
+record rules on the server are what actually protect the data, and a client side
+check that is not backed by one is theatre.
+
+## The pattern you will write most
+
+```js
+import { Component, useState, onWillStart } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+
+export class OverdueInvoices extends Component {
+    static template = "owl_course.OverdueInvoices";
+    static props = {};
+
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.notification = useService("notification");
+        this.state = useState({ invoices: [] });
+
+        onWillStart(async () => {
+            this.state.invoices = await this.orm.searchRead(
+                "account.move",
+                [["move_type", "=", "out_invoice"], ["payment_state", "!=", "paid"]],
+                ["name", "partner_id", "amount_residual", "invoice_date_due"],
+                { limit: 20, order: "invoice_date_due asc" },
+            );
+        });
+    }
+
+    open(id) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "account.move",
+            res_id: id,
+            views: [[false, "form"]],
+        });
+    }
+}
+```
+
+Fetch with the ORM, display, open with the action service, report with
+notifications. Almost every component you write in Odoo is a variation on this.
+
+## What is next
+
+The ORM service in full: search, read, write, create, and calling your own Python
+methods.

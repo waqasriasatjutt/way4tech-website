@@ -1,0 +1,204 @@
+---
+title: "Extending a standard view"
+metaTitle: "Extend Odoo list and form views OWL"
+description: "Adding a button to a view's control panel, a column to a list, a widget tag inside a form, and extending a controller for one model without affecting the rest."
+part: 6
+partTitle: "Extending Odoo itself"
+order: 6
+outcome: "Add behaviour to a standard view, scoped to the models you intend, without copying core code."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+Before building a view, exhaust extending one. A standard list brings sorting,
+grouping, filters, pagination, export, multi-edit and optional columns. Those are
+weeks of work you get free and must otherwise reimplement.
+
+## A widget inside a view
+
+The lightest option, and the most scoped. A `view_widget` is a component you can
+drop into any view's arch with a `<widget>` tag.
+
+```js
+// static/src/widgets/margin_banner.js
+import { Component, useState, onWillStart } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { standardWidgetProps } from "@web/views/widgets/standard_widget_props";
+
+export class MarginBanner extends Component {
+    static template = "owl_course.MarginBanner";
+    static props = { ...standardWidgetProps };
+
+    setup() {
+        this.orm = useService("orm");
+        this.state = useState({ margin: null });
+        onWillStart(() => this.load());
+    }
+
+    async load() {
+        const id = this.props.record.resId;
+        if (!id) return;                    // a new, unsaved record
+        this.state.margin = await this.orm.call(
+            "sale.order", "compute_live_margin", [[id]],
+        );
+    }
+}
+
+registry.category("view_widgets").add("margin_banner", {
+    component: MarginBanner,
+    fieldDependencies: [{ name: "amount_total", type: "monetary" }],
+});
+```
+
+```xml
+<record id="view_order_form_margin" model="ir.ui.view">
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//sheet" position="before">
+            <widget name="margin_banner"/>
+        </xpath>
+    </field>
+</record>
+```
+
+Scoped to exactly the views where you put the tag. No patching, nothing else
+affected. Reach for this first.
+
+## A button in the control panel, for one model
+
+Patching a controller affects every model using that view type, so guard it.
+
+```js
+import { patch } from "@web/core/utils/patch";
+import { ListController } from "@web/views/list/list_controller";
+
+patch(ListController.prototype, {
+    setup() {
+        super.setup();
+        this.myModuleShowImport = this.props.resModel === "my.model";
+    },
+
+    async myModuleOnImport() {
+        await this.actionService.doAction("my_module.action_import_wizard", {
+            onClose: () => this.model.load(),
+        });
+    },
+});
+```
+
+```xml
+<t t-name="my_module.ListControlPanel"
+   t-inherit="web.ListView.Buttons"
+   t-inherit-mode="extension">
+    <xpath expr="//button[hasclass('o_list_button_add')]" position="after">
+        <button t-if="myModuleShowImport" type="button"
+                class="btn btn-secondary"
+                t-on-click="myModuleOnImport">
+            Import
+        </button>
+    </xpath>
+</t>
+```
+
+Two things make this safe. The `resModel` check means other models see nothing,
+and the method name is namespaced so it cannot collide.
+
+The cleaner alternative when it fits: `cogMenu`, which is designed for exactly
+this and needs no patch.
+
+```js
+import { registry } from "@web/core/registry";
+
+class ImportCogMenu extends Component {
+    static template = "my_module.ImportCogMenu";
+    setup() {
+        this.action = useService("action");
+    }
+}
+
+registry.category("cogMenu").add("my_module.import", {
+    Component: ImportCogMenu,
+    groupNumber: 20,
+    isDisplayed: ({ config }) => config.actionType === "ir.actions.act_window"
+        && config.viewType === "list",
+});
+```
+
+`isDisplayed` is given the view config, so you decide per view and per model
+without patching anything.
+
+## Registering a whole view variant
+
+When you want a list that behaves differently for one model, register a new view
+type rather than patching the shared one.
+
+```js
+import { registry } from "@web/core/registry";
+import { listView } from "@web/views/list/list_view";
+import { ListController } from "@web/views/list/list_controller";
+
+export class ApprovalListController extends ListController {
+    setup() {
+        super.setup();
+        this.notification = useService("notification");
+    }
+
+    async approveSelected() {
+        const ids = await this.getSelectedResIds();
+        if (!ids.length) {
+            return this.notification.add("Select some rows first", { type: "warning" });
+        }
+        await this.orm.call("my.approval", "action_approve", [ids]);
+        await this.model.load();
+        this.notification.add(`${ids.length} approved`, { type: "success" });
+    }
+}
+
+registry.category("views").add("approval_list", {
+    ...listView,
+    Controller: ApprovalListController,
+    buttonTemplate: "my_module.ApprovalListButtons",
+});
+```
+
+```xml
+<list js_class="approval_list">
+    <field name="name"/>
+    <field name="amount"/>
+</list>
+```
+
+`js_class` on the arch opts one view in. Everything else keeps the standard list.
+This is the right tool whenever the change belongs to a model rather than to
+lists in general.
+
+## The pieces of a view
+
+Worth knowing when deciding what to extend:
+
+| Piece | Responsibility |
+| --- | --- |
+| `Controller` | Top level component, buttons, coordination |
+| `Renderer` | Drawing the rows or the form |
+| `Model` | Loading and writing records |
+| `ArchParser` | Reading the XML arch into a structure |
+
+Spreading `listView` and replacing one of them keeps the rest.
+
+## Order of preference
+
+1. Change the arch in XML. No JavaScript at all.
+2. A `view_widget` dropped into the arch.
+3. A `cogMenu` entry with `isDisplayed`.
+4. A registered view variant with `js_class`.
+5. A patch to a shared controller, guarded by model.
+6. A custom view type.
+
+Work down this list, not up it. Each step affects more of the system than the
+one before.
+
+## What is next
+
+The last resort: a view type of your own.

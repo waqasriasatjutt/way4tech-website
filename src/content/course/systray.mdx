@@ -1,0 +1,205 @@
+---
+title: "Systray items, the user menu and the command palette"
+metaTitle: "Odoo systray item OWL"
+description: "A systray item with a dropdown and a live counter, adding to the user menu, and registering a command in the palette, with the rule about what belongs up there."
+part: 6
+partTitle: "Extending Odoo itself"
+order: 4
+outcome: "Add a systray item with a dropdown, a user menu entry and a command palette action."
+versions: ["19.0", "18.0"]
+updated: 2026-10-09
+---
+
+The systray is the row of icons top right. It is visible on every screen, which
+makes it valuable and easy to abuse.
+
+## A counter with a dropdown
+
+```js
+// static/src/systray/approvals_systray.js
+import { Component, useState, onWillStart, onWillUnmount } from "@odoo/owl";
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { Dropdown } from "@web/core/dropdown/dropdown";
+import { DropdownItem } from "@web/core/dropdown/dropdown_item";
+
+export class ApprovalsSystray extends Component {
+    static template = "owl_course.ApprovalsSystray";
+    static components = { Dropdown, DropdownItem };
+    static props = {};
+
+    setup() {
+        this.orm = useService("orm");
+        this.action = useService("action");
+        this.state = useState({ count: 0, items: [] });
+
+        onWillStart(() => this.load());
+
+        this.timer = setInterval(() => this.load(), 120000);
+        onWillUnmount(() => clearInterval(this.timer));
+    }
+
+    async load() {
+        const domain = [["state", "=", "to_approve"]];
+        this.state.count = await this.orm.silent.searchCount("my.approval", domain);
+        if (this.state.count) {
+            this.state.items = await this.orm.silent.searchRead(
+                "my.approval", domain, ["display_name", "amount"], { limit: 8 },
+            );
+        } else {
+            this.state.items = [];
+        }
+    }
+
+    open(id) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "my.approval",
+            res_id: id,
+            views: [[false, "form"]],
+        });
+    }
+
+    openAll() {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Waiting for approval",
+            res_model: "my.approval",
+            domain: [["state", "=", "to_approve"]],
+            views: [[false, "list"], [false, "form"]],
+        });
+    }
+}
+
+registry.category("systray").add("my_module.approvals", {
+    Component: ApprovalsSystray,
+}, { sequence: 50 });
+```
+
+```xml
+<t t-name="owl_course.ApprovalsSystray">
+    <Dropdown>
+        <button class="btn o_dropdown_toggler d-flex align-items-center px-2"
+                title="Waiting for approval">
+            <i class="fa fa-check-square-o"/>
+            <span t-if="state.count" class="badge rounded-pill text-bg-danger ms-1"
+                  t-esc="state.count"/>
+        </button>
+
+        <t t-set-slot="content">
+            <div t-if="!state.count" class="px-3 py-2 text-muted">
+                Nothing waiting
+            </div>
+            <DropdownItem t-foreach="state.items" t-as="item" t-key="item.id"
+                          onSelected="() => this.open(item.id)">
+                <span t-esc="item.display_name"/>
+            </DropdownItem>
+            <div t-if="state.count > state.items.length" class="dropdown-divider"/>
+            <DropdownItem t-if="state.count" onSelected="() => this.openAll()">
+                See all <t t-esc="state.count"/>
+            </DropdownItem>
+        </t>
+    </Dropdown>
+</t>
+```
+
+Four choices worth copying: `orm.silent` so polling does not flicker the loading
+bar, a two minute interval rather than ten seconds, cleanup in `onWillUnmount`,
+and no second request when the count is zero.
+
+## Visibility by group
+
+The systray renders for everyone, so check the group and render nothing when it
+does not apply:
+
+```js
+import { user } from "@web/core/user";
+
+setup() {
+    this.state = useState({ visible: false, count: 0 });
+    onWillStart(async () => {
+        this.state.visible = await user.hasGroup("my_module.group_approver");
+        if (this.state.visible) await this.load();
+    });
+}
+```
+
+```xml
+<t t-name="owl_course.ApprovalsSystray">
+    <Dropdown t-if="state.visible">...</Dropdown>
+</t>
+```
+
+As ever, this is tidiness rather than security. Server side rules do the real
+work.
+
+## The sequence
+
+Lower numbers sit further **right**, nearer the user menu. Core items occupy
+roughly 0 to 100. Pick something in the middle unless you have a reason, and do
+not fight core for the first position.
+
+## The user menu
+
+```js
+import { registry } from "@web/core/registry";
+
+registry.category("user_menuitems").add("my_module.docs", (env) => ({
+    type: "item",
+    id: "my_module_docs",
+    description: "Module documentation",
+    href: "https://example.com/docs",
+    callback: () => window.open("https://example.com/docs", "_blank"),
+    sequence: 60,
+}));
+```
+
+A function taking `env` and returning the item, so it can decide at the moment
+the menu opens.
+
+## The command palette
+
+Ctrl+K. Underused, and the cheapest way to add a power user feature.
+
+```js
+import { registry } from "@web/core/registry";
+import { _t } from "@web/core/l10n/translation";
+
+registry.category("command_provider").add("my_module.commands", {
+    provide: (env, options) => [
+        {
+            name: _t("Open today's approvals"),
+            category: "app",
+            action() {
+                env.services.action.doAction({
+                    type: "ir.actions.act_window",
+                    name: "Approvals today",
+                    res_model: "my.approval",
+                    domain: [["create_date", ">=", new Date().toISOString().slice(0, 10)]],
+                    views: [[false, "list"], [false, "form"]],
+                });
+            },
+        },
+    ],
+});
+```
+
+`provide` runs when the palette opens, so commands can depend on the current
+screen through `env`.
+
+## What belongs in the systray
+
+The bar is shared by every module and every user. One badge from each of six
+modules is a mess nobody can read.
+
+A systray item earns its place when it is **time sensitive and applies to most
+users of the system**: something waiting for approval, an unread count, a
+connection warning.
+
+It does not earn its place when it is a shortcut to a screen, which is what the
+app menu and the command palette are for, or when it matters to one person in
+the company.
+
+## What is next
+
+Client actions: a full screen of your own, under its own menu item.

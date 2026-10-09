@@ -1,0 +1,203 @@
+---
+/*
+ * Download page for one Way4Tech Windows app, at /<slug>/.
+ *
+ * The slug is also where the app looks for updates (/<slug>/latest.json) and
+ * where /<slug>/download points (public/_redirects), so the URL is fixed by
+ * the shipped agent and must not move.
+ */
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import {
+  WINDOWS_APPS, WINDOWS_APP_RELEASES, storeUrlOf, formatSize,
+  type WindowsApp, type WindowsAppRelease,
+} from '~/data/windows-apps';
+
+export function getStaticPaths() {
+  return WINDOWS_APPS.map(app => ({ params: { winapp: app.slug }, props: { app } }));
+}
+
+interface Props { app: WindowsApp }
+const { app } = Astro.props;
+const rel: WindowsAppRelease = WINDOWS_APP_RELEASES[app.slug];
+const downloadHref = `/${app.slug}/download`;
+const pageUrl = new URL(`/${app.slug}/`, SITE.url).toString();
+const contactHref = `/contact/?product=${encodeURIComponent(app.slug)}&source=windows-apps/${app.slug}`;
+const storeUrl = app.module ? storeUrlOf(app.module) : null;
+const released = new Date(`${rel.released}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const others = WINDOWS_APPS.filter(a => a.slug !== app.slug).slice(0, 10);
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: app.name,
+    description: app.metaDescription,
+    url: pageUrl,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Windows 10, Windows 11',
+    softwareVersion: rel.version,
+    fileSize: formatSize(rel.size),
+    downloadUrl: new URL(downloadHref, SITE.url).toString(),
+    datePublished: rel.released,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    publisher: { '@id': new URL('/#organization', SITE.url).toString() },
+    screenshot: rel.shots.map(s => new URL(s.src, SITE.url).toString()),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/', SITE.url).toString() },
+      { '@type': 'ListItem', position: 2, name: 'Windows apps for Odoo', item: new URL('/windows-apps/', SITE.url).toString() },
+      { '@type': 'ListItem', position: 3, name: app.name, item: pageUrl },
+    ],
+  },
+];
+---
+<Base title={app.metaTitle} description={app.metaDescription} image={rel.shots[0]?.src} structuredData={schema}>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-20">
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/windows-apps/" class="hover:text-white">Windows apps</a> / <span class="text-white">{app.name}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="chip !bg-white/10 !text-white">{app.category}</span>
+          <span class="chip !bg-white/10 !text-white">Windows 10 and 11</span>
+          <span class="chip !bg-white/10 !text-white">Version {rel.version}</span>
+        </div>
+        <h1 class="h1 mt-6">{app.name}</h1>
+        <p class="lede mt-6 text-brand-100">{app.tagline}</p>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href={downloadHref} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50" rel="nofollow">Download for Windows</a>
+          {storeUrl ? (
+            <a href={storeUrl} target="_blank" rel="noopener" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Odoo module on Odoo Apps</a>
+          ) : (
+            <a href={contactHref} class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Pro licence: contact us</a>
+          )}
+        </div>
+        <p class="mt-4 text-sm text-brand-100">Free download, {formatSize(rel.size)}, released {released}.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <h2 class="h3">Who it is for</h2>
+          <div class="mt-4 space-y-4">
+            {app.intro.map(p => <p class="text-lg text-ink-700">{p}</p>)}
+          </div>
+
+          <h2 class="h3 mt-12">What it does</h2>
+          <ul class="mt-6 space-y-3">
+            {app.features.map(f => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">✓</span>
+                <span class="text-ink-700">{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <h2 class="h3 mt-12">Screenshots</h2>
+          <div class="mt-6 grid gap-6 sm:grid-cols-2">
+            {rel.shots.map((shot, i) => (
+              <figure class={i === 0 ? 'sm:col-span-2' : ''}>
+                <a href={shot.src} target="_blank" rel="noopener">
+                  <img src={shot.src} width={shot.w} height={shot.h} loading={i === 0 ? 'eager' : 'lazy'} decoding="async"
+                       alt={app.captions[shot.key] || `${app.name} screenshot ${i + 1}`}
+                       class="h-auto w-full rounded-xl border border-ink-200 shadow-sm" />
+                </a>
+                <figcaption class="mt-2 text-sm text-ink-500">{app.captions[shot.key]}</figcaption>
+              </figure>
+            ))}
+          </div>
+
+          <h2 class="h3 mt-12">System requirements</h2>
+          <ul class="mt-6 space-y-3">
+            {app.requirements.map(r => (
+              <li class="flex gap-3"><span class="text-brand-600 font-bold">→</span><span class="text-ink-700">{r}</span></li>
+            ))}
+          </ul>
+
+          <div id="download" class="mt-12 rounded-2xl border border-ink-200 bg-ink-50 p-6">
+            <h2 class="text-lg font-semibold">Download {app.name} {rel.version}</h2>
+            <p class="mt-2 text-ink-700">The installer is free. {storeUrl ? 'The app works together with the Odoo module, which you install from the Odoo Apps Store.' : 'The free edition works as soon as it is installed. A Pro licence unlocks the rest.'}</p>
+            <a href={downloadHref} class="btn-primary mt-5" rel="nofollow">Download {rel.file}</a>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex flex-wrap gap-x-3"><dt class="text-ink-500">File</dt><dd class="font-mono text-ink-900 break-all">{rel.file}</dd></div>
+              <div class="flex flex-wrap gap-x-3"><dt class="text-ink-500">Size</dt><dd class="text-ink-900">{formatSize(rel.size)} ({rel.size.toLocaleString('en-US')} bytes)</dd></div>
+              <div class="flex flex-wrap gap-x-3"><dt class="text-ink-500">SHA-256</dt><dd class="font-mono text-xs text-ink-900 break-all">{rel.sha256}</dd></div>
+            </dl>
+            <p class="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Windows may show a SmartScreen notice until our code-signing certificate is active: click More info, then Run anyway.
+              You can check the file first: in PowerShell, <code class="font-mono">Get-FileHash {rel.file}</code> should print the SHA-256 above.
+            </p>
+            <p class="mt-4 text-sm text-ink-600">Once installed, the app checks for updates by itself and installs only releases signed by Way4Tech.</p>
+          </div>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">{app.name}</h2>
+              <p class="mt-2 text-sm text-brand-100">Version {rel.version} for Windows. Free download.</p>
+              <a href={downloadHref} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50" rel="nofollow">Download</a>
+              {storeUrl ? (
+                <a href={storeUrl} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Odoo module</a>
+              ) : (
+                <a href={contactHref} class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Pro licence: contact us</a>
+              )}
+              <a href={contactHref} class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Contact us</a>
+              <a href={SITE.whatsapp} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">WhatsApp</a>
+            </div>
+
+            <div class="rounded-2xl border border-ink-200 bg-white p-6">
+              <h2 class="text-sm font-semibold">Details</h2>
+              <dl class="mt-4 space-y-3 text-sm">
+                <div class="flex justify-between gap-3"><dt class="text-ink-500">Version</dt><dd class="text-right font-medium text-ink-900">{rel.version}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-500">Released</dt><dd class="text-right font-medium text-ink-900">{released}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-500">Size</dt><dd class="text-right font-medium text-ink-900">{formatSize(rel.size)}</dd></div>
+                <div class="flex justify-between gap-3"><dt class="text-ink-500">Works with</dt><dd class="text-right font-medium text-ink-900">{app.module ? 'Odoo 19' : 'Standalone'}</dd></div>
+                {app.module && (
+                  <div class="flex justify-between gap-3"><dt class="text-ink-500">Odoo module</dt><dd class="text-right font-mono text-xs text-ink-900">{app.module}</dd></div>
+                )}
+              </dl>
+              {app.module && storeUrl && (
+                <div class="mt-5 space-y-2 text-sm">
+                  <a class="block font-semibold text-brand-600 hover:text-brand-700" href={storeUrl} target="_blank" rel="noopener">{app.moduleName} on apps.odoo.com →</a>
+                  {app.extraModules?.map(m => (
+                    <a class="block text-brand-600 hover:text-brand-700" href={storeUrlOf(m.module)} target="_blank" rel="noopener">{m.name} ({m.module}) →</a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">More Windows apps</h2>
+              <ul class="mt-4 space-y-2">
+                {others.map(o => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/${o.slug}/`}>{o.name}</a></li>
+                ))}
+              </ul>
+              <a href="/windows-apps/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All Windows apps →</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site text-center">
+      <h2 class="h2">Questions before you install?</h2>
+      <p class="lede mt-4 max-w-2xl mx-auto">Tell us about your setup and we will tell you whether {app.name} fits, and help with the first install.</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
+        <a href={contactHref} class="btn-primary">Contact us</a>
+        <a href="/windows-apps/" class="btn-secondary">All Windows apps</a>
+      </div>
+    </div>
+  </section>
+</Base>

@@ -119,6 +119,10 @@ const SECTION_HINTS = {
     index: { priority: 0.9, changefreq: 'monthly' },
     child: { priority: 0.8, changefreq: 'monthly' },
   },
+  'windows-apps': {
+    index: { priority: 0.9, changefreq: 'monthly' },
+    child: { priority: 0.8, changefreq: 'monthly' },
+  },
   integrations: {
     index: { priority: 0.9, changefreq: 'monthly' },
     child: { priority: 0.8, changefreq: 'monthly' },

@@ -275,6 +275,39 @@ const phases = (detail?.phases || []).slice(0, 5);
 const risks = (detail?.failureModes || []).slice(0, 4);
 const provides = (detail?.clientProvides || []).slice(0, 6);
 
+/*
+ * What this service actually has to deal with in THIS market.
+ *
+ * These pages used to restate the service itself: the phases, what the client
+ * provides, and the failure modes, all of which come from services-detail.ts
+ * and are therefore byte for byte the same on all eighteen countries. Measured
+ * on the built pages, half of every page was identical to every other one, and
+ * the same three sections already sit on the parent /services/<slug>/ page.
+ *
+ * So the method now lives on the parent and is linked, and the space goes to
+ * the sourced country register instead, which is the half a competitor cannot
+ * produce by swapping a place name.
+ */
+const FACT_FOCUS: Record<string, string[]> = {
+  'odoo-implementation': ['tax', 'accounting', 'payroll'],
+  'odoo-migration': ['accounting', 'tax'],
+  'odoo-support': ['tax', 'accounting'],
+  'odoo-customization': ['accounting', 'payroll'],
+  'odoo-integration': ['tax'],
+  'hire-odoo-developer': ['accounting', 'payroll'],
+};
+const FACT_LABEL: Record<string, string> = {
+  tax: 'Tax', accounting: 'Accounting', payroll: 'Payroll',
+};
+const marketFacts = (FACT_FOCUS[service.slug] || ['tax', 'accounting'])
+  .flatMap((k: string) => ((cd as any)?.[k] || [])
+    .map((f: { claim: string; verified: boolean }) => ({ ...f, group: k })))
+  .slice(0, 7);
+
+const einvReqs: string[] = (cd?.einvoicing?.requirements || []).slice(0, 5);
+const odooNative: string[] = (cd?.odoo?.native || []).slice(0, 6);
+const odooCustom: string[] = (cd?.odoo?.custom || []).slice(0, 5);
+
 /* Sibling services in the same market, and the same service in nearby markets. */
 const CROSSED_SLUGS = ['odoo-implementation', 'odoo-customization', 'hire-odoo-developer', 'odoo-migration', 'odoo-support', 'odoo-integration'];
 const siblings = SERVICES.filter(s => CROSSED_SLUGS.includes(s.slug) && s.slug !== service.slug).slice(0, 5);
@@ -328,7 +361,6 @@ const reviewedOn = Number.isNaN(reviewedStamp.getTime())
   : reviewedStamp.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const orgId = `${SITE.url}/#organization`;
 const personId = `${SITE.url}/author/waqas-riasat/#person`;
-
 
 const schema = [
   {
@@ -470,21 +502,87 @@ const schema = [
             </div>
           )}
 
-          {phases.length > 0 && (
+          {(einvReqs.length > 0 || marketFacts.length > 0) && (
             <div class="mt-14">
-              <h2 class="h3">How the work runs</h2>
-              <ol class="mt-6 space-y-6">
-                {phases.map((p, i) => (
-                  <li class="border-l-2 border-brand-200 pl-5">
-                    <div class="text-xs font-bold uppercase tracking-wider text-ink-500">Step {i + 1}</div>
-                    <div class="mt-1 font-semibold text-ink-900">{p.name}</div>
-                    <p class="mt-2 text-ink-700">{p.goal}</p>
-                    {p.deliverable && (
-                      <p class="mt-2 text-sm text-ink-600"><span class="font-semibold">You end up with:</span> {p.deliverable}</p>
-                    )}
-                  </li>
-                ))}
-              </ol>
+              <h2 class="h3">What {service.title.toLowerCase()} has to satisfy in {plainName}</h2>
+              <p class="mt-3 text-ink-700">
+                The rules that decide how much of this is configuration and how much is a build.
+                Everything below is from our {plainName} register, checked against a primary source.
+              </p>
+
+              {einvReqs.length > 0 && (
+                <div class="mt-6 rounded-2xl bg-ink-50 p-5">
+                  <div class="font-semibold text-ink-900">
+                    {schemeName || 'E-invoicing'}
+                    {cd?.einvoicing?.authority && <span class="text-ink-600"> &middot; {cd.einvoicing.authority}</span>}
+                  </div>
+                  {cd?.einvoicing?.status && <p class="mt-1 text-sm text-ink-600">{cd.einvoicing.status}</p>}
+                  <ul class="mt-4 space-y-2">
+                    {einvReqs.map(r => (
+                      <li class="flex gap-3 text-ink-700">
+                        <span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-brand-500"></span>
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {marketFacts.length > 0 && (
+                <ul class="mt-6 space-y-3">
+                  {marketFacts.map(f => (
+                    <li class="flex gap-3">
+                      <span class="mt-0.5 inline-flex flex-none rounded-full bg-brand-100 px-2 py-0.5 text-xs font-bold text-brand-700">
+                        {FACT_LABEL[f.group] || f.group}
+                      </span>
+                      <span class="text-ink-700">{f.claim}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {(odooNative.length > 0 || odooCustom.length > 0) && (
+                <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                  {odooNative.length > 0 && (
+                    <div class="card !p-4">
+                      <div class="text-xs font-bold uppercase tracking-wider text-ink-500">Odoo covers in {plainName}</div>
+                      <ul class="mt-2 space-y-1 text-sm text-ink-700">
+                        {odooNative.map(m => <li>{m}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {odooCustom.length > 0 && (
+                    <div class="card !p-4">
+                      <div class="text-xs font-bold uppercase tracking-wider text-ink-500">Needs a build here</div>
+                      <ul class="mt-2 space-y-1 text-sm text-ink-700">
+                        {odooCustom.map(m => <li>{m}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <p class="mt-5 text-sm text-ink-600">
+                Reviewed {COUNTRY_DETAIL_REVIEWED}.
+                <a class="ml-1 font-semibold text-brand-600 hover:text-brand-700" href={`/countries/${country.slug}/`}>
+                  The full {plainName} register
+                </a>
+              </p>
+            </div>
+          )}
+
+          {phases.length > 0 && (
+            <div class="mt-14 rounded-2xl border border-ink-100 p-5">
+              <h2 class="text-lg font-semibold text-ink-900">How we run the work</h2>
+              <p class="mt-2 text-ink-700">
+                {phases.length} stages, the same in every market: {phases.map(p => p.name).join(', ')}.
+                The method does not change by country, so it is written up once rather than repeated here.
+              </p>
+              <p class="mt-3 text-sm">
+                <a class="font-semibold text-brand-600 hover:text-brand-700" href={`/services/${service.slug}/`}>
+                  How {service.title.toLowerCase()} runs, stage by stage
+                </a>
+              </p>
             </div>
           )}
 
@@ -518,33 +616,9 @@ const schema = [
             </div>
           )}
 
-          {provides.length > 0 && (
-            <div class="mt-14">
-              <h2 class="h3">What we need from you</h2>
-              <ul class="mt-6 space-y-3">
-                {provides.map(x => (
-                  <li class="flex gap-3">
-                    <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">+</span>
-                    <span class="text-ink-700">{x}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          
 
-          {risks.length > 0 && (
-            <div class="mt-14">
-              <h2 class="h3">What goes wrong, and how we avoid it</h2>
-              <div class="mt-6 space-y-4">
-                {risks.map(r => (
-                  <div class="rounded-2xl bg-ink-50 p-5">
-                    <div class="font-semibold text-ink-900">{r.title}</div>
-                    <p class="mt-2 text-ink-700">{r.body}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          
 
           {faqs.length > 0 && (
             <div class="mt-14">

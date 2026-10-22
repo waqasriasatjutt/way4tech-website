@@ -1,0 +1,188 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const all = (await getCollection('guides')).filter(g => !g.data.draft);
+  return all.map(g => ({ params: { slug: g.slug }, props: { guide: g, all } }));
+}
+
+const { guide, all } = Astro.props;
+const d = guide.data;
+const { Content, headings } = await guide.render();
+
+const path = `/odoo-guides/${guide.slug}/`;
+const url = new URL(path, SITE.url).toString();
+const AUTHOR_PATH = '/author/waqas-riasat/';
+const AUTHOR_URL = new URL(AUTHOR_PATH, SITE.url).toString();
+const listing = (technical: string) => `https://apps.odoo.com/apps/modules/19.0/${technical}/`;
+
+const toc = headings.filter(h => h.depth === 2);
+const bySlug = new Map(all.map(g => [g.slug, g]));
+const related = d.related.map(s => bySlug.get(s)).filter((g): g is NonNullable<typeof g> => Boolean(g));
+
+const fmt = (dt: Date) => dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  '@id': `${url}#article`,
+  headline: d.title,
+  description: d.description,
+  mainEntityOfPage: url,
+  inLanguage: 'en',
+  author: { '@type': 'Person', '@id': `${AUTHOR_URL}#person`, name: 'Waqas Riasat', url: AUTHOR_URL },
+  publisher: { '@type': 'Organization', '@id': new URL('/#organization', SITE.url).toString(), name: SITE.name, logo: { '@type': 'ImageObject', url: `${SITE.url}/logo-w4t.png` } },
+  datePublished: d.published.toISOString(),
+  dateModified: d.updated.toISOString(),
+  ...(d.sources.length ? { citation: d.sources.map(s => ({ '@type': 'CreativeWork', name: s.label, url: s.url })) } : {}),
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: d.faqs.map(f => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE.url}/` },
+    { '@type': 'ListItem', position: 2, name: 'Odoo guides', item: new URL('/odoo-guides/', SITE.url).toString() },
+    { '@type': 'ListItem', position: 3, name: d.title, item: url },
+  ],
+};
+---
+<Base
+  title={d.metaTitle}
+  description={d.description}
+  canonical={url}
+  ogType="article"
+  publishedTime={d.published}
+  modifiedTime={d.updated}
+  structuredData={[articleSchema, faqSchema, breadcrumbSchema]}
+>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-14">
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb"><a href="/" class="hover:text-white">Home</a> / <a href="/odoo-guides/" class="hover:text-white">Odoo guides</a></nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex flex-wrap gap-2">
+          <span class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-brand-100">{d.category}</span>
+          {d.region && <span class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-brand-100">{d.region}</span>}
+        </div>
+        <h1 class="mt-5 text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">{d.title}</h1>
+        <p class="mt-4 text-brand-100">
+          <a href={AUTHOR_PATH} rel="author" class="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">Waqas Riasat</a>
+          {' · '}
+          Updated <time datetime={d.updated.toISOString()}>{fmt(d.updated)}</time>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <article class="section">
+    <div class="container-site grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-8">
+        <div class="prose prose-lg prose-ink max-w-none
+                    prose-headings:tracking-tight prose-headings:text-ink-900
+                    prose-h2:scroll-mt-24
+                    prose-a:text-brand-600 hover:prose-a:text-brand-700
+                    prose-strong:text-ink-900
+                    prose-code:text-brand-700 prose-code:bg-brand-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                    prose-code:before:content-none prose-code:after:content-none
+                    prose-pre:bg-ink-950 prose-pre:text-ink-100
+                    prose-table:text-base prose-th:text-left
+                    prose-img:rounded-xl">
+          <Content />
+        </div>
+
+        <section class="mt-14" aria-labelledby="faq">
+          <h2 id="faq" class="text-2xl font-bold tracking-tight text-ink-900">Frequently asked questions</h2>
+          <div class="mt-6 space-y-3">
+            {d.faqs.map(f => (
+              <details class="group rounded-xl border border-ink-200 bg-white open:border-brand-200">
+                <summary class="flex cursor-pointer items-center justify-between gap-4 p-5 font-semibold text-ink-900">
+                  <span>{f.q}</span>
+                  <span class="text-brand-600 transition group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+                <p class="px-5 pb-5 text-ink-700">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {d.sources.length > 0 && (
+          <section class="mt-12" aria-labelledby="sources">
+            <h2 id="sources" class="text-lg font-semibold text-ink-900">Sources</h2>
+            <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-600">
+              {d.sources.map(s => (<li><a href={s.url} rel="noopener" target="_blank" class="text-brand-700 hover:text-brand-800">{s.label}</a></li>))}
+            </ul>
+            <p class="mt-3 text-sm text-ink-500">Rates and deadlines change. Check the source in force before you run a live month or file anything.</p>
+          </section>
+        )}
+
+        <div class="mt-14 rounded-2xl border border-ink-200 p-6 sm:p-8">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-ink-500">Written by</h2>
+          <p class="mt-2 text-xl font-semibold"><a href={AUTHOR_PATH} rel="author" class="hover:text-brand-700">Waqas Riasat</a></p>
+          <p class="mt-3 text-ink-600">Independent Odoo developer in Lahore, Pakistan. Builds and maintains the Way4Tech modules on the Odoo apps store, and writes the guides on this site from that work.</p>
+        </div>
+
+        <div class="mt-10 rounded-2xl bg-ink-50 p-8 text-center">
+          <h2 class="text-xl font-semibold">Want this set up on your Odoo?</h2>
+          <p class="mt-2 text-ink-600">Tell us what you run today and what has to change. You get a straight answer on what fits and what it takes.</p>
+          <a href={`/contact/?source=odoo-guides/${guide.slug}`} class="btn-primary mt-6">Ask a question</a>
+        </div>
+      </div>
+
+      <aside class="lg:col-span-4">
+        <div class="space-y-6 lg:sticky lg:top-24">
+          {toc.length > 2 && (
+            <nav class="rounded-2xl border border-ink-200 p-5" aria-label="On this page">
+              <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">On this page</p>
+              <ul class="mt-3 space-y-2 text-sm">
+                {toc.map(h => (<li><a href={`#${h.slug}`} class="text-ink-700 hover:text-brand-700">{h.text}</a></li>))}
+              </ul>
+            </nav>
+          )}
+
+          {d.modules.length > 0 && (
+            <div class="rounded-2xl border border-ink-200 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Modules in this guide</p>
+              <ul class="mt-3 space-y-3 text-sm">
+                {d.modules.map(m => (
+                  <li>
+                    <a href={listing(m.technical)} rel="noopener" target="_blank" class="font-semibold text-brand-700 hover:text-brand-800">{m.name}</a>
+                    <span class="block text-xs text-ink-500"><code>{m.technical}</code>{m.note ? ` · ${m.note}` : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {d.demo && (
+            <div class="rounded-2xl border border-ink-200 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Live demo</p>
+              <a href={d.demo.url} rel="noopener" target="_blank" class="mt-2 block font-semibold text-brand-700 hover:text-brand-800">{d.demo.label}</a>
+              <p class="mt-1 text-xs text-ink-500">Ask us for a login.</p>
+            </div>
+          )}
+
+          {related.length > 0 && (
+            <div class="rounded-2xl border border-ink-200 p-5">
+              <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Related guides</p>
+              <ul class="mt-3 space-y-2 text-sm">
+                {related.map(r => (<li><a href={`/odoo-guides/${r.slug}/`} class="text-ink-700 hover:text-brand-700">{r.data.title}</a></li>))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  </article>
+</Base>

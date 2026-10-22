@@ -1,0 +1,150 @@
+---
+title: "Odoo payroll for Pakistan: income tax slabs, allowances, provident fund and bank salary files"
+metaTitle: "Odoo Payroll Pakistan: Tax Slabs 2026-27 Setup"
+description: "Run Pakistan payroll in Odoo 19: tax year 2027 salary slabs, monthly withholding, allowances, provident fund and HBL, MCB, UBL or Meezan salary files."
+targetQuery: "odoo payroll pakistan"
+category: "Payroll and HR"
+region: "Pakistan"
+summary: "How to run a Pakistani payroll in Odoo 19: the tax year 2027 salary slabs, how monthly tax is withheld, allowances, provident fund and the bank salary file, with honest notes on what each module does."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Pakistan Payroll"
+    technical: "wt_hrms_payroll_pk"
+    note: "USD 30, needs HRMS Payroll"
+  - name: "HRMS Payroll"
+    technical: "wt_hrms_payroll"
+    note: "USD 45, the payroll engine"
+  - name: "Payroll Bank Files"
+    technical: "wt_hrms_payroll_bank_files"
+    note: "USD 40, HBL, MCB, UBL and Meezan formats"
+related: ["eobi-pessi-contributions-odoo", "zkteco-adms-odoo", "uae-wps-sif-file-odoo", "fbr-digital-invoicing-odoo"]
+linkFrom: ["/products/wt-hrms-payroll-pk/", "/products/wt-hrms-payroll/", "/products/wt-hrms-payroll-bank-files/", "/countries/pakistan/payroll/", "/modules/payroll/", "/services/odoo-payroll-setup/", "/blog/odoo-payroll-localization-what-ships/"]
+sources:
+  - label: "FBR, Withholding Tax Rate Card for Tax Year 2027 (Finance Act 2026), section 149"
+    url: "https://download1.fbr.gov.pk/Docs/202681113864992WithholdingTaxRatesCard2027.pdf"
+  - label: "FBR, Withholding Tax Rate Card for Tax Year 2026 (Finance Act 2025), section 149"
+    url: "http://download1.fbr.gov.pk/Docs/20258181281745641WHT-RateCard.pdf"
+  - label: "FBR, index of withholding tax rate cards"
+    url: "https://urdu.fbr.gov.pk/withholding-taxes-rate-card/174298/174301"
+  - label: "PwC Worldwide Tax Summaries, Pakistan, taxes on personal income"
+    url: "https://taxsummaries.pwc.com/pakistan/individual/taxes-on-personal-income"
+  - label: "Vialto Partners, Pakistan employment tax, Finance Bill 2026-27 summary"
+    url: "https://vialtopartners.com/regional-alerts/pakistan-employment-tax-finance-bill-2026-27-summary"
+  - label: "PkRevenue, tax deduction on salary income under section 149"
+    url: "https://pkrevenue.com/tax-deduction-on-salary-income-under-section-149-of-ito/"
+  - label: "Odoo 19 documentation, payroll localizations"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/payroll/payroll_localizations.html"
+  - label: "Odoo source, l10n_pk (Pakistan, Accounting) manifest, branch 19.0"
+    url: "https://github.com/odoo/odoo/blob/19.0/addons/l10n_pk/__manifest__.py"
+faqs:
+  - q: "What are the salaried income tax slabs in Pakistan for 2026-27?"
+    a: "For tax year 2027 (1 July 2026 to 30 June 2027) the FBR rate card shows 0% up to Rs 600,000, then 1%, 11%, 20%, 25%, 29% and 32% bands, and 35% above Rs 7,000,000 with Rs 1,424,000 carried in. The statute prevails over the card, so check the Finance Act 2026 text for edge cases."
+  - q: "Does Odoo Community have payroll for Pakistan?"
+    a: "No. Odoo Community has no payroll app at all, and its Pakistan module l10n_pk covers accounting only: chart of accounts, taxes and tax reports. Payroll on Community needs a third-party engine and a Pakistan rule set on top of it."
+  - q: "How is monthly salary tax calculated in Pakistan?"
+    a: "Section 149 asks the employer to deduct at the employee's average rate on the estimated salary income for the tax year, adjusted for tax already withheld. In practice you estimate the annual taxable salary, compute the annual tax from the slabs and spread it over the salary payments left in the year."
+  - q: "Do I have to edit code when the Finance Act changes the slabs?"
+    a: "Not with version 19.0.2.0.0 of the Pakistan Payroll module. The slabs and contribution figures are dated rate-set records, so you close the old set and add a new one with its own start date. Earlier versions kept the slabs in a Python formula, which is why older documentation mentions editing code."
+  - q: "Which banks are supported for salary transfer files?"
+    a: "The Payroll Bank Files module ships formats for HBL, MCB, UBL and Meezan, plus a generic CSV you can copy for any other bank. It writes a delimited file for you to upload to the bank's portal; it does not connect to the bank."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every July the salary slabs move, and every July somebody in accounts rebuilds the payroll spreadsheet by hand, checks it against last month and hopes nobody earns exactly on a band boundary. Odoo can take that work over, but only if the tax table lives somewhere a payroll officer can change it, the monthly deduction follows the way section 149 works, and the bank file at the end matches what payroll actually computed. This guide covers all three for a Pakistani company on Odoo 19.
+
+## What Pakistani payroll has to get right
+
+### The salary slabs in force now
+
+Pakistan's tax year runs from 1 July to 30 June. Tax year 2027 started on 1 July 2026, under the Finance Act 2026. The FBR's [withholding tax rate card for tax year 2027](https://download1.fbr.gov.pk/Docs/202681113864992WithholdingTaxRatesCard2027.pdf) lists these section 149 rates for salary, and [PwC's Pakistan tax summary](https://taxsummaries.pwc.com/pakistan/individual/taxes-on-personal-income) shows the same table. The previous year's figures come from the [tax year 2026 rate card](http://download1.fbr.gov.pk/Docs/20258181281745641WHT-RateCard.pdf) (Finance Act 2025).
+
+| Annual taxable salary (PKR) | Tax year 2027 (FA 2026) | Tax year 2026 (FA 2025) |
+|---|---|---|
+| Up to 600,000 | 0% | 0% |
+| 600,001 to 1,200,000 | 1% of the amount over 600,000 | 1% of the amount over 600,000 |
+| 1,200,001 to 2,200,000 | 6,000 + 11% over 1,200,000 | 6,000 + 11% over 1,200,000 |
+| 2,200,001 to 3,200,000 | 116,000 + 20% over 2,200,000 | 116,000 + 23% over 2,200,000 |
+| 3,200,001 to 4,100,000 | 316,000 + 25% over 3,200,000 | 346,000 + 30% over 3,200,000 |
+| 4,100,001 to 5,600,000 | 541,000 + 29% over 4,100,000 | 616,000 + 35% over 4,100,000 |
+| 5,600,001 to 7,000,000 | 976,000 + 32% over 5,600,000 | 616,000 + 35% over 4,100,000 |
+| Above 7,000,000 | 1,424,000 + 35% over 7,000,000 | 616,000 + 35% over 4,100,000 |
+
+Two things changed besides the rates. The 35% band now starts at Rs 7 million instead of Rs 4.1 million, and the tax year 2026 card carried a 9% surcharge on salary income above Rs 10 million, which the tax year 2027 card no longer lists for salary. [Vialto's summary of the 2026-27 budget](https://vialtopartners.com/regional-alerts/pakistan-employment-tax-finance-bill-2026-27-summary) describes that surcharge as withdrawn. The FBR's own cards say the Income Tax Ordinance prevails over them, so treat the card as the working copy and the Act as the authority.
+
+A quick check of the numbers: each "carried" figure equals the tax at the top of the band below. For example, 116,000 plus 20% of 1,000,000 gives 316,000, which is where the next band starts. Any table you type into a payroll system should pass that test, and the module described below refuses to save one that does not.
+
+### How the monthly deduction works
+
+Section 149 does not say "apply the slab to the month". It asks the employer to deduct at the employee's average rate of tax on the estimated salary income for the whole tax year, after adjusting for tax already withheld and any earlier excess or shortfall. [PkRevenue's explanation of section 149](https://pkrevenue.com/tax-deduction-on-salary-income-under-section-149-of-ito/) walks through the A over B formula. In day-to-day terms:
+
+1. Estimate the employee's taxable salary for the full tax year.
+2. Work out the annual tax from the slabs.
+3. Subtract the tax already deducted this year.
+4. Spread what is left over the salary payments remaining in the year.
+
+For a steady salary that collapses to "monthly taxable times 12, tax it, divide by 12". It stops being that simple for a mid-year joiner, a bonus month, an increment in March or someone who brings tax certificates from a previous employer.
+
+A worked example at Rs 250,000 a month of taxable salary (Rs 3,000,000 a year): tax year 2027 gives 116,000 plus 20% of 800,000, so Rs 276,000 a year or Rs 23,000 a month. The same salary under the tax year 2026 slabs gave Rs 300,000 a year, Rs 25,000 a month. Payroll that keeps last year's table overdeducts by Rs 2,000 a month for that person.
+
+### Allowances and provident fund
+
+Most Pakistani salary letters split pay into basic, house rent, medical and conveyance. The split is company policy, but it matters for tax because the Second Schedule exempts some allowances in part, and it matters for the provident fund because contributions are normally a percentage of basic. Get the exempt portions from your tax adviser for your own structure; the point for the system is that the tax rule must be able to run on a base that excludes them.
+
+## What standard Odoo does and does not do
+
+Odoo Community has no payroll app: there is no `hr_payroll` module in the Community source tree. The Pakistan module that does ship with Community, `l10n_pk`, is described in [its own manifest](https://github.com/odoo/odoo/blob/19.0/addons/l10n_pk/__manifest__.py) as Pakistan Accounting: chart of accounts, taxes, a tax report and a withholding tax report. Nothing about salaries.
+
+Odoo Payroll is an Enterprise app. The [Odoo 19 payroll localizations page](https://www.odoo.com/documentation/19.0/applications/hr/payroll/payroll_localizations.html) lists Pakistan among its countries, but unlike Belgium or the UAE it has no Pakistan page of its own, so what the package computes is not documented there. If you are on Enterprise, ask Odoo what it covers for slabs, EOBI and social security before you decide. [What a payroll localization ships](/blog/odoo-payroll-localization-what-ships/) explains what to look for.
+
+On Community, the usual path is a payroll engine plus a country rule set. That is what the modules below are.
+
+## How to set it up in Odoo
+
+The setup uses three modules: [HRMS Payroll](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll/) (the engine: salary structures, rules, payslips and batches, USD 45), [Pakistan Payroll](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll_pk/) (the rule set and the rate tables, USD 30) and, if you pay by bank transfer, [Payroll Bank Files](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll_bank_files/) (USD 40). They run on Community; see [running Odoo Community](/odoo-community/) for what that edition leaves out elsewhere.
+
+1. **Install Pakistan Payroll.** The engine installs with it. You get twelve rules (BASIC, HRA, MED, CONV, GROSS, EOBI_EMP, EOBI_ER, PF_EMP, PF_ER, TAX, SESSI, NET) and a "Pakistan Standard" salary structure.
+2. **Open the rate table.** Go to WT HRMS, Configuration, Payroll Config, Pakistan Statutory Rates. One set is there: "Pakistan, Finance Act 2024, salaried", in force from 1 July 2024 with no end date.
+3. **Close the shipped set.** Set its In Force Until date. If you have payslips from tax year 2025 to keep reproducible, end it on 30 June 2025; otherwise end it on the day before your first live month.
+4. **Add the current year.** Create a new set named, say, "Finance Act 2026, salaried", In Force From 1 July 2026, and enter the eight tax year 2027 bands from the table above in the Income Tax Slabs tab. The upper limit of the top band stays empty. Tax On Lower Bands holds the carried amount (0, 0, 6,000, 116,000, 316,000, 541,000, 976,000, 1,424,000). If you need to recompute any month of tax year 2026, add a Finance Act 2025 set for 1 July 2025 to 30 June 2026 as well.
+5. **Fill the contribution figures** on the same set: EOBI wage base and percentages, social security percentage and ceiling. The [EOBI and social security guide](/odoo-guides/eobi-pessi-contributions-odoo/) covers what to enter there.
+6. **Review the allowance rules** under WT HRMS, Configuration, Payroll Config, Payroll Rules. HRA ships at 45% of basic, medical at 10%, conveyance at a flat Rs 5,000, and both provident fund rules at 8.33% of basic. These are policy, so change them to match your contracts.
+7. **Point tax at the right base.** The TAX rule has a Taxable Base Rule field. Empty means it taxes basic plus allowances. If part of an allowance is exempt in your structure, create a rule that computes the taxable figure and put its code there.
+8. **Record wages** on each employee's contract version as the contractual basic, not the package. The allowances are added on top.
+9. **Run the month** under WT HRMS, Pay, Payroll, Batches: New, choose "Pakistan Standard", set the dates, then Generate Payslips, Compute All and Confirm All. Read one payslip of each grade before confirming the rest.
+
+<Shot src="/odoo-guides/odoo-payroll-pakistan/pakistan-statutory-rates-form.webp" alt="Pakistan Statutory Rates form in Odoo showing the Finance Act 2024 rate set with EOBI wage base 39,000, social security 6 percent and six income tax slabs" width={1280} height={800} caption="The rate set as shipped: Finance Act 2024 slabs from 1 July 2024. Add a new dated set for the current Finance Act rather than editing this one." />
+
+### What the module actually does with the table
+
+The rate set is looked up by the payslip's own period end date, never by today's date. A payslip for June 2026 recomputed in October still uses tax year 2026 figures. If no set covers the period, the payslip refuses to compute instead of deducting zero tax. Two sets for the same company cannot overlap, and the slab table is checked on save: it must start at zero, each band must start where the previous one ends, there must be exactly one open top band, and each carried amount must equal the tax at the top of the band below.
+
+The monthly tax is computed as the month's taxable base times 12, taxed on the annual table, divided by 12. That matches section 149 for a steady salary. It does not look back at tax already deducted this year, so the true-up described above is still a manual job for mid-year joiners, bonuses and mid-year increments.
+
+<Shot src="/odoo-guides/odoo-payroll-pakistan/pakistan-payroll-rules.webp" alt="Odoo Payroll Rules list showing EOBI, provident fund, Income Tax (FBR), Social Security and Net Salary rules with the computation type Pakistan Statutory Amount" width={1280} height={734} caption="Tax, EOBI, social security and net pay use the 'Pakistan Statutory Amount' computation type, which reads the dated rate set." />
+
+### The bank salary file
+
+Once the batch is confirmed, go to WT HRMS, Pay, Payroll, Bank Files, Generate Bank File, pick the batch and a format (HBL, MCB, UBL, Meezan or the generic CSV). The column order, delimiter, encoding and amount format are settings on the format, so match them to the specification your bank's corporate portal gives you before the first upload. An employee with no bank account recorded stops the file and is named; you can tick "Send Without Everybody" to proceed knowingly, and the shortfall is shown on the run. A batch can have only one live file, which prevents paying a month twice.
+
+<Shot src="/odoo-guides/odoo-payroll-pakistan/bank-disbursement-run.webp" alt="Bank disbursement run in Odoo showing three payments, one skipped employee with no bank account, the file total, the batch total and the shortfall in red" width={1280} height={550} caption="A disbursement run names everyone the file does not pay and shows the shortfall against the payroll total." />
+
+If your attendance comes from biometric devices, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) and the [ZKTeco integration page](/integrations/zkteco/) cover getting punches into Odoo before payroll runs. For a Gulf branch on the same database, the [UAE WPS SIF guide](/odoo-guides/uae-wps-sif-file-odoo/) is the equivalent of the bank file step.
+
+## Limitations and what this does not do
+
+<Callout title="The shipped slabs are out of date">
+The module installs with the Finance Act 2024 table (0, 5, 15, 25, 30 and 35 percent). Those figures were replaced by the Finance Act 2025 and again by the Finance Act 2026. Add a current rate set before your first live payroll, as in step 4 above.
+</Callout>
+
+- **No surcharge.** The rate set has no surcharge field. The tax year 2026 surcharge on salary above Rs 10 million is not computed if you recompute months from that year.
+- **No year-to-date true-up.** Tax is annualised from the current month only. Adjustments for earlier deductions, previous employers or one-off payments must be made with an extra rule or a manual line.
+- **No tax certificates or returns.** It does not produce the annual salary certificate or the employer's withholding statement for IRIS.
+- **The allowance splits are examples.** HRA 45%, medical 10% and conveyance Rs 5,000 are starting values, not rules from any Act.
+- **Older documentation is superseded.** The listing page still mentions editing the Python code on the TAX rule and a licence that differs from the manifest. Version 19.0.2.0.0 keeps figures in rate sets and is licensed OPL-1.
+- **The bank file is a file.** There is no host-to-host connection to any bank, and ISO 20022 XML is not produced.
+
+For the wider question of which HR stack fits a Pakistani business, see [choosing an HRMS for Pakistan](/blog/best-hrms-for-pakistan-businesses/) and the [Pakistan payroll overview](/countries/pakistan/payroll/). The [payroll module hub](/modules/payroll/) lists the other add-ons.
+
+If you want a second pair of eyes on your structure before the first live month, [send us a note](/contact/) with your salary split and headcount.

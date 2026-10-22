@@ -1,0 +1,153 @@
+---
+title: "Odoo 20: what is new, what breaks in custom code, and how to plan a move from Odoo 19"
+metaTitle: "Odoo 20: New Features and Migrating from 19"
+description: "Odoo 20 features from the official release notes, the code changes we hit porting 195 modules from 19 to 20, and an upgrade and go-live checklist."
+targetQuery: "Odoo 20 new features, migrate Odoo 19 to 20"
+category: "Upgrades"
+summary: "What Odoo actually announced for version 20, the framework changes that break Odoo 19 custom modules, and how to run the upgrade on Enterprise, Odoo.sh or Community."
+published: 2026-10-23
+updated: 2026-10-23
+related: ["n8n-odoo-automation", "zkteco-adms-odoo", "odoo-payroll-pakistan"]
+linkFrom: ["/blog/odoo-18-vs-odoo-19-upgrade-now-or-wait/", "/services/odoo-migration/", "/odoo-community/"]
+sources:
+  - label: "Odoo 20 release notes"
+    url: "https://www.odoo.com/odoo-20-release-notes"
+  - label: "Odoo 20 documentation, ORM changelog"
+    url: "https://www.odoo.com/documentation/20.0/developer/reference/backend/orm/changelog.html"
+  - label: "Odoo 19 documentation, External JSON-2 API (XML-RPC and JSON-RPC deprecation)"
+    url: "https://www.odoo.com/documentation/19.0/developer/reference/external_api.html"
+  - label: "Odoo 19 documentation, Upgrade"
+    url: "https://www.odoo.com/documentation/19.0/administration/upgrade.html"
+  - label: "Odoo upgrade service"
+    url: "https://upgrade.odoo.com/"
+  - label: "odoo/odoo on GitHub, 20.0 branch"
+    url: "https://github.com/odoo/odoo/tree/20.0"
+  - label: "OCA OpenUpgrade on GitHub, 20.0 branch"
+    url: "https://github.com/OCA/OpenUpgrade/tree/20.0"
+faqs:
+  - q: "Is Odoo 20 released?"
+    a: "Yes. Odoo published the Odoo 20 release notes in September 2026 and the 20.0 branch is live in the public odoo/odoo repository on GitHub, receiving fixes. The developer documentation for 20.0 is also online."
+  - q: "Should I upgrade from Odoo 19 to Odoo 20 now?"
+    a: "Only if a specific Odoo 20 feature pays for the effort and every custom or third party module you rely on is available for 20. Odoo says each major version is supported for three years, so a stable Odoo 19 database has time. Run a test upgrade first either way."
+  - q: "Can Odoo Community be upgraded from 19 to 20?"
+    a: "Not through Odoo's upgrade service, whose upload form asks for an Enterprise subscription code. Community databases normally go through OCA OpenUpgrade, and as of late October 2026 its 20.0 branch exists but has no migration scripts yet. Plan a Community move to 20 for later, or budget for scripted migration."
+  - q: "Will my Odoo 19 custom modules work on Odoo 20?"
+    a: "Not unchanged. A module with a 19.0 version number is simply not installable on 20, and most modules need security, binary field and JavaScript changes. Odoo's own upgrade documentation makes custom modules the responsibility of their maintainer."
+  - q: "What happens to XML-RPC integrations in Odoo 20?"
+    a: "They still work, but Odoo's documentation marks /xmlrpc, /xmlrpc/2 and /jsonrpc as deprecated and scheduled for removal in Odoo 22 (fall 2028), and on Odoo Online from 21.1 (winter 2027). New integrations should use the JSON-2 API."
+---
+import Callout from '../../components/guides/Callout.astro';
+
+Odoo 20 is out, the marketing is loud, and the question on the table is narrow: do we move our Odoo 19 database, when, and what will it cost us in custom code. The feature list answers the first part. The second part is where upgrades go over budget, and it is mostly invisible until someone tries to install a 19 module on 20. We ported 195 of our own Odoo 19 modules to 20 in October 2026, so this guide pairs what Odoo has published with what actually broke.
+
+## What Odoo has published about version 20
+
+The [Odoo 20 release notes](https://www.odoo.com/odoo-20-release-notes) are dated September 2026, the [20.0 branch](https://github.com/odoo/odoo/tree/20.0) is live on GitHub and taking fixes, and the 20.0 developer documentation is online. Headline items from the release notes, by area:
+
+| Area | What the release notes say |
+|---|---|
+| General | Offline mode: create, edit, archive and delete records while offline. Activities can be assigned to a person or a role. |
+| AI | All AI features need credits bought through IAP. Agents for automation. Connecting to a database over MCP (Model Context Protocol). |
+| Accounting | Ask the AI assistant about your finances. Payment statuses renamed: "In Process" becomes "Paid", and "Paid" becomes "Reconciled". |
+| Inventory | Better intercompany resupply routes. Suggested min and max for reordering rules from demand history. |
+| Manufacturing | Manufacturing orders planned as soon as possible by default; redesigned Kanban. |
+| Payroll and HR | Payroll dashboard rebuilt around setup warnings and pay runs; work entries and the Planning to Payroll link removed. Remote Work merged into Employees. Time off by calendar days or working days. |
+| Attendances | A photo at check in when the device has a camera. |
+| Sales and Purchase | A sales dashboard on the quotations list; order lines without a product. A default Incoterm per vendor. |
+| Project | Projects created from opportunities; the profitability report replaced by budget and margin reports. |
+| Point of Sale | Several currencies at checkout. |
+| Website | Structured data added to pages by default; a larger AI website assistant. |
+| Industries | New packages such as Catering and Vineyard; Construction Developer renamed Property Developer. |
+
+Read the notes for your own apps rather than a summary. Two items above change existing behaviour rather than add to it: the payment status rename (reports, filters and integrations that read the state need checking) and the removal of payroll work entries (anything built on them needs redesign). Both matter if you run a localised payroll, as in our [Pakistan payroll guide](/odoo-guides/odoo-payroll-pakistan/).
+
+## What changes for developers
+
+Odoo's [ORM changelog](https://www.odoo.com/documentation/20.0/developer/reference/backend/orm/changelog.html) lists the framework changes. Several landed in the Odoo Online 19.x releases, so a jump from 19.0 to 20.0 takes all of them at once:
+
+- `ir.access`, which merges access control lists and record rules (19.4).
+- Binary fields hold a `BinaryValue` and base64 is no longer used through the data flow (19.2 and 19.3).
+- A new HTTP server, and `request` removed from model code in favour of `env.website` (19.4).
+- A new API for `ir.config_parameter` (19.1).
+- In 20.0: `Model._table_query` removed, a copy function on fields that adds "(copy)" to a duplicated `name`, and manifest terms moved into each module's translation files.
+
+### What we hit porting 195 modules
+
+These are from our own port against the `odoo:20.0` Docker image of late September 2026, across tools, themes, HR and payroll, POS, van sales, construction, garage, CAFM and connectors. Each item broke at least one real module.
+
+| Odoo 19 | Odoo 20 | How it fails |
+|---|---|---|
+| `'version': '19.0.x.y.z'` | `'version': '20.0.x.y.z'` | Silently: the module is marked not installable and install exits with success. Grep the log for "incompatible version". |
+| `security/ir.model.access.csv` and `ir.rule` records | One `security/ir.access.csv` with an `operation` column (`r`, `cru`, `crud`) and a `domain` | Install crashes on the missing model. Group permissions are now a union, so a manager row without a domain grants everything. |
+| `get_param` / `set_param` | Typed `get_str`, `get_bool`, `get_int`, `set_str` and so on | An unticked boolean setting read as a string is truthy. |
+| Binary fields as base64 bytes, `ir.attachment.datas` | `BinaryValue` objects, `raw` | Writing `datas` only warns, and the attachment is created empty. |
+| `t-esc` and `t-raw` in server templates | `t-out` | The element renders empty in PDF reports, with only a log line. |
+| `t-set` inside a `t-call` body | Parameters as attributes of the `t-call` | The value never reaches the called template. No error. |
+| Owl 2 components | Owl 3: `this.` in templates, `useProps` instead of `static props`, `proxy` instead of `useState` | `static props` throws; missing `this.` gives undefined values. |
+| Font Awesome icons (`fa fa-phone`, `icon="fa-print"`) | Material Symbols via `oi` and `data-icon` | Icons render as nothing. |
+| `stock.scrap`, `stock.return.picking`, `mail.tracking.value`, `res.bank`, `account.group` | Removed; scraps are moves with `is_scrap`, returns via `_create_return()` | Import or install errors, or quiet loss of tracking logic. |
+| `product_uom` on stock moves, `product_uom_id` on purchase lines | `uom_id` | Invalid field on create. |
+| `check_access_rights`, `toggle_active`, `_check_recursion` | `check_access`, `action_archive`, `_has_cycle` | Attribute errors at runtime. |
+
+A real example, one of the smallest modules we ported (the ZKTeco push receiver from our [ZKTeco guide](/odoo-guides/zkteco-adms-odoo/)): the manifest version, the security file rewritten to `ir.access.csv`, one `get_param` changed to `get_str`, the store text, and every button icon changed from Font Awesome names to Material Symbols. No business logic changed, and it still took a test run with and without demo data to trust it. Larger modules with JavaScript, PDF reports and portal pages took days, not minutes.
+
+### Odoo's code upgrader helps, partly
+
+Odoo 20 ships rewrite scripts you can run with `odoo upgrade_code`, including an Owl 3 migration and an `ir.access` converter. Use them as a first pass on a copy and diff the output. In our run the Owl script left `static props` and most template `this.` fixes for us, and the access script needed patching inside the Docker image and printed warnings wherever merging rules widened or narrowed access. Every one of those warnings needed a person to read it.
+
+<Callout title="Security is where a quiet port does damage">
+In Odoo 19 a record rule on a group restricted everyone in that group. In Odoo 20 permissions from different groups are added together. A converted access file can install cleanly and still give a role more than it had. Test every role with a real login, not only as admin.
+</Callout>
+
+### Integrations
+
+XML-RPC and JSON-RPC still answer on 20, but Odoo's [external API documentation](https://www.odoo.com/documentation/19.0/developer/reference/external_api.html) says `/xmlrpc`, `/xmlrpc/2` and `/jsonrpc` are deprecated and scheduled for removal in Odoo 22 (fall 2028), and on Odoo Online from 21.1 (winter 2027). If you are touching integrations during the upgrade, move them to the JSON-2 API now. Our [n8n and Odoo guide](/odoo-guides/n8n-odoo-automation/) covers the options.
+
+## Which upgrade route applies to you
+
+Odoo's [upgrade documentation](https://www.odoo.com/documentation/19.0/administration/upgrade.html) says each major version is supported for three years, and that a database cannot be upgraded until its custom modules are available for the new version, which is the maintainer's responsibility.
+
+| Your setup | Route | Status in October 2026 |
+|---|---|---|
+| Odoo Online | Database manager, Manage, Upgrade: test first, then production | Odoo runs it |
+| Odoo.sh | Upgrade from a staging branch, then production on a new commit | Odoo migrates standard data; you port custom modules in the repository |
+| Enterprise on premise | `python <(curl -s https://upgrade.odoo.com/upgrade) test -d yourdb -t 20.0`, then the production variant | The [upgrade service](https://upgrade.odoo.com/) upload form asks for an Enterprise subscription code |
+| Community | OCA OpenUpgrade or your own migration scripts | The [OpenUpgrade 20.0 branch](https://github.com/OCA/OpenUpgrade/tree/20.0) exists but has no migration scripts yet |
+
+For Community users this is the practical answer today: stay on 19 until OpenUpgrade coverage for 20 arrives, unless you are prepared to fund scripted migration. Our [Odoo Community page](/odoo-community/) and the [Community versus Enterprise post](/blog/odoo-community-vs-enterprise-decided-properly/) cover the wider trade off.
+
+## How to run the upgrade
+
+1. **Inventory.** List every installed module, split into standard, store or third party, and your own. For each non-standard one, find out whether a 20.0 version exists and who will port it.
+2. **Read the release notes for your apps only.** Flag behaviour changes such as payment states and payroll work entries.
+3. **Request a test upgrade.** On Online and Odoo.sh through the interface, on premise with the `test` command above. You can request several.
+4. **Port custom modules on a branch.** Version bump, security, binary fields, templates, JavaScript, icons, renamed fields, in that order. Run Odoo's `upgrade_code` scripts first, then fix by hand.
+5. **Run every module's tests with and without demo data.** We found tests that only passed one way on 19.
+6. **Click through as each role.** Sales user, warehouse user, accountant, portal user. Access changes show up here and nowhere else.
+7. **Check the data.** Compare open receivables and payables, stock valuation, open orders and payroll totals between the 19 copy and the upgraded test.
+8. **Print everything.** Invoices, delivery slips, payslips and any custom report, because a broken `t-esc` renders blank without an error.
+9. **Test integrations** against the upgraded test database, with webhook URLs and API keys pointed at test endpoints.
+10. **Rehearse the cut over.** Time the production upgrade on a recent copy so you know how long the database will be unavailable.
+
+## Go-live checklist
+
+| Check | Owner | Done when |
+|---|---|---|
+| Every installed non-standard module has a tested 20.0 version | Developer | Installs on a fresh 20 database and on the upgraded copy |
+| Role-by-role access test | Functional lead | Each role can do its job and cannot see what it should not |
+| Accounting balances match the 19 copy | Accountant | Trial balance, aged receivables and payables agree |
+| Stock quantities and valuation match | Warehouse lead | Spot counts and valuation report agree |
+| Reports and PDFs render | Functional lead | No blank fields on invoices, slips, payslips |
+| Integrations tested | Developer | Each integration completes a real round trip |
+| Users told about changed screens | Project lead | Short notes sent, especially for payments and payroll |
+| Backup and rollback plan | Developer | A restorable 19 backup taken just before cut over |
+| Downtime window agreed | Project lead | Timed on a rehearsal |
+
+## Limitations of this guide
+
+- It covers what Odoo published by 23 October 2026 and what we hit in our own modules. Your modules will hit different things.
+- Feature availability differs between Community and Enterprise and between Online and on premise. Check each feature you rely on in the release notes.
+- We have not used Odoo's upgrade service on a production database for 20 yet, so we do not quote upgrade times.
+- OpenUpgrade status changes quickly; check the repository before planning a Community move.
+
+If the call is 19 or 20 rather than 18 or 19, the reasoning in our [Odoo 18 versus 19 post](/blog/odoo-18-vs-odoo-19-upgrade-now-or-wait/) still applies: upgrade for a reason you can name. Our [migration service page](/services/odoo-migration/) explains how we run these projects, and if you want your module list checked against 20 before you commit, [send it over](/contact/).

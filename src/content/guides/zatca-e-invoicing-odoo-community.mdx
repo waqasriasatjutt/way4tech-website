@@ -1,0 +1,142 @@
+---
+title: "ZATCA e-invoicing on Odoo 19 Community: what Phase 2 needs and what already ships free"
+metaTitle: "ZATCA Phase 2 on Odoo 19 Community"
+description: "ZATCA Phase 1 and Phase 2 rules, the 2026 waves, and what Odoo 19 Community does for clearance and reporting, with setup steps and the real gaps."
+targetQuery: "ZATCA Odoo Community 19"
+category: "Tax and compliance"
+region: "Saudi Arabia"
+summary: "Phase 2 integration is not an Enterprise-only feature in Odoo 19: the ZATCA module sits in the free Community code. Here is what it does, how to onboard it on the Fatoora portal, and where the gaps are."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Restaurant Fiscal Compliance"
+    technical: "w4_resto_tax_compliance"
+    note: "Phase 1 QR on restaurant POS receipts only, not Phase 2. USD 199"
+related: ["uae-e-invoicing-odoo", "fbr-pos-integration-odoo", "fbr-digital-invoicing-odoo"]
+linkFrom: ["/countries/saudi-arabia/e-invoicing/", "/countries/saudi-arabia/", "/services/odoo-e-invoicing/", "/blog/odoo-e-invoicing-clearance-vs-reporting/", "/blog/odoo-implementation-in-saudi-arabia/", "/odoo-community/"]
+sources:
+  - label: "ZATCA, E-Invoicing roll-out phases"
+    url: "https://zatca.gov.sa/en/E-Invoicing/Introduction/Pages/Roll-out-phases.aspx"
+  - label: "ZATCA, Criteria for Wave 24 of the Integration Phase"
+    url: "https://zatca.gov.sa/en/Pages/news_1426.aspx"
+  - label: "ZATCA, Criteria for Wave 25 of the Integration Phase (24 July 2026)"
+    url: "https://zatca.gov.sa/en/MediaCenter/News/Pages/Wave25-E-invoicing.aspx"
+  - label: "ZATCA, Wave 20 of the Integration Phase"
+    url: "https://zatca.gov.sa/en/MediaCenter/News/Pages/e-invoicing-wave-20-2025.aspx"
+  - label: "ZATCA, E-Invoicing Detailed Guidelines (Fatoora)"
+    url: "https://zatca.gov.sa/en/E-Invoicing/Introduction/Guidelines/Documents/E-Invoicing_Detailed__Guideline.pdf"
+  - label: "ZATCA, Electronic Invoice XML Implementation Standard v1.2"
+    url: "https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20230519_ZATCA_Electronic_Invoice_XML_Implementation_Standard_%20vF.pdf"
+  - label: "Odoo 19 documentation, Saudi Arabia fiscal localization"
+    url: "https://www.odoo.com/documentation/19.0/applications/finance/fiscal_localizations/saudi_arabia.html"
+  - label: "odoo/odoo on GitHub, l10n_sa_edi manifest (19.0, LGPL-3)"
+    url: "https://github.com/odoo/odoo/blob/19.0/addons/l10n_sa_edi/__manifest__.py"
+faqs:
+  - q: "Does Odoo 19 Community support ZATCA Phase 2?"
+    a: "Yes. The Saudi e-invoicing module l10n_sa_edi, and its Point of Sale companion l10n_sa_edi_pos, are in the public Odoo 19 Community code under the LGPL licence. They onboard each sales journal with ZATCA, sign the UBL 2.1 XML, and send standard invoices for clearance and simplified invoices for reporting."
+  - q: "What does Odoo Enterprise add for Saudi Arabia?"
+    a: "The e-invoicing integration itself is the same module in both editions. Enterprise adds the Accounting app's reporting, including the Saudi accounting reports module that is not in the Community code, plus Odoo's own support and hosting. Whether that is worth the subscription depends on how you file your VAT return, not on ZATCA integration."
+  - q: "Which ZATCA wave is due next?"
+    a: "As of October 2026, ZATCA has announced Wave 25: taxpayers whose VAT-subject revenue exceeded SAR 187,500 in any of 2022, 2023, 2024 or 2025 must integrate with the Fatoora platform by 1 February 2027. ZATCA notifies each targeted taxpayer directly, at least six months before its date."
+  - q: "Is a Phase 1 QR code still enough?"
+    a: "Only until your wave's integration date. Phase 1 needs electronic invoices with a QR code, while Phase 2 needs the signed XML sent to ZATCA, either for clearance before a standard invoice is issued or for reporting within 24 hours for a simplified one."
+---
+import Callout from '../../components/guides/Callout.astro';
+
+You run Odoo 19 Community in Saudi Arabia, ZATCA has written to say your wave is due, and every implementer you call quotes an Enterprise subscription plus a third-party ZATCA connector. Before you sign either, check what is already in the free code. Odoo's Saudi e-invoicing module, the one that onboards with the Fatoora portal and clears or reports invoices, is part of Odoo 19 Community. This guide covers the ZATCA rules that apply in October 2026, what that module does and does not do, how to switch it on, and when you would still need something more.
+
+## What ZATCA requires
+
+### Two phases
+
+- **Phase 1, Generation**, has applied since **4 December 2021** to all resident VAT taxpayers ([ZATCA roll-out phases](https://zatca.gov.sa/en/E-Invoicing/Introduction/Pages/Roll-out-phases.aspx)). Invoices and notes are issued and kept in an electronic solution, and simplified invoices carry a QR code. The Phase 1 QR is a base64 string of five TLV tags: seller name, VAT number, timestamp, invoice total with VAT, and VAT total.
+- **Phase 2, Integration**, started on **1 January 2023** and is rolled out in waves. Each wave must connect its e-invoicing solution to ZATCA's **Fatoora** platform, issue invoices in the set XML format, and add the extra fields. ZATCA notifies each wave at least six months before its date.
+
+### Clearance and reporting
+
+The [ZATCA detailed guidelines](https://zatca.gov.sa/en/E-Invoicing/Introduction/Guidelines/Documents/E-Invoicing_Detailed__Guideline.pdf) split invoices in two:
+
+| | Standard tax invoice (B2B, B2G) | Simplified tax invoice (B2C) |
+|---|---|---|
+| Model | Clearance | Reporting |
+| When it goes to ZATCA | Before you share it; it is not valid until cleared | Within 24 hours of issue |
+| What is sent | Signed UBL 2.1 XML | Signed UBL 2.1 XML, not the PDF |
+| Who stamps it | ZATCA clears and returns it | Your solution stamps it with its CSID |
+| QR code | On the cleared invoice | Phase 2 QR, 9 TLV tags, generated by your solution |
+
+The **CSID** (cryptographic stamp identifier) identifies each invoice generating unit. A unit first obtains a compliance CSID from a certificate signing request, passes ZATCA's compliance checks, then gets a production CSID. The XML follows ZATCA's [UBL 2.1 implementation standard](https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20230519_ZATCA_Electronic_Invoice_XML_Implementation_Standard_%20vF.pdf), where the invoice type code tells a standard invoice from a simplified one.
+
+### Where the waves stand
+
+| Wave | VAT-subject revenue over | In any of | Integrate by |
+|---|---|---|---|
+| [Wave 20](https://zatca.gov.sa/en/MediaCenter/News/Pages/e-invoicing-wave-20-2025.aspx) | SAR 1.5 million | 2022 or 2023 | 31 October 2025 |
+| [Wave 24](https://zatca.gov.sa/en/Pages/news_1426.aspx) | SAR 375,000 | 2022, 2023 or 2024 | 30 June 2026 |
+| [Wave 25](https://zatca.gov.sa/en/MediaCenter/News/Pages/Wave25-E-invoicing.aspx) | SAR 187,500 | 2022, 2023, 2024 or 2025 | 1 February 2027 |
+
+Wave 25 was announced on 24 July 2026 and is the next deadline as of this guide. ZATCA writes to each targeted taxpayer, so your notification letter, not this table, is what fixes your own date.
+
+## What Odoo 19 Community actually ships
+
+We checked the public [odoo/odoo 19.0 source](https://github.com/odoo/odoo/blob/19.0/addons/l10n_sa_edi/__manifest__.py) and the [Saudi localization docs](https://www.odoo.com/documentation/19.0/applications/finance/fiscal_localizations/saudi_arabia.html) on 23 October 2026:
+
+| Module | What it does | In Community 19 |
+|---|---|---|
+| `l10n_sa` | Saudi chart of accounts, taxes, invoice layout, Phase 1 QR | Yes |
+| `l10n_sa_edi` | Phase 2: journal onboarding, CSIDs, signed UBL 2.1 XML, clearance and reporting APIs | Yes, LGPL-3 |
+| `l10n_sa_pos` | Saudi fields and behaviour on POS orders | Yes |
+| `l10n_sa_edi_pos` | Phase 2 for Point of Sale | Yes, LGPL-3 |
+| `l10n_sa_withholding_tax` | Withholding tax on payments | Yes |
+| `l10n_sa_reports` | Saudi accounting reports | No, Enterprise only |
+
+The e-invoicing module depends only on Community modules (`account_edi`, `account_edi_ubl_cii`, `base_vat`, `certificate` and `l10n_sa`). Its code carries the three Fatoora gateways (developer sandbox, simulation, core production), requests the compliance and production CSIDs, runs the compliance checks during onboarding, and sends each invoice to the clearance endpoint or the reporting endpoint depending on whether it is simplified. Its views extend the standard Invoicing settings, journal and invoice forms, so they appear in Community.
+
+So the common belief that ZATCA Phase 2 needs Odoo Enterprise is wrong for Odoo 19. What Enterprise adds is the full Accounting app and its reports, Odoo's own support, and Odoo.sh or Odoo Online hosting. Our [Community vs Enterprise](/blog/odoo-community-vs-enterprise-decided-properly/) piece goes through that choice in general.
+
+### The realistic options
+
+| Route | When it fits |
+|---|---|
+| Community 19 with `l10n_sa_edi` | Standard invoicing flows, a team that can run its own server and handle the onboarding |
+| Enterprise with the same module | You want Odoo's reporting, support and hosting as well |
+| A third-party ZATCA module | You are on an older Odoo version without a working integration, or need features the standard module lacks |
+| Middleware or a ZATCA solution provider | Several systems issue invoices and you want one stamping point |
+| Custom build | Only for flows the standard module cannot express; rarely needed on 19 |
+
+If you are on Odoo 16, 17 or 18 Community, check the `l10n_sa_edi` module in your own version's code before buying anything, and consider whether the upgrade to 19 is the cheaper fix. Our [Saudi implementation notes](/blog/odoo-implementation-in-saudi-arabia/) cover the wider setup.
+
+## How to set it up in Odoo 19 Community
+
+The Odoo docs say "Accounting"; in Community the same menus sit under **Invoicing**.
+
+1. **Install the module.** Apps, remove the Apps filter, search "Saudi Arabia - E-invoicing" and install it. For tills, also install the Point of Sale e-invoicing module.
+2. **Complete the company.** In Settings, Companies: legal name (the docs cap it at 63 characters), full address including building number, plot identification and district, the identification scheme, the VAT number, and SAR as currency. Gaps here are what make onboarding fail.
+3. **Pick the API mode.** Invoicing, Configuration, Settings, ZATCA API Modes. Start in Sandbox, move to Simulation for pre-production testing, then Production. Production cannot be switched back once an invoice has been sent.
+4. **Get an OTP.** Log in to the Fatoora portal for the matching environment and generate an OTP. Simulation and production OTPs expire after 60 minutes.
+5. **Onboard each sales journal.** Invoicing, Configuration, Journals, open the sales journal, ZATCA tab, Onboard, and enter the OTP. Every sales journal is onboarded separately.
+6. **Clean customer data.** B2B customers need their VAT number and a full Saudi address, or clearance rejects the invoice.
+7. **Issue and process.** Confirm an invoice, then use Process now on the banner and check the response in the chatter. Standard invoices are cleared; simplified ones are reported.
+8. **Point of Sale.** Point of Sale, Configuration, Settings, Accounting section: open the default invoice journal and onboard it the same way. The docs ask for a customer on each order before it is finalised.
+9. **Test the awkward cases** in Simulation: credit and debit notes, down payments, retention, and a failed send followed by a retry.
+
+<Callout title="Watch the invoice chain">
+Phase 2 invoices are chained: each one carries the hash of the previous one. If an invoice in a journal fails, Odoo marks it as the blocking invoice and the ones after it wait. Fix the first failure rather than skipping it.
+</Callout>
+
+### Before you switch to Production
+
+Treat Simulation as a dress rehearsal with your real data, not demo records. Send at least one of every document you actually issue: a B2B invoice to a VAT registered customer, a cash sale as a simplified invoice, a credit note against each, a debit note, and an invoice in a foreign currency if you sell in one. Then check three things on each: the response in the chatter says it was cleared or reported, the QR on the PDF decodes, and the totals on the PDF match the XML. Only then change the API mode, because Production is a one way switch and every invoice after that point counts.
+
+## Where our restaurant module fits
+
+Our [Restaurant Fiscal Compliance](https://apps.odoo.com/apps/modules/19.0/w4_resto_tax_compliance) module (USD 199, part of the [restaurant suite](/products/wt-restaurant-management/)) does one ZATCA thing: it prints the **Phase 1** QR, the five TLV tags, on restaurant POS receipts headed "Simplified Tax Invoice", configured under Restaurant, Configuration, Fiscal Providers. It has no ZATCA API and does **not** do Phase 2. If you are in a Phase 2 wave, use Odoo's `l10n_sa_edi_pos` for the tills; our module's value is in the Pakistani FBR and provincial integrations covered in the [FBR POS guide](/odoo-guides/fbr-pos-integration-odoo/).
+
+## Limitations
+
+- **The standard module follows Odoo's flows.** Invoices raised outside Odoo, or a heavily customised invoice form, need checking against ZATCA's rules before go live.
+- **Odoo does not decide your wave or your scope.** ZATCA's letter does.
+- **Community has no Saudi accounting reports module.** You still need a way to prepare the VAT return.
+- **Self-hosted means self-supported.** Certificate renewal, server time and failed sends are yours to watch.
+- **This is not tax advice.** Questions about which invoices are standard or simplified belong with your adviser.
+
+The UAE is taking a different, reporting-only route; see the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/), and our [clearance vs reporting explainer](/blog/odoo-e-invoicing-clearance-vs-reporting/) compares the two. For the Saudi rules in one place, see the [Saudi e-invoicing page](/countries/saudi-arabia/e-invoicing/) and our [e-invoicing service](/services/odoo-e-invoicing/); if you want a hand with onboarding, [contact us](/contact/).

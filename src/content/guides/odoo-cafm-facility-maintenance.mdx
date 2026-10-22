@@ -1,0 +1,159 @@
+---
+title: "Odoo CAFM: planned maintenance, SLA clocks and permits for facility management"
+metaTitle: "Odoo CAFM for Facility Maintenance"
+description: "Run hard services facility maintenance on Odoo 19: asset register, planned maintenance on time or meter, SLA clocks, permits, statutory inspections."
+targetQuery: "odoo cafm facility maintenance"
+category: "Industry"
+summary: "What a facilities team or maintenance contractor needs from Odoo, where the standard Maintenance app stops, and how to set up a CAFM with SLA clocks, permits and contract billing."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+  - name: "Facility Management Enterprise"
+    technical: "wt_facility_enterprise"
+    note: "USD 850 add-on, needs Facility Management"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Facility Management CAFM demo"
+related: ["odoo-labour-camp-management", "odoo-garage-management", "n8n-odoo-automation"]
+linkFrom: ["/industries/facility-management/", "/products/wt-facility-management/", "/modules/maintenance/"]
+sources:
+  - label: "Odoo 19 documentation, Maintenance"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/maintenance.html"
+  - label: "Odoo 19 documentation, Maintenance requests"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/maintenance/maintenance_requests.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch, maintenance models (Community)"
+    url: "https://github.com/odoo/odoo/blob/19.0/addons/maintenance/models/maintenance.py"
+  - label: "HSE, Lifting equipment used for lifting people at work"
+    url: "https://www.hse.gov.uk/work-equipment-machinery/lift-persons.htm"
+faqs:
+  - q: "Is the Odoo Maintenance app a CAFM?"
+    a: "Not on its own. It tracks equipment and corrective or preventive maintenance requests, with recurring preventive work and mean time between failures. It has no site, building, floor and room register, no response and resolution SLA clocks, no permit to work and no contractor insurance control."
+  - q: "Can planned maintenance run on run hours instead of dates?"
+    a: "Yes, with the Facility Management module. A schedule fires on a calendar interval, on a meter reading such as run hours or lift cycles, or on whichever comes first. Readings are typed in or logged on a job; nothing is fetched from a BMS."
+  - q: "Do SLA clocks stop outside working hours?"
+    a: "They do when the service level runs in cover hours only. A four hour target on a contract covering 08:00 to 18:00 does not run overnight. Whether time on hold stops the resolution clock is a company setting, because contracts differ."
+  - q: "Can tenants report faults through a portal?"
+    a: "No. Faults are logged by your help desk or technicians inside Odoo. There is no tenant or occupier portal and no phone app; technicians use the Odoo web client."
+  - q: "Does it need Odoo Enterprise?"
+    a: "No. Both modules are built for Odoo 19 Community and also run on Enterprise. The Enterprise add-on is a module edition name for the contracts and billing layer."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A facilities manager is judged on a handful of things: did the lift get its examination on time, did the contractor turn up within the hour on a P1, is the estate drifting towards planned work or living on breakdowns, and is the chiller now costing more to keep than to replace. Spreadsheets and a shared inbox can answer each of those once. They cannot answer them every month without someone rebuilding the numbers. A CAFM system answers them because every job is raised against an asset in a room, and every job carries its own clocks. This guide explains what that takes in Odoo 19 and how to set it up.
+
+## What a hard services maintenance operation needs
+
+Whether you are an in house maintenance department, a managing agent or a contractor holding a facilities contract, the requirements are much the same:
+
+1. **An estate register with a hierarchy.** Site, building, floor, room. A fault is reported against a room, not a description of one.
+2. **An asset tree.** A compressor sits inside a chiller, which sits inside a plant room. Money spent on the part should roll up to the whole.
+3. **Planned maintenance that raises itself.** On a calendar interval, on a meter reading, or on whichever comes first, which is how many manufacturer warranties are written.
+4. **Two clocks per reactive job.** Response and resolution are contracted separately and argued about separately. Cover hours matter: a routine job reported at five on Friday is not late on Saturday morning if the contract covers weekdays only.
+5. **Statutory inspections with evidence.** Some examinations are legal duties. In Great Britain, for example, equipment used for lifting people must be thoroughly examined at six-monthly intervals or under an examination scheme drawn up by a competent person ([HSE guidance](https://www.hse.gov.uk/work-equipment-machinery/lift-persons.htm)). The certificate reference is the proof. Intervals for other plant depend on your country and the standards your insurer applies, so confirm them with your competent person.
+6. **Permit to work.** Hot work, confined spaces, electrical isolation and working at height should not start without the right permit.
+7. **Contractor control.** An uninsured firm should be blocked before the job is assigned, not after.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community ships a **Maintenance** app ([Odoo 19 documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/maintenance.html)). It tracks equipment with categories, serial numbers, warranty dates and a cost, and it handles maintenance requests that are either corrective or preventive. A preventive request can recur every so many days, weeks, months or years, forever or until a date, and equipment shows mean time between failures, mean time to repair and an estimated next failure date ([maintenance models, 19.0 source](https://github.com/odoo/odoo/blob/19.0/addons/maintenance/models/maintenance.py)). Requests sit on a kanban by stage with priority, teams and a calendar, as described in the [maintenance requests documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/maintenance/maintenance_requests.html). The [Maintenance module page](/modules/maintenance/) on this site covers it further.
+
+That is a sound tool for a factory floor. For a building estate, it stops short:
+
+- No site, building, floor and room hierarchy.
+- No recurrence on a meter reading; the recurrence is by calendar only.
+- No response and resolution due times, no cover hours, no breach flags.
+- No permit to work, no statutory inspection interval per asset class, no certificate reference written back.
+- No contractor insurance check, no rate per contractor, no vendor bill raised off the job.
+- No lifetime cost against replacement value.
+
+The [Facility Management module](https://apps.odoo.com/apps/modules/19.0/wt_facility_management/) is a separate set of models built around an estate. It does not extend or import from Odoo Maintenance, so decide which one you run; using both for the same plant only splits the history.
+
+| Need | Odoo Maintenance (Community) | Facility Management | + Enterprise add-on |
+|---|---|---|---|
+| Equipment or asset register | Yes | Yes, as a tree with sub assets | Yes |
+| Site, building, floor, room register | No | Yes | Yes |
+| Preventive work on a calendar interval | Yes | Yes | Yes |
+| Planned work on a meter or whichever comes first | No | Yes | Yes |
+| Response and resolution SLA clocks with cover hours | No | Yes | Yes |
+| Permit to work with controls per type | No | Yes | Yes |
+| Statutory inspections per asset class | No | Yes | Yes |
+| Contractor insurance block, vendor bill off the job | No | Yes | Yes |
+| Lifetime cost against replacement value | No | Yes | Yes |
+| Maintenance contracts, billing cycle, service credits | No | No | Yes |
+| Rate cards, chargeable work, budgets | No | No | Yes |
+
+## How the CAFM works
+
+### Register and asset classes
+
+Sites carry the address, the site manager and a planned against reactive ratio for the last ninety days. Rooms carry a restricted flag with an access note; when a job is raised in a restricted room, the access rules are copied onto the job sheet. Assets have a parent, so cost rolls up, and they move through Not Yet Commissioned, In Service, Faulty and Decommissioned. An asset with open jobs cannot be decommissioned.
+
+Eleven asset classes ship ready to use or rename, from chillers metered in run hours to passenger lifts with a six month statutory interval metered in cycles, fire detection on six months, emergency lighting on twelve and electrical distribution on sixty. Statutory intervals live on the class; the last examination date and certificate reference live on the asset; the next date and an overdue flag follow automatically.
+
+<Shot src="/odoo-guides/odoo-cafm-facility-maintenance/statutory-inspections.webp" alt="Statutory Inspections list in Odoo with assets such as a boiler, passenger lift, fire alarm panel, emergency lighting and generator, their class, building, criticality, condition, next inspection date, lifetime cost and spend against replacement" width={1280} height={363} caption="Statutory inspections: every asset with an examination interval and its next date due." />
+
+### Planned maintenance
+
+One schedule per asset per task fires on a calendar interval, on a meter, or on whichever comes first. The meter forecast uses the asset's reading trend, so a schedule due at a run hour figure still has a date to plan labour against. A schedule will not raise a second job while one is open, and completing the job moves the next due date on. Generate Now raises it by hand; the nightly job raises it a set number of days ahead, fourteen by default.
+
+<Shot src="/odoo-guides/odoo-cafm-facility-maintenance/maintenance-schedules.webp" alt="Maintenance Schedules list in Odoo with references, asset, site, trigger on a calendar interval or whichever comes first, interval, next due date, planned hours and a statutory flag" width={1280} height={514} caption="Planned maintenance schedules: calendar, meter or whichever comes first." />
+
+### Reactive work and the two clocks
+
+A work order records where (site down to asset), the origin, the work type, priority P1 to P4, the caller and the fault in their words. The priority picks the service level, and the service level sets the response and resolution due times. Four ship as the estate standard:
+
+| Priority | Response | Resolution | Cover |
+|---|---|---|---|
+| P1 Emergency | 1 hour | 4 hours | Around the clock |
+| P2 Urgent | 4 hours | 24 hours | Around the clock |
+| P3 Routine | 8 hours | 40 hours | 08:00 to 18:00 |
+| P4 Scheduled | 40 hours | 200 hours | 08:00 to 18:00 |
+
+A contractor's own agreement beats the estate default. In cover hours mode, the clock does not run overnight. Time on hold is banked, and whether it comes off the resolution clock is a company setting. The form shows an SLA Breached ribbon the moment either clock is missed.
+
+<Shot src="/odoo-guides/odoo-cafm-facility-maintenance/work-order-sla.webp" alt="Reactive work order in Odoo for a fire panel fault, with site, building, floor, room and asset, priority P1 Emergency, skills needed, and the clocks section showing response and resolution due times both missed under an SLA Breached ribbon" width={1280} height={800} caption="A P1 work order with both clocks missed and the SLA Breached ribbon on." />
+
+### Permits, contractors and cost
+
+A job whose work type needs a permit cannot start until a permit of the matching type is issued and the job falls inside its window. Each type demands its own controls: hot work needs a fire watch period, confined space needs the atmosphere test time and a standby person, electrical isolation needs the lock and tag confirmed. Only a supervisor or manager can issue, and a technician cannot sign their own.
+
+Contractors carry trades, sites covered, day and callout rates and public liability cover with expiry. A firm inside the grace period before expiry, seven days by default, is blocked from new jobs. Parts come off stock with a real stock move, labour is costed at the technician's rate (with an out of hours factor, 1.5 by default), and Create Bill raises the contractor's vendor bill. Asset Lifetime Cost puts spend next to replacement value, which is the repair against replace figure.
+
+### The Enterprise add-on
+
+The [Facility Management Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_facility_enterprise/) add-on adds the commercial half: maintenance contracts with a schedule of what the price covers, so a call is marked included or chargeable before the invoice; invoices raised on a monthly, quarterly, half yearly or annual cycle with the analytic account on the line; service credits worked out from the breaches already recorded, per priority with an allowance and a cap; rate cards per client and trade with subcontract work passed through at cost plus margin; and budgets per site or contract with the real cost booked as jobs complete.
+
+## How to set it up in Odoo
+
+1. Install Facility Management. Inventory and Accounting install with it. Demo data gives you a business park with three buildings and a quarter of history to practise on.
+2. Open **Facilities, Configuration, Settings**: permit before work starts, insurance grace period, days ahead to raise planned jobs, auto close days, whether hold time stops the resolution clock, and the default labour rate.
+3. Create sites and floors under **Facilities, Configuration, Sites** and **Floors**, then buildings and rooms under **Facilities, Register, Buildings** and **Rooms and Spaces**. Mark restricted rooms with an access note.
+4. Review **Configuration, Asset Classes** and **Skills**. Check every statutory interval against what your competent person and insurer require before you rely on the due dates.
+5. Adjust **Configuration, Service Levels** to match your contracts, including cover hours and the escalation contact.
+6. Load the asset register under **Facilities, Register, Assets**, with parents, warranty, criticality, purchase and replacement values.
+7. Add technicians and contractors under **Facilities, Team**, with skills, certificate expiry and insurance details.
+8. Build schedules under **Facilities, Maintenance, Schedules** and log opening meter readings under **Meter Readings**.
+9. Run a week on the buttons (Generate Now, Assign, Log Response), then switch on the scheduled jobs.
+10. With the Enterprise add-on, set up **Facilities, Contracts, Maintenance Contracts**, **Configuration, Rate Cards** and **Contracts, Cost Budgets**.
+
+<Callout title="The scheduled jobs ship switched off">Raising planned work, watching the SLA clocks, closing finished jobs, checking contractor insurance and timing out permits all ship turned off. Turn them on only when your schedules and service levels are right, or the first nightly run will raise jobs and breach mails off draft settings.</Callout>
+
+## Limitations
+
+The module states plainly what it is not:
+
+- **No soft services.** No cleaning rotas, security rounds, catering, waste or reception.
+- **No tenant or occupier portal.** Faults are logged by your team inside Odoo.
+- **No BMS, IoT or meter integration.** A reading marked as coming from the BMS is one somebody typed in and labelled that way.
+- **No phone app.** Technicians use the Odoo web client; no offline mode and no barcode scanning of asset tags.
+- **No space booking, leases or service charges.** Rooms exist so jobs can be raised against them.
+- **No fixed asset accounting or purchasing.** Depreciation stays in Accounting and reordering stays in Inventory and Purchase.
+- **Scheduled jobs ship off.** Until you turn them on, the buttons do the work.
+
+If your estate includes worker accommodation, the [labour camp management guide](/odoo-guides/odoo-labour-camp-management/) covers rooms, beds and occupancy in Odoo. For pushing SLA breaches to a chat channel or a client report, see the [n8n guide](/odoo-guides/n8n-odoo-automation/). Workshops that service vehicles rather than buildings should read the [garage guide](/odoo-guides/odoo-garage-management/). The [facility management industry page](/industries/facility-management/) and the [Facility Management product page](/products/wt-facility-management/) have the full feature list.
+
+Walk through a work order on the [CAFM demo](https://facility-demo.way4tech.com/), or the contracts and billing side on the [demo with the Enterprise add-on](https://facility-pro.way4tech.com/). If you want to check your contract's service levels against how the clocks work before committing, [send them over](/contact/).

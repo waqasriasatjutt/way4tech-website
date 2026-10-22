@@ -1,0 +1,133 @@
+---
+title: "FBR POS integration in Odoo: fiscal invoice numbers, QR receipts and PRA, SRB and KPRA restaurant reporting"
+metaTitle: "FBR POS Integration in Odoo 19: How It Works"
+description: "How FBR POS integration works for Tier-1 retailers and restaurants, what the receipt must show, and how to report Odoo 19 POS orders to FBR or PRA."
+targetQuery: "FBR POS integration Odoo"
+category: "Tax and compliance"
+region: "Pakistan"
+summary: "What FBR's POS integration scheme requires, what a fiscal receipt must carry, how provincial restaurant reporting differs, and how an Odoo 19 restaurant POS can report orders without making the cashier wait."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Restaurant Fiscal Compliance"
+    technical: "w4_resto_tax_compliance"
+    note: "USD 199, needs the Restaurant Suite Base"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant suite demo (fiscal reporting not configured)"
+related: ["fbr-digital-invoicing-odoo", "odoo-payroll-pakistan", "zatca-e-invoicing-odoo-community"]
+linkFrom: ["/modules/pos/", "/services/odoo-pos-deployment/", "/countries/pakistan/", "/countries/pakistan/e-invoicing/", "/services/odoo-e-invoicing/", "/services/odoo-localization/"]
+sources:
+  - label: "FBR, Sales Tax Rules 2006, Chapter XIV-AA, online integration of Tier-1 retailers"
+    url: "https://download1.fbr.gov.pk/Docs/201912412122821649ChapterXIV-AA-10112019-afterSRO1203.pdf"
+  - label: "FBR, POS integration frequently asked questions"
+    url: "https://download1.fbr.gov.pk/Docs/20201201313212651FAQs-POSIntegration.pdf"
+  - label: "FBR, SRO 1006(I)/2021, standardised format for POS invoices"
+    url: "https://download1.fbr.gov.pk/SROs/202189168291729SRO-1006.pdf"
+  - label: "FBR, press release on the Re 1 POS service charge"
+    url: "https://fbr.gov.pk/fbr-rebuts-disinformation-about-pos-integration-drive-on-social-media/173273"
+  - label: "FBR, POS invoice verification"
+    url: "https://www.fbr.gov.pk/pos-invoice-verification/163085/163142"
+  - label: "FBR, draft SRO 288(I)/2026, online integration of businesses (Income Tax Rules)"
+    url: "https://download1.fbr.gov.pk/SROs/2026218112270512SRO288dated18.02.2026.pdf"
+  - label: "Orbitax, FBR publishes draft rules for online integration of businesses (1 April 2026)"
+    url: "https://orbitax.com/news/country/article/FBR-publishes-draft-rules-for-_f08899cb-2e26-11f1-97eb-5ea2b590ed79"
+  - label: "PRA and PRAL, POS Component and eIMS user manual (January 2026)"
+    url: "https://e.pra.punjab.gov.pk/templates/POS_COMPONENT_and_eIMS_User_Manual.pdf"
+faqs:
+  - q: "Who has to integrate their POS with FBR?"
+    a: "Tier-1 retailers under section 2(43A) of the Sales Tax Act 1990. The Sales Tax Rules have required them to integrate every point of sale for real-time reporting since 1 December 2019, whatever goods they sell."
+  - q: "What is the FBR POS service fee?"
+    a: "FBR set a service charge of Re 1 per invoice issued through an integrated POS, whatever the bill amount, collected under section 76 of the Sales Tax Act. SRO 1006(I)/2021 lists it as a line on the standard receipt."
+  - q: "What must an FBR POS receipt show?"
+    a: "Under SRO 1006(I)/2021 the receipt must carry business and POS registration details, item-wise price, tax rate and tax, the Re 1 service fee, the FBR fiscal invoice number, the FBR POS logo, a 7 by 7 mm QR code and a line asking the customer to verify through Tax Asaan or SMS 9966."
+  - q: "Does Odoo POS have built-in FBR integration?"
+    a: "No. Odoo's Pakistan module covers accounting only, and there is no Pakistan POS fiscal module in Odoo 19 Community. Integration comes from a third-party module or a custom connector."
+  - q: "Is FBR POS integration the same as FBR Digital Invoicing?"
+    a: "No. POS integration reports retail sales to consumers in real time and prints a fiscal number on the till receipt. Digital Invoicing is the PRAL API for sales tax invoices between registered businesses, with HS codes, sale types and SRO references."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A cashier with a queue of twelve people cannot wait for a government server to answer, and an auditor cannot accept a receipt without the fiscal number on it. FBR POS integration sits in the middle of that tension. The law wants every sale reported as it happens and a verifiable number printed on the bill; the counter wants the till to keep moving when the internet drops. This guide explains what FBR and the provincial authorities ask for, where Odoo 19 stands, and how one restaurant-specific module handles it.
+
+## What the rules require
+
+### Who must integrate
+
+Chapter XIV-AA of the Sales Tax Rules 2006 deals with online integration of Tier-1 retailers. [Rule 150ZEA](https://download1.fbr.gov.pk/Docs/201912412122821649ChapterXIV-AA-10112019-afterSRO1203.pdf) says that from 1 December 2019 all Tier-1 retailers must integrate their outlets with the Board's computerised system for real-time reporting of sales. The [FBR's POS integration FAQ](https://download1.fbr.gov.pk/Docs/20201201313212651FAQs-POSIntegration.pdf) adds that this applies whatever items the retailer sells, and quotes the section 2(43A) definition of a Tier-1 retailer: a unit of a national or international chain, a retailer in an air-conditioned mall or plaza (kiosks excluded), one whose electricity bills cross a set annual threshold, a wholesaler-cum-retailer in bulk imports, or a shop of 1,000 square feet or more. Finance Acts have amended parts of that definition over the years, so check the current text against your own outlets.
+
+### How the fiscal number is produced
+
+Rule 150ZEB requires each POS to be registered, which gives it a POS registration number, and every sale from a notified outlet to pass through an electronic fiscal device: a Sales Data Controller connected to one or more POS terminals. The controller turns the sale into fiscal data, returns a fiscal invoice number to the POS and transmits the data to FBR. In practice the POS software sends the order to FBR's fiscal component and prints what comes back.
+
+### What the receipt must show
+
+[SRO 1006(I)/2021](https://download1.fbr.gov.pk/SROs/202189168291729SRO-1006.pdf) standardised the receipt. In summary:
+
+| Block | What must be printed |
+|---|---|
+| Business | Name or brand, outlet address, STRN and NTN, tax office, unique POS registration number |
+| Invoice | Sequential invoice number, date and time, mode of payment, buyer name for B2B or bills above Rs 100,000 |
+| Items | Description, price excluding tax, tax rate per item (0% if exempt), quantity, tax amount |
+| Totals | Sale value, tax, discount, POS service fee of Re 1, total payable, amount received |
+| FBR | Fiscal invoice number in the form XXXXXX-DDMMYYHHMMSS-0001, FBR POS logo, QR code of 7 by 7 mm, the line "Verify this invoice through FBR Tax Asaan Mobile App or SMS at 9966" |
+
+The Re 1 is a service charge per invoice of any amount, collected under section 76 of the Sales Tax Act, as the [FBR clarified](https://fbr.gov.pk/fbr-rebuts-disinformation-about-pos-integration-drive-on-social-media/173273) when social media reported it as 1%. Customers can check a receipt through [FBR's POS invoice verification](https://www.fbr.gov.pk/pos-invoice-verification/163085/163142), and an unverifiable receipt is what draws enforcement.
+
+### Restaurants and the provinces
+
+A restaurant's food service is taxed as a service by the province, and the provincial authorities run their own reporting. The Punjab Revenue Authority's [POS Component and eIMS manual](https://e.pra.punjab.gov.pk/templates/POS_COMPONENT_and_eIMS_User_Manual.pdf), published with PRAL in January 2026, describes registering each branch and POS on the PRA portal and integrating with the PRA Software Fiscal Device, which generates the fiscal invoice number. Its invoice model uses the same field names FBR's POS model uses (POSID, USIN, RefUSIN for returns) and the same payment modes. The Sindh Revenue Board and the Khyber Pakhtunkhwa Revenue Authority run their own schemes; get the endpoint, token and any extra fields from their onboarding pack rather than assuming they match PRA.
+
+FBR has also published [draft SRO 288(I)/2026](https://download1.fbr.gov.pk/SROs/2026218112270512SRO288dated18.02.2026.pdf), dated 18 February 2026, which would add an income tax framework for online integration of businesses. [Orbitax's summary](https://orbitax.com/news/country/article/FBR-publishes-draft-rules-for-_f08899cb-2e26-11f1-97eb-5ea2b590ed79) lists restaurants and hotels among the sectors. The draft says invoices issued while the system or internet is down must be marked as offline and uploaded within 24 hours of restoration. It was a draft for comment when published; check whether a final version has been notified before planning around it.
+
+Which authority your outlet reports to, or whether it reports to both, depends on what it sells and where it is registered. Settle that with your tax adviser before choosing software.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community's only Pakistan module, `l10n_pk`, is an accounting localisation: chart of accounts, taxes and tax reports. There is no Pakistan POS fiscal module in the Odoo 19 Community source. Odoo's Point of Sale prints receipts, but it does not call FBR, PRA, SRB or KPRA, and it has no notion of a fiscal invoice number. The [POS module hub](/modules/pos/) and our [POS deployment service](/services/odoo-pos-deployment/) cover the rest of the POS setup.
+
+## How to set it up in Odoo
+
+[Restaurant Fiscal Compliance](https://apps.odoo.com/apps/modules/19.0/w4_resto_tax_compliance/) (USD 199) adds FBR POS, PRA, SRB and KPRA reporting to the Way4Tech restaurant suite. It depends on the [Restaurant Suite Base](https://apps.odoo.com/apps/modules/19.0/w4_resto_base/), which is free and installed with it. It is built for that suite; a general retail POS on standard Odoo is a different integration and would be custom work.
+
+1. **Register with the authority first.** Get your POS registration id and token from FBR or the provincial authority, plus sandbox access for testing.
+2. **Create the provider.** Go to Restaurant, Configuration, Fiscal Providers, New. Pick the provider (FBR POS, PRA, SRB or KPRA), the branch (or leave it empty for a company-wide default), and enter the POS registration id and bearer token. Tick Sandbox while testing.
+3. **Endpoints.** FBR POS has the FBR IMS live and sandbox endpoints built in, with an override field. The provincial providers have no default URL, so paste the one from your onboarding pack. Extra top-level fields an authority asks for go in "Extra payload (JSON)".
+4. **Press Check configuration**, then decide on "Submit while paying". When on (the default), the POS waits up to six seconds for the number while the order is paid.
+5. **Give products a PCT/HS code** on the product form, or set one default under Restaurant, Configuration, Settings. A restaurant usually reports one code for all food.
+6. **Map payment methods.** Each method says what it is reported as: Cash, Card, Gift voucher, Loyalty card or Cheque. An order paid two ways is reported as Mixed.
+7. **Customer tax ids.** The customer's Tax ID goes out as the buyer NTN, and a new CNIC field as the buyer CNIC.
+8. **Test in sandbox**: pay an order, check the receipt shows the label and number with a QR, then refund it and check the refund is sent against the original.
+
+<Shot src="/odoo-guides/fbr-pos-integration-odoo/fbr-fiscal-provider-form.webp" alt="Fiscal provider form in Odoo for FBR POS on the Gulberg branch with sandbox ticked, six second timeout, POS registration id, masked bearer token, invoice type codes and default PCT code" width={1280} height={800} caption="One provider per branch: authority connection, invoice codes and what the receipt prints." />
+
+### How the order is built and sent
+
+Every figure comes from the Odoo order. The receipt number becomes USIN; a refund is sent as invoice type 3 with the original receipt as RefUSIN. Per line, the sale value before discount, the discount, the tax and the line total are sent so that the line total equals value less discount plus tax. The bill total and tax total are the amounts Odoo booked. A one-paisa rounding difference from global tax rounding is absorbed on the last line; anything larger refuses the order with a clear error instead of reporting figures that do not add up.
+
+### When FBR does not answer
+
+The POS never blocks on the authority. If the call fails or times out, the order goes into a queue and the receipt says "Fiscal invoice pending" with the order reference. A scheduled action retries after 1, 5, 15 and then 60 minutes, up to eight attempts, then marks the entry "Given up" with the authority's own error text. A reprint shows the fiscal number once it exists.
+
+<Shot src="/odoo-guides/fbr-pos-integration-odoo/fiscal-queue.webp" alt="Fiscal Queue in Odoo listing four orders for the Gulberg branch, one given up after eight attempts with an invalid token error and three failed and waiting to retry with timeout or credential errors" width={1280} height={800} caption="Restaurant, Reporting, Fiscal Queue: what is waiting, why, and when it will be tried again." />
+
+Each order keeps its fiscal status, number, the payload sent and the authority's response on a Fiscal tab, which is what you show an auditor who asks what was reported.
+
+<Shot src="/odoo-guides/fbr-pos-integration-odoo/pos-order-fiscal-tab.webp" alt="Odoo POS order form with the Fiscal tab open showing status Submitted, a demo FBR fiscal invoice number, the FBR sandbox configuration and the payload and response sections" width={1280} height={800} caption="The Fiscal tab on a paid order, from the demo database (demo numbers, not real FBR numbers)." />
+
+## Limitations: what this does not do
+
+<Callout title="Check the receipt against SRO 1006 before going live">
+The module prints the receipt label, the fiscal number and its QR, plus the tax registration line. It does not add the FBR POS logo, the Re 1 service fee line or the Tax Asaan verification sentence. Put the sentence in the receipt header or footer, and agree with your adviser how the service fee is charged and shown, before the first live day.
+</Callout>
+
+- **Restaurant suite only.** It depends on the Way4Tech restaurant suite. A non-restaurant retailer on standard Odoo POS needs a separate connector.
+- **Per order, not per invoice.** It reports POS orders. FBR Digital Invoicing for registered persons is a different scheme, covered in the [FBR Digital Invoicing guide](/odoo-guides/fbr-digital-invoicing-odoo/).
+- **Pending receipts.** A receipt printed while the authority is unreachable carries no fiscal number. Decide with your adviser how you handle those under your authority's offline rules.
+- **Provincial specifics come from you.** PRA, SRB and KPRA endpoints and extra fields are entered from the authority's pack; none is pre-filled.
+- **The demo is not integrated.** The [restaurant suite demo](https://restro.way4tech.com/) shows the POS and kitchen screens; fiscal reporting is not configured there.
+
+For the wider Pakistan picture see [e-invoicing in Pakistan](/countries/pakistan/e-invoicing/) and our [e-invoicing service](/services/odoo-e-invoicing/). If your branches also run payroll in Odoo, the [Pakistan payroll guide](/odoo-guides/odoo-payroll-pakistan/) covers that side, and the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/) covers the Saudi phase one QR this module also prints.
+
+If you are deciding between FBR and a provincial authority for a new outlet, [send us the outlet details](/contact/) and we will tell you what we would set up.

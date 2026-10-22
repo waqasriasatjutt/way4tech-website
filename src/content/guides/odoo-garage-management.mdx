@@ -1,0 +1,157 @@
+---
+title: "Odoo garage management: job cards, health checks and labour recovery for an auto workshop"
+metaTitle: "Odoo Garage Management for Auto Workshops"
+description: "Run an auto workshop on Odoo 19: job cards with an authority ceiling, red amber green checks, flat rate vs clocked hours, bays, QC and gross profit."
+targetQuery: "odoo garage management / auto workshop"
+category: "Industry"
+summary: "What a car workshop needs from Odoo, why the standard Repairs app does not cover it, and how to set up job cards, check sheets, bays, reminders and the money side."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Garage Management"
+    technical: "w4t_garage_management"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Accounting"
+  - name: "Garage Management Enterprise"
+    technical: "w4t_garage_enterprise"
+    note: "USD 99 add-on, needs Garage Management"
+demo:
+  url: "https://garage-demo.way4tech.com/"
+  label: "Garage Management demo"
+related: ["odoo-cafm-facility-maintenance", "odoo-van-sales", "zkteco-adms-odoo"]
+linkFrom: ["/solutions/automotive-workshop/", "/products/w4t-garage-management/", "/modules/repairs/"]
+sources:
+  - label: "Odoo 19 documentation, Repairs: repair orders"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/repairs/repair_orders.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch, repair addon manifest (Community)"
+    url: "https://github.com/odoo/odoo/blob/19.0/addons/repair/__manifest__.py"
+  - label: "Odoo 19 documentation, Fleet"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/fleet.html"
+faqs:
+  - q: "Is the Odoo Repairs app enough for a car garage?"
+    a: "For a small shop that repairs products and invoices parts, it can work. It has no vehicle record with odometer history, no inspection check sheet, no bays, no technician clock against flat rate hours and no service reminders by date or distance, which is what a car workshop runs on."
+  - q: "Does the garage module need Odoo Enterprise?"
+    a: "No. Garage Management is built and tested on Odoo 19 Community and installs with the standard Inventory and Accounting apps. It also runs on Enterprise. The Garage Management Enterprise add-on is a module edition name and also runs on Community."
+  - q: "Can it decode a VIN or look up labour times?"
+    a: "No. Nothing calls a VIN decoder, a registration lookup or a manufacturer labour time database. You enter your own labour operations with your own flat rate hours, and make and model are picked from editable lists."
+  - q: "Can customers book online?"
+    a: "Not with this module. There is no public booking page or customer portal. Estimates, ready notices, reminders and the health check reach the customer by email from your own mail server."
+  - q: "How does insurance work on a job?"
+    a: "With the Enterprise add-on, an approved claim raises two invoices: one to the insurer for what they authorised and one to the owner for the excess and anything the insurer would not pay. The two always add up to the job value."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A car workshop rarely loses money on one big job. It loses it a few hundred at a time: brake discs fitted before the customer agreed, an amber tyre warning written on a scrap of paper and never sold, two hours charged for a job that took three and a half, a comeback nobody counted. None of that shows up as a line in the accounts. Odoo can hold every one of those facts, but only if the workshop records them as part of the job, not after it. This guide walks through what a garage actually needs, what standard Odoo gives you, and how to set up a job card driven workshop on Odoo 19.
+
+## What an auto workshop actually needs
+
+Strip away the brochure language and a workshop needs six things from its system:
+
+1. **A job card that cannot skip steps.** Estimate, customer approval, work, quality check, ready, invoiced. If a technician can start work on an unapproved job, the system is a notepad.
+2. **Authority as an amount.** "The customer said yes" is not enough. The customer said yes up to a figure, and when the job goes over that figure the call has to happen before the spanner comes out.
+3. **Inspections that sell work.** A red or amber item needs a measurement or a note and a price, otherwise it never becomes revenue.
+4. **The vehicle as its own record.** Registration, VIN, odometer history, certificates and every past job, because the car comes back more often than the customer changes.
+5. **Hours sold against hours clocked.** Flat rate hours are what you charge. Clocked hours are what it cost. The gap per technician is the most useful number a workshop manager can see.
+6. **Gross profit split between labour and parts.** A workshop that only sees total margin cannot tell whether the parts counter is carrying the ramps.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community ships a **Repairs** app. Its manifest describes it as covering adding and removing products in the repair, the impact on stock, a warranty concept, a repair quotation report and notes for the technician and customer ([odoo/odoo repair manifest, 19.0](https://github.com/odoo/odoo/blob/19.0/addons/repair/__manifest__.py)). A repair order names the product being repaired, can be linked to a sales order, reserves parts from stock and can be marked under warranty, as the [repair orders documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/repairs/repair_orders.html) shows. The [Repairs module page](/modules/repairs/) on this site goes through it in more detail.
+
+That is a good fit for repairing a product that comes in over the counter. For a car workshop, it misses most of the list above:
+
+- No vehicle record with VIN, odometer readings in and out, or certificate history. Odoo's [Fleet app](https://www.odoo.com/documentation/19.0/applications/hr/fleet.html) tracks your own vehicles, not customer cars passing through a workshop.
+- No inspection check sheet with red, amber and green items.
+- No bays, no technician clock per operation, no flat rate against clocked hours.
+- No authority ceiling that blocks work when the job grows.
+- No quality check by a second technician, no courtesy car loans, no reminders by date or distance.
+
+You can build some of this with Studio or custom fields, but the controls (refusing to start, refusing to pass your own repair) need code. That is the gap the two modules below fill.
+
+## The modules and what each covers
+
+[Garage Management](https://apps.odoo.com/apps/modules/19.0/w4t_garage_management/) is the workshop control system: job cards, inspections, vehicles, courtesy cars and the reporting. It is USD 199 once per Odoo version and needs nothing from Odoo Enterprise. [Garage Management Enterprise](https://apps.odoo.com/apps/modules/19.0/w4t_garage_enterprise/) is a USD 99 add-on that adds the commercial side around the job card; it also runs on Community.
+
+| Area | Odoo Repairs | Garage Management | + Enterprise add-on |
+|---|---|---|---|
+| Repair or job order with parts from stock | Yes | Yes | Yes |
+| Vehicle record with VIN and odometer history | No | Yes | Yes |
+| Signed authority ceiling before work starts | No | Yes | Yes |
+| Red, amber, green check sheet priced at your rate | No | Yes | Yes |
+| Flat rate hours against clocked time per technician | No | Yes | Yes |
+| Bays with lift, test lane and weight limits | No | Yes | Yes |
+| Second technician quality check | No | Yes | Yes |
+| Courtesy cars, service and certificate reminders | No | Yes | Yes |
+| Gross profit split labour and parts | No | Yes | Yes |
+| Rate cards per account (trade, fleet, insurer) | No | No | Yes |
+| Service plans drawn down by jobs | No | No | Yes |
+| Insurance split billing, insurer and owner | No | No | Yes |
+| Sublet work with markup, technician commission | No | No | Yes |
+
+## How the job card works
+
+The job card moves through estimate, awaiting approval, approved, in progress, quality check, ready and invoiced, with cancelled to the side. Nothing skips a step, and writing the stage field directly from an import or bulk edit is refused the same way the buttons refuse it.
+
+**Authority.** Send Estimate emails the priced estimate and sets the authority ceiling. Record Authority needs a name and a method: in person, phone, email, message or signed on screen. Start Work is refused if the job is now worth more than the signed figure. Ask for More Authority sends the job back for a new figure.
+
+<Shot src="/odoo-guides/odoo-garage-management/job-card-form.webp" alt="Garage job card in Odoo in progress, with customer, vehicle, VIN, odometer reading, bay and lead technician, tabs for labour, parts, time, authority and warranty, and the chatter showing the estimate email and authorisation amount" width={1280} height={800} caption="A job card in progress: authorised up to a figure, with the estimate email in the chatter." />
+
+**Bays.** Work cannot start without a bay, and the bay has to fit: a roadworthiness test needs an approved test lane, work from underneath needs a lift, a bay refuses a vehicle heavier than it is rated for, and two jobs cannot hold the same bay over the same window. An apprentice cannot be put on an operation marked for a senior technician.
+
+**Flat rate and clocked hours.** Labour lines come from your own operation list at flat rate hours times the workshop rate. Technicians clock on to a job, or to a single labour operation, with an activity such as repair, diagnostics, road test or waiting on parts. One technician can only be on one thing at a time, and a clock left running overnight is closed at eight hours by a scheduled job.
+
+**Quality check.** Finished, Check It refuses while someone is still on the clock or nothing is written under work carried out. With the second pair of eyes setting on, Pass needs a technician with sign-off authority who did not do the work.
+
+### Inspections: red, amber, green with a price
+
+A check sheet is loaded from a template (one 23 item Vehicle Health Check ships with the module). Each item is green, amber, red or not checked. A red or amber item is refused without a measurement or a note, the sheet cannot be completed with a blank item, and an odometer reading below the last one on the vehicle is refused. Template items can point at a labour operation, so an advisory arrives priced. Add Accepted Work to the Job turns accepted items into labour lines on the open job card.
+
+<Shot src="/odoo-guides/odoo-garage-management/check-sheets.webp" alt="Inspections kanban in Odoo showing completed vehicle health checks per car with red and amber counts and the value of work advised" width={1280} height={800} caption="Check sheets with red and amber counts and the value of work advised on each." />
+
+### Vehicles, reminders and courtesy cars
+
+Each vehicle carries registration, VIN (optionally forced to seventeen characters), make, model, fuel, odometer history and roadworthiness certificates under the scheme you name (MOT, ITV, Fahes, Hauptuntersuchung, Controle Technique or your own). Service reminders carry a due date and a due reading and fire on whichever comes first. Courtesy car loans record fuel and odometer out and in, refuse double bookings and lapsed insurance cover, and the job cannot be invoiced while the car is still out.
+
+### The money
+
+Every invoiced job shows revenue, cost and profit for labour and for parts separately. Once time is clocked, the clocked hours replace the book figure in the labour cost, so an overrun shows up in money. Labour Recovery lists sold against clocked hours per technician by month and highlights lines under eighty per cent efficiency.
+
+<Shot src="/odoo-guides/odoo-garage-management/labour-recovery.webp" alt="Labour Recovery pivot in Odoo with sold hours, clocked hours and price subtotal per technician for August and September" width={1280} height={800} caption="Labour Recovery: sold hours against clocked hours per technician, month by month." />
+
+### What the Enterprise add-on adds
+
+Rate cards set a labour rate per kind of account (retail, trade, fleet, insurer), with an operation-level rate beating a category-level one. Service plans sell a number of services over a term, and a job on a covered vehicle finds the live plan and marks itself paid. An approved insurance claim raises two invoices, insurer and owner, which always add up to the job. Sublet work is costed in, marked up and sold on, and the car cannot be billed while sublet work is still out. Technician commission pays per hour sold, on labour or on job margin, with an efficiency floor.
+
+<Shot src="/odoo-guides/odoo-garage-management/insurance-claim.webp" alt="Insurance or warranty claim form in Odoo linked to a job, with who pays the bill, claim number, surveyor, excess paid by owner, approved amount and shortfall" width={1280} height={800} caption="A claim on the Enterprise add-on: the insurer, the excess and the shortfall worked out." />
+
+## How to set it up in Odoo
+
+1. Install Garage Management. Inventory and Accounting install with it. Installing with demo data gives you a sample workshop to practise on.
+2. Open **Configuration, Settings** in the Garage app: distance unit, signed authority before work, second pair of eyes on quality, target efficiency, VIN length rule, default service interval and the chase windows for reminders and certificates.
+3. Create the workshop in **Configuration, Workshops**: job number prefix, opening hours, labour rate, labour cost rate, sundries percentage, invoice journal, Inventory operation type and parts location.
+4. Add bays in **Configuration, Bays** with their kind (two post lift, pit, test lane, tyre bay and so on), lift flag, test approval and maximum weight.
+5. Add technicians in **Configuration, Technicians**, linked to Odoo users, with grade, hourly cost, contracted hours, sign-off flag and tester licence number if they sign certificates.
+6. Build your flat rate book in **Configuration, Labour Operations**: code, category, flat rate hours, skill level, lift needed, service product and an optional interval in months and distance.
+7. Point each section of the Vehicle Health Check in **Configuration, Check Sheets** at one of your operations so advisories arrive priced.
+8. Turn on the three scheduled jobs that email customers or the manager only after your outgoing mail server works. They ship switched off.
+9. Book the first car in through **Workshop, Job Cards** and run it end to end, including a check sheet and a quality check, before going live.
+10. If you bought the Enterprise add-on, set up **Configuration, Rate Cards** and **Configuration, Commission Rules**, then use **Plans and Claims** for service plans, claims and sublet work.
+
+<Callout title="Technicians never see margins">The Technician group sees only their own jobs, clocks and sheets, with no prices or costs. Cost prices, gross profit and recovery are behind the Workshop Manager group. Assign groups before go-live, not after a technician has seen the margin report.</Callout>
+
+## Limitations
+
+These are the module's own statements about what it does not do:
+
+- **No VIN decoding or manufacturer data.** Make, model, engine and flat rate hours are typed in or picked from your own lists. There is no labour time database.
+- **No parts catalogue or supplier feed.** Parts are Odoo products; there is no EPC and no live price from a supplier.
+- **No online booking or customer portal.** Customers do not book slots on a website or log in to watch their job. "Signed on screen" means the advisor recorded it that way; there is no signature pad.
+- **No point of sale or card terminal.** The job raises a standard Odoo invoice.
+- **No regulator connection.** Certificates are records you keep; nothing is sent to a government system.
+- **No drag and drop bay planner.** The board is a kanban by stage; bay clashes are refused when work starts.
+- **Not a fleet manager or rental system.** Courtesy cars are a handful of loaners tied to jobs.
+- **No insurer system link.** The Enterprise add-on holds the claim number, surveyor and approved amount; no motor insurer integration exists.
+
+If your technicians clock in on a ZKTeco terminal, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) shows how attendance reaches Odoo, which pairs well with the recovery report. For maintaining your own buildings and lifts rather than customer cars, see the [CAFM guide](/odoo-guides/odoo-cafm-facility-maintenance/), and if you also run parts vans, the [van sales guide](/odoo-guides/odoo-van-sales/) covers stock on the road. The [automotive workshop solution page](/solutions/automotive-workshop/) and the [Garage Management product page](/products/w4t-garage-management/) list what is included.
+
+Try the full flow on the [base demo](https://garage-demo.way4tech.com/) or the [demo with the Enterprise add-on](https://garage-pro.way4tech.com/). If your workshop has a setup this guide does not cover, such as several branches sharing one parts store, [send a short description](/contact/) and I will say whether it fits.

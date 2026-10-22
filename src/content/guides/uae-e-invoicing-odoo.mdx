@@ -1,0 +1,142 @@
+---
+title: "UAE e-invoicing from 2027: the Peppol model, the deadlines, and getting Odoo ready"
+metaTitle: "UAE E-Invoicing 2027 in Odoo: Peppol, ASPs"
+description: "UAE e-invoicing dates as amended in 2026, how the Peppol five corner model and ASPs work, what Odoo ships today and a data checklist to start now."
+targetQuery: "UAE e-invoicing 2027 Odoo Peppol"
+category: "Tax and compliance"
+region: "UAE"
+summary: "The Ministry of Finance timeline as it stands in October 2026, how invoices move between Accredited Service Providers, what Odoo does and does not ship for the UAE yet, and the Odoo data to clean before your ASP connects."
+published: 2026-10-23
+updated: 2026-10-23
+modules: []
+related: ["zatca-e-invoicing-odoo-community", "fbr-digital-invoicing-odoo", "uae-wps-sif-file-odoo"]
+linkFrom: ["/countries/uae/e-invoicing/", "/services/odoo-e-invoicing/", "/blog/odoo-e-invoicing-clearance-vs-reporting/", "/countries/uae/", "/blog/odoo-implementation-in-uae/"]
+sources:
+  - label: "UAE Ministry of Finance, eInvoicing programme page (documents, decisions, DCTCE flow)"
+    url: "https://mof.gov.ae/en/about-us/initiatives/einvoicing/"
+  - label: "UAE Ministry of Finance, Ministerial Decision No. 66 of 2026 amending Decision No. 244 of 2025"
+    url: "https://mof.gov.ae/wp-content/uploads/2026/05/Ministerial-Resolution-No.-66-of-2026-Amending-Certain-Provisions-of-Ministerial-Resolution-No.-244-of-2025-Regarding-the-Implementation-of-the-Electronic-Invoicing-System-En-20260514.pdf"
+  - label: "EY Tax News, UAE Ministry of Finance publishes ministerial decisions on e-invoicing (30 September 2025)"
+    url: "https://taxnews.ey.com/news/2025-1964-uae-ministry-of-finance-publishes-ministerial-decisions-on-e-invoicing"
+  - label: "KPMG, Implementation of the Electronic Invoicing System in the UAE"
+    url: "https://kpmg.com/ae/en/insights/tax-insights/implementation-of-the-electronic-invoicing-system-in-the-uae.html"
+  - label: "EY Tax News, Cabinet Decision on penalties for non-compliance with e-invoicing (5 December 2025)"
+    url: "https://taxnews.ey.com/news/2025-2433-uae-ministry-of-finance-publishes-cabinet-decision-on-penalties-for-noncompliance-with-e-invoicing"
+  - label: "Khaleej Times, UAE amends e-invoicing regulations (Ministerial Decision No. 197 of 2026)"
+    url: "https://www.khaleejtimes.com/business/uae-amends-e-invoicing-regulations-to-reduce-operational-burden-on-businesses"
+  - label: "Odoo 19 documentation, Electronic invoicing (Peppol)"
+    url: "https://www.odoo.com/documentation/19.0/applications/finance/accounting/customer_invoices/electronic_invoicing.html"
+  - label: "Odoo 19 documentation, United Arab Emirates fiscal localization"
+    url: "https://www.odoo.com/documentation/19.0/applications/finance/fiscal_localizations/united_arab_emirates.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch addons"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+faqs:
+  - q: "When does UAE e-invoicing become mandatory?"
+    a: "Businesses with revenue of AED 50 million or more must appoint an Accredited Service Provider by 30 October 2026 and go live on 1 January 2027. Businesses below that threshold go live on 1 July 2027 and government entities on 1 October 2027, with ASP appointment by 31 March 2027 for both groups. Voluntary adoption has been allowed since 1 July 2026."
+  - q: "Does Odoo support UAE e-invoicing with PINT AE?"
+    a: "Not as of October 2026 in anything we could verify. The public Odoo 19 code has Peppol PINT variants for Australia and New Zealand, Japan, Malaysia and Singapore but none for the UAE, and Odoo's Peppol registration page does not list the UAE. In practice an Odoo user connects through an Accredited Service Provider, using a connector module or the ASP's own integration."
+  - q: "Do I need an Accredited Service Provider if I use Odoo?"
+    a: "Yes. Under the Ministry of Finance model every invoice issuer and recipient in scope appoints an ASP, and the ASP is the one that validates, exchanges and reports the invoice. Odoo is the system that produces the invoice data, not the accredited network participant."
+  - q: "What is the penalty for missing the UAE e-invoicing deadline?"
+    a: "Cabinet Decision No. 106 of 2025 sets AED 5,000 for each month or part of a month that a business is late implementing the system or appointing an ASP. Failing to issue an e-invoice or e-credit note costs AED 100 each, capped at AED 5,000 a month, and late updates of data to the ASP cost AED 1,000 a day."
+---
+import Callout from '../../components/guides/Callout.astro';
+
+If your UAE company turned over AED 50 million or more in its last accounting period, you have until 30 October 2026 to sign with an Accredited Service Provider and until 1 January 2027 to send every B2B invoice through it. Most of the work in that window is not technical. It is getting the invoice data in your ERP clean enough that an ASP can turn it into a valid Peppol document on the first attempt. This guide sets out the rules as amended through October 2026, explains the five corner model in plain terms, says what Odoo ships for the UAE today, and gives you the Odoo data checklist to start on now.
+
+## The rules as they stand in October 2026
+
+The legal base is two Ministry of Finance decisions issued on 29 September 2025: **Ministerial Decision No. 243 of 2025** on the Electronic Invoicing System and **No. 244 of 2025** on its implementation ([EY summary](https://taxnews.ey.com/news/2025-1964-uae-ministry-of-finance-publishes-ministerial-decisions-on-e-invoicing)). Both have since been amended, so read the originals together with the 2026 changes listed on the [Ministry of Finance eInvoicing page](https://mof.gov.ae/en/about-us/initiatives/einvoicing/).
+
+### Timeline
+
+| Group | Appoint an ASP by | E-invoicing mandatory from |
+|---|---|---|
+| Pilot (selected taxpayers) and voluntary adopters | Not fixed | 1 July 2026 |
+| Revenue of AED 50 million or more | 30 October 2026 | 1 January 2027 |
+| Revenue below AED 50 million | 31 March 2027 | 1 July 2027 |
+| Government entities | 31 March 2027 | 1 October 2027 |
+
+The 30 October 2026 date comes from [Ministerial Decision No. 66 of 2026](https://mof.gov.ae/wp-content/uploads/2026/05/Ministerial-Resolution-No.-66-of-2026-Amending-Certain-Provisions-of-Ministerial-Resolution-No.-244-of-2025-Regarding-the-Implementation-of-the-Electronic-Invoicing-System-En-20260514.pdf), which moved the large business ASP deadline from 31 July 2026 and kept the 1 January 2027 go live. The other rows are from the original decision as summarised by [KPMG](https://kpmg.com/ae/en/insights/tax-insights/implementation-of-the-electronic-invoicing-system-in-the-uae.html). Revenue here means gross income in the most recent accounting period.
+
+<Callout title="Today is a week from the large business deadline">
+If you are in the AED 50 million group and have not signed with an ASP, the penalty for a late appointment is AED 5,000 for each month or part of a month. Sign first, then finish the data clean up below with the ASP in the loop.
+</Callout>
+
+### Scope and recent changes
+
+- **B2B and B2G only.** B2C transactions are outside the system for now ([KPMG](https://kpmg.com/ae/en/insights/tax-insights/implementation-of-the-electronic-invoicing-system-in-the-uae.html)).
+- **Exclusions** include government entities acting in a sovereign capacity, international airline e-ticket services, international goods transport under airway bills (for 24 months), and VAT exempt or zero rated financial services ([EY](https://taxnews.ey.com/news/2025-1964-uae-ministry-of-finance-publishes-ministerial-decisions-on-e-invoicing)).
+- **Ministerial Decision No. 197 of 2026**, in force from 1 October 2026, excludes transactions between members of the same VAT tax group for 24 months from 1 January 2027, drops the requirement to store invoices inside the UAE (records are kept for the Tax Procedures Law period instead), and removes the duty to report a system failure within two business days ([Khaleej Times](https://www.khaleejtimes.com/business/uae-amends-e-invoicing-regulations-to-reduce-operational-burden-on-businesses)).
+
+### Penalties
+
+[Cabinet Decision No. 106 of 2025](https://taxnews.ey.com/news/2025-2433-uae-ministry-of-finance-publishes-cabinet-decision-on-penalties-for-noncompliance-with-e-invoicing) sets the fines:
+
+| Violation | Penalty |
+|---|---|
+| Late implementation or late ASP appointment | AED 5,000 per month or part of a month |
+| E-invoice not issued and sent | AED 100 each, capped at AED 5,000 per month |
+| E-credit note not issued and sent | AED 100 each, capped at AED 5,000 per month |
+| Late update of data to your ASP | AED 1,000 per day |
+
+The decision also fines a late system failure notice. Decision 197 of 2026 has since removed that notice duty, so check with your adviser how the two now fit together.
+
+## How an invoice moves: the five corner model
+
+The Ministry calls its model DCTCE, decentralised continuous transaction control and exchange. Described step by step on the [Ministry page](https://mof.gov.ae/en/about-us/initiatives/einvoicing/):
+
+1. **Corner 1**, the supplier, produces the invoice data in the **PINT AE** format, the UAE specialisation of the Peppol invoice, and passes it to its ASP.
+2. **Corner 2**, the supplier's ASP, validates it, converts it if needed, and sends it to the buyer's ASP over Peppol.
+3. Corner 2 also reports a tax data document to **Corner 5**, the Federal Tax Authority side.
+4. **Corner 3**, the buyer's ASP, validates the invoice and returns a status message. If validation fails, the negative status goes back and nothing is reported.
+5. **Corner 4**, the buyer, receives the invoice.
+
+This is a reporting model, not a clearance model like Saudi Arabia's: the invoice is not held for approval before it is valid. Our [clearance vs reporting explainer](/blog/odoo-e-invoicing-clearance-vs-reporting/) covers the difference, and the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/) shows the clearance side.
+
+The fields each invoice must carry are set out in the Ministry's **UAE Electronic Invoice Mandatory Field Requirements** (version 1.0, February 2026), alongside the **UAE Electronic Invoicing Guidelines** (version 1.1, June 2026). Both are on the [Ministry page](https://mof.gov.ae/en/about-us/initiatives/einvoicing/). Read the field list with your ASP rather than from a summary, because it is the document your invoices are validated against.
+
+## What Odoo ships for the UAE today
+
+Checked on 23 October 2026 against Odoo's documentation and the public [Odoo 19 source](https://github.com/odoo/odoo/tree/19.0/addons):
+
+| Piece | Status |
+|---|---|
+| `l10n_ae`, UAE chart of accounts and taxes | Ships with Community, installs with the UAE company |
+| `l10n_ae_pos`, UAE receipt behaviour in Point of Sale | Ships with Community |
+| `l10n_ae_reports`, VAT return and corporate tax reports | Listed in the [UAE localization docs](https://www.odoo.com/documentation/19.0/applications/finance/fiscal_localizations/united_arab_emirates.html); not in the public Community code |
+| `account_peppol`, Peppol sending and receiving through Odoo | Ships with Community. Odoo's [Peppol docs](https://www.odoo.com/documentation/19.0/applications/finance/accounting/customer_invoices/electronic_invoicing.html) list the countries that can register, mostly European; the UAE is not one of them |
+| PINT country formats | Public 19.0 code has PINT variants for Australia and New Zealand, Japan, Malaysia and Singapore. None for the UAE |
+| ASP accreditation for Odoo | We have found no Odoo announcement |
+
+So, as of today, standard Odoo does not produce a PINT AE invoice for the UAE network, and Odoo is not something you can appoint as your ASP. That can change, and Odoo may ship UAE support in a later update, but plan on what exists now. The workable routes are:
+
+- **An ASP with an Odoo connector.** Several ASPs and integrators publish connector modules for Odoo 17 to 19 on the Odoo Apps store. Check that the ASP is on the Ministry's accredited list, not just that the module exists.
+- **The ASP's own intake.** Some ASPs take a file or API feed from any ERP and do the PINT AE conversion themselves. Odoo then only has to export clean data.
+- **Custom integration.** Worth it only if your ASP has an API but no Odoo connector, or your invoice flow has quirks a connector cannot follow.
+
+Way4Tech does not sell a UAE e-invoicing module. We do the data preparation and the connector setup as a service, described on our [e-invoicing service page](/services/odoo-e-invoicing/).
+
+## How to set it up in Odoo: the readiness checklist
+
+Whatever ASP you choose, it can only send what Odoo holds. These steps work in Community and Enterprise; in Community the app is called Invoicing rather than Accounting.
+
+1. **Company record.** In Settings, Companies, check the legal name, the full address, and the TRN in the Tax ID field. One company per TRN, and branches set up the way your VAT registration actually is.
+2. **Customers and vendors.** Under Invoicing, Customers, filter by country UAE and Tax ID not set. Every VAT registered B2B customer needs a correct 15 digit TRN, legal name and address. Merge duplicate contacts now, keeping the one with the right TRN.
+3. **Government customers.** Flag them, for example with a contact tag, because they follow the October 2027 timeline as recipients and may need different handling.
+4. **Tax group members.** If you are in a VAT tax group, tag the other members so invoices between you can be kept out of the e-invoicing flow during the 24 month exclusion.
+5. **Taxes.** Under Invoicing, Configuration, Taxes, make sure every tax in use maps cleanly to standard rated, zero rated, exempt or out of scope, and that no one has invented local copies of the 5% tax. A document with a tax your ASP cannot map is rejected.
+6. **Products.** Clear names, correct units of measure and a default tax on every product you sell. Free text invoice lines without a product are hard to map.
+7. **Credit notes.** Always create them with Reverse from the original invoice, never as a free standing negative invoice. The credit note has to point at what it corrects.
+8. **Invoice sequences and journals.** One sales journal per real invoice series, no gaps, no manual renumbering.
+9. **Excluded flows.** If you have B2C sales in the same database, make sure they can be told apart from B2B by customer or journal, since B2C sits outside the system for now.
+10. **Test with your ASP.** Send a sample of real invoices, credit notes and edge cases through the ASP's test environment before your go live date.
+
+## Limitations of this guide and of Odoo today
+
+- No standard Odoo version we could check produces PINT AE or connects to a UAE ASP by itself.
+- We have not tested every ASP connector on the Odoo store, so treat any of them as something to trial, not a given.
+- The Ministry has amended the 2025 decisions twice in 2026. Re-check dates and the mandatory field list on the [Ministry page](https://mof.gov.ae/en/about-us/initiatives/einvoicing/) before you plan around them.
+- This is not tax advice. Scope questions, such as whether a given transaction is excluded, belong with your tax adviser.
+
+For the country context, see our [UAE e-invoicing page](/countries/uae/e-invoicing/) and [Odoo implementation in the UAE](/blog/odoo-implementation-in-uae/). Payroll has its own UAE file to get right, covered in the [WPS SIF guide](/odoo-guides/uae-wps-sif-file-odoo/). If you want a second pair of eyes on your Odoo data before your ASP connects, [contact us](/contact/).

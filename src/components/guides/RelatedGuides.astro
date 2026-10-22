@@ -1,0 +1,36 @@
+---
+/*
+ * Lists the Odoo guides that name the current page in their linkFrom field.
+ * Dropped into the product, module, industry, solution, country and blog
+ * templates, so a guide decides where it is linked from in its own
+ * frontmatter and no template carries a hand-kept list. Renders nothing when
+ * no guide points here.
+ */
+import { getCollection } from 'astro:content';
+
+export interface Props {
+  /* Override for pages whose URL is not Astro.url.pathname. */
+  path?: string;
+}
+const raw = Astro.props.path || Astro.url.pathname;
+const path = raw.endsWith('/') ? raw : `${raw}/`;
+const guides = (await getCollection('guides'))
+  .filter(g => !g.data.draft && g.data.linkFrom.includes(path))
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+---
+{guides.length > 0 && (
+  <section class="section border-t border-ink-100">
+    <div class="container-site">
+      <h2 class="h3">Odoo guides on this topic</h2>
+      <div class="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {guides.map(g => (
+          <a href={`/odoo-guides/${g.slug}/`} class="card group flex flex-col">
+            <span class="text-xs font-semibold uppercase tracking-wider text-brand-600">{g.data.category}</span>
+            <span class="mt-2 text-lg font-semibold text-ink-900 group-hover:text-brand-700">{g.data.title}</span>
+            <span class="mt-2 flex-1 text-sm text-ink-600">{g.data.summary}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+)}

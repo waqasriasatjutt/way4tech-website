@@ -41,4 +41,46 @@ const course = defineCollection({
   }),
 });
 
-export const collections = { blog, course };
+/*
+ * Odoo guides at /odoo-guides/<slug>/. One page per question somebody types,
+ * written from the modules and the regulations rather than from a template.
+ * (/guides/ is taken: it holds client handover guides kept out of search.)
+ *
+ * The limits are enforced so a guide cannot ship with a <title> or a meta
+ * description a results page would cut: the layout appends " | Way4Tech"
+ * (11 characters) to metaTitle.
+ */
+const guides = defineCollection({
+  type: 'content',
+  schema: z.object({
+    title: z.string(),
+    metaTitle: z.string().max(48),
+    description: z.string().min(80).max(155),
+    /* The search the page is written to answer. Editorial, not rendered. */
+    targetQuery: z.string(),
+    category: z.enum(['Payroll and HR', 'Tax and compliance', 'Industry', 'Integration', 'Upgrades']),
+    region: z.string().optional(),
+    /* One or two sentences for the hub card. */
+    summary: z.string(),
+    published: z.coerce.date(),
+    updated: z.coerce.date(),
+    /* Store modules the guide describes. technical is the module's directory
+       name; the listing URL is built from it. */
+    modules: z.array(z.object({
+      name: z.string(),
+      technical: z.string().regex(/^[a-z0-9_]+$/),
+      note: z.string().optional(),
+    })).default([]),
+    /* A live demo that answered 200 when the guide was written. */
+    demo: z.object({ url: z.string().url(), label: z.string() }).optional(),
+    /* Other guide slugs shown under "Related guides". */
+    related: z.array(z.string()).default([]),
+    /* Site paths (with trailing slash) that should list this guide. */
+    linkFrom: z.array(z.string().regex(/^\/.*\/$/)).default([]),
+    sources: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
+    faqs: z.array(z.object({ q: z.string(), a: z.string() })).min(3),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { blog, course, guides };

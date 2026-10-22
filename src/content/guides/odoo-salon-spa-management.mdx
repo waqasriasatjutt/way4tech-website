@@ -1,0 +1,155 @@
+---
+title: "Odoo salon and spa management: bookings, stylist commission, rooms and the till"
+metaTitle: "Odoo Salon and Spa Management Setup"
+description: "Set up a salon or spa on Odoo 19: no double booking, commission rules, a /salon booking page, stock per service, spa rooms with cleaning time, loyalty."
+targetQuery: "odoo salon and spa management"
+category: "Industry"
+summary: "What a salon or day spa needs from Odoo, what the Appointments app covers, and how the four-module salon ladder fits together from the booking page to the till."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "WT Salon Management"
+    technical: "wt_salon_management"
+    note: "USD 10, base module, Community or Enterprise"
+  - name: "POS Salon"
+    technical: "wt_pos_saloon"
+    note: "USD 949, needs WT Salon Management and Point of Sale"
+  - name: "WT Spa POS"
+    technical: "wt_spa_pos"
+    note: "USD 1,299, needs WT Salon Management and POS Salon"
+  - name: "WT Enterprise Salon (Salon Loyalty)"
+    technical: "wt_enterprise_salon"
+    note: "USD 1,299, needs WT Salon Management"
+demo:
+  url: "https://salon.way4tech.com/"
+  label: "Salon website on Odoo with booking portal"
+related: ["odoo-garage-management", "n8n-odoo-automation", "zkteco-adms-odoo"]
+linkFrom: ["/industries/salon-spa/", "/products/wt-salon-management/", "/products/wt-pos-saloon/", "/products/wt-spa-pos/", "/products/wt-enterprise-salon/", "/modules/appointments/"]
+sources:
+  - label: "Odoo 19 documentation, Appointments"
+    url: "https://www.odoo.com/documentation/19.0/applications/productivity/appointments.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch addons (Community source)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+  - label: "UAE government portal, Value Added Tax"
+    url: "https://u.ae/en/information-and-services/finance-and-investment/taxation/vat/valueaddedtaxvat"
+  - label: "GOV.UK, VAT rates"
+    url: "https://www.gov.uk/vat-rates"
+faqs:
+  - q: "Can I run a salon on Odoo Community?"
+    a: "Yes, with a module. The Odoo Appointments app is not part of the Community source, so Community has no booking app of its own. WT Salon Management adds appointments, stylists, rooms, commission and an online booking page on Community or Enterprise."
+  - q: "How does the salon module stop double booking?"
+    a: "Saving an appointment that overlaps another for the same stylist is refused, and so is one that would put more clients in a room than its capacity. The message names the booking already there. Back to back bookings, one ending at 11:00 and the next starting at 11:00, are allowed."
+  - q: "Do I need the POS modules to take payment?"
+    a: "No. The base module invoices from the appointment and prints an 80 mm receipt, and payment is registered in Accounting. POS Salon puts the bookings on a Point of Sale till for a front desk that wants a till workflow, tips and a quick rebook."
+  - q: "Does it send SMS or WhatsApp reminders?"
+    a: "The base module sends only the booking confirmation email. The Salon Loyalty add-on adds reminder, review request, birthday and win-back emails, and WhatsApp only with your own Meta Cloud API token and phone number id."
+  - q: "Can a spa book couples treatments?"
+    a: "Yes, with Spa POS. A couples booking takes two guests and two therapists on one bill. The bill is one order paid once; splitting it between two payers is not included."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A salon diary looks simple until two receptionists book the same colourist at 3pm, a massage room is double sold on a Saturday, and at the end of the month nobody can agree what each stylist earned. A spa adds rooms that need cleaning between guests, couples who want one bill and a health form before the first treatment. Odoo can run all of it in one database with stock and accounts, but the out of the box apps leave real gaps for a salon. This guide covers what the business needs, what standard Odoo does, and how to set it up on Odoo 19.
+
+## What a salon or spa actually needs
+
+The rules of the business are not complicated, but they are strict:
+
+- **One person, one client at a time.** A stylist or therapist cannot be in two bookings. A room holds as many clients as it has beds or chairs, no more.
+- **Services have a length and use stock.** A full colour takes two hours and uses colour and developer. If the stock is not consumed when the service is done, the back bar runs out without warning.
+- **Commission is per stylist and often per service.** A colourist may earn more on colour work than on cuts. The rule that applies has to be clear, and the number has to come from invoiced work, not a spreadsheet.
+- **Clients book outside opening hours.** An online page that only offers free slots saves phone time and no-shows.
+- **Tax is part of the price.** In the UAE, VAT is 5 per cent ([UAE government portal](https://u.ae/en/information-and-services/finance-and-investment/taxation/vat/valueaddedtaxvat)); in the UK the standard rate is 20 per cent ([GOV.UK](https://www.gov.uk/vat-rates)). The appointment, the invoice and the receipt must agree to the cent.
+- **A spa adds rooms and safety.** Cleaning time between guests, couples on one bill, and an intake form with contraindications before a first treatment.
+
+## What standard Odoo does and does not do
+
+Odoo's **Appointments** app lets customers book online against users or resources. The [Odoo 19 documentation](https://www.odoo.com/documentation/19.0/applications/productivity/appointments.html) describes appointment types with a duration, user-based or resource-based booking, resource capacity, manual confirmation, guests and custom questions, and a published booking page on the website. It is a good scheduler.
+
+Three things matter for a salon:
+
+1. **It is not in Community.** The `appointment` module is not in the [odoo/odoo 19.0 source](https://github.com/odoo/odoo/tree/19.0/addons), which is the Community edition, so it needs an Enterprise subscription.
+2. **It schedules meetings, not services.** There is no stylist commission, no stock consumed per service, no service catalogue with prices that flows to an invoice, and no floor view of which chair is free.
+3. **Point of Sale has no diary.** Odoo Point of Sale (Community) sells services as products, but it does not know who is booked at 3pm.
+
+The [Appointments module page](/modules/appointments/) covers the standard app in more depth. If it fits your business, use it. If you need commission, stock per service and a salon front desk, the modules below fill the gap.
+
+## The four-module ladder
+
+The salon modules are layered. Each column includes everything below it: POS Salon includes Salon Management, and Spa POS includes both. The loyalty add-on sits on top of whichever you run. Prices are as listed on each module.
+
+| Feature | Salon Management (USD 10) | POS Salon (USD 949) | Spa POS (USD 1,299) | + Enterprise Salon (USD 1,299) |
+|---|---|---|---|---|
+| Setup wizard with region presets, dashboard, calendar, kanban | Yes | Yes | Yes | Yes |
+| Rooms and stations, time slots, no double booking | Yes | Yes | Yes | Yes |
+| Online booking page and stylist commission | Yes | Yes | Yes | Yes |
+| Salon board, day view per stylist, tips, quick rebook at the till | No | Yes | Yes | In your till |
+| Room grid, cleaning buffer, couples, intake form, itinerary | No | No | Yes | No |
+| Loyalty points and tiers, packages, memberships, gift cards, deposits | No | No | No | Yes |
+| Waitlist, consent forms, KPI dashboard | No | No | No | Yes |
+
+[WT Salon Management](https://apps.odoo.com/apps/modules/19.0/wt_salon_management/) is the base and the only required module. [POS Salon](https://apps.odoo.com/apps/modules/19.0/wt_pos_saloon/) puts the bookings on the till. [WT Spa POS](https://apps.odoo.com/apps/modules/19.0/wt_spa_pos/) adds the spa layer on top of POS Salon. [WT Enterprise Salon](https://apps.odoo.com/apps/modules/19.0/wt_enterprise_salon/) adds the loyalty and packages layer and is not a till itself. All of them run on Odoo 19 Community.
+
+## How the base module works
+
+### Setup wizard and region presets
+
+The wizard opens on its own the first time the administrator logs in, and again from **Salon, Configuration, Setup Wizard**. Five steps: business type, region, opening hours, staff and services. Running it twice creates nothing twice, because each step matches by name.
+
+The region step fills in editable defaults. The Gulf preset sets VAT at 5 per cent, a 20 per cent deposit default and Friday closed; South Asia sets sales tax at 15 per cent, a 10 per cent deposit and Sunday closed; UK and EU sets VAT at 20 per cent, a 25 per cent deposit and Sunday closed; North America sets no tax rate at all. These are module defaults, not tax advice, so check the rate that applies to your location with your accountant before the first invoice. The wizard reuses a matching tax from your chart of accounts and only creates one when nothing matches.
+
+<Shot src="/odoo-guides/odoo-salon-spa-management/setup-wizard-region.webp" alt="Salon Setup wizard step 2 of 5 in Odoo with region Gulf GCC, tax name VAT, tax rate 5 percent, deposit default 20 percent and switches for Ladies and Gents sections and WhatsApp reminders" width={1280} height={800} caption="Step 2 of the setup wizard: the Gulf preset fills in editable defaults." />
+
+### Appointments and no double booking
+
+An appointment moves through New, Confirmed, In Progress, Done, Invoiced and Cancelled. Confirming creates the sale order. Finishing consumes the Bill of Materials attached to the service, so colour, wax or oil comes out of the warehouse as a real stock move. Invoicing calculates commission.
+
+An appointment that overlaps another for the same stylist is refused, and so is one that overfills a room. The floor view shows each chair, room and station as available, reserved or in service right now. Recurring visits (every week or every few weeks) are booked as a series when the first is confirmed; if one visit would clash, none of it is booked.
+
+### Commission rules
+
+Commission is a percentage or a fixed amount, general or scoped to specific services. When two rules could apply, the one with the lower sequence wins, so a service-specific rate beats a general one placed after it. Lines are generated on invoice and moved from draft to confirmed to paid on your own schedule.
+
+<Shot src="/odoo-guides/odoo-salon-spa-management/commission-rules.webp" alt="Commission Rules list in Odoo with one rule per stylist, percentage of service value or fixed amount per service, a colour specialist rule limited to hair colour and highlights, and total earned" width={1280} height={800} caption="Commission rules: a higher rate on colour work for one stylist, a fixed amount per service for another." />
+
+### The online booking page
+
+A public page at /salon on your Odoo website lists published services by category with price and duration. The customer picks services, a preferred stylist and a time. Slots already taken, or inside a stylist's blocked time or a closed weekday, are never offered. Times are the salon's own time zone, so 15:00 booked online is 15:00 in the diary and in the email.
+
+<Shot src="/odoo-guides/odoo-salon-spa-management/booking-portal.webp" alt="Public Book an Appointment page on an Odoo website with customer details, a list of salon services with duration, category and price, and a preferred stylist selector" width={1280} height={800} caption="The booking page at /salon: services with length and price, then a stylist and a time." />
+
+## The spa layer
+
+Spa POS turns the till into a spa till. It opens on a room grid with live status: free, reserved, in service until a time, or cleaning until a time. Each room has a cleaning buffer in minutes, and no booking or walk-in can start inside it. A couples booking takes two guests and two therapists on one bill. A guest's first treatment of a kind needs an intake form (conditions, allergies, pregnancy, medication, consent); a yes on a safety question raises an alert, and only a manager can override a missing form, with a reason on record. A day-spa itinerary books several treatments in one go, and the guest's therapist gender preference is kept on the guest.
+
+<Shot src="/odoo-guides/odoo-salon-spa-management/spa-room-grid.webp" alt="Spa room grid in the Odoo Point of Sale with massage rooms, a couples suite, a hammam room shown cleaning until a set time, facial room and nail stations, each with turnover minutes and the day's bookings" width={1280} height={800} caption="Spa POS room grid: each room's status, turnover time and the day's treatments." />
+
+The loyalty add-on adds points with four tiers, prepaid session packages that come off the bill as they are used, memberships with a minimum term, gift cards with balance and expiry, deposits carried onto the invoice exactly once, a waitlist that calls the first person when a slot frees, consent forms, and a KPI dashboard.
+
+## How to set it up in Odoo
+
+1. Install WT Salon Management. Sales, Accounting, Inventory, Manufacturing, Employees, Portal and Website install with it.
+2. Run the setup wizard: business type, region preset (check the tax rate), opening hours and closed days, stylists with a colour and commission rule each, and a starter service list.
+3. In **Salon, Configuration, Settings**, confirm the salon time zone, opening and closing hour and the slot interval for the booking page.
+4. Add chairs, rooms and stations with a capacity each in **Salon, Configuration, Rooms and Stations**. A couples room takes two.
+5. Open each service in **Salon, Services, Services**: set the duration, price, qualified stylists, rooms, time slots if needed, an advance, and attach a Bill of Materials for products the service uses.
+6. Review commission in **Salon, Staff, Commission Rules** and set sequences so specific rules sit above general ones. Add monthly targets under **Salon, Staff, Sales Targets**.
+7. Block breaks, holidays and room cleaning in **Salon, Staff, Breaks & Blocked Times**.
+8. Publish the services you want online and test the /salon page as a customer.
+9. For a till, install POS Salon and switch on Salon Mode in the till's own settings. For a spa, install Spa POS and set the cleaning buffer per room.
+10. Assign users to the Stylist, Receptionist or Manager group. Stylists see only their own appointments and cannot see a colleague's commission rate.
+
+<Callout title="The advance is recorded, not collected">In the base module, an advance due at booking is a figure on the appointment. Taking that money is the job of a till (POS Salon or Spa POS) or the loyalty add-on's deposits. Plan which one your front desk will use before you advertise deposits.</Callout>
+
+## Limitations
+
+From the modules' own "what this does not do" lists:
+
+- **Base module:** no loyalty, packages, memberships or gift cards; no till; no SMS or WhatsApp reminders (the confirmation email is the only automated message); no per-stylist day view in the back office (that is in the POS Salon till). Region presets set defaults only; they do not file taxes or enforce a no-show fee or cancellation window.
+- **Spa POS:** no split of one couples bill between two payers; no drawn signature on the intake form; no tax on the advance line, so check with your accountant if your country taxes deposits when taken.
+- **Loyalty add-on:** no selling of packages, memberships or gift cards on the website; it does not collect monthly membership fees; it does not post gift cards as deferred income (the liability report gives the figure, the journal entry is yours); no WhatsApp without your own Meta Cloud API credentials.
+- **Commission is calculated, not paid out.** Payroll or a payment run does that.
+
+If your staff clock in on a biometric terminal, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) covers getting that into Odoo. To send booking events to WhatsApp or a sheet through your own automation, see the [n8n guide](/odoo-guides/n8n-odoo-automation/). Other service businesses with job cards rather than appointments may find the [garage guide](/odoo-guides/odoo-garage-management/) closer to their flow. The [salon and spa industry page](/industries/salon-spa/) and the [Salon Management product page](/products/wt-salon-management/) have the full feature lists, with the salon till on the [POS Salon page](/products/wt-pos-saloon/), the spa till on the [Spa POS page](/products/wt-spa-pos/) and loyalty on the [Enterprise Salon page](/products/wt-enterprise-salon/).
+
+You can see a salon website on Odoo with the booking page at the [salon demo](https://salon.way4tech.com/). If you are deciding between the Appointments app and a salon module for your own shop, [ask here](/contact/) and I will tell you which one fits.

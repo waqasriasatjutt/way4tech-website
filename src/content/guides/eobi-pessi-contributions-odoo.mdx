@@ -1,0 +1,150 @@
+---
+title: "EOBI, PESSI and SESSI contributions in Odoo payroll: who pays, on what base, and how to post it"
+metaTitle: "EOBI, PESSI, SESSI Contributions in Odoo"
+description: "EOBI and provincial social security in Odoo: shares, the minimum wage base, ceilings, salary rules, employer-only lines and posting to accounts."
+targetQuery: "EOBI PESSI SESSI contributions Odoo"
+category: "Payroll and HR"
+region: "Pakistan"
+summary: "A deep dive on Pakistan's EOBI and provincial social security contributions: who pays which share, why the base is the minimum wage rather than the salary, and how each one becomes a payroll rule and a journal line in Odoo."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Pakistan Payroll"
+    technical: "wt_hrms_payroll_pk"
+    note: "USD 30, needs HRMS Payroll"
+  - name: "HRMS Payroll"
+    technical: "wt_hrms_payroll"
+    note: "USD 45, the payroll engine"
+related: ["odoo-payroll-pakistan", "zkteco-adms-odoo", "uae-wps-sif-file-odoo"]
+linkFrom: ["/products/wt-hrms-payroll-pk/", "/countries/pakistan/payroll/", "/modules/payroll/", "/modules/hr/", "/services/odoo-payroll-setup/", "/blog/best-hrms-for-pakistan-businesses/"]
+sources:
+  - label: "EOBI, About EOBI: enactment, registration and contribution rates"
+    url: "http://www.eobi.gov.pk/introduction/enactment.html"
+  - label: "The News, EOBI's challenge (1 July 2026)"
+    url: "https://www.thenews.pk/print/1423273-eobi-s-challenge"
+  - label: "Vialto Partners, Pakistan social security update: minimum wages, EOBI and social security (October 2025)"
+    url: "https://vialtopartners.com/regional-alerts/pakistan-social-security-update-minimum-wages-eobi-and-social-security"
+  - label: "WageIndicator, minimum wage increased in Punjab, Pakistan, from 1 July 2025"
+    url: "https://wageindicator.org/work/minimum-wage/updates/2025/minimum-wage-increased-in-punjab-pakistan-from-1-july-2025-september-10-2025/"
+  - label: "Pakistan Observer, Sindh budget 2026-27: minimum wage set at Rs 43,000 (17 June 2026)"
+    url: "https://pakobserver.net/sindh-budget-2026-27-salaries-pensions-increased-by-7pc-minimum-wage-set-at-rs43000/"
+  - label: "Finance Division, OM of 21 August 2026 on minimum pay of federal civil employees"
+    url: "https://www.finance.gov.pk/circulars/circular_21082026.pdf"
+  - label: "Odoo 19 documentation, payroll localizations"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/payroll/payroll_localizations.html"
+faqs:
+  - q: "What is the EOBI contribution rate?"
+    a: "EOBI states the employer pays 5% and the employee 1% of the worker's minimum wage, 6% in total per month. The base is the notified minimum wage, not the employee's actual salary, so the amount is the same for a clerk and a director."
+  - q: "How much is EOBI per month in 2026?"
+    a: "On a Rs 40,000 minimum wage it is Rs 2,000 from the employer and Rs 400 from the employee. Provinces announced higher minimum wages for 2026-27, for example Rs 43,000 in Sindh's budget, so recompute once the notified figure that EOBI applies to you is confirmed."
+  - q: "Is PESSI or SESSI deducted from the employee's salary?"
+    a: "No. Provincial social security is an employer contribution, commonly 6%, and is not taken from the employee's pay. In Odoo it should appear as an employer contribution line that is posted to the books but does not change net pay."
+  - q: "Which businesses must register with EOBI?"
+    a: "EOBI says the Act applies to industrial and commercial establishments with five or more employees, from 1 July 2008. Smaller establishments may opt in voluntarily."
+  - q: "Does the Odoo module apply a social security wage ceiling?"
+    a: "The rate set has a Social Security Wage Ceiling field and the calculation caps the wage at it when it is set. It ships at zero, meaning no ceiling, because no figure could be confirmed for every province, so you set the one that applies to you."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ask three payroll officers in Lahore how EOBI is calculated and you may get three answers: 6% of salary, a flat Rs 2,400, or "whatever the last challan said". Provincial social security adds a second layer, collected by a different institution in each province, and neither contribution follows the employee's real pay the way income tax does. This guide is about those two contributions only: who pays which share, what the base really is, and how to make Odoo compute them, keep the employer's share off the employee's deductions and still get it into the ledger. The income tax side is in the [Pakistan payroll guide](/odoo-guides/odoo-payroll-pakistan/).
+
+## The rules: who pays, on what base
+
+### EOBI
+
+The Employees' Old-Age Benefits Institution runs the federal pension scheme under the EOB Act 1976. According to [EOBI's own description of the Act](http://www.eobi.gov.pk/introduction/enactment.html), it applies from 1 July 2008 to industrial and commercial establishments with five or more employees, and a smaller establishment may opt in. The same page sets the rates: the employer pays 5% and the employee 1% of the worker's minimum wages, 6% in total each month.
+
+The word that trips people up is "minimum". Since a 2005 amendment, "wages" for EOBI are defined by reference to the minimum wage for unskilled workers, as [The News explained on 1 July 2026](https://www.thenews.pk/print/1423273-eobi-s-challenge). The same article notes that employers and EOBI have disputed the definition in the superior courts for years, and that some employers with stay orders still pay on an old base. If your company is party to such a case, follow your lawyer's instruction, not the general rule.
+
+### Provincial social security
+
+Labour law was devolved to the provinces in 2010, with the EOB Act kept federal, so employees' social security is collected province by province: PESSI in Punjab, SESSI in Sindh, and separate institutions in Khyber Pakhtunkhwa and Balochistan. It is an employer contribution. [Vialto's October 2025 summary](https://vialtopartners.com/regional-alerts/pakistan-social-security-update-minimum-wages-eobi-and-social-security) lists it at 6% for Punjab, Sindh, Khyber Pakhtunkhwa and Balochistan, computed on the statutory minimum wage whatever the worker is actually paid.
+
+Which employees count as covered workers, and whether a wage limit applies, is set by each province's law and practice. Confirm it with your provincial institution when you register, because it decides who gets a social security line on the payslip at all.
+
+### The base: which minimum wage
+
+| Province | Minimum wage 2025-26 | EOBI employer 5% | EOBI employee 1% | Social security 6% |
+|---|---|---|---|---|
+| Punjab | Rs 40,000 from 1 July 2025 | Rs 2,000 | Rs 400 | Rs 2,400 |
+| Sindh | Rs 40,000 from 1 July 2025 | Rs 2,000 | Rs 400 | Rs 2,400 |
+| Khyber Pakhtunkhwa | Rs 40,000 from 1 July 2025 | Rs 2,000 | Rs 400 | Rs 2,400 |
+| Balochistan | Rs 37,000 from 1 July 2024 | Rs 1,850 | Rs 370 | Rs 2,220 |
+
+The figures above are from [Vialto's October 2025 update](https://vialtopartners.com/regional-alerts/pakistan-social-security-update-minimum-wages-eobi-and-social-security); the Punjab increase to Rs 40,000 is also recorded by [WageIndicator](https://wageindicator.org/work/minimum-wage/updates/2025/minimum-wage-increased-in-punjab-pakistan-from-1-july-2025-september-10-2025/).
+
+For 2026-27 the picture is still settling. Sindh's budget [announced a rise from Rs 40,000 to Rs 43,000](https://pakobserver.net/sindh-budget-2026-27-salaries-pensions-increased-by-7pc-minimum-wage-set-at-rs43000/). The federal [Finance Division memo of 21 August 2026](https://www.finance.gov.pk/circulars/circular_21082026.pdf) raised the minimum pay of federal civil employees to Rs 40,700 from 1 July 2026, which is a government pay order rather than a private sector notification. We could not find a published Punjab figure for 2026-27. Before changing the base in payroll, get the notified minimum wage that EOBI and your provincial institution are actually applying to your establishment, usually from the demand on their portal or from your regional office.
+
+### Registration and the monthly payment
+
+Register the establishment with EOBI and with the social security institution of each province where you employ people, then register each employee. Both institutions issue a monthly challan or demand. EOBI's site links an online payment facility. Check the due date on each challan rather than relying on a date from memory, as the institutions have changed procedures over the years.
+
+## What standard Odoo does
+
+Odoo Community has no payroll, so nothing in it computes EOBI or social security. Odoo Enterprise's [payroll localization list](https://www.odoo.com/documentation/19.0/applications/hr/payroll/payroll_localizations.html) names Pakistan but has no Pakistan page describing which contributions it covers, so check with Odoo before relying on it. On Community you need a payroll engine and a rule set; the [payroll module hub](/modules/payroll/) lists what we publish.
+
+## How each contribution becomes a salary rule
+
+[Pakistan Payroll](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll_pk/) (on top of [HRMS Payroll](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll/)) does not carry contribution figures inside rule formulas. They sit on a dated rate set, and three rules read them through a computation type called "Pakistan Statutory Amount":
+
+| Rule code | Category | What it computes | Changes net pay |
+|---|---|---|---|
+| EOBI_EMP | Deduction | EOBI wage base times the employee percent | Yes, deducted |
+| EOBI_ER | Employer Contribution | EOBI wage base times the employer percent | No |
+| SESSI | Employer Contribution | Social security percent times the wage, capped at the ceiling if one is set | No |
+
+EOBI ignores the employee's salary completely: it is the wage base on the rate set times the percentage. Social security takes the monthly gross (or another rule if you name one in Taxable Base Rule), caps it at the ceiling when the ceiling is not zero, and applies the percentage.
+
+That gives you a clean way to follow the minimum wage practice described above. Set the Social Security Wage Ceiling to the minimum wage. Anyone paid at least the minimum wage is then charged 6% of the minimum wage, which is the result Vialto describes. Leave the ceiling at zero only if your institution charges on actual wages.
+
+### Employer-only lines: printed, but not deducted
+
+Earlier releases hid the employer rules from the payslip. That kept the payslip tidy, but a rule that produces no payslip line reaches no journal entry, so the company's own EOBI and social security cost was missing from the books. In version 19.0.2.0.0 EOBI_ER, PF_ER and SESSI print as lines in the Employer Contribution category. That category is kept out of gross and out of deductions, so the employee's net pay does not move. An install made before this version is repaired on upgrade for any rule still exactly as shipped; a rule you had edited is left alone and named in the server log.
+
+## How to set it up in Odoo
+
+1. **Install Pakistan Payroll**, which brings HRMS Payroll with it.
+2. **Open the rate sets** at WT HRMS, Configuration, Payroll Config, Pakistan Statutory Rates. The shipped set shows an EOBI wage base of 39,000 and social security at 6% with no ceiling.
+3. **Do not edit the shipped set in place.** Give it an In Force Until date, then create a new set starting on the date the new base applies, for example 1 July 2026.
+4. **Enter the EOBI fields**: EOBI Wage Base (the confirmed minimum wage, such as 40,000), EOBI Employee Percent 1, EOBI Employer Percent 5.
+5. **Enter social security**: Social Security Percent 6 and, if your institution charges on the minimum wage, a Social Security Wage Ceiling equal to it.
+6. **Split by province if you need to.** The base and ceiling differ by province, but one company has one rate set per period. If you employ in two provinces with different bases, either run each province as its own company in Odoo, or add a second social security rule with a fixed percentage of a base rule for the other province's staff and use separate salary structures.
+7. **Check the rules** at WT HRMS, Configuration, Payroll Config, Payroll Rules: EOBI_EMP, EOBI_ER and SESSI should show "Pakistan Statutory Amount".
+8. **Compute one payslip** and confirm it shows EOBI employee Rs 400 and employer Rs 2,000 on a Rs 40,000 base before running the batch.
+
+<Shot src="/odoo-guides/eobi-pessi-contributions-odoo/statutory-rate-sets-list.webp" alt="Pakistan Statutory Rates list in Odoo with one rate set from 1 July 2024, six slabs, EOBI wage base 39,000 and social security 6 percent" width={1280} height={282} caption="The shipped rate set. Its EOBI base of 39,000 gives 390 and 1,950 a month, which no longer matches any current minimum wage." />
+
+<Callout title="Update the shipped EOBI base before a live run">
+The module ships an EOBI wage base of 39,000, chosen to reproduce the 390 and 1,950 amounts earlier versions charged. That is below the Rs 40,000 minimum wage that applied in Punjab, Sindh and Khyber Pakhtunkhwa from 1 July 2025, and higher bases were announced for 2026-27. Add a rate set with the base that applies to you.
+</Callout>
+
+## Posting contributions to the books
+
+Payroll is only half done until the liability sits in the ledger. HRMS Payroll Accounting (wt_hrms_payroll_accounting, [store listing](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll_accounting/), USD 35 per its manifest) posts each confirmed payslip as one balanced journal entry. Accounts are set per payroll rule, with a fallback per category under WT HRMS, Configuration, Payroll Config, Payroll Accounts.
+
+A sensible mapping for these contributions:
+
+- **EOBI_EMP**: debit Salary Payable, credit EOBI Payable. It is money withheld from the employee and owed to EOBI.
+- **EOBI_ER**: debit EOBI Expense, credit EOBI Payable.
+- **SESSI**: debit Social Security Expense, credit Social Security Payable (one payable account per province if you pay more than one institution).
+
+A per-rule journal override lets you route these to a separate journal if your accountant prefers. Net pay is marked "Skip in Journal" so it is not counted twice. If a line has no account, posting stops and names the rule instead of producing an entry that balances but understates payroll.
+
+<Shot src="/odoo-guides/eobi-pessi-contributions-odoo/payroll-account-mapping.webp" alt="Payroll Accounts list in Odoo mapping Allowance, Basic, Deduction, Employer Contribution and Net categories to debit and credit accounts, with Net set to skip in journal" width={1280} height={282} caption="Fallback accounts per category. Set EOBI and social security accounts on the rules themselves so each payable has its own balance." />
+
+### The monthly check
+
+When the challan arrives, compare it with the credit balance movement on EOBI Payable and Social Security Payable for the month. A difference usually means a joiner or leaver registered with the institution but not in Odoo, or the other way round. Clear the payable when you pay, and the balance at month end should be zero.
+
+## Limitations
+
+- **One rate set per company per period.** Mixed provinces in one company need the workaround in step 6.
+- **No challan file.** The module computes and posts amounts; it does not produce EOBI or PESSI upload files or pay them.
+- **No coverage logic.** It charges every employee on the structure. Remove the rules from the structure used for employees who are not covered.
+- **Court-ordered bases are your call.** If you pay on a different base under a stay order, enter that base on the rate set yourself.
+- **The ceiling ships empty.** No figure is set for any province; you supply it.
+
+If attendance feeds your payroll, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) covers getting device punches in first, and the [UAE WPS SIF guide](/odoo-guides/uae-wps-sif-file-odoo/) is the Gulf counterpart for salary files. See also the [Pakistan payroll page](/countries/pakistan/payroll/) and the [payroll setup service](/services/odoo-payroll-setup/).
+
+If your contribution totals do not match the challan and you cannot see why, [tell us what you are seeing](/contact/).

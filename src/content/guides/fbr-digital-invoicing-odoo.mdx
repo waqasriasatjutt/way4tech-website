@@ -1,0 +1,130 @@
+---
+title: "FBR Digital Invoicing with Odoo: who is in scope, what the PRAL API needs, and how to connect safely"
+metaTitle: "FBR Digital Invoicing in Odoo: A Practical Plan"
+description: "FBR Digital Invoicing for Odoo users: who is in scope, the PRAL API fields and sandbox scenarios, data to prepare, and the ways to connect safely."
+targetQuery: "FBR digital invoicing Odoo"
+category: "Tax and compliance"
+region: "Pakistan"
+summary: "A practical plan for sales tax registered businesses on Odoo that must issue FBR digital invoices: the SRO timeline, the PRAL API and its sandbox scenarios, the product and customer data to fix first, and the options for connecting."
+published: 2026-10-23
+updated: 2026-10-23
+related: ["fbr-pos-integration-odoo", "zatca-e-invoicing-odoo-community", "uae-e-invoicing-odoo", "odoo-payroll-pakistan"]
+linkFrom: ["/countries/pakistan/e-invoicing/", "/services/odoo-e-invoicing/", "/countries/pakistan/", "/modules/accounting/", "/services/odoo-integration/", "/blog/odoo-e-invoicing-clearance-vs-reporting/", "/blog/odoo-implementation-in-pakistan/"]
+sources:
+  - label: "FBR, SRO 709(I)/2025 of 22 April 2025 on electronic invoicing"
+    url: "https://download1.fbr.gov.pk/SROs/2025423124414622SRO709dated22April,2025.pdf"
+  - label: "FBR, SRO 1413(I)/2025 of 1 August 2025"
+    url: "https://download1.fbr.gov.pk/SROs/2025811681810559SRO1413.pdf"
+  - label: "FBR, SRO 1852(I)/2025 of 24 September 2025, integration and issuance dates"
+    url: "https://download1.fbr.gov.pk/SROs/2025924149054920SRO1852.pdf"
+  - label: "FBR, e-invoicing frequently asked questions"
+    url: "https://fbr.gov.pk/faqs/173967/173969"
+  - label: "PRAL, Technical Specification for DI API, version 1.12 (24 July 2025)"
+    url: "https://download1.fbr.gov.pk/Docs/20257301172130815TechnicalDocumentationforDIAPIV1.12.pdf"
+  - label: "Odoo source, l10n_pk (Pakistan, Accounting) manifest, branch 19.0"
+    url: "https://github.com/odoo/odoo/blob/19.0/addons/l10n_pk/__manifest__.py"
+faqs:
+  - q: "Who must issue FBR digital invoices?"
+    a: "Sales tax registered persons. SRO 709(I)/2025 made electronic invoicing mandatory for corporate and non-corporate registered persons, and SRO 1852(I)/2025 set staged registration, testing and issuance dates by category and turnover. Those dates fell between October and December 2025, so every registered person is now expected to be live."
+  - q: "Can I connect Odoo to FBR Digital Invoicing myself?"
+    a: "You can build the software, but FBR's FAQ says only a licensed integrator with a valid FBR licence can configure a registered person's e-invoicing software, and PRAL offers integration free on demand. Plan the connection with a licensed integrator or PRAL from the start."
+  - q: "What is the sandbox scenario ID in FBR Digital Invoicing?"
+    a: "In the sandbox each invoice carries a scenarioId such as SN001 for standard rate goods to a registered buyer or SN019 for services. The PRAL specification lists 28 scenarios and which ones apply to each business activity, and you test those before moving to production."
+  - q: "Does Odoo have FBR Digital Invoicing built in?"
+    a: "No. Odoo 19 Community's Pakistan module covers the chart of accounts, taxes and tax reports. It has no FBR or PRAL connector, so you need a third-party module or a custom integration."
+  - q: "What happens if the FBR API is down when I validate an invoice?"
+    a: "A well-built connector records the attempt, keeps the invoice in a pending state and retries, instead of blocking validation or posting twice. Do not send the customer an invoice without the FBR invoice number and QR code."
+---
+import Callout from '../../components/guides/Callout.astro';
+
+Most Odoo users in Pakistan hear about FBR Digital Invoicing the same way: an accountant forwards an SRO, a deadline is attached, and somebody asks whether "the system" can do it. Underneath that question are three separate pieces of work. Your data has to carry what FBR wants on every invoice line, something has to talk to the PRAL API and cope when it fails, and FBR's rules decide who is allowed to configure that something. This guide takes them in that order.
+
+## What the rules require
+
+### Who is in scope and by when
+
+Electronic invoicing applies to sales tax registered persons. [SRO 709(I)/2025](https://download1.fbr.gov.pk/SROs/2025423124414622SRO709dated22April,2025.pdf), issued on 22 April 2025, made it mandatory for corporate and non-corporate registered persons. The dates moved twice. [SRO 1413(I)/2025](https://download1.fbr.gov.pk/SROs/2025811681810559SRO1413.pdf) of 1 August 2025 replaced the first timetable, and [SRO 1852(I)/2025](https://download1.fbr.gov.pk/SROs/2025924149054920SRO1852.pdf) of 24 September 2025 replaced that one.
+
+SRO 1852 directs registered persons to complete registration and testing of their hardware and software with the Board's system, through a licensed integrator or PRAL, and to issue electronic invoices by staged dates. The categories run from public companies and companies with turnover above Rs 1 billion, through mid-sized companies and all importers, to smaller companies, individuals and associations of persons above Rs 100 million, and finally every other registered person. Turnover is what was declared in sales tax returns for the last twelve months. The staged dates ran from October to December 2025. The scanned notification is hard to read in places, so take the exact date for your category from the PDF itself, but the practical point stands: as of October 2026 every category's date has passed.
+
+### Who may connect you
+
+The [FBR e-invoicing FAQ](https://fbr.gov.pk/faqs/173967/173969) answers the question most Odoo projects get wrong. You may use any e-invoicing software, but only a licensed integrator with a valid FBR licence can configure a registered person's software for the Board's system. PRAL provides integration free of cost on demand. FBR charges taxpayers nothing; integrators may charge within limits the Board sets. Missing the integration timeline exposes the taxpayer to penal action under section 33 of the Sales Tax Act, and the FAQ applies the same section to an integrator who fails to deliver.
+
+So "we will write our own connector" is fine as an engineering plan, provided a licensed integrator or PRAL does the registration and configuration.
+
+### What the API expects
+
+PRAL's [Technical Specification for DI API, version 1.12](https://download1.fbr.gov.pk/Docs/20257301172130815TechnicalDocumentationforDIAPIV1.12.pdf) describes two calls used in real time: one that posts invoice data and one that only validates it. The sandbox and production URLs differ by a suffix, and the security token decides which environment you reach. The token is issued by PRAL, sent as a Bearer header, and valid for five years.
+
+Each invoice has a header (invoice type, date, seller and buyer NTN or CNIC, names, provinces, addresses, buyer registration type, and for a debit note the original FBR invoice number) and one or more items. The item fields you will spend the most time on:
+
+| API field | Meaning | Where it should come from in Odoo |
+|---|---|---|
+| hsCode | Harmonised System code of the product | A field on the product |
+| productDescription | Description of goods or service | Invoice line label |
+| rate | Tax rate, as listed by the rate reference API | The tax on the line, mapped to FBR's rate description |
+| uoM | Unit of measure from FBR's UoM list | Product UoM, mapped to FBR's names |
+| quantity, valueSalesExcludingST | Quantity and value before sales tax | Invoice line |
+| salesTaxApplicable, salesTaxWithheldAtSource | Sales tax, and any withheld at source | Computed taxes on the line |
+| furtherTax, extraTax, fedPayable, discount | Other amounts where they apply | Separate taxes or discount on the line |
+| saleType | Type of sale, such as goods at standard rate | Mapped from the tax or fiscal position |
+| sroScheduleNo, sroItemSerialNo | SRO schedule and serial for reduced rate or exempt items | A mapping per product or tax |
+| scenarioId | Sandbox test scenario, sandbox only | Set by the connector during testing |
+
+A valid response returns an FBR invoice number for the invoice and a number per item. An invalid one returns status 01 with an error code, for example 0052 for an improper HS code. The specification also defines reference calls for provinces, document types, UoMs, rates, SRO schedules and HS codes with their UoM, and requires the Digital Invoicing logo and a QR code (version 2.0, 25 by 25, printed at 1 by 1 inch) on each invoice.
+
+### Sandbox scenarios
+
+Before production you test in the sandbox with scenario IDs. The specification lists 28, from SN001 (goods at standard rate to a registered buyer) and SN002 (to an unregistered buyer) through reduced rate, exempt, zero rated, third schedule goods, services (SN018, SN019) and three retail scenarios, and a table of which apply to each business activity and sector. A distributor of FMCG goods has a different list from a services company. Pick yours from that table before writing any mapping.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community ships one Pakistan module, `l10n_pk`, whose [manifest](https://github.com/odoo/odoo/blob/19.0/addons/l10n_pk/__manifest__.py) lists a chart of accounts, taxes, a tax report and a withholding tax report. There is no FBR or PRAL e-invoicing module in the Odoo 19 Community source, and Odoo's fiscal localisation documentation lists Pakistan without a page of its own. Odoo does give you useful raw material: taxes and fiscal positions, customer Tax IDs, provinces as states, units of measure, and an HS Code field on products once the shipping module (stock_delivery) is installed. [What a country localization contains](/blog/what-an-odoo-country-localization-contains/) explains why that is a long way from a working connector. For how this differs from the clearance models in the Gulf, see [clearance versus reporting](/blog/odoo-e-invoicing-clearance-vs-reporting/).
+
+## How to prepare Odoo and connect
+
+1. **Pick your scenarios.** From the PRAL table, list the scenario IDs for your business activity and sector. This decides which sale types, rates and SRO references you must support.
+2. **Clean product data.** Every sold product needs a valid HS code and a unit of measure that maps to FBR's UoM list. Pull the HS-code-with-UoM reference list and check your catalogue against it; a mismatch is the most common rejection.
+3. **Clean customer data.** Registered buyers need a 7 or 9 digit NTN or 13 digit CNIC in the Tax ID field, a province and an address. Decide how you mark a buyer as registered or unregistered.
+4. **Map taxes.** For each Odoo sales tax, record the FBR rate description, the sale type and, for reduced or exempt supplies, the SRO schedule and item serial. Further tax and extra tax should be separate taxes, not folded into the main rate.
+5. **Choose the connection route** (see the table below) and engage a licensed integrator or PRAL for registration.
+6. **Get the sandbox token** through your integrator or PRAL, and run every scenario on your list through the validate call first, then the post call.
+7. **Design the invoice PDF** with the FBR invoice number, the Digital Invoicing logo and the QR code at the specified size.
+8. **Go live** with production credentials, starting with a small set of customers, and compare the day's FBR numbers with posted invoices before widening.
+
+### Engineering choices that save you later
+
+These are general practice for any tax authority API, and they apply here:
+
+- **Do not block validation on the network.** Post the invoice in Odoo, then submit. If FBR is slow or down, mark the invoice as pending and retry from a queue with increasing gaps, rather than leaving a user staring at a spinner or rolling back the accounting entry.
+- **Never send a pending invoice to the customer.** The customer's copy should carry the FBR number and QR code, so hold the email until the number exists.
+- **Store every request and response** on the invoice: the JSON sent, the JSON returned, the time and the error code. When a figure is questioned, that record answers it.
+- **Guard against double posting.** A timeout does not mean the call failed. Before resending, check whether the first attempt produced an FBR number, and ask your integrator how to confirm the status of a timed-out submission.
+- **Validate before you post.** The validate call catches HS code, rate and UoM errors without creating anything at FBR.
+- **Handle adjustments explicitly.** Version 1.12 lists Sale Invoice and Debit Note as invoice types, and a debit note must carry the original FBR invoice number. Confirm with your integrator how credit notes are treated for your scenarios before you go live.
+
+The restaurant module in the [FBR POS guide](/odoo-guides/fbr-pos-integration-odoo/) uses the same queue-and-retry pattern for FBR's POS endpoint, which is a different scheme with different fields.
+
+### Your options
+
+| Route | What you get | Watch for |
+|---|---|---|
+| Build a connector in Odoo | Full control of data mapping and error handling | Still needs a licensed integrator or PRAL to register and configure |
+| Third-party module from the Odoo app store | Faster start | Check the scenarios it supports, how it retries, and who holds the integrator licence |
+| PRAL's free integration | No integrator fee | Fit with Odoo's data model is your job |
+| Have a connector built for you | Mapped to your catalogue and taxes | Agree scenario coverage and support terms in writing |
+
+<Callout title="Not a product we ship today">
+We do not currently sell a ready FBR Digital Invoicing module for Odoo 19. If you want one built or reviewed, it is project work, scoped against your scenarios and catalogue.
+</Callout>
+
+## Limitations of this guide
+
+- **Dates and fields change.** The SRO timetable has been replaced twice and the API specification is versioned. Check the current SRO list and the latest PRAL document before you build.
+- **No legal advice.** Whether a supply is reduced rate, exempt or third schedule, and which SRO applies, is a tax question for your adviser.
+- **POS retail is separate.** Over-the-counter sales by Tier-1 retailers follow the POS integration rules, not this API.
+
+For the Pakistan overview see [e-invoicing in Pakistan](/countries/pakistan/e-invoicing/), our [e-invoicing service](/services/odoo-e-invoicing/) and [integration work](/services/odoo-integration/). Comparable guides for the Gulf are the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/) and the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/).
+
+If you have a sandbox token and a list of failing invoices, [send us the error codes](/contact/) and we will tell you where the data needs fixing.

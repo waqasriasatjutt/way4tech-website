@@ -118,6 +118,8 @@ function sourcesFor(pathname) {
   if (seg.length === 0) return ['src/pages/index.astro', 'src/data/site.ts'];
   if (a === 'blog' && b) return [`src/content/blog/${b}.mdx`, `src/content/blog/${b}.md`];
   if (a === 'blog') return ['src/pages/blog/index.astro', 'src/content/blog/'];
+  if (a === 'odoo-guides' && b) return [`src/content/guides/${b}.mdx`, 'src/pages/odoo-guides/[slug].astro'];
+  if (a === 'odoo-guides') return ['src/pages/odoo-guides/index.astro', 'src/content/guides/'];
   if (a === 'learn' && b === 'odoo-owl' && c) return [`src/content/course/${c}.mdx`];
   if (a === 'learn' && b === 'odoo-owl') return ['src/pages/learn/odoo-owl/index.astro', 'src/content/course/', ...data];
   if (a === 'author') return [`src/pages/author/${b}.astro`, 'src/data/modules-catalog.ts', 'src/content/blog/'];
@@ -249,6 +251,10 @@ const SECTION_HINTS = {
   },
   industries: {
     index: { priority: 0.9, changefreq: 'monthly' },
+    child: { priority: 0.8, changefreq: 'monthly' },
+  },
+  'odoo-guides': {
+    index: { priority: 0.8, changefreq: 'monthly' },
     child: { priority: 0.8, changefreq: 'monthly' },
   },
   blog: {

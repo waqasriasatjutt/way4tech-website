@@ -1,0 +1,150 @@
+---
+title: "n8n and Odoo: the four ways to connect them, and one workflow built end to end"
+metaTitle: "n8n Odoo Integration: Options and Setup"
+description: "n8n with Odoo 19: the built-in Odoo node, JSON-RPC, the JSON-2 API and signed webhooks compared, plus an order to Google Sheets flow with HMAC checks."
+targetQuery: "n8n Odoo"
+category: "Integration"
+summary: "What the n8n Odoo node can and cannot do, what changes with Odoo 19's JSON-2 API and the XML-RPC deprecation, and how to push signed events from Odoo into n8n with retries."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "n8n Connector Enterprise"
+    technical: "wt_n8n_connector"
+    note: "USD 249, Odoo 19 Community or Enterprise, depends on base, mail and web"
+related: ["odoo-van-sales", "odoo-20-whats-new-migration", "zkteco-adms-odoo"]
+linkFrom: ["/services/odoo-integration/", "/blog/odoo-build-buy-or-configure/", "/modules/sales/"]
+sources:
+  - label: "n8n docs, Odoo node"
+    url: "https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.odoo/"
+  - label: "n8n docs, Odoo credentials"
+    url: "https://docs.n8n.io/integrations/builtin/credentials/odoo/"
+  - label: "n8n source, Odoo node v2 transport (JSON-2 and legacy /jsonrpc)"
+    url: "https://github.com/n8n-io/n8n/blob/master/packages/nodes-base/nodes/Odoo/v2/transport/index.ts"
+  - label: "Odoo 19 documentation, External JSON-2 API"
+    url: "https://www.odoo.com/documentation/19.0/developer/reference/external_api.html"
+  - label: "Odoo 19 documentation, Webhooks"
+    url: "https://www.odoo.com/documentation/19.0/applications/studio/automated_actions/webhooks.html"
+  - label: "Odoo 19 source, ir_actions.py (Send Webhook Notification)"
+    url: "https://github.com/odoo/odoo/blob/19.0/odoo/addons/base/models/ir_actions.py"
+faqs:
+  - q: "Does n8n have an Odoo trigger node?"
+    a: "No. n8n ships an Odoo action node for contacts, opportunities, notes or activities and custom records, but no trigger. To react when something happens in Odoo you either poll on a schedule or have Odoo send a webhook to an n8n Webhook node."
+  - q: "Will my n8n Odoo workflows break when XML-RPC is removed?"
+    a: "Odoo's documentation says the /xmlrpc, /xmlrpc/2 and /jsonrpc endpoints are deprecated and scheduled for removal in Odoo 22 (fall 2028), and on Odoo Online from 21.1 (winter 2027). Workflows that call those endpoints directly need moving to the JSON-2 API before then. The current n8n Odoo node source already supports JSON-2 for Odoo 19 and later."
+  - q: "Can Odoo Community send webhooks to n8n without a module?"
+    a: "Yes, an automation rule can use the Send Webhook Notification action, which is part of Community. It posts once after the transaction commits with a one second timeout, with no signature and no retry, so a missed call is simply lost. That is fine for notifications and weak for anything financial."
+  - q: "How do I check that a webhook really came from Odoo?"
+    a: "The sender signs the raw request body with a shared secret using HMAC-SHA256 and puts the result in a header. In n8n you enable Raw Body on the Webhook node, compute the same HMAC with a Crypto node, and compare the two in an If node before any other step runs."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+You have n8n running, you have Odoo running, and you want a confirmed sales order to land in a Google Sheet, a new lead to ping Slack, or a form to create a contact. The first hour usually goes well: the n8n Odoo node creates a contact. Then you need it to happen when something changes in Odoo rather than on a timer, or you need a model the node does not list, or the call fails silently at 2am and nobody knows which orders were missed. This guide sorts out the options, says what each one is good for, and walks one real workflow through from Odoo to a sheet.
+
+## What an Odoo and n8n integration actually needs
+
+Most automations have two directions, and they need different things:
+
+- **Into Odoo** (n8n writes or reads): an authenticated API, access to the models you need, and ideally a key that can do less than a full user.
+- **Out of Odoo** (Odoo tells n8n something happened): an event at the moment of change, a way for n8n to prove the call came from Odoo, and some memory of what was sent, so a failure can be retried and audited.
+
+The second direction is where most setups fall down, because standard tooling is built around n8n calling Odoo, not the other way round.
+
+## The four options
+
+### 1. n8n's built-in Odoo node
+
+The [n8n Odoo node documentation](https://docs.n8n.io/integrations/builtin/app-nodes/n8n-nodes-base.odoo/) lists create, delete, get, get all and update for contacts, opportunities, notes and a custom resource (any model by technical name). The credential takes your site URL, username, database name and either a password or, recommended, an API key generated under your profile's Account Security ([n8n credentials docs](https://docs.n8n.io/integrations/builtin/credentials/odoo/)).
+
+Under the hood, version 1 of the node calls Odoo's `/jsonrpc` endpoint. The current source on GitHub adds a version 2 that posts to `/json/2/model/method` with a bearer API key for Odoo 19 and later, and falls back to `/jsonrpc` for older versions ([n8n source](https://github.com/n8n-io/n8n/blob/master/packages/nodes-base/nodes/Odoo/v2/transport/index.ts)). Check which node version your n8n release ships before relying on that.
+
+There is no Odoo trigger node. For "when X happens in Odoo", the node alone means a scheduled poll.
+
+### 2. Raw JSON-RPC or XML-RPC from an HTTP Request node
+
+This works with any model and any method, and it is how most older tutorials do it. It also has a deadline. Odoo's own documentation says the `/xmlrpc`, `/xmlrpc/2` and `/jsonrpc` endpoints are deprecated and scheduled for removal in Odoo 22 (fall 2028), and on Odoo Online from 21.1 (winter 2027) ([Odoo external API docs](https://www.odoo.com/documentation/19.0/developer/reference/external_api.html)). Anything new should not be built on them.
+
+### 3. Odoo 19's JSON-2 API
+
+Odoo 19 documents a JSON-2 endpoint: you post a JSON object to `/json/2/model/method`, with the API key in the `Authorization` header as a bearer token, and an `X-Odoo-Database` header when one server hosts several databases ([Odoo external API docs](https://www.odoo.com/documentation/19.0/developer/reference/external_api.html)). It is the supported path forward for n8n calling Odoo. The key carries the full rights of the user it belongs to, so create a dedicated integration user with only the access it needs.
+
+### 4. Webhooks out of Odoo
+
+Odoo Community includes automation rules with a **Send Webhook Notification** action, and an **On webhook** trigger for inbound calls ([Odoo webhooks docs](https://www.odoo.com/documentation/19.0/applications/studio/automated_actions/webhooks.html)). Read the source before trusting it with money: the outbound call is a single POST after the transaction commits, with a one second timeout, no signature and no retry ([ir_actions.py](https://github.com/odoo/odoo/blob/19.0/odoo/addons/base/models/ir_actions.py)). If n8n is restarting at that second, the event is gone.
+
+That gap is why we wrote [n8n Connector Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_n8n_connector/). It sends signed events out of any model with retries and a replay button, and exposes a scoped REST API in, with an OpenAPI schema per key.
+
+## Side by side
+
+| | n8n Odoo node | Raw JSON-RPC / XML-RPC | JSON-2 (Odoo 19) | Native webhook action | n8n Connector |
+|---|---|---|---|---|---|
+| Direction | n8n to Odoo | n8n to Odoo | n8n to Odoo | Odoo to n8n | Both |
+| Models | Four resources plus custom | Any | Any | Any | Any, per key scope |
+| Events from Odoo | Polling only | Polling only | Polling only | Yes, once | Yes, queued |
+| Signed requests | Not applicable | Not applicable | Not applicable | No | HMAC-SHA256 |
+| Retries and log | n8n side only | n8n side only | n8n side only | Optional call log, no retry | Retries, dead letter, replay, request log |
+| Key narrower than the user | No | No | No | Not applicable | Model, operation, field and record scopes |
+| Future proof | Version 2 uses JSON-2 | Removed in Odoo 22 | Yes | Yes | Own endpoints |
+
+The honest summary: for n8n writing a contact or a lead, the built-in node on JSON-2 is enough. For anything that must react to Odoo reliably, you need a queue on the Odoo side.
+
+## How the connector works
+
+**Events out.** You subscribe to a model and a trigger: created, updated, chosen fields changed, or deleted, with a domain filter on top. The event is queued in the same database transaction as the change, so a rollback sends nothing. A scheduled job delivers the queue every minute and is also woken straight after a change. A failed delivery retries after 1, 5, 15, 60 and 360 minutes, six attempts in all, then stops and waits in the log for a manual Replay.
+
+**Payloads.** A many2one arrives as an object with id and name, dates as ISO 8601, selections with their label, and updates can carry old and new values. You can expand a relation so an invoice travels with its lines.
+
+**Signing.** Every request carries `X-Odoo-Signature`, which is `sha256=` followed by the HMAC-SHA256 of the raw body with the connection's secret. The body includes the event, model, record id, delivery id and a timestamp, so those are covered by the signature too. The secret rotates with one click.
+
+**API in.** Under `/api/n8n/v1/` you get search with Odoo domains, read, count, create, update, delete and whitelisted method calls such as `action_confirm`, with the key as a bearer token or an `X-API-Key` header. A key acts as an Odoo user, so access rights apply first, then the key's scopes narrow it further by model, operation, field and record domain, with optional IP allowlist, expiry and a per minute rate limit. `GET /api/n8n/v1/openapi.json` describes exactly what that key can reach.
+
+<Shot src="/odoo-guides/n8n-odoo-automation/api_keys.webp" alt="n8n Connector API key form with 120 requests per minute and a scopes table: Contact with read, create and update limited to companies, User with read on email, login and name only" width={1280} height={800} caption="An API key that can do less than its user: per model operations, fields and a record domain." />
+
+## How to set it up: confirmed sales orders to Google Sheets
+
+This is one of the eight recipes that ship with the module. The same pattern fits any event, for example a van sales order synced from the road (see the [van sales guide](/odoo-guides/odoo-van-sales/)).
+
+1. Install [n8n Connector Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_n8n_connector/). A new **n8n Connector** app appears.
+2. Go to n8n Connector, Configuration, Connections. Open the connection, copy the signing secret and note the retry and retention settings (sent deliveries are kept 30 days by default).
+3. Go to n8n Connector, Recipes, open **Confirmed sales orders to Google Sheets** and click **Download Workflow JSON**.
+4. In n8n, import the workflow. It has four nodes: a Webhook node, a Crypto node, an If node and a Google Sheets append.
+5. In the Crypto node, paste the Odoo signing secret where the placeholder says so.
+6. In the Google Sheets node, set your Google credential and paste the sheet URL. The columns map Order, Customer, Date, Total and Salesperson from the payload's record.
+7. Copy the production webhook URL from the n8n Webhook node and activate the workflow.
+8. Back in Odoo, click **Prepare in Odoo** on the recipe. It creates the subscription on `sale.order` with the trigger "When chosen fields change", watched field `state`, filter state equals sale. Paste the n8n webhook URL into it.
+9. Click **Send a Sample Now** on the subscription, then confirm a real quotation. Check n8n Connector, Deliveries for the row and its HTTP status.
+
+<Shot src="/odoo-guides/n8n-odoo-automation/subscription.webp" alt="Event subscription form New contacts to n8n with model Contact, trigger When a record is created, webhook URL, batch size, expand relations and Send old and new values options" width={1280} height={800} caption="A subscription: what to watch, where to send it, and how to shape the payload." />
+
+### The HMAC check inside n8n
+
+The signature is only useful if n8n checks it before doing anything. The recipe wires it like this:
+
+1. **Webhook node** with the **Raw Body** option on. This matters: if n8n parses the JSON and you hash the re-serialised version, spacing and key order differ and the check always fails.
+2. **Crypto node**, action HMAC, type SHA256, on the binary property `data` (the raw body), with the Odoo secret. It writes the hex digest to `signature`.
+3. **If node** comparing `'sha256=' + $json.signature` with the incoming `x-odoo-signature` header. Only the true branch continues to Google Sheets.
+
+If you want protection against an old request being replayed, add a check that the `timestamp` in the body is recent and that the `delivery_id` has not been seen before. Both sit inside the signed body.
+
+<Callout title="Keep the secret out of shared workflows">
+The recipe has the secret pasted into a node so it works on import. Before you share or export the workflow, move the secret into an n8n credential or environment variable, and rotate it in Odoo if it has ever been committed anywhere.
+</Callout>
+
+### When something fails
+
+Deliveries show sent, retrying and stopped rows with attempts, HTTP status and timing. Open a row to see the exact payload and the error n8n returned. Fix the workflow, then click Replay. On the API side, n8n Connector, API Request Log records every call, including refused ones, with key, model, status, duration and the reason.
+
+<Shot src="/odoo-guides/n8n-odoo-automation/deliveries.webp" alt="Deliveries list showing sent, retrying and stopped webhook deliveries with attempts, HTTP status, duration and a Replay button on each row" width={1280} height={800} caption="Deliveries: a stopped event stays in the log until someone replays it." />
+
+## Limitations
+
+- It is a connector, not a hosted n8n. You run n8n yourself or on n8n cloud.
+- Delivery runs on a scheduled job, so events usually leave within about a minute, not in the same millisecond as the save.
+- Retries stop after six attempts. A stopped delivery needs a person to look at it and press Replay.
+- Signature comparison in the recipe is a plain string equality in an If node. That is fine for most uses; if you need constant time comparison, do it in a Code node.
+- Method calls through the API are limited to the methods you whitelist on the key. That is deliberate.
+- The eight recipes are starting points. Your sheet, channel and field names will differ.
+
+For a choice between configuring standard Odoo, buying a module or building one, our [build, buy or configure post](/blog/odoo-build-buy-or-configure/) lays out how we decide, and the [integration services page](/services/odoo-integration/) covers custom work. Other prebuilt pieces live under [products](/products/) and the [sales module overview](/modules/sales/). If you are planning ahead for the XML-RPC removal, the [Odoo 20 migration guide](/odoo-guides/odoo-20-whats-new-migration/) covers the API changes we hit while porting.
+
+If you want a second pair of eyes on an n8n and Odoo design before it goes live, [send us a note](/contact/).

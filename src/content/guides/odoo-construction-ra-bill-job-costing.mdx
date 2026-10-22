@@ -1,0 +1,151 @@
+---
+title: "RA bills and job costing in Odoo for contractors: measurement, valuation, retention and the monthly margin"
+metaTitle: "Odoo Construction: RA Bill and Job Costing"
+description: "How running account (RA) bills, retention, advance recovery and job costing work, what standard Odoo covers, and how to run them in Odoo 19 step by step."
+targetQuery: "Odoo construction RA bill job costing"
+category: "Industry"
+summary: "The chain from measured work to an RA bill a client will certify, and the commitment, accrual and actual split that tells a contractor whether a job is making money, in Odoo 19."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Construction Management"
+    technical: "wt_construction_management"
+    note: "USD 10, base module: projects, phases, BOQ, requisitions, labour, subcontracts"
+  - name: "Construction Management Enterprise"
+    technical: "wt_construction_management_enterprise"
+    note: "USD 349 add-on, needs the base module (USD 359 together)"
+related: ["odoo-labour-camp-management", "zkteco-adms-odoo", "odoo-cafm-facility-maintenance"]
+linkFrom: ["/solutions/construction/", "/products/wt-construction-management/", "/modules/project/"]
+sources:
+  - label: "Odoo 19 documentation, Milestone invoicing"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/sales/invoicing/milestone.html"
+faqs:
+  - q: "What is an RA bill in construction?"
+    a: "A running account bill is an interim bill raised during the job for the work measured to date. It shows the value up to the previous bill, the value of this bill and the cumulative total, then takes off retention, advance recovery and anything already paid, so the net figure is what is due this time."
+  - q: "Does standard Odoo have RA billing or a bill of quantities?"
+    a: "No. Standard Odoo can invoice a sales order by milestone or by delivered quantity, and Project tracks tasks and milestones, but there is no bill of quantities, measurement book, retention ledger or cumulative interim certificate. Those come from a construction module."
+  - q: "How is retention calculated on an RA bill?"
+    a: "Retention is a percentage of the gross value certified to date, usually with a cap set in the contract. Each bill holds back the difference between retention due to date and retention already held. Half is commonly released at practical completion and the rest after the defects period, but the split and dates come from your contract."
+  - q: "What is the difference between committed, accrued and actual cost?"
+    a: "Committed cost is money you are bound to spend, such as a subcontract order already let. Accrued cost is work done or material received that has not been invoiced yet. Actual cost is what has been invoiced and posted. Margin reports that only use actual cost look better than the job really is."
+  - q: "Can I start using it on a job that is already half built?"
+    a: "Yes. Set up the contract, load the bill, then enter one measurement sheet dated at your last valuation with the agreed quantities to date and the retention already held. The next valuation is then run in Odoo."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+On a contracting job, the money question every month is not "what did we spend" but "what can we bill, what will they certify, and are we still making money". The site engineer has the measurements in a field book, the quantity surveyor has the RA bill in Excel, accounts has last month's invoices, and the director gets a margin figure in November for a job that went wrong in March. Odoo can hold all of that, but not out of the box. This guide explains the documents, what standard Odoo does with them, and how we run them in Odoo 19.
+
+## What a contractor actually needs
+
+### The RA bill, in plain terms
+
+A running account (RA) bill is an interim bill for work done to date. It is cumulative: each bill states the gross value up to the previous bill, the gross value of this bill, and the cumulative gross to date. Deductions then come off the cumulative figure, and what was already certified comes off last, so the net is this month's money. In the UK and FIDIC world the same document is called an interim payment certificate or progress claim. The arithmetic does not change.
+
+A worked example with illustrative figures: contract sum 1,000,000, retention 5 per cent capped at 50,000, a mobilisation advance of 100,000 recovered at 10 per cent of the value earned each period.
+
+| Line | Bill 1 and 2 (to date) | Bill 3 (this bill) | Cumulative after bill 3 |
+|---|---|---|---|
+| Gross value of work | 250,000 | 150,000 | 400,000 |
+| Less retention (5%) | 12,500 | 7,500 | 20,000 |
+| Less advance recovery (10%) | 25,000 | 15,000 | 40,000 |
+| Net value | 212,500 | 127,500 | 340,000 |
+| Less previously certified | | | 212,500 |
+| **Due on bill 3** | | | **127,500** |
+
+Working cumulatively matters because quantities get corrected. If bill 2 over measured a slab, bill 3 measures the true quantity to date and the difference comes out by itself. A bill built from "this month's quantities only" carries every old error forward.
+
+### Retention and advance
+
+Retention is money the client holds back from every bill as security for defects, typically released in two parts (moieties), one at practical completion and one after the defects liability period. The percentage, cap and release dates are contract terms. Retention that nobody tracks to its due date is retention that never gets collected.
+
+A mobilisation advance is paid up front and recovered by a percentage deduction from each bill until it is fully repaid. Recovery must stop exactly when the advance is cleared.
+
+### Job costing: commitment, accrual and actual
+
+Cost and value run on different clocks. Value is what has been certified, which lags the work. Cost on the books is what has been invoiced, which also lags: the subcontractor who worked all March invoices in April. A useful job cost report keeps three numbers apart:
+
+- **Committed**: a subcontract order or approved requisition you are bound to.
+- **Accrued**: work done or goods received that are not invoiced yet.
+- **Actual**: invoiced and posted.
+
+Compare certified value with actual cost only, and the job looks healthier than it is in exactly the months when you could still act.
+
+## What standard Odoo does and does not do
+
+Standard Odoo 19 gives you Project (tasks, stages, milestones), Purchase, Inventory and invoicing. A sales order line can be invoiced by milestone: you set a service product to "Based on Milestones", mark milestones reached in Project, and then create the invoice from the sales order, because reaching a milestone does not create one by itself ([Odoo 19 documentation, milestone invoicing](https://www.odoo.com/documentation/19.0/applications/sales/sales/invoicing/milestone.html)). Analytic accounts let you tag costs to a project.
+
+| Need | Standard Odoo 19 | With the two construction modules |
+|---|---|---|
+| Bill of quantities with sections, rates and cost rates | No | Yes, with Excel import checked row by row |
+| Measurement book (number by length by width by depth) | No | Yes, cumulative, over measurement refused |
+| Cumulative interim valuation and certificate | No, milestone or percentage invoicing only | Yes, previous, this bill, cumulative |
+| Claimed versus certified, with reasons | No | Yes, line by line |
+| Retention with capped percentage and release dates | No | Retention ledger with both moieties |
+| Advance recovery | No | Percentage recovery, stops at the advance |
+| Variations with estimate, assessed and agreed values | No | Yes |
+| Committed, accrued and actual cost per cost code | Partial, via analytic accounts and purchase orders | Budget control and monthly cost value reconciliation |
+| Draft customer invoice from a certificate | Not applicable | Yes, one invoice per certificate |
+
+Milestone invoicing is fine for a fit out paid in three stages. It is not a substitute for measured, cumulative billing against a bill of quantities, and there is no retention concept anywhere in standard Odoo. More context on the wider stack is on our [construction solution page](/solutions/construction/) and the [Project module overview](/modules/project/).
+
+## How the two modules split the work
+
+The base module, [Construction Management](https://apps.odoo.com/apps/modules/19.0/wt_construction_management/) at USD 10, extends Odoo Project with construction projects, phases, the bill of quantities, material requisitions, labour logs, equipment, subcontracts, site expenses and a budget against actual view. See the [product page](/products/wt-construction-management/).
+
+The add-on, [Construction Management Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_construction_management_enterprise/) at USD 349, adds the commercial chain on top: contracts, the measurement book, interim valuations, applications for payment, payment certificates, the retention ledger, variations, budget control, cost value reconciliation, the Job Cost Sheet and the RA Bill print. It also adds tenders, procurement, site attendance, QHSE and a client and subcontractor portal, which this guide does not cover. Both run on Odoo 19 Community; nothing needs an Enterprise licence.
+
+## How to set it up in Odoo
+
+1. Install Construction Management first, then Construction Management Enterprise. A **Construction** app and a **Commercial** app appear.
+2. Create the job under Construction, Projects, Projects, with client, contract value and phases.
+3. Under Commercial, Contracts, set up the contract: contract sum, retention percentage and limit, the two moieties, the defects liability period, the valuation day, days to certify and days to pay.
+4. Load the bill under Construction, Projects, Bills of Quantities. Import from Excel against the template, or key it in with sections, quantities, selling rates and cost rates. The approved budget per item is frozen once the bill is agreed.
+5. Set the print title under Settings: Certificate Print Title can be Interim Payment Certificate, RA Bill, Progress Claim or Payment Application.
+6. Each month, record measurements under Commercial, Measurement, Measurement Book. Enter number, length, width and depth per bill item; the quantity computes. A sheet that would take an item past its billed quantity is refused with the excess, and you raise a variation instead.
+7. Certify the measurement sheets, then run Commercial, Valuations, Raise a Valuation. It pulls measured work, agreed variations and signed dayworks as at the valuation date. Key materials on site and time related preliminaries for the period. On the first valuation, enter the advance paid and the recovery percentage; later valuations carry them forward.
+8. Serve the application for payment, then record the payment certificate under Commercial, Valuations, Payment Certificates with claimed against certified on every line and a reason for each difference.
+9. Issue the certificate. It creates a draft customer invoice with the work certified, retention and advance recovered on separate lines, using accounts you set once in Settings. Your accountant posts it.
+10. Print the RA Bill from the certificate, and run Commercial, Reporting, Job Cost Sheet for one or several jobs.
+
+<Shot src="/odoo-guides/odoo-construction-ra-bill-job-costing/measurement.webp" alt="Commercial app Measurement Book list with sheet references, measured date, project, measured by, item count, measured value, days awaiting certification and draft, measured or certified status" width={1280} height={800} caption="The measurement book: every sheet dated, valued and tracked to certification." />
+
+<Shot src="/odoo-guides/odoo-construction-ra-bill-job-costing/certificate.webp" alt="Payment Certificates list showing certificate reference, contract, application, gross claimed, gross certified, amount payable, shortfall against application, final date for payment, invoice and status" width={1280} height={800} caption="Payment certificates with the shortfall against each application in its own column." />
+
+## What the RA Bill print shows
+
+The RA Bill print takes the same certificate and lays it out the South Asian way: claimed against certified for measured work, variations, dayworks, materials on site and preliminaries; then gross value up to the previous bill, this bill and cumulative; then retention this bill, retention held to date, advance recovery to date, other deductions and previously certified, ending with the net payable and the amount in words. The bill number is the certificate's position on that contract. Other deductions (a back charge or a disputed item) reduce the printed net payable without changing the certificate's own amount payable, which is what Accounting posts.
+
+<Shot src="/odoo-guides/odoo-construction-ra-bill-job-costing/ra_bill.webp" alt="Printed Running Account (RA) Bill No. 5 with claimed against certified lines, gross value up to previous bill, this bill and cumulative, retention, advance recovery, previously certified, net payable and amount in words" width={1280} height={800} caption="The RA Bill print: previous, this bill and cumulative, with deductions and the amount in words." />
+
+## Retention, advance and variations in practice
+
+- **Retention** is a ledger, not a percentage field. Each certificate writes a dated deduction, capped at the contract limit. When practical completion is recorded, the two release rows are written with their due dates and their share of what was actually held. A release cannot exist without a due date, and a snag can be flagged as blocking retention release.
+- **Advance recovery** is a percentage of each period's gross value and never recovers more than the advance paid.
+- **Variations** carry three figures, your estimate, their assessment and the agreed value, and only the agreed value enters a valuation. Site instructions convert to variations and keep the link.
+
+## Job costing: the Job Cost Sheet and the CVR
+
+Every bill item carries its approved budget and shows committed, actual, remaining and percentage used. The rules avoid double counting: an approved material requisition is committed, then actual once issued, never both; a subcontract commits its revised order value less what has been billed; labour, expenses and plant hire are actual only. What happens when an item would go over budget is a company setting: none, warn, block or send for approval.
+
+The monthly cost value reconciliation (Commercial, Cost Value Reconciliation) sets value earned against cost including accruals by cost code, and the Job Cost Sheet prints budget, committed, actual, cost to complete, forecast final cost and variance by section and cost type. Both export to Excel.
+
+<Shot src="/odoo-guides/odoo-construction-ra-bill-job-costing/job_cost_sheet.webp" alt="Printed Job Cost Sheet for a fit out job with contract sum, adjusted sum, certified to date and progress, then sections with budget, committed, actual, cost to complete, forecast final cost, variance and percentage used" width={1280} height={800} caption="The Job Cost Sheet by section and cost type, built from the same budget control figures." />
+
+<Callout title="Start at the next valuation, not at day one">
+You do not need to re-enter a running job's history. Enter one measurement sheet dated at your last valuation with the agreed quantities to date, plus the retention already held as ledger entries, and run the next month in Odoo. Keep the spreadsheet in parallel for one month only.
+</Callout>
+
+## Limitations
+
+These come straight from the module's own listing:
+
+- **It is not an accounting engine.** Certificates raise draft customer invoices and certified subcontract valuations raise draft vendor bills. Your accountant still posts them, reconciles payments and runs the ledgers.
+- **It is built for contractors.** Main contractors and subcontractors, not client side, consultant side or developer appraisal.
+- **There is no native mobile app.** Site check in, diary and forms are phone browser pages and there is no offline mode.
+- **It is an add-on.** Construction Management Enterprise will not install without the USD 10 base module.
+- English is the working language; Arabic translation covers the module's screens and menus.
+
+For site attendance, the same Odoo can take punches from biometric terminals, covered in our [ZKTeco guide](/odoo-guides/zkteco-adms-odoo/), and workforce housing is covered in the [labour camp guide](/odoo-guides/odoo-labour-camp-management/). If your contract forms or bill layout need changes, that is [customisation work](/services/odoo-customization/), and the [accounting module overview](/modules/accounting/) explains what stays with your accountant.
+
+If you want to walk through your own RA bill format against this before deciding, [get in touch](/contact/).

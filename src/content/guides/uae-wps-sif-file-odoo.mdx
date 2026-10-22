@@ -1,0 +1,178 @@
+---
+title: "UAE WPS SIF file from Odoo: what the file holds and which Odoo setup can produce it"
+metaTitle: "UAE WPS SIF File from Odoo, Explained"
+description: "What a UAE WPS salary information file contains, the EDR and SCR records, MOHRE late-salary rules, and what Odoo Enterprise and Community can produce."
+targetQuery: "UAE WPS SIF file Odoo"
+category: "Payroll and HR"
+region: "UAE"
+summary: "The SIF record by record, the MOHRE rules that make it matter, and an honest look at which Odoo setup can write it: Enterprise UAE Payroll, a configured bank file, or custom work."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Payroll Bank Files"
+    technical: "wt_hrms_payroll_bank_files"
+    note: "USD 40, needs HRMS Payroll (USD 45). Delimited bank files, not a WPS SIF out of the box"
+  - name: "HRMS Payroll"
+    technical: "wt_hrms_payroll"
+    note: "USD 45, payslips and payroll runs on Community"
+related: ["odoo-labour-camp-management", "zkteco-adms-odoo", "odoo-payroll-pakistan"]
+linkFrom: ["/products/wt-hrms-payroll-bank-files/", "/modules/payroll/", "/countries/uae/", "/services/odoo-payroll-setup/", "/blog/odoo-payroll-localization-what-ships/"]
+sources:
+  - label: "Dubai Islamic Bank, WPS File Format Reference Guide v1.1 (SIF creation guidelines)"
+    url: "https://www.dib.ae/docs/default-source/wps-guidelines/wps-file-format-reference-guide_v1-1.pdf"
+  - label: "Emirates Islamic, businessONLINE Salary WPS File Creation User Guide"
+    url: "https://www.emiratesislamic.ae/-/media/ei/pdfs/business-online/salary-and-utility-payments/ei_businessonline_salary_wps_file_creation_user_guide.pdf"
+  - label: "MOHRE, Ministerial Resolution No. 598 of 2022 regarding the Wages Protection System"
+    url: "https://mohre.gov.ae/assets/download/d0af668c/Ministerial%20Resolution%20No.%20598%20of%202022%20Regarding%20the%20Wages%20Protection%20System%20and%20Its%20Amendment.pdf.aspx"
+  - label: "Hadef & Partners, Update to Wages Protection System (summary of Resolution 598 of 2022)"
+    url: "https://hadefpartners.com/news-insights/insights/update-to-wages-protection-system/"
+  - label: "Gulf News, How to avoid a ban on your company due to the Wage Protection System"
+    url: "https://gulfnews.com/living-in-uae/ask-us/how-to-avoid-a-ban-on-your-company-due-to-the-wage-protection-system-1.1655960112721"
+  - label: "Odoo 19 documentation, United Arab Emirates payroll localization"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/payroll/payroll_localizations/united_arab_emirates.html"
+faqs:
+  - q: "Does Odoo generate a WPS SIF file?"
+    a: "Odoo Enterprise does, through the UAE payroll localization. You set the Employer Unique ID and a salaries bank account whose bank carries a 9 digit routing code, post the payslips, then create a payment report with the UAE WPS export format. Odoo Community has no payroll app, so it has nothing to build the file from on its own."
+  - q: "What are EDR and SCR in a SIF file?"
+    a: "EDR is the Employee Detail Record, one line per employee with the person ID, the agent routing code, the account or IBAN, the pay period, days, fixed and variable pay and unpaid leave days. SCR is the Salary Control Record, a single summary line with the employer ID, the employer's bank routing code, the file date and time, the salary month, the EDR count and the total. The bank guides we checked put the SCR as the last line."
+  - q: "When is a UAE salary considered late under WPS?"
+    a: "Under Ministerial Resolution 598 of 2022 an employer is treated as late if wages are not paid within 15 days of the due date, unless the contract sets a shorter period. Reminders go out from the third day, and continued default leads to work permit suspensions, fines and, for larger employers, referral onwards."
+  - q: "Can the Way4Tech bank file module produce a WPS SIF?"
+    a: "Not out of the box. It writes one delimited line per payslip with an optional header row, and it has no concept of a summary control line, so it cannot write the SCR. A SIF from it means custom work on top of the module, or using Odoo Enterprise UAE Payroll instead."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Your bank rejected the salary file again, and the rejection says "SCR total mismatch" or "invalid routing code" with a line number and nothing else. Meanwhile the MOHRE clock is running. A UAE salary is not paid until it has gone through the Wage Protection System, and the only way into WPS is a Salary Information File, the SIF, built to a layout that has barely changed in a decade. This guide takes the file apart record by record, sets out the MOHRE rules that make getting it right urgent, and then says plainly which Odoo setups can write it and which cannot.
+
+## What WPS is and who has to use it
+
+WPS is the electronic salary transfer system that lets the Ministry of Human Resources and Emiratisation (MOHRE) see whether private sector workers were paid, in full and on time. Salaries go from the employer's bank, or an exchange house acting as agent, through the system to each worker's account or salary card, and MOHRE compares what was paid against the contract on record.
+
+The current rules sit in [Ministerial Resolution No. 598 of 2022](https://mohre.gov.ae/assets/download/d0af668c/Ministerial%20Resolution%20No.%20598%20of%202022%20Regarding%20the%20Wages%20Protection%20System%20and%20Its%20Amendment.pdf.aspx). As [Hadef & Partners summarise it](https://hadefpartners.com/news-insights/insights/update-to-wages-protection-system/), subscription is mandatory for all employers registered with MOHRE and for certain free zone employers. A few groups are exempt, such as employees on unpaid leave that MOHRE was told about in advance, absconding employees and those with a wage case open.
+
+### When a salary counts as late
+
+- An employer is treated as late if wages are not paid **within 15 days of the due date**, unless the contract sets a shorter period ([Hadef & Partners on Resolution 598](https://hadefpartners.com/news-insights/insights/update-to-wages-protection-system/)).
+- Reminders and notifications can go out on the **3rd and 10th days** after the due date.
+- An employer counts as compliant when at least **80% of the contract salary** is transferred.
+- New employees have a grace period, but must be paid **within 30 days** of the due date.
+- Continued default brings financial penalties, a stop on new work permits, inspections and referral to the public prosecutor. [Gulf News](https://gulfnews.com/living-in-uae/ask-us/how-to-avoid-a-ban-on-your-company-due-to-the-wage-protection-system-1.1655960112721) adds that permit renewals are suspended once a worker has gone more than three months unpaid.
+
+The penalty scale also depends on company size and the share of unpaid workers. Vendor guides publish day by day tables beyond these points; we could not match those to the resolution text, so check the detail with MOHRE or your adviser before you rely on a specific day count.
+
+## The SIF, record by record
+
+The SIF layout is what the bank guides call the Ministry of Labour standard format, with routing codes assigned by the Central Bank. The document most employers actually work from is their agent bank's guide. Two bank-published guides agree on the structure below: [Dubai Islamic Bank's WPS file format reference](https://www.dib.ae/docs/default-source/wps-guidelines/wps-file-format-reference-guide_v1-1.pdf) and [Emirates Islamic's file creation guide](https://www.emiratesislamic.ae/-/media/ei/pdfs/business-online/salary-and-utility-payments/ei_businessonline_salary_wps_file_creation_user_guide.pdf).
+
+- The file is plain comma separated text with **no header row**.
+- One **EDR** line per employee, which is mandatory.
+- An **EVP** line after an employee's EDR when that employee has variable pay.
+- One **SCR** line, the summary, as the **last line** of the file.
+- The Emirates Islamic guide builds the file in Excel, saves it as CSV, then renames it to **.SIF**. The file name itself follows a convention based on the employer's ID and the creation date and time; take the exact pattern from your own agent's guide, because banks reject a misnamed file before they read a line of it.
+
+### EDR, Employee Detail Record
+
+| No. | Field | Format in the bank guides |
+|---|---|---|
+| 1 | Record type | The text EDR |
+| 2 | Employee unique ID | The person ID from MOHRE, on the labour card. Emirates Islamic asks for 14 digits, zero padded |
+| 3 | Agent routing code | 9 digits, the routing code the Central Bank assigned to the employee's bank or exchange house |
+| 4 | Employee account with agent | Up to 23 characters, the IBAN or salary card account |
+| 5 | Pay start date | YYYY-MM-DD |
+| 6 | Pay end date | YYYY-MM-DD, after the start date and in the same month |
+| 7 | Days in period | End date minus start date plus one |
+| 8 | Fixed income | Amount such as 4000.00, never negative |
+| 9 | Variable income | Amount, 0.00 when there is none, never negative |
+| 10 | Days on unpaid leave | Number of days, 0 when none |
+
+### SCR, Salary Control Record
+
+| No. | Field | Format in the bank guides |
+|---|---|---|
+| 1 | Record type | The text SCR |
+| 2 | Employer unique ID | The establishment ID from MOHRE. Emirates Islamic asks for 13 digits, zero padded; DIB allows 13 to 35 characters |
+| 3 | Employer bank routing code | 9 digits, your own bank's routing code |
+| 4 | File creation date | YYYY-MM-DD |
+| 5 | File creation time | HHMM |
+| 6 | Salary month | Month and year, written as six digits such as 012016 in both sample files |
+| 7 | EDR count | Number of EDR lines in the file |
+| 8 | Total salary | Must equal the sum of every fixed and variable amount in the EDRs |
+| 9 | Currency | AED |
+| 10 | Employer reference | Optional free text |
+
+Three checks deserve the most care. The SCR total is validated against the sum of the EDR amounts, the salary month has to match the pay dates on every EDR (DIB says the whole file is rejected if it does not), and both the employer and agent routing codes and IDs are validated against the WPS master database. The EVP record breaks variable pay into housing, conveyance, medical, annual passage, overtime, other allowances and leave encashment, each as its own amount.
+
+<Callout title="The agent bank's spec is final">
+The two guides above differ on small points, such as the ID lengths. They are bank documents, not the Central Bank master spec. Before you build or configure anything, get the current SIF guide from the bank or exchange house that will upload your file and treat it as the authority.
+</Callout>
+
+## What standard Odoo does
+
+### Odoo Enterprise: yes, through UAE Payroll
+
+Payroll in Odoo is an Enterprise app, and the UAE payroll localization (`l10n_ae_hr_payroll`, with `l10n_ae_hr_payroll_account` for the accounting side) does produce the WPS file. Per the [Odoo 19 UAE payroll documentation](https://www.odoo.com/documentation/19.0/applications/hr/payroll/payroll_localizations/united_arab_emirates.html):
+
+1. In **Payroll, Configuration, Settings**, under the Emirati localization section, fill in the **Employer Unique ID**.
+2. In the same place choose the **Salaries Bank Account**. It must belong to the company, carry a valid IBAN, be set to send money and be trusted, and its bank must have a **Routing Code Agent** of 9 digits.
+3. On every employee, fill in the **Identification No** and a bank account.
+4. Generate the payslips, one by one or as a batch, and post the journal entry.
+5. Create the payment report and choose **UAE WPS** as the export format. Odoo writes a .sif (or an .xlsx with the same layout) holding the EDR lines, EVP lines where there is variable pay, and one SCR.
+
+Allowances entered on the payslip feed the variable salary column. If you already run Enterprise, this is the shortest road to a SIF and we would point you to it before anything we sell.
+
+### Odoo Community: no payroll, so no SIF
+
+Community ships HR and employees but no payroll engine, so there is nothing for a SIF to be built from. You need a payroll add-on first, and then a way to write the file. The trade-offs are covered in [Community vs Enterprise, decided properly](/blog/odoo-community-vs-enterprise-decided-properly/) and in [what Odoo payroll localizations actually ship](/blog/odoo-payroll-localization-what-ships/).
+
+## Where the Way4Tech bank file module fits, and where it does not
+
+On Community, our [HRMS Payroll](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll) module (USD 45) runs payslips and batches, and [Payroll Bank Files](https://apps.odoo.com/apps/modules/19.0/wt_hrms_payroll_bank_files) (USD 40) turns a confirmed batch into the delimited file a bank portal wants. Formats are data, not code: you set the columns, the delimiter, the encoding, Windows or Unix line endings, quoting and the amount format. It ships formats for four Pakistani banks (HBL, MCB, UBL, Meezan) plus a generic one to copy. It does not ship a UAE WPS format.
+
+<Shot src="/odoo-guides/uae-wps-sif-file-odoo/bank-format.webp" alt="Bank format form in WT HRMS showing code, file extension CSV, comma delimiter, UTF-8 encoding, header row ticked, Windows line endings, quoting set to never, the amount settings and a columns definition list" width={1280} height={766} caption="A bank format in Payroll Bank Files: columns, delimiter, line endings and amount format are all settings." />
+
+We read the code before writing this, and here is the honest fit against a SIF:
+
+| SIF need | What Payroll Bank Files does |
+|---|---|
+| No header row | Supported, untick Include Header |
+| Comma separated, CR LF endings, no quotes | Supported |
+| Constant record type EDR on every line | Supported with a static column |
+| Pay start and end dates | The payslip's own date fields can be columns |
+| Person ID, IBAN | Can be read from fields on the employee and bank account, once those fields exist and are filled |
+| Agent routing code per employee | No field holds it in a Community install; needs adding |
+| Days in period, unpaid leave days, fixed and variable split | Not available as columns today |
+| EVP lines | Not supported: the module writes exactly one line per payslip |
+| SCR summary line with count and total | Not supported: there is no trailer or control record concept |
+| .SIF file extension | Not offered (CSV, TXT, TSV); the file would need renaming |
+
+So a WPS SIF from this module is **custom work**: a summary line, the extra columns and probably an EVP option. It is not a configuration job, and we would not sell it to you as one. What the module does bring is the guard rails around the file: it refuses to drop someone silently for missing bank details, allows only one live file per payroll run, and locks a file once you mark it posted to the bank.
+
+<Shot src="/odoo-guides/uae-wps-sif-file-odoo/disbursement-run.webp" alt="A bank disbursement run showing line count 3, one skipped employee, total amount, batch total, a shortfall in red and the skipped employee named with the reason no bank account recorded" width={1280} height={550} caption="A disbursement run: the shortfall and the person left out are on the record before anything goes to the bank." />
+
+## How to set it up in Odoo
+
+If you are on Enterprise, follow the five steps in the section above. If you are on Community with our modules and want a WPS file built, this is the order we work in:
+
+1. Get your agent bank's current SIF guide and your 13 digit MOHRE establishment ID, plus the 9 digit routing code of your own bank.
+2. Install HRMS Payroll and Payroll Bank Files from the Apps menu.
+3. On each employee, record the MOHRE person ID from the labour card and the salary account or IBAN, and mark the bank account as trusted for outgoing payment. Anyone missing details stops the file, which is what you want on the first run.
+4. Record the agent routing code for each employee's bank or exchange house. This needs a field added, which is part of the custom work.
+5. Make sure unpaid leave days and the fixed and variable split come through the payslip, so the EDR columns have a source.
+6. Build the format under **WT HRMS, Payroll, Bank Files, Bank Formats**: no header, comma, CR LF, no quotes, two decimals, no thousands separator.
+7. Confirm the payroll run under **Payroll, Batches**, then generate the file under **Bank Files, Generate Bank File**.
+8. Check the SCR total against the batch total on the run, upload to the bank, then mark the run Posted to Bank.
+
+If attendance drives your deductions, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) covers getting punches into Odoo first, and the [Pakistan payroll guide](/odoo-guides/odoo-payroll-pakistan/) shows the same payroll modules under a different country's rules.
+
+## Limitations
+
+- **It does not talk to the bank or to MOHRE.** Nothing in either the Enterprise route or ours submits the SIF. You upload it in your bank's portal, and the bank passes it to WPS.
+- **It does not calculate UAE gratuity or contribution rules by itself.** Enterprise UAE Payroll covers end of service; our payroll needs that configured.
+- **It is not an ISO 20022 or host to host connector.** The bank file module writes text files only.
+- **Field lengths and order are your bank's call.** Re-check them each time the bank updates its guide.
+- **Labour camp operators** who also house the workers they pay will find accommodation, bed billing and document expiry handled separately in the [labour camp guide](/odoo-guides/odoo-labour-camp-management/).
+
+## Getting the file right
+
+A SIF is a short file with very little room for error, and the payroll data behind it matters more than the export. If you want help choosing between Enterprise UAE Payroll and a Community build, our [payroll setup service](/services/odoo-payroll-setup/) and [customization work](/services/odoo-customization/) cover both, and the [UAE page](/countries/uae/) lists the rest of the local rules we handle; if you want to talk it through, [get in touch](/contact/).

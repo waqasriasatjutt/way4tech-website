@@ -1,0 +1,158 @@
+---
+title: "Odoo van sales: load the van, sell from it, and settle the day"
+metaTitle: "Odoo Van Sales and Route Sales Setup"
+description: "How to run van sales in Odoo 19: the van as a stock location, loads as transfers, sell from van, returns with credit notes, receipts and settlement."
+targetQuery: "odoo van sales / route sales"
+category: "Industry"
+summary: "Pre-sales, van sales or both: how a distributor runs vans on Odoo 19 with real stock per van, one-step sell from van, returns into the van and a clean end of day."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "Van Sales and Field Sales Management"
+    technical: "wt_sale_distributor"
+    note: "Base app, USD 500, needs Sales, Inventory and Accounting"
+  - name: "Van Sales and Van Stock"
+    technical: "wt_sale_distributor_van"
+    note: "USD 400, needs the base app and Odoo Fleet"
+  - name: "Van Sales and Field Sales Enterprise"
+    technical: "wt_sale_distributor_enterprise"
+    note: "USD 4,599, includes Van Sales; offline field app"
+demo:
+  url: "https://distributor-demo.way4tech.com/"
+  label: "Distributor and van sales demo"
+related: ["odoo-garage-management", "n8n-odoo-automation", "odoo-cafm-facility-maintenance"]
+linkFrom: ["/solutions/distribution-fmcg/", "/products/wt-sale-distributor/", "/modules/sales/", "/modules/inventory/"]
+sources:
+  - label: "Odoo 19 documentation, Inventory: use locations"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/warehouses_storage/inventory_management/use_locations.html"
+  - label: "Odoo 19 documentation, Fleet"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/fleet.html"
+  - label: "Odoo 19 documentation, Point of Sale"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch, fleet addon (Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons/fleet"
+faqs:
+  - q: "Can Odoo do van sales without a custom module?"
+    a: "Partly. You can make an internal stock location per van, move goods to it with transfers and sell from it with sales orders or a Point of Sale session. What you do not get is a phone screen for the driver that shows the van stock and turns a cart into a delivery, invoice and payment in one step, or a report of sales by van."
+  - q: "What is the difference between pre-sales and van sales?"
+    a: "In pre-sales an order taker visits the shop, takes an order, and a delivery person brings the goods later from the warehouse. In van sales the driver carries the stock and hands it over at the visit, with the invoice and payment done on the spot. Many distributors run both, sometimes on the same route."
+  - q: "Does the van sales app work without mobile signal?"
+    a: "The Order Taker app with the Van Sales add-on needs a connection. Offline work, with a queue of sales, collections and returns sent once the signal is back, is part of the Enterprise edition only. The van settlement and counter sales need signal even there."
+  - q: "Can I track lots and expiry dates on van stock?"
+    a: "Not with these modules. They do not track lots or expiry dates, which is why they are not a fit for pharma distribution. The Enterprise edition sends returns marked as expired or near expiry to a quarantine location, but that is a reason on the return, not lot tracking."
+  - q: "Which handhelds and printers work?"
+    a: "Any Android phone or handheld with Chrome, such as the SUNMI V2 and V3. Receipts print through the browser print dialog on 58 mm or 80 mm paper. The Enterprise edition adds an Android app and the SUNMI built-in printer."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A distributor with three vans on the road usually knows what left the warehouse in the morning and what cash came back at night. What it rarely knows is the middle: which shop got which carton, what is still in van two at four o'clock, and why the stock count is twelve units short on Friday. Odoo can answer all of that, because every carton can be a stock move and every sale an invoice. The work is in making that happen at the shop door, on a cheap handheld, in under a minute per drop.
+
+## What a van sales operation actually needs
+
+Before any software, decide which model you run. It changes the stock flow, the paperwork and the people involved.
+
+- **Pre-sales (order taking).** A rep visits the shop, takes the order on a phone, and a separate delivery run brings the goods from the warehouse a day later. Stock leaves the warehouse against a confirmed order.
+- **Van sales.** The driver is the salesman. The van is loaded in the morning, the driver sells what is on board, hands it over, invoices and collects cash at the counter, then brings the rest back.
+- **Hybrid.** Some routes pre-sell, some sell from the van, and on some routes the driver also drops pre-sold orders from the van.
+
+Whatever the model, the business needs the same five controls:
+
+1. **Stock per van.** The van is a place stock sits. If it is not a location, you cannot count it.
+2. **Loads and unloads that someone signs off.** A driver asking for goods is not the same as the storekeeper releasing them.
+3. **A sale that cannot exceed what is on board.** Selling twelve when the van holds ten creates negative stock and an argument at settlement.
+4. **Returns that go back to the right place.** A refused carton should return to the van it left from, and if it was already invoiced, a credit note has to follow.
+5. **A day that closes.** Cash expected against cash handed over, stock expected against stock counted.
+
+## What standard Odoo does and does not do
+
+Standard Odoo has the building blocks, in Community as well as Enterprise.
+
+- **Inventory locations.** You can create an internal location per van under your warehouse and move goods to it with internal transfers, as the [Odoo documentation on locations](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/warehouses_storage/inventory_management/use_locations.html) describes.
+- **Fleet.** The [Fleet app](https://www.odoo.com/documentation/19.0/applications/hr/fleet.html) holds the vehicles, drivers and odometer, and it ships in Community ([fleet addon, 19.0 branch](https://github.com/odoo/odoo/tree/19.0/addons/fleet)).
+- **Sales and Point of Sale.** A sales order can deliver from any location, and a [Point of Sale](https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale.html) session can be pointed at a van location.
+
+What it does not do is join these up for the person standing in the shop. The salesman has to open a sales order, change the source location, validate the delivery, create the invoice and register the payment: five screens built for an office. Nothing stops a sale when the van is short until the delivery is validated. Nothing ties a payment to the van it was collected in. Point of Sale can sell from a van location, but it is a retail till: no routes, no shop visits, no credit limits checked against the customer's open invoices, and no load sheet. That gap is what the [Distribution and FMCG solution](/solutions/distribution-fmcg/) on this site is built around.
+
+## The three editions
+
+The modules are layered. The [base app](https://apps.odoo.com/apps/modules/19.0/wt_sale_distributor/) covers routes, visits, order taking and delivery. The [Van Sales add-on](https://apps.odoo.com/apps/modules/19.0/wt_sale_distributor_van/) adds stock on the van. The [Enterprise add-on](https://apps.odoo.com/apps/modules/19.0/wt_sale_distributor_enterprise/) adds the offline field app and the controls a larger team needs, and it includes Van Sales. Despite the name, all three run on Odoo Community; Enterprise here is the module edition, not an Odoo subscription.
+
+| Feature | Base | Van Sales | Enterprise |
+|---|---|---|---|
+| Routes, stops, visits, order taking, delivery with proof, collections, returns | Yes | Yes | Yes |
+| Order Taker and Delivery apps in the Odoo web client, camera barcode scan | Yes | Yes | Yes |
+| Vans on Odoo Fleet, each with its own stock location | No | Yes | Yes |
+| Loading and unloading as validated transfers | No | Yes | Yes |
+| My Van screen and Sell from van (delivery, invoice and cash in one step) | No | Yes | Yes |
+| Sales mode per company and per route: pre-sales, van sales or both | No | Yes | Yes |
+| Returns back into the van with a posted credit note | No | Yes | Yes |
+| 58 mm and 80 mm receipts, customer statement | No | Yes | Yes |
+| Offline phone app, Android app, SUNMI built-in printer | No | No | Yes |
+| End of day settlement with cash and stock counts | No | No | Yes |
+| Live GPS tracking, route replay, targets per van, margin reports | No | No | Yes |
+
+The table follows the comparison printed on the module listings, and the [Van Sales product page](/products/wt-sale-distributor/) has the full feature list. If your vans carry stock but always have signal, Van Sales on top of the base app is the smaller step. Upgrading later keeps every van, load, sale and payment.
+
+## How the van sales flow works
+
+### The van is a vehicle and a stock location
+
+A van is an Odoo Fleet vehicle with Distribution Van ticked, a home warehouse, a default route and a driver. Its stock location is created under that warehouse the first time it is loaded. From then on, the van form shows stock, sales and loads, and the Vans list shows units and stock value per van.
+
+<Shot src="/odoo-guides/odoo-van-sales/phone-02-my-van.webp" alt="My Van screen on a phone for VAN-01 showing 8 products, 112 units and 337 dollars of stock, with a search box and a product list with quantities" width={720} height={1280} caption="My Van in the Order Taker app: what is on board, searchable." />
+
+### Loading and unloading are transfers
+
+A load can come from three places: the route's load sheet (what the open orders need), a load created in the back office, or the driver's own request from My Van. In every case it is a normal Odoo transfer from the warehouse to the van, and only a Distribution Manager or an Inventory Administrator can validate it. Drivers can only ask. At night, Hand back all creates the unload for the storekeeper. Because these are ordinary stock moves, the inventory valuation and stock history stay complete.
+
+<Shot src="/odoo-guides/odoo-van-sales/desk-03-loads.webp" alt="Van Loading list in Odoo with load and unload documents per van and route, origin driver app or load sheet, units, value and state" width={1280} height={800} caption="Van Loading: loads and unloads per van, with the driver requests still in draft." />
+
+### Selling from the van
+
+At the shop, the driver checks in, adds products or scans them, and sees how many of each are on board. In the cart there are two choices. Confirm order sends the goods later from the warehouse, as a pre-sale. Sell from van confirms the order, delivers it out of the van, posts the invoice and offers Take payment. If the van is short, the sale is refused, nothing is saved, and the message names each product and how many are on board.
+
+<Shot src="/odoo-guides/odoo-van-sales/phone-04-cart.webp" alt="Phone cart for a bakery customer with subtotal, taxes and total, a Confirm order button and a Sell from van button, and a note explaining that Sell from van hands over goods now from VAN-01" width={720} height={1280} caption="The cart offers both: confirm for later delivery, or sell from the van now." />
+
+Payment can be cash or bank against the new invoice. Anything unpaid stays on the customer's account, with the credit limit checked. A 58 mm or 80 mm receipt prints through the browser print dialog, and the same paper width works for payment receipts and the customer statement.
+
+### Returns into the van
+
+When a shop hands goods back, they go back into the van they left from. If the goods were already invoiced, a credit note is posted, and the order does not invoice them again. In the Enterprise edition, damaged returns are scrapped rather than put back on sale, and returns marked as expired go to a quarantine location.
+
+### End of day
+
+With Van Sales alone, the end of day is the unload: the driver hands everything back, the storekeeper validates it, and Sales by Van shows what each van sold by salesperson and product category. The Enterprise edition adds a proper settlement: the driver counts the van, declares damaged units and hands over cash; stock and cash differences go to a manager for approval, and a van cannot start selling on a new day while an earlier day with sales is unsettled.
+
+<Shot src="/odoo-guides/odoo-van-sales/desk-05-sales-by-van.webp" alt="Sales by Van pivot table in Odoo grouped by van and salesperson, with untaxed totals and quantities per product category" width={1280} height={800} caption="Sales by Van: each van and driver against product categories." />
+
+## How to set it up in Odoo
+
+1. Install the base app from Apps. Sales, Inventory and Accounting install with it. In **Distribution, Configuration, Settings** you can load sample data (six routes, forty shops) to try every screen before using real data.
+2. Create territories and routes in **Distribution, Operations, Routes**, with visit days, an order taker, a delivery person and a warehouse, then add the shops as stops in visit order.
+3. In **Settings, Users**, give each field person the Order Taker or Delivery Person role in the Distribution section.
+4. Install the Van Sales add-on. It pulls in Odoo Fleet.
+5. In **Settings, Distribution, Van Sales**, choose the sales mode for the company: pre-sales and van sales, or van sales. Override it on any route that works differently.
+6. In **Distribution, Operations, Vans**, create each van, tick Distribution Van, and set the home warehouse, route and driver. Set the receipt paper width and footer in Settings.
+7. Load the first van from its load sheet, or create a load in **Distribution, Operations, Van Loading**, and validate it.
+8. On the driver's phone, open the Order Taker app. My Van shows the stock and the cart now offers Sell from van. Set up a SUNMI or Bluetooth scanner if you have one: scanners that type the barcode and press Enter add the product to the cart.
+9. Check the first week in **Distribution, Reporting, Sales by Van** and the Customer Statement report before adding more vans.
+
+The [Inventory module page](/modules/inventory/) and the [Sales module page](/modules/sales/) explain how these documents sit in standard Odoo, which matters when your accountant asks where a van sale shows up.
+
+<Callout title="Decide the sales mode per route first">A route set to both modes still allows orders for later delivery, and pre-sale drops can leave from the driver's van. Set this before go-live: changing it mid-week leaves some orders delivered from the warehouse and some from vans, and the load sheets stop matching.</Callout>
+
+## Limitations
+
+The modules say plainly where they stop, and so should this guide.
+
+- **No lots or expiry dates.** Lots and expiry dates are not tracked by these modules. That rules out pharma distribution, which also needs batch and licence controls.
+- **Not for building materials.** Cement and similar products need truck and weight planning that is not part of this product.
+- **Returnable crates are planned, not shipped.** Dairy and fresh routes, beverages with returnable crates, water and gas delivery and ice cream need returnable containers and deposits, standing orders or cold chain. Separate add-ons for those are planned; they are not available today.
+- **Offline is Enterprise only.** The Order Taker app with Van Sales needs a connection. If your routes run through areas with no coverage, you need the Enterprise edition, and even there a counter sale and the van settlement need signal.
+- **Purchasing is standard Odoo.** Buying from suppliers stays in Odoo Purchase. Each company has one counter warehouse in the Enterprise edition.
+- **Receipts are browser prints.** Without Enterprise, receipts print through the browser dialog, not straight to a built-in printer.
+
+If you also run a workshop that services the vans, the [garage management guide](/odoo-guides/odoo-garage-management/) covers job cards in the same Odoo database, and the [n8n guide](/odoo-guides/n8n-odoo-automation/) shows how to push daily van totals to a chat group or a sheet without code. For the people side, field staff attendance from ZKTeco devices is covered in the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/).
+
+Most van sales projects fail on the morning load and the evening unload, not on the phone screen, so test those two with your storekeeper on the [live demo](https://distributor-demo.way4tech.com/) before anything else. If you want a second opinion on whether your routes fit pre-sales, van sales or both, [get in touch](/contact/).

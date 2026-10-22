@@ -1,0 +1,81 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import { getCollection } from 'astro:content';
+
+const CATEGORY_ORDER = ['Payroll and HR', 'Tax and compliance', 'Industry', 'Integration', 'Upgrades'] as const;
+
+const guides = (await getCollection('guides'))
+  .filter(g => !g.data.draft)
+  .sort((a, b) => a.data.title.localeCompare(b.data.title));
+
+const groups = CATEGORY_ORDER
+  .map(cat => ({ cat, items: guides.filter(g => g.data.category === cat) }))
+  .filter(g => g.items.length > 0);
+
+const url = new URL('/odoo-guides/', SITE.url).toString();
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Odoo guides',
+  description: 'Practical Odoo guides for payroll, tax compliance and industry setups, written from real modules.',
+  url,
+  publisher: { '@id': new URL('/#organization', SITE.url).toString() },
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: guides.map((g, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: new URL(`/odoo-guides/${g.slug}/`, SITE.url).toString(),
+      name: g.data.title,
+    })),
+  },
+};
+---
+<Base
+  title="Odoo Guides: Payroll, Tax, Industry Setups"
+  description="Practical Odoo guides: Pakistan payroll and FBR, UAE WPS and e-invoicing, ZATCA, van sales, garages, salons, CAFM, construction and integrations."
+  canonical={url}
+  structuredData={schema}
+>
+  <section class="bg-ink-900 text-white">
+    <div class="container-site py-16 sm:py-20">
+      <div class="max-w-3xl">
+        <div class="eyebrow text-brand-300">Odoo guides</div>
+        <h1 class="h1 mt-4">How to do it in Odoo, step by step.</h1>
+        <p class="lede mt-6 text-ink-300">
+          Payroll rules, tax mandates and industry setups, written from the modules we build and the
+          systems we run. Each guide says what Odoo does out of the box, what needs a module, and
+          where the limits are.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {groups.map(group => (
+    <section class="section border-b border-ink-100">
+      <div class="container-site">
+        <h2 class="h3">{group.cat}</h2>
+        <div class="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {group.items.map(g => (
+            <a href={`/odoo-guides/${g.slug}/`} class="card group flex flex-col">
+              {g.data.region && <span class="text-xs font-semibold uppercase tracking-wider text-brand-600">{g.data.region}</span>}
+              <h3 class="mt-2 text-lg font-semibold text-ink-900 group-hover:text-brand-700">{g.data.title}</h3>
+              <p class="mt-2 flex-1 text-sm text-ink-600">{g.data.summary}</p>
+              <span class="mt-4 text-sm font-semibold text-brand-600 group-hover:text-brand-700">Read the guide &rarr;</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <section class="section">
+    <div class="container-site max-w-3xl text-center">
+      <h2 class="h3">Not covered here?</h2>
+      <p class="mt-3 text-ink-600">The <a class="text-brand-700 underline" href="/blog/">blog</a> covers implementation decisions, and the <a class="text-brand-700 underline" href="/learn/odoo-owl/">OWL course</a> covers front-end development. Or ask directly.</p>
+      <a href="/contact/?source=odoo-guides" class="btn-primary mt-6">Ask a question</a>
+    </div>
+  </section>
+</Base>

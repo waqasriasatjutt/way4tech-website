@@ -1,0 +1,159 @@
+---
+title: "ZKTeco and Odoo: getting biometric punches into Attendances with ADMS push or a LAN bridge"
+metaTitle: "ZKTeco Odoo Integration: ADMS Push and LAN"
+description: "How ZKTeco terminals send punches to Odoo 19: ADMS push to /iclock/, or a LAN bridge for devices that cannot push. Setup, PIN mapping, pairing rules."
+targetQuery: "ZKTeco Odoo integration ADMS push"
+category: "Integration"
+summary: "Two ways to get ZKTeco (and Hikvision) punches into Odoo 19 Attendances, what happens to each punch on the way, and how to turn the raw times into late, early and overtime figures."
+published: 2026-10-23
+updated: 2026-10-23
+modules:
+  - name: "WT ZKTeco ADMS Push"
+    technical: "wt_zkteco_adms"
+    note: "USD 49, needs Employees and Attendances"
+  - name: "WT Attendance Bridge (LAN): ZKTeco and Hikvision"
+    technical: "wt_zkteco_bridge"
+    note: "USD 99, needs WT ZKTeco ADMS Push; the Windows agent is a free download"
+  - name: "HR Attendance Management"
+    technical: "wt_hrms_attendance"
+    note: "USD 25, late, early and overtime on top of Attendances"
+related: ["odoo-payroll-pakistan", "uae-wps-sif-file-odoo", "odoo-labour-camp-management"]
+linkFrom: ["/integrations/zkteco/", "/modules/attendance/", "/products/wt-hrms-attendance/"]
+sources:
+  - label: "Odoo 19 documentation, Attendances"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/attendances.html"
+  - label: "Odoo 19 documentation, Attendances kiosks"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/attendances/kiosks.html"
+faqs:
+  - q: "Does Odoo connect to ZKTeco devices out of the box?"
+    a: "No. Standard Odoo 19 Attendances supports check in from the backend, the systray icon and a kiosk with badge, RFID or manual selection. There is no built in ZKTeco or other biometric driver, so a module or a middleware script has to carry the punches in."
+  - q: "What is ADMS on a ZKTeco device?"
+    a: "ADMS, also called Push SDK or Cloud Server on the device menu, is firmware that makes the terminal call a server over HTTP and post each punch as it happens. The server has to answer the iclock endpoints the device expects. If your model has no Cloud Server setting, it cannot push and you need a LAN pull instead."
+  - q: "My Odoo is in the cloud and the device is on the office network. Do I need to open ports?"
+    a: "No. With ADMS the device dials out to Odoo, so only Odoo needs to be reachable. With the LAN bridge a Windows PC in the office reads the device on port 4370 and sends the punches out to Odoo over HTTPS. Nothing has to be opened from the internet into the office."
+  - q: "What happens if an employee forgets to punch out?"
+    a: "When their next punch arrives and the open session is older than the auto close threshold (14 hours by default), the old session is closed at check in plus the default shift length (9 hours by default) and the new punch opens a fresh attendance. Both numbers are set per device."
+  - q: "Can it work out late arrivals and overtime from the punches?"
+    a: "The device modules only create check ins and check outs. Late minutes, early departures, overtime and a monthly summary come from HR Attendance Management, which reads the attendances against each employee's working schedule and time zone."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The fingerprint or face terminal on the wall already knows who came in and when. The trouble starts after that: somebody exports a USB stick of logs every Friday, pastes them into Excel, and payroll argues with the floor supervisor about who was really late. If your Odoo runs in the cloud and the terminal sits on an office network behind a router, the obvious question is how the punch gets from one to the other without a person in the middle. There are two honest answers, and which one you need depends on the firmware in your device, not on Odoo.
+
+## What the business actually needs from a biometric integration
+
+Before any setup, it helps to be clear about the job. A usable attendance feed does five things:
+
+1. Every punch reaches Odoo, even if the internet drops for an hour.
+2. Each device PIN maps to exactly one employee, and punches from unknown PINs are kept, not lost.
+3. Punches become sensible check in and check out pairs, including the messy cases: double swipes, forgotten punch outs, night shifts.
+4. Times are right. Terminals keep local time; Odoo stores UTC.
+5. Someone can see what went wrong and fix it, then re-run the pairing.
+
+Payroll is where any error here ends up. If you pay hourly staff or deduct for absence, the attendance record is the input to the payslip, which is why this guide links straight into [Odoo payroll for Pakistan](/odoo-guides/odoo-payroll-pakistan/) and the [UAE WPS salary file](/odoo-guides/uae-wps-sif-file-odoo/).
+
+## What standard Odoo does and does not do
+
+Odoo 19's Attendances app, in both Community and Enterprise, lets people check in from the backend, from the attendance icon in the top bar, or from a kiosk ([Odoo documentation, Attendances](https://www.odoo.com/documentation/19.0/applications/hr/attendances.html)). The kiosk accepts a barcode or RFID badge, manual selection from a list, and an optional employee PIN ([Odoo documentation, kiosks](https://www.odoo.com/documentation/19.0/applications/hr/attendances/kiosks.html)).
+
+What it does not have is a driver for ZKTeco, Hikvision or any other biometric terminal. The documentation does not mention them. So a tablet kiosk works, but a fingerprint reader that already holds 300 enrolled staff does not talk to Odoo until something translates its protocol. Our [ZKTeco integration page](/integrations/zkteco/) and the [attendance module overview](/modules/attendance/) cover the wider options; this guide covers the two routes we build and maintain.
+
+## Two routes: ADMS push or LAN pull
+
+| | ADMS push | LAN bridge (pull) |
+|---|---|---|
+| Devices | ZKTeco with ADMS / Push SDK firmware (a Cloud Server setting in the communication menu) | ZKTeco on the standard ZK protocol, port 4370; Hikvision access terminals over ISAPI |
+| Who connects to whom | The device calls Odoo at `/iclock/` | A Windows service in the office reads the device, then posts to Odoo |
+| Extra hardware | None | Any Windows 10 or 11 PC, or Windows Server 2016 or later, that stays on |
+| Odoo modules | [WT ZKTeco ADMS Push](https://apps.odoo.com/apps/modules/19.0/wt_zkteco_adms/) | ADMS Push plus [WT Attendance Bridge](https://apps.odoo.com/apps/modules/19.0/wt_zkteco_bridge/) |
+| Internet outage | The device keeps unsent punches and retries | The agent keeps a local queue and sends in order when Odoo is back |
+| Ports opened into the office | None | None |
+
+Both routes write into the same raw punch table, so the pairing rules below are identical whichever way a punch arrives.
+
+### Route 1: ADMS push to /iclock/
+
+Once [WT ZKTeco ADMS Push](https://apps.odoo.com/apps/modules/19.0/wt_zkteco_adms/) is installed, Odoo answers the endpoints a push firmware expects: a handshake and data upload at `/iclock/cdata`, a command poll at `/iclock/getrequest` and a command result at `/iclock/devicecmd`. The device sends attendance rows (the ATTLOG table) with the PIN, local time, status and verify method, and Odoo replies with the count it accepted so the device can clear its upload buffer. There is also `/iclock/ping`, which returns a plain text OK, handy for testing from the office network with a browser or curl.
+
+### Route 2: the LAN bridge
+
+Plenty of ZKTeco models have no push firmware, and Hikvision terminals speak their own ISAPI. For those, [WT Attendance Bridge](https://apps.odoo.com/apps/modules/19.0/wt_zkteco_bridge/) adds the Odoo side, and a free Windows agent (see the [Attendance Bridge download page](/bridge/) and our other [Windows apps](/windows-apps/)) runs as a service on an office PC. The agent scans its own subnet plus any ranges you add, using the ZKTeco search broadcast, Hikvision SADP and a check of ports 4370 and 80. It confirms each ZKTeco with a handshake that only reads serial number, model and firmware, and rescans every 12 hours or when you click Scan now.
+
+The agent only reads. It never clears device logs, sets the clock, changes users or opens doors. If a device changes IP address, the bridge finds it again by serial number and notes the move in the chatter.
+
+<Shot src="/odoo-guides/zkteco-adms-odoo/device_lan_zkteco.webp" alt="Odoo device form for a ZKTeco MB560 on the LAN bridge, showing serial number, time zone offset 5, port 4370, TCP transport, 60 second poll, firmware and users on device" width={1280} height={800} caption="A ZKTeco device read through the LAN bridge: connection, status and the counters for punches, unmatched punches and unmapped PINs." />
+
+## How to set it up in Odoo
+
+### ADMS push
+
+1. Install WT ZKTeco ADMS Push. It depends only on Employees and Attendances.
+2. Make sure Odoo is reachable from the office network on a real domain over HTTPS.
+3. On the terminal, open the Cloud Server (ADMS) setting in the communication menu. Enter your Odoo domain, path `/iclock/`, port 443, and switch on the domain name option for HTTPS. In Odoo, the Show Device URL button on any device record prints these values for your server.
+4. Wait for the device's next cycle. It appears under Attendances, ZKTeco, Devices, switched off.
+5. Open it, check the serial number against the label on the device, set the location, the time zone offset and the auto close settings, then tick Is Active.
+6. On each employee, fill the ZKTeco User ID field with their device PIN. If you already use the employee badge ID for the same number, that works as a fallback.
+7. Punch on the device and check Attendances, ZKTeco, Raw Punches.
+
+### LAN bridge
+
+1. Install WT Attendance Bridge on top of ADMS Push.
+2. Go to Attendances, ZKTeco, Bridges, create a bridge and note the pairing code or invite link. Codes are single use and valid for 7 days.
+3. Install the agent on a PC in the same network as the devices and open the invite link there. The bridge form ticks each setup step as it completes.
+4. On the Found devices tab, click Add for each device. Hikvision terminals ask for their login, which is sent to the agent over HTTPS and stored there with Windows DPAPI.
+5. Click Match employees. People stored on the device are proposed against your employees with a confidence score; close spellings are left for you to tick.
+6. Anything left goes to Attendances, ZKTeco, Unmapped PINs, where you link one at a time or in bulk. Punches that were waiting become attendances at once.
+
+<Shot src="/odoo-guides/zkteco-adms-odoo/bridge_checklist_done.webp" alt="Odoo bridge record Head office reception PC with the setup checklist all ticked: agent installed, paired, devices found, devices added, employees matched, first punch received" width={1280} height={800} caption="The bridge form shows each setup step and turns green when it is done." />
+
+<Shot src="/odoo-guides/zkteco-adms-odoo/unmapped_pins.webp" alt="Unmapped PINs list in Odoo showing device, PIN, name on device and a proposed employee to link, with a Link to employee action per row" width={1280} height={800} caption="Unmapped PINs: the name stored on the device next to the employee it most likely belongs to." />
+
+## What happens to each punch
+
+### Raw log first
+
+Every punch is stored as it arrived: device, PIN, time, status code, verify method and work code. The table is unique on device, PIN and time, so a punch the device or agent sends twice is stored once. If the PIN does not match an employee, the punch stays in the log with the reason, and the Reprocess Unprocessed Punches button on the device pairs it later, oldest first.
+
+### Pairing rules
+
+The modules do not trust the device's in or out status code, because staff press the wrong key all day. Instead:
+
+- A punch within 60 seconds of the last check in or check out is treated as a repeat swipe and absorbed.
+- If the employee has an open attendance, the next punch closes it.
+- If that open attendance is older than the auto close threshold (14 hours by default), the employee forgot to punch out. The old session is closed at check in plus the default shift length (9 hours by default) and the new punch opens a fresh attendance. No 40 hour days.
+- A punch older than the employee's latest attendance is not spliced into history. It is marked with a note so you can review it.
+
+### Time zones
+
+Terminals report local time. Each device has a whole hour offset (Pakistan 5, UAE 4, Saudi Arabia 3), punches are converted to UTC on arrival, and on ADMS the same offset goes back to the device in the handshake. The bridge also rejects times more than 24 hours in the future or more than 400 days old, which catches a device with a dead clock battery.
+
+<Callout title="Switch new devices on promptly">
+A device that calls in for the first time is registered by serial number but switched off. On the ADMS route, punches it sends while switched off are acknowledged and not written, and the device will not resend them by itself. On the bridge route they are refused and reported back to the agent. Check the serial and switch the device on as soon as it appears.
+</Callout>
+
+## From punches to late, early and overtime
+
+The device modules stop at check in and check out. [HR Attendance Management](https://apps.odoo.com/apps/modules/19.0/wt_hrms_attendance/) adds the analysis: late arrival with minutes and a grace period, early departure, net worked hours with the break taken off once, overtime against the expected day, and a monthly summary per employee and department. It measures against each employee's working schedule in the employee's own time zone, handles shifts that cross midnight, and a scheduled job builds the previous month on the first. Its own listing is blunt that it has no device integration; it reads whatever is already in Attendances, which is exactly what the two modules above supply. More detail is on the [product page](/products/wt-hrms-attendance/).
+
+<Shot src="/odoo-guides/zkteco-adms-odoo/attendance-summary.webp" alt="Attendance Summary list in WT HRMS with employee, department, year, month, present days, late count, total worked hours, overtime hours and total late minutes" width={1280} height={800} caption="The monthly attendance summary built from the paired attendances." />
+
+For a labour camp or site workforce on rotating shifts, the same feed drives the [labour camp guide](/odoo-guides/odoo-labour-camp-management/).
+
+## Security notes
+
+- Use HTTPS. The ADMS endpoints are public by design, because the device cannot log in. The device identifies itself only by serial number.
+- That is why new devices start switched off. Treat an unexpected new device in the list as a question, not a convenience.
+- The bridge authenticates with a token, and Odoo stores only a hash of it. Revoke a bridge from its form when a PC is retired.
+- The bridge raises an activity for the HR manager when a bridge has been silent for 30 minutes, so a PC that was switched off over the weekend does not go unnoticed.
+
+## Limitations
+
+- No commands go back to the device. The ADMS command poll answers with nothing to do, so you cannot push users, fingerprints or clock changes from Odoo. User and fingerprint changes the device reports are logged, not synced to employees.
+- Status codes (check in, check out, break, overtime) are stored but not used for pairing. Pairing alternates.
+- Time zone offsets are whole hours. A site on a half hour offset needs a word with us before go live.
+- The bridge needs a Windows PC that stays on. It is not a Linux or Docker agent.
+- Hikvision support covers access control terminals with ISAPI, not cameras.
+- Late and overtime are only as good as the working schedules and time zones on your employees. No module can guess those.
+
+If you have a device model that behaves differently, or you want help wiring attendance into payroll, [get in touch](/contact/).

@@ -304,7 +304,7 @@ const isBritish = BRITISH.includes(country.slug);
 const custWord = isBritish ? 'customisation' : 'customization';
 const licWord = isBritish ? 'licence' : 'license';
 
-const whatWeAre = `We work as an Odoo development company and Odoo implementation partner for businesses in ${plainName}. That covers the whole engagement: consulting on whether Odoo fits, configuring it, writing the custom modules that fit requires, connecting it to the systems you already run, and supporting it afterwards. Our Odoo developers and consultants deliver remotely, and travel for discovery, training and go-live week.`;
+const whatWeAre = `We work as an Odoo development and implementation company for businesses in ${plainName}. That covers the whole engagement: consulting on whether Odoo fits, configuring it, writing the custom modules that fit requires, connecting it to the systems you already run, and supporting it afterwards. Our Odoo developers and consultants deliver remotely, and travel for discovery, training and go-live week.`;
 const whatWeAreTwo = `If you are moving off spreadsheets or replacing older ERP software, an ERP migration is the shape of the project and the ${plainName} items on this page decide how hard it is. As ERP consultants we will say when Odoo is the right ERP solution for you and when it is not. We work on Odoo 17, 18 and 19, on Odoo Community and Odoo Enterprise, and on Odoo cloud hosting or your own servers. Odoo ${custWord}, an Odoo upgrade from an older release, and Odoo AMC and support contracts are all in scope. We will say plainly when the edition you run is the wrong one, and what the Enterprise ${licWord} would change.`;
 
 /* ── hreflang ──────────────────────────────────────────────────────
@@ -331,7 +331,7 @@ const hreflangAlternates = [
     : []),
 ];
 
-const metaDescription = `Odoo implementation, customization, development and support in ${plainName}. ${country.tagline}`;
+const metaDescription = `${country.tagline} Customisation, integrations and support from Odoo developers with modules published on the Odoo App Store.`;
 
 /* Title length.
 
@@ -347,17 +347,18 @@ const metaDescription = `Odoo implementation, customization, development and sup
    and fall back to the bare, correctly targeted phrase. */
 const TITLE_BUDGET = 60;
 const SUFFIX_LEN = ` | ${SITE.name}`.length;
-/* 'Odoo Development Company in <market>' is the shape the pages ranking above
-   us are titled with, and 'company' is the query with budget behind it.
-   'Partner' stays in the lede and the body, where it was already. The
-   qualifier names the biggest cities that still fit the title budget. */
+/* Each hub is the single page on the site targeting "odoo implementation
+   <country>": the service-by-country and topic pages are noindex, and the
+   country blog posts carry a different angle in their titles and link here.
+   The title names the main business city first, then the market, and falls
+   back to the bare market name when the city does not fit the budget. */
 const seoName = seoNameOf(country.slug, country.title, plainName, (country as any).abbr);
-const titleStem = `Odoo Development Company in ${seoName}`;
-const cityQualifiers = [3, 2, 1].map(n => ': ' + country.cities.slice(0, n).join(', '));
+const PRIMARY_CITY: Record<string, string> = { pakistan: 'Lahore' };
+const titleMarket = (country as any).abbr === 'KSA' ? plainName : ((country as any).abbr || plainName);
+const primaryCity = PRIMARY_CITY[country.slug] || country.cities[0];
 const pageTitle =
-  [...cityQualifiers, '']
-    .map(q => titleStem + q)
-    .find(t => t.length + SUFFIX_LEN <= TITLE_BUDGET) || titleStem;
+  [`Odoo Implementation in ${primaryCity}, ${titleMarket}`, `Odoo Implementation in ${titleMarket}`]
+    .find(t => t.length + SUFFIX_LEN <= TITLE_BUDGET) || `Odoo Implementation in ${titleMarket}`;
 
 const schema = [
   {
@@ -431,7 +432,7 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
       <nav class="text-sm text-brand-200"><a href="/" class="hover:text-white">Home</a> / <a href="/countries/" class="hover:text-white">Countries</a> / <span class="text-white">{country.title}</span></nav>
       <div class="mt-6 max-w-3xl">
         <div class="text-6xl">{country.flag}</div>
-        <h1 class="h1 mt-6">Odoo Development Company in {seoName}</h1>
+        <h1 class="h1 mt-6">Odoo Implementation in {seoName}</h1>
         <p class="lede mt-6 text-ink-200">{country.tagline}</p>
         <div class="mt-6 flex flex-wrap gap-2">
           {country.cities.map((c: string) => <span class="chip !bg-white/10 !text-white">{c}</span>)}
@@ -545,9 +546,6 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
                 <div class="bg-brand-50 p-6 sm:p-8">
                   <div class="flex flex-wrap items-center gap-3">
                     <span class="eyebrow">Scheme</span>
-                    {detail.einvoicing.verified === false && (
-                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Unconfirmed</span>
-                    )}
                   </div>
                   <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{detail.einvoicing.scheme}</p>
                   <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Authority:</span> {detail.einvoicing.authority}</p>
@@ -607,7 +605,6 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
                   {SUPPORT_LEGEND.map((s: OdooSupport) => (
                     <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${supportClass(s)}`}>{supportLabel(s)}</span>
                   ))}
-                  <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Unconfirmed</span>
                 </div>
               )}
               <div class="mt-6 grid gap-3 sm:grid-cols-2">
@@ -811,6 +808,7 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
           </div>
           <a href="/products/" class="mt-5 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All Way4Tech modules →</a>
 
+          {countryCases.length > 0 && (<>
           <h2 class="h3 mt-14">{hasNearWork ? `Client work close to ${plainName}` : 'Selected client work'}</h2>
           <p class="mt-3 text-ink-700">
             {hasNearWork
@@ -837,11 +835,12 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
               </a>
             ))}
           </div>
+          </>)}
 
           <h2 class="h3 mt-14">{(country.regions || []).length ? `Cities and regions we serve in ${plainName}` : `Cities we serve in ${plainName}`}</h2>
           <p class="mt-3 text-ink-700">
-            We deliver Odoo projects remotely and on-site across {plainName}. The places below are the ones we cover for
-            on-site work. Books run in {country.currency}, with multi-currency switched on where you trade across borders.
+            We deliver Odoo projects remotely for businesses across {plainName}, and travel for discovery or go-live where a
+            project needs it. Books run in {country.currency}, with multi-currency switched on where you trade across borders.
           </p>
           <div class="mt-5 flex flex-wrap gap-2">
             {country.cities.map((c: string) => <span class="chip">{c}</span>)}

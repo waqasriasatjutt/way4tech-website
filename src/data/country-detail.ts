@@ -1041,14 +1041,13 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
  },
  "kuwait": {
   "einvoicing": {
-   "scheme": "None. Kuwait has no e-invoicing scheme.",
+   "scheme": "No e-invoicing mandate in force.",
    "authority": "Not applicable. Tax administration sits with the Ministry of Finance Department of Inspection and Tax Claims.",
-   "status": "Kuwait is one of two GCC states with nothing in force. Saudi Arabia, the UAE and Oman all have binding mandates or fixed dates, and Qatar has an approved draft law. Kuwait and Bahrain have neither.",
-   "appliesTo": "Nobody. There is no Kuwaiti e-invoicing obligation today. Invoicing follows ordinary commercial and tax record-keeping rules.",
+   "status": "Kuwait has not enacted VAT, and no e-invoicing obligation is in force. Reports of a draft e-invoicing law have not been followed by a published model, scope or date, so confirm the position with the Ministry of Finance before planning around one.",
+   "appliesTo": "No current obligation. Invoicing follows ordinary commercial and tax record-keeping rules.",
    "requirements": [
     "Nothing on the e-invoicing side. The obligations that do bite are the 5% contract retention and tax clearance certificate process, and the requirement to keep accounting records in Kuwait available for inspection.",
-    "Watch item, not a deadline: Kuwait signed the GCC Unified VAT Agreement but has not enacted VAT. Across the GCC, e-invoicing has followed VAT rather than preceded it, so a Kuwaiti VAT law is the signal to watch.",
-    "If a vendor quotes you a Kuwait e-invoicing deadline, ask them for the gazette reference. There is not one."
+    "Watch item, not a deadline: Kuwait signed the GCC Unified VAT Agreement but has not enacted VAT. Across the GCC, e-invoicing has followed VAT rather than preceded it, so a Kuwaiti VAT law is the signal to watch."
    ],
    "verified": false
   },
@@ -5854,3 +5853,21 @@ export const COUNTRY_DETAIL: Record<string, CountryDetail> = {
   "openQuestions": 23
  }
 };
+
+/*
+ * Published facts only.
+ *
+ * Entries marked verified: false (sources agreed, no primary confirmation) used
+ * to render with an "Unconfirmed" badge next to regulatory claims. A buyer reads
+ * a hedged statute as an unchecked one, so they are no longer published at all.
+ * They stay in the data above as a research backlog: confirm one against a
+ * primary source, set verified: true, and it reappears. The e-invoicing block is
+ * kept whole (every country needs one) and its wording is kept cautious instead.
+ */
+for (const d of Object.values(COUNTRY_DETAIL)) {
+  d.tax = d.tax.filter(f => f.verified !== false);
+  d.payroll = d.payroll.filter(f => f.verified !== false);
+  d.accounting = d.accounting.filter(f => f.verified !== false);
+  d.payments = d.payments.filter(p => p.verified !== false);
+  d.shipping = d.shipping.filter(p => p.verified !== false);
+}

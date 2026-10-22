@@ -48,6 +48,30 @@ async function rpc(url: string, path: string, params: unknown, cookie?: string):
   return { result: data.result, cookie: r.headers.get('set-cookie') || cookie };
 }
 
+/*
+ * Posts that must not be published even though they are live in Odoo.
+ *
+ * Ids 1-3 were the "now live from Odoo" pipeline tests ("Welcome to the
+ * Way4Tech blog", "How we built a multi-brand Odoo content engine", "Why one
+ * Odoo beats two CMSes"), 67-161 words each, and they sat in the sitemap as
+ * thin pages. Their URLs 301 to /blog/ (public/_redirects). The word floor
+ * keeps the next test post from shipping the same way: unpublish it in Odoo
+ * or write it out properly.
+ */
+const EXCLUDED_POST_IDS = new Set([1, 2, 3]);
+const MIN_WORDS = 300;
+
+function keepPost(p: any): boolean {
+  if (EXCLUDED_POST_IDS.has(p.id)) return false;
+  const text = String(p.content || '').replace(/<[^>]+>/g, ' ');
+  const words = text.split(/\s+/).filter(Boolean).length;
+  if (words < MIN_WORDS) {
+    console.warn(`[odoo] skipping blog.post ${p.id} "${p.name}": ${words} words, under ${MIN_WORDS}`);
+    return false;
+  }
+  return true;
+}
+
 export async function fetchOdooBlogPosts(): Promise<OdooBlogPost[]> {
   const url = process.env.ODOO_URL;
   const db = process.env.ODOO_DB;
@@ -90,7 +114,7 @@ export async function fetchOdooBlogPosts(): Promise<OdooBlogPost[]> {
       tagMap = Object.fromEntries((tags.result as any[]).map(t => [t.id, t.name]));
     }
 
-    return raw.map(p => {
+    return raw.filter(keepPost).map(p => {
       const title = p.name || '(untitled)';
       const slug = slugify(title) || `post-${p.id}`;
       const author = Array.isArray(p.author_id) ? p.author_id[1] : 'Way4Tech';

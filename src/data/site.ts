@@ -1,7 +1,7 @@
 export const SITE = {
   name: 'Way4Tech',
   tagline: 'Odoo ERP that fits your business - not the other way around.',
-  description: 'Global Odoo Partner. 9+ years of Odoo delivery, 500+ deployments, 1000+ custom modules. Implementation, customization, SaaS, and support across 18 countries.',
+  description: 'Odoo implementation and custom module company. 180+ modules published on the Odoo App Store. Implementation, customisation, hosting and support for Pakistan, the UAE, Saudi Arabia and 15 more markets.',
   url: 'https://way4tech.com',
   email: 'info@way4tech.com',
   alt_email: 'waqasriasatjutt@gmail.com',
@@ -54,19 +54,63 @@ export function whatsappHref(pathname?: string, subject?: string): string {
   return `${SITE.whatsapp}?text=${encodeURIComponent(text)}`;
 }
 
+/*
+ * Published modules on the Odoo App Store, counted on apps.odoo.com on
+ * 2026-10-23: 181 apps under the author "Waqas Riasat" (177 of them for 19.0,
+ * 114 for 20.0) plus 5 under "Way4Tech". Stated as "180+" and always linked to
+ * the author listing so anyone can check it. Recount before raising it.
+ *
+ * Every figure on this site must be something a buyer can verify. The old
+ * "9+ years / 500+ deployments / 1000+ modules / Odoo Partner" block could not
+ * be, and the site itself contradicted it.
+ */
+export const APP_STORE = {
+  count: '180+',
+  url: 'https://apps.odoo.com/apps/modules/browse?author=Waqas%20Riasat',
+};
+
+/*
+ * Live demo systems run by Way4Tech, each checked on 2026-10-23 to answer 200
+ * (the Odoo ones land on their login page). Every entry names the published
+ * module it shows, so the claim on /case-studies/ can be checked twice over:
+ * open the demo, open the store listing. Remove a demo here the day it goes down.
+ */
+export interface LiveDemo {
+  url: string;
+  title: string;
+  what: string;
+  /** Product slugs under /products/ that the demo runs. */
+  products: string[];
+  kind: 'website' | 'backend';
+}
+export const LIVE_DEMOS: LiveDemo[] = [
+  { url: 'https://garage-demo.way4tech.com/', title: 'Garage and workshop', what: 'Job cards from estimate to invoice, vehicle history with VIN and odometer, inspection sheets, labour and parts.', products: ['w4t-garage-management'], kind: 'backend' },
+  { url: 'https://garage-pro.way4tech.com/', title: 'Garage and workshop, Pro build', what: 'The same garage system with the paid add-on features switched on, for side by side comparison.', products: ['w4t-garage-management'], kind: 'backend' },
+  { url: 'https://salon.way4tech.com/', title: 'Salon and spa website', what: 'A fictional salon website on Odoo, with its service menu and portal booking.', products: ['wt-salon-management', 'wt-enterprise-salon'], kind: 'website' },
+  { url: 'https://facility-demo.way4tech.com/', title: 'Facility management (CAFM)', what: 'Site and asset register, planned maintenance, work orders and SLA clocks.', products: ['wt-facility-management'], kind: 'backend' },
+  { url: 'https://facility-pro.way4tech.com/', title: 'Facility management, Pro build', what: 'The CAFM system with the extended feature set, for comparison with the base build.', products: ['wt-facility-management'], kind: 'backend' },
+  { url: 'https://transport-demo.way4tech.com/', title: 'Transport and fleet', what: 'Fleet, trips, trip expenses, maintenance, drivers and analytics on Odoo 19.', products: ['wt-transport-management'], kind: 'backend' },
+  { url: 'https://transport-pro.way4tech.com/', title: 'Transport and fleet, Pro build', what: 'The transport system with the extended feature set switched on.', products: ['wt-transport-management'], kind: 'backend' },
+  { url: 'https://freight-demo.way4tech.com/', title: 'Freight forwarding and customs', what: 'Air, sea and road job files, master and house bills, containers, customs entries and profit by lane.', products: ['wt-freight-forwarding'], kind: 'backend' },
+  { url: 'https://travel-demo.way4tech.com/', title: 'Travel agency and tours', what: 'Booking files with PNR, passports and visas, supplier cost and sell price, fixed departures.', products: ['wt-travel-agency'], kind: 'backend' },
+  { url: 'https://restro.way4tech.com/', title: 'Restaurant and cloud kitchen', what: 'Menu engineering with recipe cost, table and delivery orders, kitchen display and wastage.', products: ['wt-restaurant-management'], kind: 'backend' },
+  { url: 'https://distributor-demo.way4tech.com/', title: 'Distributor and van sales', what: 'Order taker and delivery apps for field distribution on Odoo 19.', products: ['wt-sale-distributor'], kind: 'backend' },
+  { url: 'https://rental-demo.way4tech.com/', title: 'Online rental store', what: 'A fictional hire company: date range booking, availability checks, period pricing and deposits on Odoo Website.', products: ['wt-rental-website', 'wt-rental-management'], kind: 'website' },
+];
+
 export const STATS = [
-  { value: '9+',     label: 'Years in Odoo' },
-  { value: '500+',   label: 'Deployments' },
-  { value: '1000+',  label: 'Custom Modules' },
-  { value: '18',     label: 'Countries Served' },
+  { value: APP_STORE.count, label: 'Modules on the Odoo App Store' },
+  { value: '19 + 20', label: 'Odoo versions we publish for' },
+  { value: '18',      label: 'Country localisation guides' },
+  { value: String(LIVE_DEMOS.length), label: 'Live demo systems' },
 ];
 
 export const HIGHLIGHTS = [
-  { icon: '🏆', title: 'Odoo Partner', desc: 'Deep Odoo expertise from v12 through v19.' },
-  { icon: '🌍', title: '18 Countries', desc: 'Localized compliance for MENA, EU, North America, APAC.' },
-  { icon: '🚀', title: '500+ Go-Lives', desc: 'From 10-seat shops to 2000-user enterprises.' },
-  { icon: '🔧', title: '1000+ Modules', desc: 'Library of battle-tested OCA & custom modules.' },
-  { icon: '🛡️', title: 'SLA-backed Support', desc: '24/7 monitoring, backups, security patching.' },
+  { icon: '🧩', title: 'Odoo developers', desc: 'Python and OWL module work on Odoo Community, Enterprise and Odoo.sh.' },
+  { icon: '🌍', title: '18 country guides', desc: 'Tax, e-invoicing, payroll and payment notes for each market we cover.' },
+  { icon: '🖥️', title: 'Live demos', desc: 'Garage, salon, facility, transport, travel and more, running on real Odoo.' },
+  { icon: '🔧', title: '180+ published modules', desc: 'Listed on the Odoo App Store, each with its own page and screenshots.' },
+  { icon: '🛡️', title: 'Support and hosting', desc: 'Monitoring, backups and security patching on your server or ours.' },
   { icon: '💬', title: 'Arabic · English · Urdu', desc: 'Multilingual project teams end-to-end.' },
 ];
 
@@ -215,66 +259,66 @@ export const SOLUTIONS = [
 export const COUNTRIES = [
   { slug: 'saudi-arabia', title: 'Saudi Arabia (KSA)', flag: '🇸🇦', currency: 'SAR', lang: 'ar-SA', abbr: 'KSA', cities: ['Riyadh','Jeddah','Dammam','Khobar','Makkah','Madinah','Jubail','Tabuk'],
     regions: ['Riyadh Province','Makkah Province','Eastern Province'],
-    tagline: 'Odoo partner in Riyadh, Jeddah, Dammam. ZATCA Phase 2 certified.',
+    tagline: 'Odoo implementation for Riyadh, Jeddah and Dammam. ZATCA Phase 2 e-invoicing set up on the Odoo Saudi localisation.',
     highlights: ['ZATCA Phase 2 e-invoicing (Fatoorah)','Arabic RTL & bilingual interfaces','Saudi labor law & GOSI payroll','VAT 15%','Saudization (Nitaqat) tracking'] },
   { slug: 'uae', title: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', lang: 'en-AE', abbr: 'UAE', cities: ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Al Ain','Fujairah'],
-    tagline: 'Odoo partner in Dubai, Abu Dhabi, Sharjah. UAE VAT & FTA ready.',
+    tagline: 'Odoo implementation for Dubai, Abu Dhabi and Sharjah. UAE VAT, Corporate Tax and the e-invoicing timetable in scope.',
     highlights: ['UAE VAT 5% & FTA reporting','Free-zone vs mainland setup','WPS payroll file generation','End-of-service gratuity','Corporate Tax 9% compliance'] },
   { slug: 'qatar', title: 'Qatar', flag: '🇶🇦', currency: 'QAR', lang: 'en-QA', cities: ['Doha','Al Rayyan','Lusail','Al Wakrah'],
-    tagline: 'Odoo partner in Doha. Qatar tax & payroll localization.',
+    tagline: 'Odoo implementation for Doha. Qatar tax and payroll localisation in scope.',
     highlights: ['Qatar tax authority (GTA) compliance','QNB, CB bank files (WPS)','Qatarization tracking','Arabic + English bilingual'] },
   { slug: 'kuwait', title: 'Kuwait', flag: '🇰🇼', currency: 'KWD', lang: 'en-KW', cities: ['Kuwait City','Hawalli','Al Ahmadi','Farwaniya','Salmiya'],
-    tagline: 'Odoo partner in Kuwait. PIFSS & WPS payroll.',
+    tagline: 'Odoo implementation for Kuwait City. PIFSS and WPS payroll in scope.',
     highlights: ['PIFSS social security','WPS payroll files','Arabic-first templates','Ministry of Commerce filings'] },
   { slug: 'oman', title: 'Oman', flag: '🇴🇲', currency: 'OMR', lang: 'en-OM', cities: ['Muscat','Salalah','Sohar','Nizwa','Sur'],
-    tagline: 'Odoo partner in Muscat. VAT 5% & Omanization compliance.',
+    tagline: 'Odoo implementation for Muscat. Oman VAT and Omanisation tracking in scope.',
     highlights: ['Oman VAT 5%','Omanization tracking','PASI social security','Arabic + English layouts'] },
   { slug: 'bahrain', title: 'Bahrain', flag: '🇧🇭', currency: 'BHD', lang: 'en-BH', cities: ['Manama','Muharraq','Riffa','Isa Town'],
-    tagline: 'Odoo partner in Manama. NBR VAT & SIO payroll.',
+    tagline: 'Odoo implementation for Manama. NBR VAT and SIO payroll in scope.',
     highlights: ['NBR VAT 10%','SIO social security','WPS payroll','English-first templates'] },
   { slug: 'pakistan', title: 'Pakistan', flag: '🇵🇰', currency: 'PKR', lang: 'en-PK', cities: ['Karachi','Lahore','Islamabad','Rawalpindi','Faisalabad','Multan','Peshawar','Sialkot'],
     regions: ['Punjab','Sindh','Khyber Pakhtunkhwa'],
-    tagline: 'Odoo partner in Karachi, Lahore, Islamabad. FBR & SECP compliant.',
+    tagline: 'Odoo implementation for Lahore, Karachi and Islamabad. FBR Digital Invoicing, sales tax and payroll in scope.',
     highlights: ['FBR Finance Act 2024 tax slabs','EOBI + Provident Fund + SESSI','FBR POS real-time integration','GST + Provincial Sales Tax (SRB, PRA, KPRA)','Urdu + English bilingual'] },
   { slug: 'india', title: 'India', flag: '🇮🇳', currency: 'INR', lang: 'en-IN', cities: ['Mumbai','Delhi','Bangalore','Hyderabad','Chennai','Pune','Ahmedabad','Kolkata'],
     regions: ['Maharashtra','Karnataka','Telangana','Tamil Nadu','Gujarat','West Bengal'],
-    tagline: 'Odoo partner in Mumbai, Bangalore, Delhi. GST & IRN ready.',
+    tagline: 'Odoo implementation for Mumbai, Bangalore and Delhi. GST, IRN and e-way bill in scope.',
     highlights: ['GST + GSTR-1 / GSTR-3B','e-Invoicing IRN + e-Way Bill','TDS / TCS auto-computation','PF, ESI, Professional Tax','Form 16 / EPS / ESIC filing'] },
   { slug: 'bangladesh', title: 'Bangladesh', flag: '🇧🇩', currency: 'BDT', lang: 'en-BD', cities: ['Dhaka','Chattogram','Sylhet','Gazipur','Narayanganj','Khulna'],
-    tagline: 'Odoo partner in Dhaka, Chattogram. NBR VAT compliance.',
+    tagline: 'Odoo implementation for Dhaka and Chattogram. NBR VAT in scope.',
     highlights: ['NBR VAT 15%','Mushak-6.3 e-invoicing','Bangladesh labor law','Bangla + English layouts'] },
   { slug: 'egypt', title: 'Egypt', flag: '🇪🇬', currency: 'EGP', lang: 'ar-EG', cities: ['Cairo','Alexandria','Giza','New Cairo','6th of October City','Mansoura'],
-    tagline: 'Odoo partner in Cairo, Alexandria. ETA e-invoicing ready.',
+    tagline: 'Odoo implementation for Cairo and Alexandria. ETA e-invoicing and e-receipt in scope.',
     highlights: ['ETA e-invoicing','VAT 14% & Schedule Tax','Social insurance (NOSI)','Arabic-first Odoo'] },
   { slug: 'jordan', title: 'Jordan', flag: '🇯🇴', currency: 'JOD', lang: 'ar-JO', cities: ['Amman','Zarqa','Irbid','Aqaba'],
-    tagline: 'Odoo partner in Amman. ISTD e-invoicing & SSC payroll.',
+    tagline: 'Odoo implementation for Amman. JoFotara e-invoicing and SSC payroll in scope.',
     highlights: ['ISTD e-invoicing','VAT 16%','Social Security (SSC)','Bilingual Arabic + English'] },
   { slug: 'turkey', title: 'Turkey', flag: '🇹🇷', currency: 'TRY', lang: 'tr-TR', cities: ['Istanbul','Ankara','Izmir','Bursa','Antalya','Konya','Gaziantep'],
-    tagline: 'Odoo partner in Istanbul, Ankara. GIB e-Fatura integration.',
+    tagline: 'Odoo implementation for Istanbul and Ankara. GIB e-Fatura and e-Arşiv in scope.',
     highlights: ['GIB e-Fatura & e-Arşiv','KDV (VAT) 20%','SGK payroll','Turkish uniform CoA'] },
   { slug: 'united-kingdom', title: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', lang: 'en-GB', abbr: 'UK', cities: ['London','Manchester','Birmingham','Leeds','Glasgow','Edinburgh','Bristol','Liverpool'],
     regions: ['England','Scotland','Wales','Northern Ireland'],
-    tagline: 'Odoo partner in London, Manchester. MTD VAT & RTI payroll.',
+    tagline: 'Odoo implementation for London and Manchester. MTD VAT and RTI payroll in scope.',
     highlights: ['HMRC MTD VAT','RTI payroll & P45/P60','Pensions auto-enrolment','CIS subcontractor scheme'] },
   { slug: 'germany', title: 'Germany', flag: '🇩🇪', currency: 'EUR', lang: 'de-DE', cities: ['Berlin','Munich','Frankfurt','Hamburg','Cologne','Stuttgart','Düsseldorf'],
     regions: ['Bavaria','North Rhine-Westphalia','Baden-Württemberg','Hesse'],
-    tagline: 'Odoo partner in Berlin, Munich. GoBD & SKR03/SKR04.',
+    tagline: 'Odoo implementation for Berlin and Munich. GoBD, SKR03/SKR04 and E-Rechnung in scope.',
     highlights: ['GoBD compliance','SKR03 / SKR04 chart of accounts','ELSTER tax filings','DATEV export','German payroll (Lohn+Gehalt)'] },
   { slug: 'france', title: 'France', flag: '🇫🇷', currency: 'EUR', lang: 'fr-FR', cities: ['Paris','Lyon','Marseille','Toulouse','Lille','Bordeaux','Nantes'],
     regions: ['Île-de-France','Auvergne-Rhône-Alpes','Occitanie','Hauts-de-France'],
-    tagline: 'Odoo partner in Paris, Lyon. FEC & PEPPOL compliant.',
+    tagline: 'Odoo implementation for Paris and Lyon. FEC export and the e-invoicing reform in scope.',
     highlights: ['FEC file export','PEPPOL e-invoicing','French Chart of Accounts (PCG)','DSN social declaration'] },
   { slug: 'united-states', title: 'United States', flag: '🇺🇸', currency: 'USD', lang: 'en-US', abbr: 'USA', cities: ['New York','Los Angeles','Chicago','Houston','Miami','Dallas','Atlanta','San Francisco','Seattle'],
     regions: ['California','Texas','New York','Florida','Illinois','Georgia','Washington'],
-    tagline: 'Odoo partner in New York, LA, Chicago. Sales Tax & 1099 ready.',
+    tagline: 'Odoo implementation for New York, Los Angeles and Chicago. Sales tax and 1099 reporting in scope.',
     highlights: ['Avalara / TaxJar integration','Multi-state sales tax nexus','1099 reporting','ACH & check-run','US GAAP reporting'] },
   { slug: 'canada', title: 'Canada', flag: '🇨🇦', currency: 'CAD', lang: 'en-CA', cities: ['Toronto','Vancouver','Montreal','Calgary','Ottawa','Edmonton'],
     regions: ['Ontario','British Columbia','Quebec','Alberta'],
-    tagline: 'Odoo partner in Toronto, Vancouver. GST/HST/PST localized.',
+    tagline: 'Odoo implementation for Toronto and Vancouver. GST, HST and PST in scope.',
     highlights: ['GST + HST + PST handling','T4, T4A, ROE forms','CPP & EI payroll','Bilingual EN + FR'] },
   { slug: 'australia', title: 'Australia', flag: '🇦🇺', currency: 'AUD', lang: 'en-AU', cities: ['Sydney','Melbourne','Brisbane','Perth','Adelaide','Gold Coast'],
     regions: ['New South Wales','Victoria','Queensland','Western Australia','South Australia'],
-    tagline: 'Odoo partner in Sydney, Melbourne. GST & STP Phase 2.',
+    tagline: 'Odoo implementation for Sydney and Melbourne. GST and STP Phase 2 in scope.',
     highlights: ['GST 10%','Single Touch Payroll (STP) Phase 2','Superannuation SuperStream','BAS reporting','Australian CoA'] },
 ];
 
@@ -368,15 +412,26 @@ export const INDUSTRIES = [
   { slug: 'water-delivery', title: 'Water Delivery', icon: '💧', description: 'Containers, coupons and rounds: what a water plant sets up before the first delivery run.' },
 ];
 
-/* Case studies (curated) */
-export const CASE_STUDIES = [
-  { slug: 'gcc-hotel-chain', title: 'GCC Hotel Chain: 14 properties on one Odoo', industry: 'Hospitality', country: 'UAE', tagline: '14-property roll-out in 9 months with central reporting.', metrics: [{k:'Properties',v:'14'},{k:'Months',v:'9'},{k:'Users',v:'620'}] },
-  { slug: 'ksa-pharmacy-chain', title: 'KSA Pharmacy Chain: 42 stores + ZATCA Phase 2', industry: 'Pharmacy', country: 'Saudi Arabia', tagline: '42 stores live with ZATCA Phase 2 clearance in 4 months.', metrics: [{k:'Stores',v:'42'},{k:'Months',v:'4'},{k:'ZATCA',v:'Phase 2'}] },
-  { slug: 'pk-distributor', title: 'Pakistan FMCG Distributor: 180 vans automated', industry: 'Distribution', country: 'Pakistan', tagline: 'Van-sales app + route planner for 180 vans with FBR POS.', metrics: [{k:'Vans',v:'180'},{k:'SKUs',v:'4,200'},{k:'FBR POS',v:'Live'}] },
-  { slug: 'uae-hospital', title: 'UAE 120-bed Hospital: Odoo HMIS go-live', industry: 'Healthcare', country: 'UAE', tagline: 'OPD + IPD + pharmacy + insurance on one Odoo instance.', metrics: [{k:'Beds',v:'120'},{k:'Doctors',v:'85'},{k:'Insurers',v:'32'}] },
-  { slug: 'saudi-construction', title: 'Saudi Construction Group: 28 projects, 1200 users', industry: 'Construction', country: 'Saudi Arabia', tagline: 'Multi-project BOQ, subcontractors, progress billing at scale.', metrics: [{k:'Projects',v:'28'},{k:'Users',v:'1,200'},{k:'Subcontractors',v:'310'}] },
-  { slug: 'uk-retail', title: 'UK Multi-Store Retail: MTD VAT + Shopify sync', industry: 'Retail', country: 'UK', tagline: '12 stores + online, unified inventory, HMRC MTD VAT.', metrics: [{k:'Stores',v:'12'},{k:'SKUs',v:'14,000'},{k:'MTD VAT',v:'Live'}] },
-];
+/* Case studies.
+ *
+ * The six anonymous stories that used to live here (hotel chain, pharmacy
+ * chain, distributor, hospital, construction group, retail chain) carried no
+ * client name, shared one templated narrative and one unattributed quote, and
+ * could not be verified. They were removed on 2026-10-23 and their URLs 301 to
+ * /case-studies/, which now lists only work anyone can open: the live demos
+ * below and the published modules behind them.
+ *
+ * Add an entry here only with the client's written permission to be named.
+ */
+export interface CaseStudy {
+  slug: string;
+  title: string;
+  industry: string;
+  country: string;
+  tagline: string;
+  metrics: { k: string; v: string }[];
+}
+export const CASE_STUDIES: CaseStudy[] = [];
 
 /* Pricing tiers */
 export const PRICING = [
@@ -387,12 +442,12 @@ export const PRICING = [
 
 /* FAQs (SEO) */
 export const FAQS = [
-  { q: 'Are you an Odoo Partner?', a: 'Yes. Way4Tech is an Odoo Partner. Our functional and technical consultants work across Odoo v12 through v19.' },
+  { q: 'Are you an official Odoo partner?', a: 'No. Way4Tech is an independent Odoo development and implementation company. We publish 180+ modules on the Odoo App Store under the author name Waqas Riasat, and we implement and customise Odoo Community, Odoo Enterprise and Odoo.sh. An Enterprise subscription is bought from Odoo S.A.; we do the implementation and development work around it.' },
   { q: 'How long does a typical Odoo implementation take?', a: 'Single-module Starter projects run 3-4 weeks. Multi-module Growth projects run 8-12 weeks. Enterprise multi-country rollouts run 4-9 months with phased go-lives.' },
   { q: 'Do you support Odoo Community or only Enterprise?', a: 'Both. We recommend Community for cost-sensitive teams with technical maturity, Enterprise for teams that want Studio, IoT, MRP II, and full vendor support. We also migrate Community ↔ Enterprise.' },
-  { q: 'Do you handle ZATCA Phase 2 e-invoicing in Saudi Arabia?', a: 'Yes. We have production deployments across KSA with ZATCA Phase 2 clearance, QR signing, and archive-ready long-term storage.' },
+  { q: 'Do you handle ZATCA Phase 2 e-invoicing in Saudi Arabia?', a: "Yes. ZATCA Phase 2 clearance and reporting runs on Odoo's own Saudi e-invoicing localisation. We configure it, onboard each invoicing unit with ZATCA, and test clearance in the simulation environment before go-live." },
   { q: 'Can you migrate us from Odoo 14/15/16/17 to the latest version?', a: 'Yes. Our migration service covers database, custom modules, attachments, and historical transactions, with a test environment for sign-off before cutover.' },
-  { q: 'Do you provide 24/7 support?', a: 'Yes. SLA-backed support contracts with 2h/4h/8h response tiers, 24/7 monitoring, backups, and security patching.' },
-  { q: 'Which countries do you serve?', a: 'We deliver across 18 countries including Saudi Arabia, UAE, Qatar, Kuwait, Oman, Bahrain, Pakistan, India, Bangladesh, Egypt, Jordan, Turkey, UK, Germany, France, US, Canada, and Australia.' },
+  { q: 'Do you provide ongoing support?', a: 'Yes. Support contracts with agreed response times, plus monitoring, backups and security patching for the servers we host.' },
+  { q: 'Which countries do you work with?', a: 'We are based in Pakistan and work remotely, mostly with clients in Pakistan, the UAE and Saudi Arabia. We publish localisation guides for 18 markets: Saudi Arabia, UAE, Qatar, Kuwait, Oman, Bahrain, Pakistan, India, Bangladesh, Egypt, Jordan, Turkey, UK, Germany, France, US, Canada and Australia.' },
   { q: 'Do you offer fixed-price projects?', a: 'Yes. For well-scoped implementations we deliver fixed-price with milestones. For discovery-phase work or ongoing customization we offer transparent T&M.' },
 ];

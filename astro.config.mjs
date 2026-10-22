@@ -2,10 +2,15 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = fileURLToPath(new URL('./', import.meta.url));
 
 // Pulled out of the data file so the sitemap can state when the country
 // research was last reviewed instead of when the build happened to run.
+// Only used when git history is unavailable.
 const COUNTRY_REVIEWED = (() => {
   try {
     const src = readFileSync(new URL('./src/data/country-detail.ts', import.meta.url), 'utf8');
@@ -16,17 +21,11 @@ const COUNTRY_REVIEWED = (() => {
 
 // Fallback timestamp for pages with no better source.
 //
-// Every URL used to carry this one value. It is defensible (the site IS rebuilt
-// in full each deploy) but it destroys the signal: a nightly cron rebuild
-// restamps all 598 URLs as freshly modified, so Google learns the field means
-// nothing here and a page that genuinely changed gets no priority. Where a real
-// date exists it is used instead.
+// Every URL used to carry this one value, so a nightly rebuild restamped the
+// whole site as freshly modified and Google learned the field means nothing.
 const BUILD_TIME = new Date();
 
-// Blog posts declare their own date in frontmatter. Read once at config time
-// rather than per URL. Deliberately not derived from git: the deploy workflow
-// uses actions/checkout at its default shallow depth, so per-file commit dates
-// are not available in CI, and file mtimes there are all checkout time.
+// Blog posts declare their own date in frontmatter. Fallback only.
 const BLOG_DATES = (() => {
   const out = new Map();
   const dir = new URL('./src/content/blog/', import.meta.url);
@@ -43,18 +42,139 @@ const BLOG_DATES = (() => {
   return out;
 })();
 
+/*
+ * Last commit date per tracked file, read from git once at config time.
+ *
+ * lastmod for a URL is the newest commit touching the template that renders it
+ * or the data file its content comes from (see sourcesFor). Layout, header and
+ * footer are deliberately left out: a footer tweak is not a change to 600 pages.
+ *
+ * Needs full history. The deploy workflow checks out with fetch-depth: 0; if
+ * the clone is shallow, or git is missing, this map is empty and every URL
+ * falls back to the old rules (blog frontmatter date, country review date,
+ * build time) rather than stamping one wrong date everywhere.
+ */
+const GIT_DATES = (() => {
+  const out = new Map();
+  try {
+    const shallow = execFileSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: ROOT, encoding: 'utf8' }).trim();
+    if (shallow === 'true') {
+      console.warn('[sitemap] shallow clone: lastmod falls back to frontmatter/review/build dates');
+      return out;
+    }
+    const log = execFileSync('git', ['log', '--format=%x00%cI', '--name-only', '--no-renames', '--', 'src'], {
+      cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
+    });
+    let current = null;
+    for (const line of log.split('\n')) {
+      if (line.startsWith('\0')) { current = new Date(line.slice(1).trim()); continue; }
+      const f = line.trim();
+      // git log is newest first, so the first date seen for a file is its last change.
+      if (f && current && !out.has(f)) out.set(f, current);
+    }
+  } catch (e) {
+    console.warn('[sitemap] git unavailable, lastmod falls back:', e.message);
+  }
+  return out;
+})();
+
+/** Newest commit among files equal to, or under, each given repo path. */
+function gitDateOf(paths) {
+  let best = null;
+  for (const p of paths) {
+    if (!p) continue;
+    const exact = GIT_DATES.get(p);
+    if (exact && (!best || exact > best)) best = exact;
+    if (p.endsWith('/')) {
+      for (const [f, d] of GIT_DATES) if (f.startsWith(p) && (!best || d > best)) best = d;
+    }
+  }
+  return best;
+}
+
+const has = (p) => existsSync(ROOT + p);
+
+/** Section-wide data files: what the pages of a section are built from. */
+const SECTION_DATA = {
+  countries: ['src/data/country-detail.ts'],
+  services: ['src/data/services-detail.ts'],
+  products: ['src/data/modules-catalog.ts', 'src/data/module-media.ts'],
+  modules: ['src/data/module-depth.ts'],
+  solutions: ['src/data/solution-depth.ts'],
+  industries: ['src/data/industries-detail.ts', 'src/data/industries/'],
+  integrations: ['src/data/integrations-detail.ts'],
+  compare: ['src/data/comparisons.ts'],
+  ar: ['src/data/ar-content.ts'],
+  tr: ['src/data/tr-content.ts'],
+  'windows-apps': ['src/data/windows-apps.ts', 'src/data/windows-apps-release.json'],
+  learn: ['src/data/owl-course.ts'],
+};
+
+/** The repo files whose last change is the last change of this URL. */
+function sourcesFor(pathname) {
+  const seg = pathname.replace(/^\/|\/$/g, '').split('/').filter(Boolean);
+  const [a, b, c] = seg;
+  const data = SECTION_DATA[a] || [];
+  if (seg.length === 0) return ['src/pages/index.astro', 'src/data/site.ts'];
+  if (a === 'blog' && b) return [`src/content/blog/${b}.mdx`, `src/content/blog/${b}.md`];
+  if (a === 'blog') return ['src/pages/blog/index.astro', 'src/content/blog/'];
+  if (a === 'learn' && b === 'odoo-owl' && c) return [`src/content/course/${c}.mdx`];
+  if (a === 'learn' && b === 'odoo-owl') return ['src/pages/learn/odoo-owl/index.astro', 'src/content/course/', ...data];
+  if (a === 'author') return [`src/pages/author/${b}.astro`, 'src/data/modules-catalog.ts', 'src/content/blog/'];
+  if (a === 'case-studies') return ['src/pages/case-studies/index.astro', 'src/data/site.ts'];
+  if (a === 'countries' && b && c === 'cost') return ['src/pages/countries/[slug]/cost.astro', ...data];
+  if (a === 'countries' && b && c) return ['src/pages/countries/[slug]/[topic].astro', ...data];
+  if (a === 'countries' && b) return ['src/pages/countries/[slug].astro', ...data];
+  if (a === 'services' && b && c) return ['src/pages/services/[slug]/[country].astro', ...data, 'src/data/country-detail.ts'];
+  if (a === 'modules' && b) return ['src/pages/modules/[slug].astro', `src/data/module-depth/${b}.json`, ...data];
+  if (a === 'solutions' && b) return ['src/pages/solutions/[slug].astro', `src/data/solution-depth/${b}.json`, ...data];
+  if (a === 'tr' && b === 'turkey') return ['src/pages/tr/turkey.astro', ...data];
+  if (a === 'tr' && b) return ['src/pages/tr/[topic].astro', ...data];
+  if (a && b && has(`src/pages/${a}/[slug].astro`)) return [`src/pages/${a}/[slug].astro`, ...data];
+  // Section index or a standalone page.
+  for (const p of [`src/pages/${seg.join('/')}.astro`, `src/pages/${seg.join('/')}/index.astro`]) {
+    if (has(p)) return [p, ...data];
+  }
+  // A single-segment Windows app page (/tracker/, /bridge/ ...).
+  if (seg.length === 1) return ['src/pages/[winapp]/index.astro', ...SECTION_DATA['windows-apps']];
+  return [];
+}
+
 /** The most honest last-modified date we can state for a URL. */
 function lastmodFor(pathname) {
+  const fromGit = gitDateOf(sourcesFor(pathname));
+  if (fromGit) return fromGit;
   const seg = pathname.replace(/^\/|\/$/g, '').split('/');
   if (seg[0] === 'blog' && seg[1]) {
     const d = BLOG_DATES.get(seg[1]);
     if (d) return d;
   }
-  // Country research carries an explicit review date, and it is the date that
-  // actually matters to a reader judging whether the compliance detail is current.
   if (seg[0] === 'countries' && COUNTRY_REVIEWED) return COUNTRY_REVIEWED;
   return BUILD_TIME;
 }
+
+/*
+ * Index policy. /services/<service>/<country>/ and /countries/<country>/<topic>/
+ * pages are noindex,follow except the topic pages listed in
+ * src/data/index-policy.json; the same file drives the robots meta in those
+ * templates, so the sitemap and the pages cannot disagree.
+ */
+const INDEXABLE_TOPICS = (() => {
+  try {
+    const j = JSON.parse(readFileSync(new URL('./src/data/index-policy.json', import.meta.url), 'utf8'));
+    return new Set(j.indexableCountryTopics || []);
+  } catch {
+    return new Set();
+  }
+})();
+
+function isNoindexed(pathname) {
+  const seg = pathname.replace(/^\/|\/$/g, '').split('/').filter(Boolean);
+  if (seg[0] === 'services' && seg.length === 3) return true;
+  if (seg[0] === 'countries' && seg.length === 3) return !INDEXABLE_TOPICS.has(`${seg[1]}/${seg[2]}`);
+  return false;
+}
+
 
 // Pages that must never appear in the sitemap, with and without the
 // trailing slash and the .html form.
@@ -136,8 +256,8 @@ const SECTION_HINTS = {
     child: { priority: 0.7, changefreq: 'weekly' },
   },
   'case-studies': {
-    index: { priority: 0.8, changefreq: 'weekly' },
-    child: { priority: 0.7, changefreq: 'weekly' },
+    index: { priority: 0.8, changefreq: 'monthly' },
+    child: { priority: 0.7, changefreq: 'monthly' },
   },
 };
 
@@ -185,7 +305,8 @@ export default defineConfig({
       lastmod: BUILD_TIME,
       filter: (page) =>
         !SITEMAP_EXCLUDED.has(pathnameOf(page)) &&
-        !CANONICALISED_SOLUTIONS.has(pathnameOf(page)),
+        !CANONICALISED_SOLUTIONS.has(pathnameOf(page)) &&
+        !isNoindexed(pathnameOf(page)),
       serialize: (item) => ({
         ...item,
         lastmod: lastmodFor(pathnameOf(item.url)).toISOString(),

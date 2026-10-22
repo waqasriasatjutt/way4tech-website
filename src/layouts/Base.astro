@@ -1,6 +1,6 @@
 ---
 import { clampDescription } from '~/utils/meta';
-import { SITE, ANALYTICS, COUNTRIES } from '~/data/site';
+import { SITE, ANALYTICS, COUNTRIES, APP_STORE } from '~/data/site';
 import { plainNameOf } from '~/utils/country';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
@@ -64,8 +64,8 @@ const effNoindex = ov?.noindex === true ? true : noindex;
 const pageTitle = effTitle ? `${effTitle} | ${SITE.name}` : `${SITE.name} - ${SITE.tagline}`;
 const canonicalURL = effCanonical || new URL(Astro.url.pathname, SITE.url).toString();
 const imageURL = new URL(image, SITE.url).toString();
-const imageAlt = effTitle ? `${effTitle} - ${SITE.name}` : `${SITE.name} - Odoo Partner`;
-const robots = effNoindex ? 'noindex,follow' : 'index,follow';
+const imageAlt = effTitle ? `${effTitle} - ${SITE.name}` : `${SITE.name} - Odoo implementation and custom modules`;
+const robots = effNoindex ? 'noindex, follow' : 'index, follow';
 const alternates = Array.isArray(hreflang) ? hreflang : [];
 
 // twitter:site is only emitted if a handle actually exists in SITE.social.
@@ -86,9 +86,10 @@ const orgSchema = {
   '@id': orgId,
   name: SITE.name,
   legalName: 'Way4Tech',
-  // The Google Business Profile is listed as 'Way4tech Odoo Partner'; naming
-  // it here lets the two resolve to one entity.
-  alternateName: ['Way4tech', 'Way4tech Odoo Partner'],
+  // The Google Business Profile still carries the name 'Way4tech Odoo Partner'.
+  // It is deliberately NOT repeated here: Way4Tech is not listed in Odoo's
+  // partner directory, so the profile name is the thing to fix, not to echo.
+  alternateName: ['Way4tech'],
   url: SITE.url,
   logo: new URL('/logo-w4t.png', SITE.url).toString(),
   image: {
@@ -98,7 +99,6 @@ const orgSchema = {
     height: 630,
   },
   description: SITE.description,
-  foundingDate: '2016',
   slogan: 'Odoo ERP implementation, customization, hosting, and support.',
   // Every market the site publishes pages for, not the 12 the old list carried.
   areaServed: COUNTRIES.map(c => plainNameOf(c.title)),
@@ -109,7 +109,7 @@ const orgSchema = {
     contactType: 'sales',
     availableLanguage: ['English', 'Arabic', 'Urdu'],
   }],
-  sameAs: [SITE.social.linkedin, SITE.social.github],
+  sameAs: [SITE.social.linkedin, SITE.social.github, APP_STORE.url],
 };
 
 // The WebSite node belongs to the site as a whole, so it is emitted once, on the
@@ -199,7 +199,9 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" as="style" href={fontHref} onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link rel="stylesheet" href={fontHref} /></noscript>
+    {/* Emitted as raw HTML: Astro hoists a <link> out of <noscript> in the head,
+        which left a second, render-blocking copy of the font stylesheet on every page. */}
+    <Fragment set:html={`<noscript><link rel="stylesheet" href="${fontHref}"></noscript>`} />
 
     {ov?.cssBody && <style set:html={ov.cssBody} />}
 

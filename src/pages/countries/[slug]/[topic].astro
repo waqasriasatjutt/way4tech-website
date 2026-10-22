@@ -12,6 +12,7 @@
  * so every lookup below is guarded.
  */
 import Base from '~/layouts/Base.astro';
+import INDEX_POLICY from '~/data/index-policy.json';
 import { SITE, COUNTRIES, SERVICES } from '~/data/site';
 import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
 import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
@@ -366,6 +367,7 @@ const schema = [
   title={copy?.title || `Odoo in ${country.title}`}
   description={copy?.meta}
   canonical={pageUrl}
+  noindex={!INDEX_POLICY.indexableCountryTopics.includes(`${country.slug}/${topic}`)}
   structuredData={schema}
   hreflang={hreflangAlternates}
   ogLocale={regionSubtag ? `en_${regionSubtag.toUpperCase()}` : 'en_US'}
@@ -417,9 +419,6 @@ const schema = [
                 <div class="bg-brand-50 p-6 sm:p-8">
                   <div class="flex flex-wrap items-center gap-3">
                     <span class="eyebrow">Scheme</span>
-                    {ei.verified === false && (
-                      <span class="inline-flex items-center rounded-full border border-dashed border-ink-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">Unconfirmed</span>
-                    )}
                   </div>
                   <p class="mt-3 text-2xl font-bold leading-snug text-brand-800 sm:text-3xl">{ei.scheme}</p>
                   <p class="mt-4 text-sm text-ink-700"><span class="font-semibold text-ink-900">Authority:</span> {ei.authority}</p>
@@ -680,7 +679,7 @@ const schema = [
                 <div class="flex justify-between gap-3"><dt class="text-ink-600">Cities covered</dt><dd class="font-semibold">{country.cities.length}</dd></div>
                 <div class="flex justify-between gap-3"><dt class="text-ink-600">Odoo versions</dt><dd class="font-semibold">v12 to v19</dd></div>
               </dl>
-              <a href={parentUrl} class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Odoo partner in {country.title} →</a>
+              <a href={parentUrl} class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Odoo implementation in {plainName} →</a>
             </div>
 
             {providerGroups.length > 0 && (

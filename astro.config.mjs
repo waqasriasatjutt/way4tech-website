@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -25,22 +25,20 @@ const COUNTRY_REVIEWED = (() => {
 // whole site as freshly modified and Google learned the field means nothing.
 const BUILD_TIME = new Date();
 
-// Blog posts declare their own date in frontmatter. Fallback only.
-const BLOG_DATES = (() => {
-  const out = new Map();
-  const dir = new URL('./src/content/blog/', import.meta.url);
-  let names = [];
-  try { names = readdirSync(dir); } catch { return out; }
-  for (const name of names) {
-    if (!name.endsWith('.mdx') && !name.endsWith('.md')) continue;
-    try {
-      const head = readFileSync(new URL(name, dir), 'utf8').slice(0, 800);
-      const m = head.match(/^date:\s*['"]?(\d{4}-\d{2}-\d{2})/m);
-      if (m) out.set(name.replace(/\.mdx?$/, ''), new Date(`${m[1]}T00:00:00Z`));
-    } catch { /* a post without a readable date just falls back */ }
-  }
-  return out;
-})();
+// Blog posts live in the Odoo portal, not the repo, so git knows nothing about
+// them. The fetcher in src/lib/odoo.ts writes each post's write_date to this
+// file while the pages are built; the sitemap is serialized afterwards, so it
+// is read lazily on first use.
+let blogDatesCache = null;
+function blogDates() {
+  if (blogDatesCache) return blogDatesCache;
+  blogDatesCache = new Map();
+  try {
+    const raw = JSON.parse(readFileSync(new URL('./node_modules/.cache/way4tech/blog-dates.json', import.meta.url), 'utf8'));
+    for (const [slug, iso] of Object.entries(raw)) blogDatesCache.set(slug, new Date(iso));
+  } catch { /* no posts fetched: blog URLs fall back to build time */ }
+  return blogDatesCache;
+}
 
 /*
  * Last commit date per tracked file, read from git once at config time.
@@ -116,13 +114,11 @@ function sourcesFor(pathname) {
   const [a, b, c] = seg;
   const data = SECTION_DATA[a] || [];
   if (seg.length === 0) return ['src/pages/index.astro', 'src/data/site.ts'];
-  if (a === 'blog' && b) return [`src/content/blog/${b}.mdx`, `src/content/blog/${b}.md`];
-  if (a === 'blog') return ['src/pages/blog/index.astro', 'src/content/blog/'];
   if (a === 'odoo-guides' && b) return [`src/content/guides/${b}.mdx`, 'src/pages/odoo-guides/[slug].astro'];
   if (a === 'odoo-guides') return ['src/pages/odoo-guides/index.astro', 'src/content/guides/'];
   if (a === 'learn' && b === 'odoo-owl' && c) return [`src/content/course/${c}.mdx`];
   if (a === 'learn' && b === 'odoo-owl') return ['src/pages/learn/odoo-owl/index.astro', 'src/content/course/', ...data];
-  if (a === 'author') return [`src/pages/author/${b}.astro`, 'src/data/modules-catalog.ts', 'src/content/blog/'];
+  if (a === 'author') return [`src/pages/author/${b}.astro`, 'src/data/modules-catalog.ts'];
   if (a === 'case-studies') return ['src/pages/case-studies/index.astro', 'src/data/site.ts'];
   if (a === 'countries' && b && c === 'cost') return ['src/pages/countries/[slug]/cost.astro', ...data];
   if (a === 'countries' && b && c) return ['src/pages/countries/[slug]/[topic].astro', ...data];
@@ -144,13 +140,15 @@ function sourcesFor(pathname) {
 
 /** The most honest last-modified date we can state for a URL. */
 function lastmodFor(pathname) {
+  const seg = pathname.replace(/^\/|\/$/g, '').split('/');
+  if (seg[0] === 'blog') {
+    const dates = blogDates();
+    if (seg[1]) return dates.get(seg[1]) || BUILD_TIME;
+    const newest = Math.max(0, ...[...dates.values()].map(d => d.getTime()));
+    return newest ? new Date(newest) : BUILD_TIME;
+  }
   const fromGit = gitDateOf(sourcesFor(pathname));
   if (fromGit) return fromGit;
-  const seg = pathname.replace(/^\/|\/$/g, '').split('/');
-  if (seg[0] === 'blog' && seg[1]) {
-    const d = BLOG_DATES.get(seg[1]);
-    if (d) return d;
-  }
   if (seg[0] === 'countries' && COUNTRY_REVIEWED) return COUNTRY_REVIEWED;
   return BUILD_TIME;
 }

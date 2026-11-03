@@ -1,7 +1,7 @@
 ---
 import Base from '~/layouts/Base.astro';
 import RelatedGuides from '~/components/guides/RelatedGuides.astro';
-import { getCollection } from 'astro:content';
+import { fetchOdooBlogPosts } from '~/lib/odoo';
 import { SITE, COUNTRIES, SERVICES, SOLUTIONS, CASE_STUDIES, PRICING, whatsappHref } from '~/data/site';
 import { COUNTRY_DETAIL, SUPPORT_LABEL, COUNTRY_DETAIL_REVIEWED } from '~/data/country-detail';
 import type { CountryDetail, CountryFact, CountryProvider, OdooSupport } from '~/data/country-detail';
@@ -155,12 +155,10 @@ const CROSSED_SERVICES = new Set([
 /* Each market has a written implementation post, and until now nothing linked
    to it from here: the 18 posts had two inbound links each and the country hub,
    the strongest page in the cluster, was not one of them. Resolved against the
-   collection rather than by building the URL, so a missing or drafted post
-   simply renders nothing instead of a dead link. */
-const blogPosts = await getCollection('blog');
-const countryPost = blogPosts.find(
-  (post) => post.slug === `odoo-implementation-in-${country.slug}` && !post.data.draft,
-);
+   published posts rather than by building the URL, so a missing or
+   unpublished post simply renders nothing instead of a dead link. */
+const blogPosts = await fetchOdooBlogPosts();
+const countryPost = blogPosts.find((post) => post.slug === `odoo-implementation-in-${country.slug}`);
 
 const serviceHref = (slug: string) =>
   CROSSED_SERVICES.has(slug) && detail
@@ -766,9 +764,9 @@ const countryWaHref = whatsappHref(`/countries/${country.slug}/`, `Odoo in ${cou
               <span class="text-2xl" aria-hidden="true">&#128214;</span>
               <span>
                 <span class="block text-sm font-semibold text-ink-900 group-hover:text-brand-700">
-                  {countryPost.data.title}
+                  {countryPost.title}
                 </span>
-                <span class="mt-1 block text-xs text-ink-600">{countryPost.data.description}</span>
+                <span class="mt-1 block text-xs text-ink-600">{countryPost.description}</span>
               </span>
             </a>
           )}

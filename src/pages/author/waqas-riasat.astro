@@ -2,7 +2,6 @@
 import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
 import { MODULE_CATALOG, type StoreModule } from '~/data/modules-catalog';
-import { getCollection } from 'astro:content';
 import { fetchOdooBlogPosts } from '~/lib/odoo';
 
 /*
@@ -146,27 +145,8 @@ const toDate = (value: unknown): Date | null => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-const mdxRows: PostRow[] = (await getCollection('blog'))
-  .filter(p => p?.data && p.data.draft !== true && byThisAuthor(p.data.author) && p.slug)
-  .map(p => {
-    const date = toDate(p.data.date);
-    return date
-      ? {
-          href: `/blog/${p.slug}/`,
-          title: (p.data.title || '').trim(),
-          description: (p.data.description || '').trim(),
-          date,
-          tags: Array.isArray(p.data.tags)
-            ? p.data.tags.filter(t => typeof t === 'string' && t.trim().length > 0)
-            : [],
-        }
-      : null;
-  })
-  .filter((p): p is PostRow => p !== null && p.title.length > 0);
-
-/* Posts written in the Odoo portal carry the portal user name. Only the ones
-   under this byline belong on this page. A fetch failure already comes back as
-   an empty list, so the build cannot break here. */
+/* Posts are written in the Odoo portal and carry the portal user name. Only
+   the ones under this byline belong on this page. */
 const odooRows: PostRow[] = (await fetchOdooBlogPosts())
   .filter(p => p && p.slug && byThisAuthor(p.author))
   .map(p => {
@@ -175,7 +155,7 @@ const odooRows: PostRow[] = (await fetchOdooBlogPosts())
       ? {
           href: `/blog/${p.slug}/`,
           title: (p.title || '').trim(),
-          description: (p.teaser || p.subtitle || '').trim(),
+          description: (p.description || '').trim(),
           date,
           tags: Array.isArray(p.tags) ? p.tags.filter(t => typeof t === 'string' && t.trim().length > 0) : [],
         }
@@ -183,7 +163,7 @@ const odooRows: PostRow[] = (await fetchOdooBlogPosts())
   })
   .filter((p): p is PostRow => p !== null && p.title.length > 0);
 
-const posts = [...mdxRows, ...odooRows].sort(
+const posts = odooRows.sort(
   (a, b) => b.date.getTime() - a.date.getTime() || a.title.localeCompare(b.title),
 );
 const postCount = posts.length;

@@ -3,7 +3,7 @@ import Base from '~/layouts/Base.astro';
 import RelatedGuides from '~/components/guides/RelatedGuides.astro';
 import { SITE } from '~/data/site';
 import { MODULE_CATALOG } from '~/data/modules-catalog';
-import { getCollection } from 'astro:content';
+import { fetchOdooBlogPosts } from '~/lib/odoo';
 
 /*
  * /odoo-community/ - the Community vs Enterprise decision page.
@@ -109,11 +109,11 @@ const themeEntry = catalog['way4tech-enterprise-theme'];
 const themeName = str(themeEntry?.name);
 const themeQuote = str(themeEntry?.summary);
 
-/* Link the Community vs Enterprise post only if it is really in the collection
-   and not a draft. A renamed file drops the link rather than 404s. */
-const posts = await getCollection('blog');
+/* Link the Community vs Enterprise post only if it is really published. A
+   changed URL drops the link rather than 404s. */
+const posts = await fetchOdooBlogPosts();
 const comparisonPost =
-  posts.find((p) => p.slug === 'odoo-community-vs-enterprise-decided-properly' && !p.data.draft) ?? null;
+  posts.find((p) => p.slug === 'odoo-community-vs-enterprise-decided-properly') ?? null;
 
 const pageUrl = `${SITE.url}/odoo-community/`;
 
@@ -272,7 +272,7 @@ const metaDescription =
         <a href="/services/odoo-consultancy/" class="btn-secondary">Talk it through first</a>
         {comparisonPost && (
           <a href={`/blog/${comparisonPost.slug}/`} class="btn-ghost">
-            Read: {comparisonPost.data.title}
+            Read: {comparisonPost.title}
           </a>
         )}
       </div>

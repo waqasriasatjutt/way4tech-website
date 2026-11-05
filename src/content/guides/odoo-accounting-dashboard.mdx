@@ -1,0 +1,95 @@
+---
+title: "Odoo accounting dashboard for Community: revenue, expenses, receivables and payables aging"
+metaTitle: "Accounting Dashboard for Odoo 19 Community"
+description: "An accounting dashboard for Odoo 19 Community: revenue against bills, net profit, receivables and payables, overdue invoices and aging buckets, by period."
+targetQuery: "odoo accounting dashboard community"
+category: "Operations"
+summary: "What the Accounting Analytics board counts, how its aging buckets work, which figures follow the period and which do not, and where it stops short of a real profit and loss."
+published: 2027-02-11
+updated: 2027-02-11
+series: "odoo-dashboards"
+seriesOrder: 4
+modules:
+  - name: "Accounting Dashboard"
+    technical: "wt_accounting_dashboard"
+    note: "USD 20, needs Invoicing"
+demo:
+  url: "https://dashboards-demo.way4tech.com/"
+  label: "Dashboards demo"
+related: ["odoo-dashboards", "odoo-post-dated-cheques-rent", "odoo-delivery-cash-collection-credit"]
+linkFrom: ["/products/wt-accounting-dashboard/"]
+sources: []
+faqs:
+  - q: "Is Net Profit on the dashboard my real profit?"
+    a: "No. Net Profit is customer invoices less vendor bills in the period, both before tax. Salaries, rent paid by journal entry, depreciation, stock adjustments and credit notes are not in it. Treat it as a trading margin indicator and take the real figure from the Profit and Loss report."
+  - q: "Who can open the accounting dashboard?"
+    a: "Users in the accounting manager group, or in the hidden full accounting features group. A user who only has Billing rights, which is the default for many invoicing users in Community, does not see the Accounting Analytics menu."
+  - q: "Does the dashboard use payments or bank data?"
+    a: "No. Every figure comes from posted customer invoices and vendor bills. The Cash Flow tab is invoices against bills by month, not money in and out of the bank. Receivables and payables use the amount still open on each invoice."
+  - q: "How are the aging buckets worked out?"
+    a: "By days past the due date of each posted, unpaid or partly paid invoice: Current for not yet due, then 1 to 30, 31 to 60, 61 to 90 and over 90 days. The buckets cover everything open, whatever period is selected."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The accountant has the Profit and Loss and the Aged Receivable report. The owner wants three numbers before the coffee is finished: what did we invoice, what do customers still owe us, and how much of it is late. Odoo 19 Community has the detail behind all of that, but no single screen that says it. The Accounting Analytics board does, from posted invoices and bills. This chapter covers what each card and chart counts, which figures move with the period, and where the board is not a substitute for the real reports.
+
+## Who sees it
+
+Install **Accounting Dashboard** (`wt_accounting_dashboard`). The **Accounting Analytics** app is shown to users in the accounting manager group and in the hidden full accounting features group. In Community many invoicing users only hold Billing rights, and they will not see the menu. Give the owner and the accountant the Billing Administrator role, or the full accounting features, and leave everyone else out.
+
+<Shot src="/odoo-guides/odoo-accounting-dashboard/accounting-year-top.webp" alt="Accounting Analytics dashboard in Odoo 19 Community with total revenue, total expenses, net profit, accounts receivable, accounts payable, outstanding invoices, overdue invoices, average invoice value and tax collected" width={1440} height={900} caption="The Accounting board on This Year, in AED." />
+
+## What the nine cards count
+
+The board reads **posted** customer invoices and vendor bills of the current company. Drafts are ignored.
+
+- **Total Revenue:** the untaxed total of customer invoices dated in the period.
+- **Total Expenses:** the untaxed total of vendor bills dated in the period.
+- **Net Profit:** revenue less expenses.
+- **Accounts Receivable:** the amount still open on customer invoices that are not paid or partly paid. All time, not the period.
+- **Accounts Payable:** the same for vendor bills.
+- **Outstanding Invoices:** how many customer invoices make up the receivable.
+- **Overdue Invoices:** how many of those are past their due date.
+- **Avg Invoice Value:** the average total of customer invoices dated in the period.
+- **Tax Collected:** the tax on customer invoices in the period.
+
+The split matters when you read it. Revenue, expenses, profit, average and tax follow the period you pick. Receivables, payables, outstanding and overdue are always today's position. Switching from This Month to This Year changes the first group and leaves the second alone.
+
+<Callout title="What is not in these figures">Credit notes are not deducted from revenue, and refunds to vendors are not deducted from expenses. Only invoices and bills count, so salaries, rent and other costs booked as journal entries are not in Total Expenses, and Net Profit is not your profit. Invoices with a payment registered but not yet matched to the bank statement (the In Payment state) drop out of receivables and payables, even though the money may not have arrived. If you invoice in more than one currency, the open amounts are added up in each invoice's own currency, so mixed-currency totals are not reliable.</Callout>
+
+## The tabs
+
+1. **Overview:** Income vs Expense Trend by month, Monthly P&L and the Recent Invoices table with the 20 latest posted invoices and bills in the period, with Export CSV. The trend is always monthly, so This Month shows a single point. The Monthly P&L chart always shows This Year, whatever period is selected.
+2. **Receivables:** the AR Aging Buckets chart and the top ten customers by invoiced revenue in the period.
+3. **Payables:** the AP Aging Buckets chart and the top ten vendors.
+4. **Cash Flow:** invoiced income, billed expense and the difference by month. It is built from invoices and bills, not from payments or the bank.
+5. **Expenses:** top vendors by spend and the AP aging again.
+6. **Comparison:** revenue, expenses, net profit and the number of invoices against the period of the same length just before.
+
+<Shot src="/odoo-guides/odoo-accounting-dashboard/accounting-tab-receivables.webp" alt="AR Aging Buckets chart and top customers in the Odoo accounting dashboard" width={1440} height={900} caption="Receivables: how old the money owed to you is." />
+
+<Shot src="/odoo-guides/odoo-accounting-dashboard/accounting-tab-overview.webp" alt="Income vs Expense Trend and Monthly P&L charts in the Odoo 19 accounting dashboard" width={1440} height={900} caption="Overview on This Year: invoiced income against bills by month." />
+
+## Using the aging buckets
+
+Each open invoice falls in one bucket by how many days it is past its due date: **Current** (not yet due), **1 to 30**, **31 to 60**, **61 to 90** and **90+**. The amount is what is still unpaid on it, so a half-paid invoice counts for the half that is left.
+
+A simple weekly routine:
+
+1. Open the Receivables tab. Anything in 61 to 90 or 90+ is a phone call, not an email.
+2. Click the **Overdue Invoices** card to open the list behind it, then sort by due date. The list behind the card is built on a slightly wider rule than the count, so it can include invoices with a payment pending; check the payment status column.
+3. Open the Payables tab before a payment run, to see which suppliers have waited longest.
+
+The due dates come from the payment terms on each invoice. If you invoice everything as immediate payment, every unpaid invoice is overdue the next day and the buckets tell you nothing, so set real terms on customers and vendors.
+
+## What to set up
+
+- **Payment terms** on customers and vendors, as above.
+- **Post invoices and bills** when they are final. Drafts do not count anywhere on this board.
+- **Register payments** against invoices, and reconcile the bank regularly so paid invoices leave the receivable.
+- **Bills in Odoo, not only on paper.** Total Expenses only knows the bills that exist as vendor bills.
+
+## Where it stops
+
+The board is a quick read of invoices and bills. It is not a set of accounts. It has no journal or analytic filter, no balance sheet figure, no cash position and no payment tracking, and the store listing's mentions of payments tracking, a P&L waterfall and cash balance are not in this version. For the statutory figures use Invoicing's own reports, and for the sales side of the same customers see the [sales and CRM chapter](/odoo-guides/odoo-sales-crm-dashboard/). The [suite overview](/odoo-guides/odoo-dashboards/) lists every board.

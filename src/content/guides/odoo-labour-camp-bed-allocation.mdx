@@ -1,0 +1,135 @@
+---
+title: "Labour camp bed allocation in Odoo: rooms, bunks, busload intake, transfers and check out"
+metaTitle: "Camps, Rooms and Bed Allocation"
+description: "Set up a labour camp in Odoo bed by bed, allocate a busload in one go, reserve beds for arrivals, move men between bunks and keep the licence enforced."
+targetQuery: "labour camp bed allocation odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "Camp, block, room and bed set up from a licence and a room list, then the allocation wizard for a whole intake, reservations, check in, transfers, home leave and check out, with the licence enforced at every check in."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-labour-camp-management"
+seriesOrder: 1
+modules:
+  - name: "Labour Camp Management"
+    technical: "wt_labour_camp"
+    note: "USD 200, Odoo 19 Community, installs Employees and Invoicing"
+demo:
+  url: "https://labourcamp-demo.way4tech.com/"
+  label: "Labour Camp demo"
+related: ["odoo-labour-camp-management", "odoo-worker-visa-document-expiry", "odoo-labour-camp-contractor-billing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can two men be allocated to the same bed by mistake?"
+    a: "No. A bed can carry only one live allocation, reserved or occupied, and a man can hold only one live allocation at a time. Both are checked by the database whenever an allocation is saved, so a second booking on the same bunk is refused with the name of the man already on it."
+  - q: "What happens when a camp reaches its licensed capacity?"
+    a: "Check in is refused. When a camp has a licensed capacity and its occupied beds already equal it, checking another man in raises an error telling you to allocate somewhere else or have the licence raised. A reservation can still be made, because a reserved bed is not yet a man in camp."
+  - q: "Does a man on home leave lose his bed?"
+    a: "No. Going on Leave moves him to On Leave and he keeps the bed, so it still counts as occupied. If you want to give the bed to someone else while he is away, press Move Out on his allocation and allocate him again when he lands."
+  - q: "How do I keep a gang together in one room?"
+    a: "Open the allocation wizard, add the whole gang to the Men field and pick the room, or the block, before you press Allocate. The wizard only offers free beds in that room or block and shows beds needed against beds free, so you see straight away whether they fit."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every other figure a camp produces comes out of one table: who sleeps in which bed, from which day. The kitchen cooks for it, the bus contractor is paid on it, the contractor is billed on it and the inspector counts it. When that table lives in a spreadsheet and the room list lives in somebody's head, they disagree within a week, and the camp boss ends up walking the blocks with a clipboard to find out how many beds he has. This chapter of the [labour camp management series](/odoo-guides/odoo-labour-camp-management/) sets up the accommodation in the Labour Camp Management module and then follows men in, around and out of it.
+
+## Camp, block, room, bed
+
+The module models accommodation the way people talk about it on site: a camp has blocks, a block has rooms, a room has beds. Occupancy is counted at the bed, never at the room, because a room of eight with six men in it is two spaces you can still fill.
+
+**The camp** (Configuration, Camps) holds the things that belong to the licence:
+
+| Field | What it is for |
+|---|---|
+| Code | Short prefix, such as DS1. Two camps in one company cannot share it |
+| Operator | Company Owned, Leased, or Managed for a Client |
+| Landlord and Annual Rent | Who the rent goes to; the rent feeds the cost per head on the compliance board |
+| Camp Boss | The user that reminders about papers, permits, visitors and incidents are assigned to |
+| Licensed Capacity | The number of men the accommodation licence permits. Enforced at check in |
+
+The camp form counts its beds, occupied, vacant and blocked, works out the occupancy percentage over the beds that can actually be used, and flags itself when more men are in it than the licence allows. Its tabs hold the blocks and the camp's permits and certificates.
+
+**Blocks** have a kind: accommodation, mess and kitchen, ablution, recreation, clinic, administration or store. Only rooms carry beds, so the mess and the ablution block are there for inspections, complaints and utility meters to point at.
+
+**Rooms** (Accommodation, Rooms) carry a room type (bunk room, single, double, family, supervisor or isolation), a capacity between one and sixty, the floor, the area in square metres, the number of AC units and whether there is an ensuite.
+
+## Making the beds
+
+On a new room, press **Create the Beds** (the room list has the same button as Create Beds). The module fills the room up to its capacity with beds numbered 1, 2, 3 and so on, so a bunk can be named out loud: room A101, bed 3. Raise the capacity later and press it again, and only the missing beds are added. Each bed has a position (lower bunk, upper bunk or single) and a state: vacant, occupied or blocked.
+
+<Shot src="/odoo-guides/odoo-labour-camp-bed-allocation/room-and-beds.webp" alt="Room A101 in Desert Star Camp 1, Block A: a bunk room with capacity 8, 8 beds and 7 occupied, area 27.2 square metres, 3.40 square metres per bed, two AC units, and the bed list with lower and upper bunks and the name of each occupant" width={1440} height={900} caption="A room: capacity, area per bed and each bunk with the man on it. The m2 per Bed figure is what a municipality inspector asks for." />
+
+The room works out **m2 per Bed** from its area and its number of beds. It is shown, not enforced: the licence is the authority on what a room may hold, and the module leaves that judgement to you.
+
+Two things take beds out of use without deleting them:
+
+- **Blocking a bed.** On the bed, press Block and give a reason, such as a cracked bunk frame. A blocked bed is not offered to the allocation wizard and is left out of the free bed figure, so the number the camp boss reads is honest. Free puts it back. An occupied bed cannot be blocked until the man is moved.
+- **Closing a room.** Close the Room blocks every bed in it, for a leaking ceiling or a pest treatment. It is refused while anybody still sleeps there. Reopen sets the blocked beds back to vacant.
+
+<Shot src="/odoo-guides/odoo-labour-camp-bed-allocation/room-under-maintenance.webp" alt="Room A205 in Block A of Desert Star Camp 1 in Closed state with a Reopen button, capacity 8, and all eight beds listed as Blocked with the reason Room under maintenance" width={1440} height={900} caption="A room taken out of use with Close the Room: every bed blocked, with the reason kept on each." />
+
+The room state also has an Under Maintenance value, which the wizard skips like Closed, but no button sets it. Use Close the Room and write the reason in the room note.
+
+## Registering the men
+
+Each man is an occupant (People, Occupants) with a reference, his employer, trade, nationality, date of birth, blood group, phone and emergency contact. He can be linked to an Odoo employee record, but he does not have to be, because a subcontractor's men are not on your payroll. His papers sit on the same form; the [papers chapter](/odoo-guides/odoo-worker-visa-document-expiry/) covers them.
+
+An occupant moves through four states: **Expected**, **In Camp**, **On Leave** and **Left**. New men start as Expected. The Camp Board counts the expected men as arrivals that still need a bed.
+
+## Allocating a busload
+
+Men arrive by the busload, not one at a time, so allocation is a wizard that takes a group. Open any man without a bed and press **Allocate a Bed**.
+
+<Shot src="/odoo-guides/odoo-labour-camp-bed-allocation/allocate-wizard.webp" alt="Allocate a Bed dialog in Odoo with one man in the Men field, Desert Star Camp 1 chosen, block and room left empty, date from, Check Them In ticked, a needed count of 1 and an available count of 45, and the Allocate button" width={1440} height={900} caption="The allocation wizard: the men, where to put them, and beds needed against beds free." />
+
+1. **Add the rest of the group** to the Men field. The whole intake can go in at once.
+2. **Pick the camp.** Name a block to keep them in one building, or a room to keep a gang together. Leave both empty to use any free bed in the camp.
+3. **Set the date** they arrive.
+4. **Check Them In** ticked puts them straight into the beds. Unticked, the beds are reserved and somebody checks them in when the bus actually turns up.
+5. **Read the two counts.** Beds needed is the number of men; beds free is the number of vacant beds in rooms that are in use, inside the camp, block or room you named. If there are fewer free beds than men, the Allocate button is not shown at all, and the server would refuse it anyway with both numbers in the message.
+
+The wizard fills the free beds in room and bed order, so a gang placed in one room lands in consecutive bunks.
+
+<Callout title="Narrowing to a block does not narrow the room list">With a block chosen, the Room drop down in the wizard still lists every room in the camp, because its filter accepts any room that belongs to a block. Pick the room you mean by its number. The bed search itself does respect the block and room you choose.</Callout>
+
+## Reserved, occupied, vacated
+
+Every allocation is a record of its own (People, Bed Allocations), with a reference, the man, the bed, the dates, the nights, a locker number, a tick for bedding issued (mattress, pillow, blanket and locker key) and a note.
+
+<Shot src="/odoo-guides/odoo-labour-camp-bed-allocation/reserved-allocation.webp" alt="Bed allocation ALC/2026/00070 in Reserved state for an occupant from Tidewell Steel Fabrication, on a bed in room A204 of Desert Star Camp 1, date from 7 November, bedding not yet issued, with Check In, Move Out and Cancel buttons" width={1440} height={900} caption="A reserved bed for a man arriving on Saturday. Check In turns it into an occupied bed." />
+
+- **Reserved** holds the bed for a man who has not arrived. The bed itself stays vacant until check in.
+- **Check In** moves the allocation to Occupied, puts the man on the bed, sets him In Camp and records his first check in date. It is refused if the bed has been blocked since, and refused if the camp is already at its licensed capacity.
+- **Cancel** drops a reservation, for a visa that did not come through. An occupied allocation cannot be cancelled; it has to be moved out.
+- **Move Out** ends the allocation, stamps the end date and frees the bed.
+
+The bed and the man can never disagree about where he sleeps: neither the bed's occupant nor the man's current bed can be typed in by hand, only set by the allocation. A bed marked occupied with nobody on it, or vacant with somebody on it, is refused by the database.
+
+## Transfers, leave and leaving for good
+
+**Moving a man.** On his current allocation, press **Move to Another Bed**. The same wizard opens with him in it and a vacate reason, Moved to Another Bed by default. Allocate closes the old allocation first and opens the new one, so the one bed each rule is never broken even for a moment, and the old bed stays in his **Bed History** with its dates.
+
+<Shot src="/odoo-guides/odoo-labour-camp-bed-allocation/bed-allocations.webp" alt="Bed Allocations list in Odoo with reference, occupant, employer, camp, room, bed, date from, date to, nights and a state badge for Occupied, Reserved, Vacated or Cancelled" width={1440} height={900} caption="Every allocation, live or closed, with its nights. Contractor billing reads this table." />
+
+**Home leave.** Going on Leave sets an In Camp man to On Leave and he keeps his bed. Back from Leave sets him In Camp again. A man on leave still counts on the board's men in camp figure, because his bed is still his.
+
+**End of service.** Check Out closes his live allocation, sets him to Left with today as the leaving date, and posts a line in his chatter. Use the allocation's vacate reason to say why: end of service, home leave, transfer, absconded or other. A man who has left keeps all his history but drops out of the papers figures, because chasing a visa for somebody who went home last year is noise. There is no button to bring a man back from Left: the module's own message says to set him to Expected first, but the state cannot be edited on the form, so a man who returns is registered again as a new occupant.
+
+## The licence, enforced
+
+Every check in compares the camp's occupied beds with its licensed capacity. At the limit, check in stops with a message saying the camp is at its licence and that being over it is what closes a camp down. That is deliberate: no other check in the module is as hard.
+
+<Callout title="The settings box does not switch the licence check off">Settings has a Refuse to Exceed the Licence box, ticked by default, that reads as if unticking it turns the licence into a note. In the current version the check in code does not read that setting, so the licence is enforced whatever the box says. Leave the camp's licensed capacity at zero if a site genuinely has no headcount limit.</Callout>
+
+A camp with no licensed capacity set is never stopped. If you run a camp over its licence by setting the capacity after the men were checked in, the camp shows as over licence and the Camp Board's Camps over licence tile counts it.
+
+## Lists worth bookmarking
+
+- **Accommodation, Free Beds**: vacant beds grouped by camp, the list to open when a request for ten beds comes in.
+- **Accommodation, All Beds**: every bed with its state, occupant and blocked reason.
+- **People, Bed Allocations**: the full history, grouped or filtered by camp, employer or state.
+- **The camp form**: the In Camp and Beds Free buttons open the men and the beds of that one camp.
+
+The next chapter, on [visas, Emirates IDs, labour cards and permits](/odoo-guides/odoo-worker-visa-document-expiry/), deals with what can stop a man going to site even when he has a bed. You can walk the whole flow on the [Labour Camp demo](https://labourcamp-demo.way4tech.com/), which runs two camps with about a hundred men; [ask us for a login](/contact/).

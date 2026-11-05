@@ -1,0 +1,129 @@
+---
+title: "Odoo purchase and inventory dashboard: vendor spend, overdue bills, low stock and pending moves"
+metaTitle: "Purchase and Inventory Dashboards in Odoo"
+description: "The Odoo 19 purchase and inventory dashboards: spend by vendor, RFQs, bills to process, overdue bills, low stock alerts and receipts against deliveries."
+targetQuery: "odoo inventory dashboard"
+category: "Operations"
+summary: "The Purchase Analytics and Inventory Analytics boards card by card: what they count, how the low stock list decides a product is short, and what to set up so the figures hold."
+published: 2027-02-11
+updated: 2027-02-11
+series: "odoo-dashboards"
+seriesOrder: 2
+modules:
+  - name: "Purchase Dashboard"
+    technical: "wt_purchase_dashboard"
+    note: "USD 20, needs Purchase"
+  - name: "Stock and Inventory Dashboard"
+    technical: "wt_inventory_dashboard"
+    note: "USD 20, needs Inventory"
+demo:
+  url: "https://dashboards-demo.way4tech.com/"
+  label: "Dashboards demo"
+related: ["odoo-dashboards", "odoo-serial-numbers-purchase-orders", "odoo-distribution-management", "odoo-van-sales"]
+linkFrom: ["/products/wt-purchase-dashboard/", "/products/wt-inventory-dashboard/"]
+sources: []
+faqs:
+  - q: "Does the purchase dashboard show what I owe suppliers?"
+    a: "Partly. It counts vendor bills still in draft and posted bills that are past their due date and not paid, across all time. For the amount owed and its age, use the Payables tab of the accounting dashboard, which shows payables aging buckets."
+  - q: "How does the inventory dashboard decide a product is low on stock?"
+    a: "From your reorder rules. A product is low when the quantity on hand at the exact location of its reorder rule is below the rule's minimum. Stock in a sub-location of that location is not added in, and products without a reorder rule are never flagged."
+  - q: "Why is Stock Value zero on my inventory dashboard?"
+    a: "On Odoo 19 the Stock Value, Average Product Value and the value charts read a stock valuation table that Odoo 19 no longer has, so they show zero. Quantities, alerts and movements work. Use Inventory, Reporting, Stock for the value until the module is updated."
+  - q: "Can I filter the inventory dashboard by warehouse?"
+    a: "No. Neither board has a warehouse, vendor or category filter in this version, only the period switch and a custom date range. Most stock figures are counted across all internal locations of the company."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Buying and stock go wrong quietly. Nobody notices a supplier creeping up to half the spend, a bill sitting unposted for three weeks or a fast mover dropping under its reorder point until a customer is told to wait. The Purchase and Inventory dashboards put those few figures where the buyer and the storekeeper see them every morning. This chapter goes card by card through both boards, explains what each one counts and what has to be set up in Odoo for it to be right.
+
+## The Purchase Analytics board
+
+Install **Purchase Dashboard** (`wt_purchase_dashboard`) and **Purchase Analytics** appears on the home screen for purchase users and managers. It opens on This Month; the period switch at the top right moves every figure at once.
+
+<Shot src="/odoo-guides/odoo-purchase-inventory-dashboard/purchase-year-top.webp" alt="Purchase Analytics dashboard in Odoo 19 with total spend, purchase orders, average PO value, RFQs, vendors, items ordered, bills to process, overdue bills and tax amount" width={1440} height={900} caption="The Purchase board on This Year." />
+
+### What the nine cards count
+
+The first six and the last card count purchase orders of the current company whose **order date** falls in the period.
+
+- **Total Spend:** the untaxed total of confirmed purchase orders.
+- **Purchase Orders:** how many were confirmed.
+- **Avg PO Value:** the untaxed average per confirmed order.
+- **RFQs:** requests for quotation still in draft or sent.
+- **Vendors:** how many different vendors received a confirmed order.
+- **Items Ordered:** the total quantity on confirmed order lines.
+- **Bills to Process:** vendor bills still in draft. This card does not follow the period: it counts every draft bill there is.
+- **Overdue Bills:** posted vendor bills past their due date and not fully paid, also across all time.
+- **Tax Amount:** the tax on confirmed orders in the period.
+
+Orders waiting for approval (the To Approve state, if you use purchase approval) are not counted in any card.
+
+### The tabs
+
+1. **Overview:** the Purchase Trend, spend as a filled line and order count as a dashed line, by day up to 90 days and by month beyond. Under it, Recent Purchase Orders lists the latest 20 in the period with Export CSV.
+2. **Vendors:** the top ten vendors by spend and a Vendor Stats table with each vendor's number of orders, spend and average, with Export CSV.
+3. **Products:** the top ten products by quantity ordered and a chart of spend by product category.
+4. **Payables:** a chart of RFQs against confirmed orders by month. Despite the name it shows no bills.
+5. **Performance:** the trend chart again.
+6. **Comparison:** spend and orders against the period of the same length just before.
+
+<Shot src="/odoo-guides/odoo-purchase-inventory-dashboard/purchase-tab-vendors.webp" alt="Top 10 Vendors by Spend chart and Vendor Stats table in the Odoo purchase dashboard" width={1440} height={900} caption="The Vendors tab: how much of the spend sits with one supplier." />
+
+The Vendors tab is the one to read before a price negotiation. In the demo one furniture supplier carries more than half the year's spend, which is a fact worth having on the table when the next price list arrives.
+
+<Callout title="Limits of the Purchase board">There is no vendor filter. Bills to Process and Overdue Bills ignore the period, so they look the same on every setting. Clicking Overdue Bills opens a list built on a wider rule than the card, so the list can be longer than the count. In the Comparison chart spend and order count share one axis, so the order bars are too small to see; read the two figures above the chart instead.</Callout>
+
+### What to set up
+
+- **Confirm purchase orders in Odoo** before goods arrive, so spend lands in the month you committed it.
+- **Use payment terms on vendors.** The due date of each bill, which decides Overdue Bills, comes from the payment terms.
+- **Post bills when they are checked.** A bill left in draft stays in Bills to Process until someone posts or cancels it.
+- **Keep product categories tidy.** Spend by Category is only as useful as the categories.
+
+## The Inventory Analytics board
+
+Install **Stock and Inventory Dashboard** (`wt_inventory_dashboard`) and **Inventory Analytics** appears for stock users and managers.
+
+<Shot src="/odoo-guides/odoo-purchase-inventory-dashboard/inventory-year-top.webp" alt="Inventory Analytics dashboard in Odoo 19 with products in stock, stock value, low stock alerts, out of stock, pending receipts and deliveries, stock moves and locations with stock" width={1440} height={900} caption="The Inventory board. Most cards show the warehouse as it is now, not for the period." />
+
+### What the nine cards count
+
+- **Products in Stock:** how many products have a positive quantity in an internal location. Now, not for the period.
+- **Stock Value:** reads zero on Odoo 19, see the note below.
+- **Low Stock Alerts:** products whose quantity at the location of their reorder rule is below the rule's minimum.
+- **Out of Stock:** products with a zero or negative quantity record in an internal location. Odoo removes empty quantity records, so in practice this counts products that have gone negative, which usually means a delivery was validated without the stock being there.
+- **Pending Receipts** and **Pending Deliveries:** the total quantity on receipts and deliveries that are waiting or ready but not done, across all time. These are units, not documents.
+- **Stock Moves:** how many stock moves were completed in the period.
+- **Avg Product Value:** reads zero on Odoo 19, like Stock Value.
+- **Locations w/ Stock:** how many internal locations hold any stock.
+
+### The tabs
+
+1. **Overview:** the Stock Movement Trend of quantity received against quantity sent out, by day up to 90 days and by month beyond, and a doughnut of quantity on hand by product category. Moves between two internal locations are not counted as in or out.
+2. **Stock Levels:** top products by stock value (empty on Odoo 19) and the stock by category chart.
+3. **Movements:** incoming against outgoing as bars.
+4. **Valuation:** the top ten products by value (empty on Odoo 19).
+5. **Alerts:** the Low Stock Items table: each product below its reorder minimum with on hand, the minimum and the shortage, with Export CSV. This is the buyer's list for the day.
+6. **Comparison:** quantity received, quantity sent and moves completed against the period before.
+
+<Shot src="/odoo-guides/odoo-purchase-inventory-dashboard/inventory-tab-alerts.webp" alt="Low Stock Items table in the Odoo inventory dashboard listing products below their reorder minimum with on hand quantity and shortage" width={1440} height={900} caption="The Alerts tab: products below their reorder rule, with the shortage." />
+
+<Shot src="/odoo-guides/odoo-purchase-inventory-dashboard/inventory-tab-overview.webp" alt="Stock Movement Trend and Stock by Category charts in the Odoo inventory dashboard" width={1440} height={900} caption="Overview: units in against units out, and where the stock sits by category." />
+
+<Callout title="Stock value on Odoo 19">Stock Value, Avg Product Value, the Top Products by Stock Value chart and the Valuation tab read Odoo's old stock valuation layer table. Odoo 19 reworked stock valuation and that table no longer exists, so on Odoo 19 these show zero or nothing. Even where it exists, the card adds up the value of moves recorded in the period, not the value on hand. Until the module is updated, take stock value from Inventory, Reporting, Stock, which values on hand at cost.</Callout>
+
+### Setting up the low stock list
+
+The Alerts tab is the most useful part of the board, and it depends entirely on reorder rules.
+
+1. In **Inventory, Configuration, Reordering Rules** (or from the product's Min/Max button), create a rule for each product you want watched.
+2. Set the **location to the one you actually count**, normally WH/Stock. The board compares the quantity at exactly that location, so stock kept in WH/Stock/Shelf 1 is not added in. If you use sub-locations, put the rule on the sub-location, or keep stock at the parent.
+3. Set the **minimum** at the level where you want to reorder. The shortage column is the minimum less on hand.
+4. Choose the rule's trigger. A manual trigger keeps Odoo from raising purchase quotations on its own, which suits a business that wants the list but places orders by hand.
+
+Archived reorder rules are still counted in this version, so delete rules you no longer want rather than archiving them.
+
+## Reading the two boards together
+
+The two boards answer the buyer's day in order. Alerts on the Inventory board says what to buy. Pending Receipts says what is already on its way, so you do not order twice. The Vendors tab on the Purchase board says who you already spend the most with. And Overdue Bills says which suppliers are waiting for money, which is worth knowing before you ask any of them for a better price. For the amount owed and how old it is, the [accounting dashboard](/odoo-guides/odoo-accounting-dashboard/) has payables aging. The [suite overview](/odoo-guides/odoo-dashboards/) lists every board.

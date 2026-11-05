@@ -1,0 +1,131 @@
+---
+title: "Worker visa, Emirates ID, labour card and medical expiry in Odoo, plus the camp's own permits"
+metaTitle: "Worker Papers and Camp Permits"
+description: "Track visa, Emirates ID, labour card and medical expiry for every man in camp, plus the camp's licences and certificates, with daily reminders in Odoo."
+targetQuery: "worker visa emirates id expiry tracking odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "The four papers on every occupant, the single papers status worked out from them, the warning window, the daily reminder to the camp boss, who can see passport and ID numbers, and the camp's licences, certificates and renewal alerts."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-labour-camp-management"
+seriesOrder: 2
+modules:
+  - name: "Labour Camp Management"
+    technical: "wt_labour_camp"
+    note: "USD 200, Odoo 19 Community, installs Employees and Invoicing"
+demo:
+  url: "https://labourcamp-demo.way4tech.com/"
+  label: "Labour Camp demo"
+related: ["odoo-labour-camp-management", "odoo-labour-camp-bed-allocation", "uae-wps-sif-file-odoo"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Which documents does the module track for each worker?"
+    a: "Four expiry dates drive the papers status: visa, Emirates ID, labour card and medical fitness. The passport number and expiry, the visa number and the Emirates ID number are kept too, behind the Camp Boss access right, but the passport expiry does not count towards the status."
+  - q: "How far ahead does a document start showing as expiring?"
+    a: "Thirty days by default. The window is a company setting, Warn About Papers, under Labour Camp settings. Inside the window a paper counts as expiring; past its date it counts as expired."
+  - q: "Who gets the reminder when a visa is about to run out?"
+    a: "A daily scheduled action puts one to do activity on the man's record for the camp boss of the camp he sleeps in, naming the next paper and its date. If the camp has no camp boss set, it goes to the user the scheduled action runs as. A man who already has an open activity is skipped, so nobody gets four reminders about the same person."
+  - q: "Can camp staff see passport numbers?"
+    a: "No. The passport number and expiry, visa number and Emirates ID number, and the ID number on the gate register, are only readable by users with the Camp Boss or Accommodation Manager role. Camp Staff see the expiry dates and the status, not the numbers."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In Gulf accommodation the compliance problem is rarely the building. It is the hundred men in it, each carrying four documents that run out on their own schedule: a residence visa, an Emirates ID, a labour card and a medical fitness certificate. The first anybody hears of an expired one is usually an inspector, a hospital desk or a site gate that refuses the bus. Around them sit the camp's own papers, the accommodation licence and a stack of certificates, each with its own renewal date. This chapter of the [labour camp management series](/odoo-guides/odoo-labour-camp-management/) shows how the Labour Camp Management module keeps both sets in date.
+
+## Four dates on every man
+
+Every occupant form has a Papers section with four expiry dates, and a Passport section next to it:
+
+| Field | Counts towards the status | Who can read it |
+|---|---|---|
+| Visa Expiry | Yes | Everybody with camp access |
+| Emirates ID Expiry | Yes | Everybody with camp access |
+| Labour Card Expiry | Yes | Everybody with camp access |
+| Medical Expiry | Yes | Everybody with camp access |
+| Visa Number, Emirates ID number | No | Camp Boss and Accommodation Manager |
+| Passport Number and Passport Expiry | No | Camp Boss and Accommodation Manager |
+
+Changes to the four expiry dates are tracked in the chatter, so a renewal leaves a line saying who changed the date and from what.
+
+<Shot src="/odoo-guides/odoo-worker-visa-document-expiry/occupant-papers-expired.webp" alt="Occupant form in Odoo for a welder with a red Papers Expired ribbon and a banner saying two of his papers have expired and he should not be on site, his employer, camp, room and bed, the visa, Emirates ID and labour card dates, and a planned activity for the camp boss about the visa" width={1440} height={900} caption="A man whose visa has run out: the ribbon, the banner, and the reminder waiting for the camp boss in the chatter." />
+
+## One status, not four alarms
+
+From the four dates the module works out a handful of figures on each man:
+
+- **Expired**: how many of the four are past their date.
+- **Expiring**: how many are still valid but inside the warning window.
+- **Next Paper** and **Expires**: the first of the four to run out, and when.
+- **Papers**: a single status, In Date, Expiring or Expired. Any expired paper makes the man Expired; otherwise any paper inside the window makes him Expiring.
+
+A man whose state is Left always shows In Date. He keeps his history, but chasing a visa for somebody who went home is noise, so he drops off every compliance figure.
+
+The warning window is **Warn About Papers** in Labour Camp settings, 30 days by default, because a renewal rarely takes less.
+
+## Papers Falling Due
+
+**People, Papers Falling Due** is the working list: every man In Camp or On Leave whose papers are Expiring or Expired, with his trade, employer, camp and room, the next paper to go and its date. It is the list the camp boss works down each week, and it is the same list the Camp Board's Papers expired and Papers expiring tiles open.
+
+<Shot src="/odoo-guides/odoo-worker-visa-document-expiry/papers-falling-due.webp" alt="Papers Falling Due list in Odoo with 25 occupants showing reference, name, trade, employer, camp, room, the next paper which is Visa, its expiry date, an Expiring or Expired badge and an In Camp or On Leave state" width={1440} height={900} caption="Papers Falling Due on the demo: 12 men with an expired paper and 13 inside the 30 day window." />
+
+The menu is only shown to the Camp Boss and Accommodation Manager roles. Camp Staff, who take the meal headcount and log bus runs, do not see it.
+
+The occupant kanban (People, Occupants, then the kanban view) has a column per state, Expected, In Camp, On Leave and Left, and a papers badge on every card. It opens filtered to In Camp; clear the filter to see the expected men too, which is a quick way to spot somebody arriving with papers already short.
+
+## The daily reminder
+
+The scheduled action **Labour camp: papers about to expire** runs once a day. It looks at every man In Camp or On Leave whose next expiry falls on or before today plus the warning window, already expired ones included, and schedules one to do activity on him:
+
+- assigned to the **Camp Boss** of the camp he sleeps in, or to the user the job runs as if the camp has no camp boss;
+- titled with his name, the paper and the date, for example "Dinesh Santos: Visa expires 2026-10-15";
+- with a note of how many papers are expired and expiring and which bed he is in.
+
+One activity per man, not one per document. A man who already has any open activity is skipped, so marking it done is what lets the next reminder through. The camp boss sees them in the activity menu at the top of Odoo like any other to do.
+
+<Callout title="The status is worked out when the record changes, not every night">The Papers status, the expired and expiring counts and the permit Status below are stored on the record and recalculated when one of their dates, or the man's state, is edited. They are not recalculated as the calendar moves on. A man whose visa passes its date overnight keeps the status he had until something on his record changes, and the boards and lists count that stored value. The daily reminder is not affected, because it searches on the expiry date itself. Until this is fixed, treat the Expires date column as the truth and the badge as a guide.</Callout>
+
+## Renewing a paper
+
+When the new visa or card comes back, open the man, type the new expiry date over the old one and save. The status, counts and next expiry move with it, the chatter records the old and new dates, and the next reminder will be for whatever falls due next. Mark the reminder activity done so the job can raise the next one. There is no separate renewal record and no document upload on the occupant; attach the scan to the chatter if you keep one.
+
+## The camp's own papers
+
+The camp is licensed too, and it keeps its licence by being able to show a stack of certificates. **Welfare, Permits and Certificates** (Accommodation Manager only) holds them, and the camp form shows the same records on its Permits and Certificates tab.
+
+<Shot src="/odoo-guides/odoo-worker-visa-document-expiry/permits-list.webp" alt="Permits and Certificates list in Odoo for two camps, with the reference, camp, kind such as Accommodation Licence, Civil Defence Certificate, Pest Control Contract and Water Tank Cleaning, the issuing authority, expiry date, days left and a status of In Date, Renewal Due or Expired" width={1440} height={900} caption="The camps' licences and certificates, soonest expiry first, with days left and the renewal status." />
+
+Each permit has a reference, the camp, a kind, the authority that issued it, the issue and expiry dates, a **Reminder Days** period (45 by default, because municipality renewals are rarely quick), the scans as attachments and a note. The kinds are:
+
+- Accommodation Licence
+- Civil Defence Certificate
+- Municipality Health Permit
+- Pest Control Contract
+- Water Tank Cleaning
+- Fire Alarm Maintenance
+- Kitchen and Food Handling
+- Waste Collection
+- Other
+
+**Days Left** is worked out every time the record is shown. **Status** is In Date, then Renewal Due once the days left are inside the permit's own reminder period, then Expired. An expiry date on or before the issue date is refused.
+
+<Shot src="/odoo-guides/odoo-worker-visa-document-expiry/permit-expired.webp" alt="Permit form in Odoo for a pest control contract at Desert Star Camp 1 issued by Brightguard Pest Control, with issue and expiry dates, a 30 day reminder, negative days left and an Expired status, and a planned activity in the chatter" width={1440} height={900} caption="A pest control contract that has run out, with the renewal reminder raised on it." />
+
+The scheduled action **Labour camp: permits due for renewal** runs daily and puts a to do activity on each Renewal Due or Expired permit for the camp boss, such as "Desert Star Camp 1, Al Quoz: Pest Control Contract has expired". Like the papers job, it skips a permit that already has an open activity. It reads the stored Status, so the stale status note above applies here too: a permit that crosses into its reminder period without being edited is not picked up until it is.
+
+The kitchen's food licence date sits on the mess record (Configuration, Mess and Catering) as Food Licence Expiry. It is a date on the form only; it has no status and raises no reminder, so if you want the alert, add the food licence as a Kitchen and Food Handling permit as well.
+
+## The compliance board
+
+**Dashboards, Compliance and Cost** puts the paperwork in one row: licences expired, renewals due, men with expired papers (with the number still inside the warning window), and the average inspection score for the period. Each tile opens the records behind it. The cost half of the same board is covered in the [billing and cost chapter](/odoo-guides/odoo-labour-camp-contractor-billing/).
+
+## What it does not do
+
+- It does not check a visa or Emirates ID against any government system, and nothing is filed with MoHRE, ICP or the municipality. The dates are what you type.
+- It has no renewal workflow: no application stage, fee or typing centre step. The date simply moves when the new paper arrives.
+- Passport expiry is kept but does not count towards the papers status or the reminder.
+- Activities are the only alert. There is no email or SMS to the worker or his employer.
+
+The next chapter shows how the same men and allocations turn into a [monthly bill for each contractor](/odoo-guides/odoo-labour-camp-contractor-billing/). To see the papers list and the reminders on real looking data, open the [Labour Camp demo](https://labourcamp-demo.way4tech.com/); [ask us for a login](/contact/).

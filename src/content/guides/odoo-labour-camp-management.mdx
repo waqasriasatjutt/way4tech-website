@@ -7,11 +7,19 @@ category: "Industry"
 region: "UAE and GCC"
 summary: "The space and occupancy rules UAE and Saudi inspectors work from, and how to run a camp in Odoo bed by bed: intake, papers falling due, contractor billing, mess, buses, permits and inspections."
 published: 2026-10-23
-updated: 2026-10-23
+updated: 2026-11-05
+series: "odoo-labour-camp-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-labour-camp-management.pdf"
+  pages: 46
 modules:
   - name: "Labour Camp Management"
     technical: "wt_labour_camp"
-    note: "USD 200, runs on Odoo 19 Community with Invoicing"
+    note: "USD 200, runs on Odoo 19 Community, installs Employees and Invoicing"
+demo:
+  url: "https://labourcamp-demo.way4tech.com/"
+  label: "Labour Camp demo"
 related: ["uae-wps-sif-file-odoo", "zkteco-adms-odoo", "odoo-cafm-facility-maintenance", "odoo-construction-ra-bill-job-costing"]
 linkFrom: ["/modules/hr/", "/industries/facility-management/", "/solutions/construction/", "/countries/uae/"]
 sources:
@@ -25,12 +33,13 @@ faqs:
   - q: "Who has to provide labour accommodation in the UAE?"
     a: "According to the UAE government portal, establishments employing 50 or more workers who earn AED 1,500 a month or less must provide accommodation, and must register it in MoHRE's Labour Accommodation System and keep that record accurate."
   - q: "Can Odoo bill a contractor for the beds its workers use?"
-    a: "With the Labour Camp Management module, yes. Each contractor gets an agreement billed per bed held, per man accommodated or per man night, and the monthly charge is worked out from the bed allocations and raised as an ordinary Odoo customer invoice."
+    a: "With the Labour Camp Management module, yes. Each contractor gets an agreement billed per bed held, per man accommodated or per man night, and a monthly scheduled action works the charge out from the bed allocations. Once approved, it is raised as an ordinary Odoo customer invoice."
   - q: "Does the module file anything with MoHRE or the municipality?"
     a: "No. No labour accommodation regulator publishes an interface for it. The module keeps the permits, their expiry dates and the certificates on file, which is what an inspection asks to see, and you keep the MoHRE accommodation system up to date yourself."
 ---
 import Shot from '../../components/guides/Shot.astro';
 import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
 
 A bus of forty men lands at midnight and the camp boss has a spreadsheet that says there are twelve free beds, except two of them are broken bunks and one is held for a gang arriving Thursday. Three of the men already in camp have visas that ran out last week and are still being sent to site. At month end the main contractor disputes the accommodation invoice because nobody can say how many nights his men actually slept. Labour camp management is mostly this: occupancy you can trust, papers before they bite, and a bill that stands up. This guide covers the UAE and Saudi rules an inspector checks, then shows how to run a camp in Odoo with our Labour Camp Management module.
 
@@ -71,38 +80,38 @@ Odoo does give you the parts that matter underneath: contacts for contractors, I
 
 ## How to set it up in Odoo
 
-[Labour Camp Management](https://apps.odoo.com/apps/modules/19.0/wt_labour_camp) (USD 200) runs on Odoo 19 Community or Enterprise. It needs Invoicing, which ships with Community; HR is optional.
+[Labour Camp Management](https://apps.odoo.com/apps/modules/19.0/wt_labour_camp) (USD 200) runs on Odoo 19 Community or Enterprise. Installing it also installs Employees and Invoicing, both part of Community. Linking a man to his employee record is optional, so a subcontractor's men who are not on your payroll still get a bed.
 
-1. **Install and set the rules.** Install Labour Camp from Apps, then open **Labour Camp, Configuration, Settings**. Set how many days before expiry a man shows as expiring (30 by default), keep **Refuse to Exceed the Licence** ticked, set the complaint answer time (48 hours by default) and choose the product accommodation charges are invoiced under.
+1. **Install and set the rules.** Install Labour Camp from Apps, then open **Labour Camp, Configuration, Settings**. Set how many days before expiry a man shows as expiring (30 by default), and set the complaint answer time (48 hours by default). The page also has a **Refuse to Exceed the Licence** box; in the current version the licence is checked at every check in whatever that box says.
 2. **Create the camp.** **Configuration, Camps**: name, licence and **licensed capacity**, then the blocks underneath it.
-3. **Add rooms and beds.** **Accommodation, Rooms**: block, room type, capacity, floor area and AC units. Press **Create Beds** to make the beds from the capacity, numbered so a bunk can be named out loud. The room shows square metres per bed, the figure an inspector asks for.
+3. **Add rooms and beds.** **Accommodation, Rooms**: block, room type, capacity, floor area and AC units. Press **Create the Beds** to make the beds from the capacity, numbered so a bunk can be named out loud. The room shows square metres per bed, the figure an inspector asks for.
 4. **Register the men.** **People, Occupants**: employer, trade, and the expiry of visa, Emirates ID, labour card and medical fitness. Passport and ID numbers sit behind their own access right. Link to the HR employee if you run HR.
 5. **Allocate the intake.** Open one man, press **Allocate a Bed**, add the rest of the busload to the Men field, and name a block or room to keep a gang together. Tick Check Them In for arrivals tonight, or leave it to reserve. The wizard shows beds needed against beds free and refuses two men in one bed or a camp over its licence.
 6. **Set up billing.** **Billing, Agreements**: one per contractor, billed **Per Bed Held**, **Per Man Accommodated** or **Per Man Night**, with the rate and, for per bed, the beds reserved. Press Start.
-7. **Run month end.** Turn on the scheduled action "Camp: draft last month's accommodation charges" (it ships switched off). On the first of the month it drafts a charge per agreement from the allocations. Check it under **Billing, Monthly Charges**, Approve, then **Raise the Invoice**.
+7. **Run month end.** Turn on the scheduled action "Camp: draft last month's accommodation charges" (it ships switched off). On the first of the month it drafts a charge per agreement from the allocations. There is no button to draft a month by hand. Check it under **Billing, Monthly Charges**, Approve, then **Raise the Invoice**.
 8. **Services.** Configure **Mess and Catering** and **Transport Routes**, then record **Meal Headcount**, **Bus Runs** and **Utilities** per block.
 9. **Welfare and compliance.** Under **Welfare**: Permits and Certificates with expiry, Inspections from your own checklists, Complaints, Incidents and the Gate Register.
 10. **Watch the boards.** **Dashboards, Camp Board** for the camp boss and **Compliance and Cost** for the compliance officer.
 
-<Shot src="/odoo-guides/odoo-labour-camp-management/rooms-form.webp" alt="Room A101 in Al Quoz Camp 2, Block A: bunk room with capacity 6, 6 beds all occupied, area 22 square metres, 3.67 square metres per bed, one AC unit, and a list of six beds with the name of each occupant" width={1280} height={800} caption="A room: capacity, area per bed and each bunk with who sleeps in it." />
+<Shot src="/odoo-guides/odoo-labour-camp-management/rooms-form.webp" alt="Room A101 in Desert Star Camp 1, Block A: a bunk room with capacity 8, 8 beds and 7 occupied, area 27.2 square metres, 3.40 square metres per bed, two AC units, and the list of beds with lower and upper bunks and the name of each occupant" width={1440} height={900} caption="A room: capacity, area per bed and each bunk with who sleeps in it." />
 
 ### The camp board
 
 The board answers the morning questions: whose papers have expired, which complaints are past the time the men were promised, who is booked in without a bed, how many beds are free once blocked ones are left out, and whether any camp is over licence. Every figure opens the records behind it.
 
-<Shot src="/odoo-guides/odoo-labour-camp-management/camp-board.webp" alt="Camp Board dashboard with tiles for papers expired, complaints past the promise, arriving with no bed, papers expiring, men in camp, beds free, occupancy percentage marked healthy, camps over licence, open and urgent complaints, inspections done and overloaded bus runs" width={1280} height={800} caption="The Camp Board: what needs somebody today, the beds, and welfare." />
+<Shot src="/odoo-guides/odoo-labour-camp-management/camp-board.webp" alt="Camp Board dashboard with tiles for papers expired, complaints past the promise, arriving with no bed yet, papers expiring, men in camp, beds free, occupancy percentage marked healthy, camps over licence, then open and urgent complaints, inspections done and overloaded bus runs" width={1440} height={900} caption="The Camp Board: what needs somebody today, the beds, and welfare." />
 
 ### Papers falling due
 
 A man with an expired visa or labour card should not be on site. Each occupant carries one papers status worked out from all four documents, and a daily job lists those inside the warning window.
 
-<Shot src="/odoo-guides/odoo-labour-camp-management/papers-falling-due.webp" alt="Papers Falling Due list showing occupants with trade, employer, camp, room, the next paper to expire such as Visa or Medical Fitness, its expiry date and a red Expired or amber Expiring status" width={1280} height={800} caption="Papers Falling Due: the renewals to chase this month." />
+<Shot src="/odoo-guides/odoo-labour-camp-management/papers-falling-due.webp" alt="Papers Falling Due list showing occupants with trade, employer, camp, room, the next paper to expire, its expiry date and a red Expired or amber Expiring badge" width={1440} height={900} caption="Papers Falling Due: the renewals to chase this month." />
 
 ### Billing the contractor
 
 Per bed held suits a main contractor reserving a block whether it is full or not. Per man night is the fairest and needs reliable check in and check out, which the allocations give you.
 
-<Shot src="/odoo-guides/odoo-labour-camp-management/monthly-charges.webp" alt="Monthly Charges list with two agreements for August, showing the contractor billed, number of men, man nights, the amount to bill and a Draft or Invoiced status, with the total at the bottom" width={1280} height={800} caption="Monthly charges worked out from men and man nights, then invoiced." />
+<Shot src="/odoo-guides/odoo-labour-camp-management/monthly-charges.webp" alt="Monthly Charges list with charges for August, September and October per agreement, showing the contractor billed, men, man nights, the amount to bill and a Draft, Approved or Invoiced status, with the total at the bottom" width={1440} height={900} caption="Monthly charges worked out from men and man nights, then invoiced." />
 
 | Basis | Billed on | Fits |
 |---|---|---|
@@ -119,7 +128,16 @@ Most of these come from the module's own description, and we would rather you re
 - **It is not payroll.** Wages go through your payroll and, in the UAE, through WPS; see the [WPS SIF guide](/odoo-guides/uae-wps-sif-file-odoo/).
 - **It does not read gate or attendance hardware.** If you want biometric punches, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) covers getting them into Odoo.
 - **Area per bed is shown, not enforced.** The licensed headcount is enforced; the space rule is displayed for you to act on.
+- **Some figures do not refresh on their own.** The papers status on each man and the status of each permit are recalculated when the record is edited, not as days pass, and the cost per head on the compliance board leaves the buses out. The chapters say where this matters.
 - **It does not raise maintenance work orders.** A complaint records the problem and its resolution; the repair to a bunk or an AC unit belongs in a maintenance system such as Facility Management CAFM, covered in the [CAFM guide](/odoo-guides/odoo-cafm-facility-maintenance/).
+
+<WhenLive slug="odoo-labour-camp-bed-allocation">
+
+## The chapters
+
+Each part of running a camp has its own chapter: [camps, rooms and bed allocation](/odoo-guides/odoo-labour-camp-bed-allocation/), [worker papers and the camp's permits](/odoo-guides/odoo-worker-visa-document-expiry/), [contractor billing and cost per head](/odoo-guides/odoo-labour-camp-contractor-billing/), and [inspections, complaints, incidents and the gate register](/odoo-guides/odoo-labour-camp-inspections-complaints/).
+
+</WhenLive>
 
 ## Where to go from here
 

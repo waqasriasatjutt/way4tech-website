@@ -1,0 +1,104 @@
+---
+title: "Odoo POS dashboard: takings by terminal and cashier, busy hours, payments, margin and CSV export"
+metaTitle: "POS Dashboard in Odoo: Cashiers and Hours"
+description: "An Odoo 19 POS dashboard: revenue, refunds, margin and discounts by terminal and cashier, busiest hours, payment methods, new against returning customers."
+targetQuery: "odoo pos dashboard"
+category: "Operations"
+summary: "The POS Analytics board for shop owners: today's takings per till and cashier, the hour-by-day heat map, payment mix, margin by category, open sessions and a full order-line export."
+published: 2027-02-11
+updated: 2027-02-11
+series: "odoo-dashboards"
+seriesOrder: 3
+modules:
+  - name: "POS Dashboard"
+    technical: "wt_pos_dashboard"
+    note: "USD 20, needs Point of Sale"
+demo:
+  url: "https://dashboards-demo.way4tech.com/"
+  label: "Dashboards demo"
+related: ["odoo-dashboards", "odoo-restaurant-pos-setup", "odoo-salon-pos-till", "odoo-car-wash-online-booking-pos"]
+linkFrom: ["/products/wt-pos-dashboard/"]
+sources: []
+faqs:
+  - q: "Can I see takings for one till or one cashier?"
+    a: "Yes. The POS board has a Terminal and a Cashier filter beside the period, and both apply to every card, chart and the CSV export. The cashier is the Odoo user on the order, so if your staff log in to the till as employees under one shared user, every order carries that user and the cashier filter cannot tell them apart."
+  - q: "Is POS revenue on the dashboard with or without tax?"
+    a: "With tax. Revenue and Average Order Value are order totals including tax, because that is what went through the till. Gross margin is worked out before tax, from line totals less product cost."
+  - q: "What does the CSV export contain?"
+    a: "Every order line in the period, up to 50,000 lines, with order reference, date, cashier, terminal, customer, product, category, quantity, unit price, discount percent and amount, price before and after tax, and order state. Orders in every state are included. Payment method and a separate tax column are not in it."
+  - q: "Why are the busiest hours shifted?"
+    a: "The hour of each order is taken in the server's time, which is UTC, not the shop's local time. In the UAE, a sale at 2 pm shows at 10 am. Read the hours with your offset from UTC in mind until the module uses the user's time zone."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+At a shop counter the questions are short and constant: how much have we taken today, which till is busiest, is one cashier giving away more discount than the others, and when should the second person be on. Odoo's Point of Sale records every order, line and payment, and its own reporting will answer most of that with enough grouping. The POS Analytics board answers it on one screen, with a filter for each till and each cashier. This chapter goes through every card, tab and filter, and the export.
+
+## Opening the board
+
+Install **POS Dashboard** (`wt_pos_dashboard`). A **POS Analytics** app appears on the home screen for **POS managers only**; a cashier with plain POS user rights does not see it. Unlike the other boards in the suite it opens on **Today**.
+
+<Shot src="/odoo-guides/odoo-pos-dashboard/pos-top.webp" alt="POS Analytics dashboard in Odoo 19 on Today with revenue, orders, average order value, items sold, refunds, open sessions, gross margin, discounts given and tax collected" width={1440} height={900} caption="The POS board on Today, with both counters of the demo shop trading." />
+
+### The three filters
+
+1. **Period:** Today, Yesterday, Last 7 Days, Last Week, This Month, Last Month, This Quarter, This Year or a custom range.
+2. **Terminal:** All Terminals or one point of sale.
+3. **Cashier:** All Cashiers or one of the users who has taken a paid order.
+
+Terminal and cashier apply to every card, chart and table except the Sessions tab, which always lists all terminals, and they also apply to the CSV export.
+
+<Callout title="The cashier filter and employee login">The cashier is the Odoo user saved on the order. If your shop uses the POS employee login, where staff badge in on one shared till user, every order carries that one user and the cashier filter and the Discounts by Cashier chart cannot tell staff apart. Give each cashier their own Odoo user if you want these figures per person.</Callout>
+
+## What the nine cards count
+
+Orders that are paid, posted or invoiced, dated in the period, for the current company.
+
+- **Revenue:** total of sales orders including tax, with the change against the previous period.
+- **Orders:** how many sales orders, also with the change against the previous period.
+- **Avg. Order Value:** revenue per order.
+- **Items Sold:** total quantity on order lines. Refund lines are negative, so this is net.
+- **Refunds:** how many refund orders, with the amount refunded under it.
+- **Open Sessions:** sessions open right now, whatever period you pick.
+- **Gross Margin %:** line totals before tax less product cost, as a share of line totals. It needs a cost on each product.
+- **Discounts Given:** the value of line discounts.
+- **Tax Collected:** tax on the period's sales orders.
+
+## The tabs
+
+1. **Overview:** Sales Trend (by hour on a single day, by day up to 90 days, by month beyond); a Payments doughnut by payment method; Revenue vs Refunds; Busiest Hours, a bubble chart of orders by weekday and hour; the 20 latest orders; and a Salesperson table.
+2. **Financial:** Discounts by Cashier, Gross Margin by Category, Average Order Value by Hour, and a table of the most discounted products.
+3. **Products:** top ten products by quantity and by revenue, and top categories. Categories are the POS product categories, falling back to the product category if a product has none.
+4. **Customers:** top ten customers, and a New vs Returning doughnut: a customer is new if their first ever POS order falls in the period, returning if they bought before, and walk-in if the order has no customer.
+5. **Sessions:** every terminal with its open session, the session's revenue and orders and when it opened. A quick check at closing time that nobody left a till open.
+6. **Compare:** revenue, orders, average order and items sold against the previous period, with a chart of both periods.
+
+<Shot src="/odoo-guides/odoo-pos-dashboard/pos-tab-overview-2.webp" alt="Revenue vs refunds by month and the busiest hours bubble chart in the Odoo POS dashboard" width={1440} height={900} caption="Overview on This Year: revenue against refunds by month, then Busiest Hours by weekday and hour." />
+
+<Shot src="/odoo-guides/odoo-pos-dashboard/pos-tab-financial.webp" alt="Discounts by cashier and gross margin by category charts in the Odoo POS dashboard" width={1440} height={900} caption="Financial: who gives the discounts and which categories carry the margin." />
+
+<Shot src="/odoo-guides/odoo-pos-dashboard/pos-tab-sessions.webp" alt="Terminal Status table in the Odoo POS dashboard with each point of sale, its open session, revenue, orders and start time" width={1440} height={900} caption="Sessions: every till, open or closed, at a glance." />
+
+<Callout title="Hours are in UTC">The Busiest Hours chart, the hourly trend on Today and Average Order Value by Hour take the hour from the order time in UTC, not your shop's time zone. In Dubai the lunchtime rush at 1 pm shows at 9 am. Days near midnight can also fall on the wrong date. Shift the hours by your UTC offset when you read them. A product in two POS categories is counted in both in the category charts.</Callout>
+
+## The CSV export
+
+The **Export CSV** button in the header downloads every order line in the period, filtered by terminal and cashier, up to 50,000 lines. It opens straight in Excel and has these columns: order reference, date, cashier, terminal, customer, product, category, quantity, unit price, discount percent, discount amount, price before tax, price after tax and order state. All states are included, so filter out cancelled orders before you total it. There is no payment method column; use the Payments chart for the mix.
+
+## Getting the figures right
+
+- **Put a cost on every product.** Gross margin and Margin by Category use the cost saved on each line when the order is paid.
+- **One user per cashier**, as above.
+- **POS categories** on products, for the category charts.
+- **Ask for a customer** on account and loyalty sales. Walk-in orders count in revenue but not in the customer charts.
+- **Close sessions** at the end of the day. Open Sessions is a live count, and a session left open for days is worth chasing.
+
+## A closing routine for the shop manager
+
+1. At closing time open **Sessions**. Every till that traded today should show its session; any session still open after the shop has shut is a till somebody forgot to close.
+2. Stay on **Today** and pick each **Terminal** in turn. Compare its Revenue with the cash and card count from that till.
+3. Pick each **Cashier** and read **Discounts Given** and **Refunds**. One person with far more of either than the others is worth a quiet word, not an accusation: the Financial tab's Discounts by Cashier chart and the most discounted products table show what was given.
+4. Once a week, set **Last 7 Days**, open **Busiest Hours** and plan the rota around it, remembering the UTC shift.
+5. At month end, set **Last Month** and use **Export CSV** to hand the accountant every line in one file.
+
+For setting up the till itself, see the [restaurant POS setup guide](/odoo-guides/odoo-restaurant-pos-setup/) or the [salon POS guide](/odoo-guides/odoo-salon-pos-till/). The [suite overview](/odoo-guides/odoo-dashboards/) covers the other boards.

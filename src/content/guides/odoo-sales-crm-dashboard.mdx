@@ -1,0 +1,130 @@
+---
+title: "Odoo sales and CRM dashboard: revenue, quotations, pipeline and win rate on one screen"
+metaTitle: "Sales and CRM Dashboards in Odoo 19"
+description: "Read Odoo 19 sales and CRM dashboards: revenue, quotations, conversion, top customers, salesperson ranking, pipeline by stage, win rate and lead sources."
+targetQuery: "odoo sales dashboard"
+category: "Operations"
+summary: "The Sales Analytics and CRM Analytics boards card by card: what each figure counts, which tab answers which question, and the data your team has to enter for the numbers to mean something."
+published: 2027-02-11
+updated: 2027-02-11
+series: "odoo-dashboards"
+seriesOrder: 1
+modules:
+  - name: "Sales Dashboard"
+    technical: "wt_sale_dashboard"
+    note: "USD 20, needs Sales"
+  - name: "CRM Dashboard"
+    technical: "wt_crm_dashboard"
+    note: "USD 20, needs CRM"
+demo:
+  url: "https://dashboards-demo.way4tech.com/"
+  label: "Dashboards demo"
+related: ["odoo-dashboards", "odoo-field-sales-tracking-reports", "odoo-distribution-management"]
+linkFrom: ["/products/wt-sale-dashboard/", "/products/wt-crm-dashboard/"]
+sources: []
+faqs:
+  - q: "Is revenue on the Sales dashboard before or after tax?"
+    a: "Before tax. Total Revenue, Average Order Value and the revenue charts use the untaxed amount of confirmed sales orders. Tax is shown on its own card. Revenue is counted on the order date, not the invoice date, so it is booked sales rather than invoiced sales."
+  - q: "How does the CRM dashboard decide a deal is won or lost?"
+    a: "Won means an opportunity at 100 percent probability whose closing date falls in the period, which is what Odoo sets when you mark it won. Lost means an archived lead or opportunity that was last changed in the period, which includes lost opportunities but also anything archived for another reason."
+  - q: "Can each salesperson see only their own figures?"
+    a: "No. Both boards count for the whole company, and there is no salesperson filter. The Salespersons tab on the Sales board and the Salespeople tab on the CRM board rank everybody side by side."
+  - q: "Why does my CRM dashboard show fewer leads than the CRM app?"
+    a: "The board only counts leads whose company is the company you are working in. A lead with the company field left empty does not appear. Set the company on the sales team, or on the leads, and they will be counted."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A sales meeting goes better when nobody has to argue about the numbers. The usual Monday problem is that each person brings a different figure: the salesperson counts quotes sent, the accountant counts invoices, the owner counts cash. The Sales and CRM dashboards settle that by counting the same records the same way every time, from Odoo itself. This chapter goes through both boards: what each card counts, what each tab is for, and what your team has to record in Odoo for the figures to be right.
+
+## The Sales Analytics board
+
+Install **Sales Dashboard** (`wt_sale_dashboard`) and a **Sales Analytics** app appears on the home screen for salespeople and sales managers. It opens on This Month. Switch the period at the top right; every card, chart and table moves together, and the dates in use show under the title.
+
+<Shot src="/odoo-guides/odoo-sales-crm-dashboard/sale-year-top.webp" alt="Sales Analytics dashboard in Odoo 19 with nine cards: revenue, confirmed orders, average order value, quotations, customers, items sold, conversion rate, tax collected and pending delivery" width={1440} height={900} caption="The Sales board on This Year for the demo company." />
+
+### What the nine cards count
+
+All cards look at sales orders of the current company whose **order date** falls in the period.
+
+- **Total Revenue:** the untaxed total of confirmed orders. Click it to open those orders.
+- **Confirmed Orders:** how many orders were confirmed.
+- **Avg Order Value:** the untaxed average per confirmed order.
+- **Quotations:** orders still in Quotation or Quotation Sent.
+- **Customers:** how many different customers placed a confirmed order.
+- **Items Sold:** the total quantity on confirmed order lines, whole units.
+- **Conversion Rate:** confirmed orders divided by confirmed orders plus open quotations in the same period.
+- **Tax Collected:** the tax on confirmed orders.
+- **Pending Delivery:** always shows 0 in this version. Clicking it opens every delivery that is not done or cancelled, which is the list you actually want.
+
+Because revenue counts on the order date, a big order confirmed on the 30th belongs to that month even if it is invoiced next month. That is booked sales. For invoiced revenue use the [accounting dashboard](/odoo-guides/odoo-accounting-dashboard/).
+
+### The tabs
+
+1. **Overview:** the Sales Trend chart, revenue as a filled line and order count as a dashed line on its own scale. For a range of 90 days or less it plots each day, for longer ranges each month. Below it, Recent Orders lists the 20 latest orders in the period in any state, with an Export CSV button. Click a row to open the order.
+2. **Products:** the top ten products by quantity and the top ten by untaxed revenue. A product that sells in volume at a low price shows on the left and not the right.
+3. **Customers:** the top ten customers by untaxed revenue.
+4. **Salespersons:** a bar chart and a table of each salesperson's orders, revenue and average order, taken from the Salesperson field on the order. The table has Export CSV.
+5. **Performance:** the same trend chart again, on its own.
+6. **Comparison:** revenue and order count for this period against the period of the same length just before.
+
+<Shot src="/odoo-guides/odoo-sales-crm-dashboard/sale-tab-overview.webp" alt="Sales Trend chart in Odoo showing monthly revenue and orders from January to November" width={1440} height={900} caption="Overview on This Year: a monthly trend. November is low because the month has only just started." />
+
+<Shot src="/odoo-guides/odoo-sales-crm-dashboard/sale-tab-salespersons.webp" alt="Salesperson Stats table in the Odoo sales dashboard with orders, revenue and average per salesperson" width={1440} height={900} caption="Salesperson Stats ranks the team on confirmed revenue in the period." />
+
+<Callout title="Two charts that need a second click">The Salesperson Performance chart and the Comparison chart are drawn before their tab has finished appearing, so they can come up blank the first time you open the tab or after you change the period. Click the tab again and the chart draws. The table and figures beside them are not affected. On the Salespersons chart, bars are read from the shortened figures such as 12.5K, so two salespeople either side of a thousand or a million can plot on different scales; trust the table.</Callout>
+
+### What your team has to enter
+
+The board can only count what is in Odoo. For it to be right:
+
+- **Confirm orders in Odoo**, not on paper. A quotation that was accepted by phone stays a quotation until someone clicks Confirm, and lowers the conversion rate.
+- **Fill the Salesperson field.** Orders without one are left out of the Salespersons tab.
+- **Cancel dead quotations.** Old drafts sit in the Quotations card for the period they were dated in, and drag conversion down.
+- **Keep products named once.** The product charts group by name, so two products with the same name are added together.
+
+## The CRM Analytics board
+
+Install **CRM Dashboard** (`wt_crm_dashboard`) and **CRM Analytics** appears on the home screen. It opens on This Month and has the same period switch as the Sales board.
+
+<Shot src="/odoo-guides/odoo-sales-crm-dashboard/crm-year-top.webp" alt="CRM Analytics dashboard in Odoo 19 showing new leads, opportunities, won deals, lost deals, win rate, average deal size, pipeline, team members and overdue activities" width={1440} height={900} caption="The CRM board on This Year: nine cards over the pipeline." />
+
+### What the nine cards count
+
+Every card counts leads and opportunities of the current company only.
+
+- **New Leads:** records of type lead created in the period.
+- **Opportunities:** records of type opportunity created in the period.
+- **Won Deals:** opportunities at 100 percent probability closed in the period, with their total expected revenue under the count.
+- **Lost Deals:** archived leads and opportunities last changed in the period.
+- **Win Rate:** won divided by won plus lost.
+- **Avg Deal Size:** won expected revenue divided by the number won.
+- **Pipeline:** open opportunities below 100 percent, whatever their age, with their total expected revenue. This card does not follow the period.
+- **Team Members:** how many different salespeople own an open lead or opportunity.
+- **Overdue Activities:** open leads and opportunities with at least one activity whose due date has passed. This is the follow-up list; click it and work through it.
+
+### The tabs
+
+1. **Overview:** a trend of leads and opportunities created, by day up to 60 days and by month beyond, and a table of the 20 latest open leads and opportunities in the period with Export CSV.
+2. **Pipeline:** two bar charts by stage, in stage order: how many open opportunities sit in each stage and their expected revenue. These show the pipeline as it is now, not for the period.
+3. **Salespeople:** top salespeople by won revenue, and a table with each one's opportunities, won deals, revenue and win rate.
+4. **Sources:** a doughnut of leads by their Source field. Leads with no source show as Direct.
+5. **Comparison:** daily counts of leads created in this period and the one before.
+
+<Shot src="/odoo-guides/odoo-sales-crm-dashboard/crm-tab-pipeline.webp" alt="Opportunities by Stage and Expected Revenue by Stage charts in the Odoo CRM dashboard" width={1440} height={900} caption="Pipeline tab: where open deals are stuck and what they are worth." />
+
+<Shot src="/odoo-guides/odoo-sales-crm-dashboard/crm-tab-sources.webp" alt="Leads by Source doughnut chart in the Odoo CRM dashboard" width={1440} height={900} caption="Sources tab: which channels bring the leads in." />
+
+<Callout title="Limits of the CRM board">There is no salesperson or stage filter. Lost counts any archived lead edited in the period, so archiving duplicates or cleaning up old records raises it and lowers the win rate. Leads with no company set are not counted at all. In the Comparison chart the two periods are drawn one after the other along a single date axis rather than on top of each other, so read it as two halves. The CRM Analytics menu is open to every internal user, not only the sales team, and it shows company-wide figures.</Callout>
+
+### Making the CRM numbers honest
+
+- **Use Mark as Won and Mark as Lost** rather than dragging cards or archiving by hand. Mark as Won sets the probability to 100 and the closing date, which is what the Won card reads.
+- **Set the Source** on every lead. It sits with Campaign and Medium on the Extra Information tab of the lead form. Without it the Sources tab is all Direct.
+- **Schedule a next activity** on every open opportunity. The Overdue Activities card only helps if each deal has one.
+- **Fill Expected Revenue.** The Pipeline, Won and Average Deal figures are sums of it.
+- **Set the company** on your sales teams, so new leads carry it.
+
+## Using both boards in the weekly meeting
+
+A pattern that works: open CRM Analytics on This Month and go through Overdue Activities first, then the Pipeline tab stage by stage. Then switch to Sales Analytics on This Month and read Revenue and Conversion against the Comparison tab. Last Month on both boards is the end-of-month review. If you want the same figures with your own layout, or a monthly target bar, the [dashboard builder chapter](/odoo-guides/odoo-dashboard-builder/) shows how to build one. The suite overview is in the [Odoo dashboards guide](/odoo-guides/odoo-dashboards/).

@@ -1,0 +1,100 @@
+---
+title: "Build your own Odoo dashboards without code: KPI, bar, list and progress tiles on any model"
+metaTitle: "Build Your Own Dashboards in Odoo 19"
+description: "Build Odoo 19 dashboards without code: KPI, bar chart, ranked list and target tiles on any model, with filters, group-by fields and per-group boards."
+targetQuery: "odoo dashboard builder no code"
+category: "Operations"
+summary: "How the Dashboard Builder works tile by tile: pick a model, a measure, a filter and a grouping, arrange the tiles, limit a board to a group, and the limits worth knowing."
+published: 2027-02-11
+updated: 2027-02-11
+series: "odoo-dashboards"
+seriesOrder: 6
+modules:
+  - name: "Dashboard Builder"
+    technical: "wt_dashboard_builder"
+    note: "USD 10, depends only on the Odoo base and web client"
+demo:
+  url: "https://dashboards-demo.way4tech.com/"
+  label: "Dashboards demo"
+related: ["odoo-dashboards", "odoo-project-approvals-automation", "n8n-odoo-automation"]
+linkFrom: ["/products/wt-dashboard-builder/"]
+sources: []
+faqs:
+  - q: "Which models can a tile use?"
+    a: "Any model installed in your Odoo, including custom modules. The tile reads it with the viewer's own access rights, so a user who cannot read invoices sees No access on an invoice tile instead of the figure."
+  - q: "Can a tile show this month only?"
+    a: "Yes, through its filter. The filter is an Odoo domain and can use context_today and relativedelta, for example a date field greater than or equal to the first day of the month. There is no period switch on the board itself."
+  - q: "Can I hide a board from some users?"
+    a: "Each board has a Groups field. A board with groups set only shows its tab to members of those groups, and a board with none shows to everybody. It hides the board in the screen; it is not a security rule, so do not rely on it to protect figures a user can already read in the apps."
+  - q: "Is the tile layout saved per user?"
+    a: "It is saved in the browser. Dragging tiles into a new order is remembered on that computer and browser only, not on the user's account, so a different browser shows the order set in the configuration."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ready-made dashboards answer the common questions. Every business also has two or three of its own: unpaid invoices for one customer group, receipts waiting from overseas vendors, or a monthly target the owner set at the start of the year. The Dashboard Builder (`wt_dashboard_builder`) covers those without a developer. You make a board, add tiles, and point each tile at a model with a measure, a filter and, for charts and lists, a field to group by. This chapter goes through every part of it, with the two boards built on the demo as worked examples.
+
+## Where it lives
+
+Installing the module adds a **Dashboards** app with three menus:
+
+- **Dashboards:** the boards themselves, one tab per board, with Refresh and Configure buttons.
+- **Configure Dashboards:** the list of boards, for designers.
+- **All Tiles:** every tile on every board in one list, for designers.
+
+Anyone with an internal user can view boards. To build them, add the person to the **Dashboard Designer** group on their user. The module also creates a **Business Overview** board with six tiles on contacts and users, so the app is never empty.
+
+<Shot src="/odoo-guides/odoo-dashboard-builder/builder-sales-pulse.webp" alt="Sales Pulse board built with the Odoo Dashboard Builder showing KPI tiles for confirmed revenue, open quotations, average order and unpaid invoices, a bar chart by salesperson and a top customers list" width={1440} height={900} caption="Sales Pulse, a board built on the demo from Sales, Invoicing and CRM data." />
+
+## The four tile types
+
+| Type | What it shows | Needs |
+|---|---|---|
+| KPI | One number with an icon and a label | A measure |
+| Bar | Horizontal bars, one per group, largest first | A measure and a group-by field |
+| List | A ranked list of groups with their value | A measure and a group-by field |
+| Progress | The value as a share of a target, with a bar | A measure and a target value |
+
+Every tile has a **measure**: **Count** of records, or **Sum**, **Average**, **Minimum** or **Maximum** of a numeric field (integer, decimal or money). For anything but Count you must pick the field, and bar and list tiles refuse to save without a group-by field.
+
+The **group-by** field can be a link to another record (salesperson, customer, stage), a selection (status), a date or date-time (grouped by month), a text field or a yes/no field. Bar and list tiles show the top groups by value; **Limit** sets how many, eight by default.
+
+Each tile also has a **colour** (teal, blue, green, orange, purple, red or slate), an **icon** for KPI tiles using a Font Awesome name such as fa-users, and a **size**: small, medium, large or wide.
+
+## Building a board, step by step
+
+1. Open **Dashboards, Configure Dashboards** and create a board. Give it a name, a sequence (lower comes first in the tabs) and a short description.
+2. Leave **Groups** empty for everyone, or pick the groups that should see the tab.
+3. Add tiles in the tiles list. For each one choose the **type**, the **model**, the **measure** and its field, and for bar and list tiles the **group-by** field.
+4. Add a **filter** if the tile should count only some records. The tile form uses Odoo's own rule editor: "Match all of the following rules", then a field, an operator and a value, with a live count of the matching records underneath. Behind it the filter is an Odoo domain, for example `[('state','=','sale')]` for confirmed sales orders, which you can also type in developer mode.
+5. Save and open **Dashboards**. The new board is a tab. Drag tiles into the order you want.
+
+<Shot src="/odoo-guides/odoo-dashboard-builder/builder-config-form.webp" alt="Dashboard configuration form in the Odoo Dashboard Builder with name, sequence, groups and the list of tiles" width={1440} height={900} caption="A board in Configure Dashboards: its settings and its tiles." />
+
+<Shot src="/odoo-guides/odoo-dashboard-builder/builder-item-bar.webp" alt="Tile form in the Odoo Dashboard Builder for a bar chart with model, measure, measure field, group by field, filter domain, limit, colour and size" width={1440} height={900} caption="A bar tile: revenue from confirmed orders in the last 90 days, grouped by salesperson." />
+
+### Filters with dates
+
+The filter can use `context_today()`, `relativedelta`, `datetime` and `uid` (the viewer's user id). That is enough for rolling periods. The demo's 90-day tiles use:
+
+```
+[('state','=','sale'), ('date_order','>=', (context_today() - relativedelta(days=90)).strftime('%Y-%m-%d'))]
+```
+
+The tile form's rule editor cannot preview a filter like this and shows Invalid domain under it, as in the screenshot above; the board still evaluates it correctly, so check the figure on the board rather than in the form. For "my own records" use `[('user_id','=',uid)]`. There is no period switch on the board, so a tile's period lives in its filter.
+
+### A target tile
+
+A progress tile divides the value by its **Target Value**. The demo's Quarterly Target tile sums confirmed revenue over 90 days against 900,000 and shows the share as a bar. Change the target in the tile when the quarter's number changes.
+
+## The second demo board
+
+**Stock and Purchasing** shows what can be done without any stock-specific module: receipts and deliveries waiting (counts of transfers by type and state), bills to pay (the open amount of posted vendor bills), purchase orders in 90 days, spend by vendor as bars, units on hand by product as a list, and receipts by month as a wide bar tile grouped on the done date.
+
+<Shot src="/odoo-guides/odoo-dashboard-builder/builder-stock-and-purchasing.webp" alt="Stock and Purchasing board built with the Odoo Dashboard Builder with receipts waiting, deliveries waiting, bills to pay and spend by vendor" width={1440} height={900} caption="Stock and Purchasing: tiles on transfers, bills, purchase orders and stock." />
+
+<Callout title="Limits of the builder">A tile works out its figure by loading every matching record, so a tile on a very large model such as journal items or stock moves without a filter can be slow; add a filter. A filter that cannot be read is ignored and the tile then counts the whole model, so check a new tile's figure against the app. Tiles grouped by month are ordered by value, not by date. The Groups field hides a board's tab but does not stop someone opening it another way, so it is not a security setting. Tile order after dragging is kept in the browser, not on the user. In the current version, users without the Access Rights technical group also need read access to Odoo's model and field lists for tiles to load; on the demo that access is granted to internal users.</Callout>
+
+## When to build and when to buy
+
+Use the builder for counts, sums, rankings and targets on any model, especially your own custom ones. Use the ready-made boards when you want a period switch, comparisons and charts over time, which tiles do not do. Many businesses run both: the app boards for each department and one builder board for the owner with the five figures they ask about every day. The other boards are described in the [suite overview](/odoo-guides/odoo-dashboards/).

@@ -1,0 +1,97 @@
+---
+title: "Odoo project dashboard: done, overdue and due-today tasks, workload and completion by project"
+metaTitle: "Project Dashboard in Odoo: Tasks and Overdue"
+description: "An Odoo 19 project dashboard: active projects, done and overdue tasks, tasks due today, workload per assignee, completion by project and an overdue list."
+targetQuery: "odoo project dashboard"
+category: "Operations"
+summary: "The Project Analytics board card by card, how it decides a task is done or overdue, the project filter, and the stage setup it needs before its figures make sense."
+published: 2027-02-11
+updated: 2027-02-11
+series: "odoo-dashboards"
+seriesOrder: 5
+modules:
+  - name: "Project Dashboard"
+    technical: "wt_project_dashboard"
+    note: "USD 20, needs Project"
+demo:
+  url: "https://dashboards-demo.way4tech.com/"
+  label: "Dashboards demo"
+related: ["odoo-dashboards", "odoo-project-management", "odoo-project-boards-timeline-workload", "odoo-project-approvals-automation"]
+linkFrom: ["/products/wt-project-dashboard/"]
+sources: []
+faqs:
+  - q: "How does the project dashboard know a task is done?"
+    a: "By its stage. A task counts as done when its stage is folded in the kanban view, which is how stages such as Done or Cancelled are normally set up. The task's own status, the green tick or Done state in Odoo 19, is not read. Make sure your finished stage is folded."
+  - q: "Does the project dashboard show timesheet hours?"
+    a: "No. It counts tasks: done, overdue, due today, by stage, by assignee and by project. Hours logged, billable time and budgets are not on this board, even though the store listing mentions a timesheets tab."
+  - q: "Can I see one project only?"
+    a: "There is a project selector next to the period, but in this version choosing a project makes the headline figures fail to load. Keep it on All Projects and use the Completion tab, which compares projects side by side, until the module is fixed."
+  - q: "Does it respect private projects?"
+    a: "No. Figures are counted for the whole company straight from the database, so a project user sees counts and task names from projects they are not a follower of. Limit the menu to managers if that matters."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A project manager with five projects running does not need another kanban. They need to know, before stand-up, which tasks went past their deadline yesterday, what is due today, who is carrying too much, and which project is falling behind. Odoo's Project app holds every task and deadline; the Project Analytics board counts them and puts the answers on one screen. This chapter covers what each card counts, how the board decides a task is finished, and the one setting in your stages that the whole board depends on.
+
+## Opening the board
+
+Install **Project Dashboard** (`wt_project_dashboard`) and **Project Analytics** appears for project users and managers. It opens on This Month. Next to the period there is a project selector listing the active projects.
+
+<Shot src="/odoo-guides/odoo-project-dashboard/project-year-top.webp" alt="Project Analytics dashboard in Odoo 19 with active projects, total tasks, done tasks, overdue tasks, due today, team members, no deadline, high priority and created this period" width={1440} height={900} caption="The Project board for the demo company's five projects." />
+
+<Callout title="Leave the project selector on All Projects">In this version, choosing a single project in the selector makes the headline figures fail to load, because of a fault in how the filter is passed to the database. The charts below would filter correctly, but the board stops at the error. Keep it on All Projects and compare projects on the Completion tab until the module is updated.</Callout>
+
+## Done means a folded stage
+
+The board decides a task is finished from its **stage**: a task in a stage that is **folded** in the kanban view counts as done. That is how Odoo's own Done and Cancelled stages are set up, but stages you create yourself are not folded unless you tick it.
+
+Before you trust any figure:
+
+1. Open a project's kanban, hover the column of your finished stage, open its settings and tick **Folded in Kanban**.
+2. Do the same for any cancelled or archived-style stage you use.
+3. Check that tasks are moved to that stage when they are finished. Marking a task done with the Odoo 19 status button without moving it leaves it in an open stage, and the board will still count it as open, and as overdue if its deadline has passed.
+
+## What the nine cards count
+
+All cards count tasks and projects of the current company, plus those with no company set.
+
+- **Active Projects:** projects that are not archived.
+- **Total Tasks:** all active tasks, all time.
+- **Done Tasks:** active tasks in a folded stage, with the completion percentage under it.
+- **Overdue Tasks:** tasks whose deadline is before today and whose stage is not folded.
+- **Due Today:** tasks with today's deadline, in any stage.
+- **Team Members:** how many different people are assigned to active tasks.
+- **No Deadline:** open tasks with no deadline at all.
+- **High Priority:** open tasks starred as high priority.
+- **Created This Period:** tasks created in the selected period. This is the only card that follows the period.
+
+Most of the board is therefore a picture of now, not of the period. The period changes what the trend and per-assignee charts cover.
+
+## The tabs
+
+1. **Overview:** a Task Creation Trend, by day up to 60 days and by month beyond, and a Recent Tasks table with the 20 latest tasks created in the period, with Export CSV.
+2. **By Stage:** a doughnut of tasks in each stage now.
+3. **By Assignee:** tasks created in the period per person. A task with two assignees counts for both.
+4. **Completion:** the share of each project's tasks in a folded stage, for the ten largest projects. This is the project-by-project view.
+5. **Overdue:** the Overdue Tasks table with task, project, deadline, assignee and a priority dot, with Export CSV. This is the stand-up list.
+6. **Comparison:** tasks created per day in this period and the period before.
+
+<Shot src="/odoo-guides/odoo-project-dashboard/project-tab-overdue.webp" alt="Overdue Tasks table in the Odoo project dashboard with project, assignee, deadline and days overdue" width={1440} height={900} caption="The Overdue tab: what went past its deadline, and whose it is." />
+
+<Shot src="/odoo-guides/odoo-project-dashboard/project-tab-completion.webp" alt="Project Completion Rates bar chart in the Odoo project dashboard" width={1440} height={900} caption="Completion: how far each project has come, by share of tasks done." />
+
+<Callout title="Other limits">Total Tasks, Team Members and the other task counts include personal to-dos, tasks with no project, such as the welcome to-do Odoo creates for each new user. A task assigned to two people appears twice in the Recent and Overdue tables. The CSV export of the Overdue table has a Stage column that comes out empty. In the Comparison chart the two periods run one after the other along the same date axis instead of on top of each other. There is no assignee filter and no timesheet figure on this board, and the counts include private projects for anyone who can open the menu.</Callout>
+
+## A morning routine that works
+
+1. Open **Overdue**. Go down the list by days late; either the deadline moves or the task does.
+2. Check **Due Today** and open it to see the list.
+3. Open **By Assignee** on Last 7 Days to see who took on the most new work this week.
+4. Once a week, open **Completion** and ask why the lowest project is lowest.
+
+## What the board does not replace
+
+The board counts; it does not plan. Moving a deadline, reassigning a task or changing its stage still happens in the Project app, and every card opens the matching task list so you can get there in one click. For effort, hours and budgets, use the Project app's own timesheet reports, which come with the Timesheets app; this board has no hours figure. And because it counts across all projects of the company, a team that shares stages between projects should agree what Done means once, so one project's folded stage means the same as the next.
+
+Keep deadlines on tasks. A task with no deadline can never be overdue, so a high No Deadline count means the overdue figure is hiding work. For setting projects up in the first place, see the [Odoo project management guide](/odoo-guides/odoo-project-management/) and the [boards, timeline and workload guide](/odoo-guides/odoo-project-boards-timeline-workload/). The [suite overview](/odoo-guides/odoo-dashboards/) lists every board.

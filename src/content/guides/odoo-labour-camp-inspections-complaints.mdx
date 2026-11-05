@@ -1,0 +1,117 @@
+---
+title: "Labour camp inspections, complaints, incidents and the gate register in Odoo"
+metaTitle: "Inspections, Complaints and Incidents"
+description: "Run camp inspections from your own checklists with critical points, log complaints against a promise time, record incidents and keep the gate book in Odoo."
+targetQuery: "labour camp inspection checklist complaints odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "Inspection checklists with critical points that fail a sheet on their own, the complaint log and its promise time, the incident register with reportable incidents that cannot close until notified, and the gate book that chases anybody never signed out."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-labour-camp-management"
+seriesOrder: 4
+modules:
+  - name: "Labour Camp Management"
+    technical: "wt_labour_camp"
+    note: "USD 200, Odoo 19 Community, installs Employees and Invoicing"
+demo:
+  url: "https://labourcamp-demo.way4tech.com/"
+  label: "Labour Camp demo"
+related: ["odoo-labour-camp-management", "odoo-worker-visa-document-expiry", "odoo-help-desk-work-orders-facility"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "When does a camp inspection count as failed?"
+    a: "An inspection passes only when at least one point was marked, the score is 80 percent or more, and no point flagged as critical has failed. One failed critical point, such as a blocked fire exit, fails the sheet whatever the score is."
+  - q: "Can a complaint be raised anonymously?"
+    a: "Yes. Raised By is optional on a complaint. Leave it empty and the complaint is kept against the camp and the room without a name."
+  - q: "Which incidents have to be notified before they can be closed?"
+    a: "Any fire, any death, and anything marked Serious or Major is ticked Reportable to the Authority automatically. The tick can be changed by hand. A reportable incident cannot be closed until the date it was notified is filled in, and no incident can be closed with an empty action taken box."
+  - q: "Can workers raise complaints from their phones?"
+    a: "No. There is no portal or worker app in the module. Complaints, gate entries and incidents are recorded by camp staff in the Odoo back office."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A camp keeps its licence by being able to show three things on the day somebody turns up unannounced: that someone walks the blocks on a schedule and writes down what they find, that when a man complains about the air conditioning it is recorded and dealt with, and that the gate book and the incident book are complete. On paper those registers are unsearchable, and the page that matters is always the one that is missing. This chapter of the [labour camp management series](/odoo-guides/odoo-labour-camp-management/) covers the four of them under the **Welfare** menu.
+
+## Inspection checklists
+
+Write each checklist once under **Configuration, Inspection Checklists**. A checklist has a name, a kind (Hygiene and Cleanliness, Health and Safety, Fire Safety, Kitchen and Mess, Room Condition or Welfare) and a list of points. Tick **Critical** on the points that should fail the whole sheet on their own.
+
+<Shot src="/odoo-guides/odoo-labour-camp-inspections-complaints/checklist.webp" alt="Inspection checklist in Odoo called Fire safety check, kind Fire Safety, with six points such as fire exits clear, extinguishers in date, fire alarm panel healthy, no cooking or heaters in rooms, emergency lights and assembly point sign, three of them ticked critical" width={1440} height={900} caption="A fire safety checklist: three critical points, three that only lower the score." />
+
+A checklist left without a company is shared across every company in the database, so a group can write one hygiene sheet and use it in every camp.
+
+## Doing an inspection
+
+**Welfare, Inspections** (Camp Boss and Accommodation Manager):
+
+1. **New**, pick the camp and, for a single building, the block. Leave the block empty for the whole camp.
+2. **Choose the checklist.** Its points are copied onto the inspection, with their critical flags.
+3. **Set who inspected.** Inspected By defaults to you. For a municipality or client audit, put the visitor's name in External Inspector.
+4. **Mark every point** Pass, Fail or Not Applicable, and give a failed point a comment and, where it is one room's fault, the room.
+5. **Complete.** Refused while any point is still Not Checked. The chatter records the score and the number failed.
+
+<Shot src="/odoo-guides/odoo-labour-camp-inspections-complaints/inspection-failed.webp" alt="Completed fire safety inspection at Desert Star Camp 2 with a score of 83.3 percent, one failed point which is critical, the passed box unticked, and a findings note about a rear exit chained shut by the night guard" width={1440} height={900} caption="83 percent and still a fail: the rear exit was chained shut, and that point is critical." />
+
+The **score** is the points passed over the points marked Pass or Fail; Not Applicable points are left out of it. The inspection **passes** only with a score of 80 percent or more and no failed critical point. A blocked fire exit is not offset by clean ablutions.
+
+An inspection still in Draft can be cancelled, and a cancelled one set back to draft with Reset to Draft. A completed inspection cannot be reopened, so check the sheet before pressing Complete.
+
+The **Compliance and Cost** board shows the average score of completed inspections in the period with a verdict (Passing from 90 percent, Marginal from 80, Failing below), and the Camp Board counts inspections done and failed.
+
+## Complaints
+
+**Welfare, Complaints** is open to every camp role, so the man on the gate or in the mess can log one. A complaint has a camp, optionally a room, a category, a description, a priority (Normal or Urgent), who it is assigned to, and Raised By, which is optional on purpose: a complaint box that demands a name stays empty.
+
+The categories are Maintenance, Cleanliness, Food and Mess, Water, Electricity or AC, Transport, Safety, Harassment or Conduct, and Other.
+
+<Shot src="/odoo-guides/odoo-labour-camp-inspections-complaints/complaints-board.webp" alt="Complaints kanban in Odoo with columns New, Being Dealt With, Resolved, Closed and Rejected, and cards showing the complaint number, category, camp and room, hours open and an urgent star" width={1440} height={900} caption="The complaints board, filtered to open complaints, one column per state, urgent ones starred." />
+
+A complaint moves through its states with one button at a time:
+
+- **Take It On** moves New to Being Dealt With.
+- **Resolved** needs the Resolution box filled in first. Say what was done, or the button refuses. It stamps the closing time.
+- **Close** files a resolved complaint.
+- **Reject** is for something that will not be done, at any point before it is resolved. It also stamps the closing time.
+
+The promise is set in Labour Camp settings as **Answer a Complaint Within**, 48 hours by default. The Camp Board's **Complaints past the promise** tile counts New and Being Dealt With complaints raised longer ago than that, and opens them.
+
+<Callout title="Two complaint details that do not behave as described">The Open For (h) column is worked out when the complaint is raised or closed, not as time passes, so on an open complaint it shows the hours at the moment it was saved. Use the raised date, or the board's past the promise count, for how long it has really waited. And the access rule meant to hide who raised a complaint from Camp Staff only hides rejected complaints; the Raised By name is still visible to staff on the others, so leave it empty when a man asks not to be named.</Callout>
+
+There is no link from a complaint to a maintenance system. The module description mentions turning an AC complaint into a work order in Facility Management CAFM, but the code has no such connection. If you run [CAFM](/odoo-guides/odoo-cafm-facility-maintenance/), raise the work order there and note its number in the resolution.
+
+## Incidents
+
+**Welfare, Incidents** is the incident book: injuries, illness or outbreaks, fire or alarm, fights or assault, theft, damage to property, absconding, death and other. Each records the camp, block and room, when it happened, the severity (Minor, Serious or Major), the people involved, who reported it, what happened, and whether first aid was given, the man went to hospital or the police attended.
+
+**Reportable to the Authority** ticks itself for any fire, any death, and anything Serious or Major. It can be changed by hand.
+
+<Shot src="/odoo-guides/odoo-labour-camp-inspections-complaints/incident-open.webp" alt="Incident in Odoo at Desert Star Camp 2: a serious injury in Investigating state, a man who fell from a top bunk, first aid given and taken to hospital, reportable to the authority ticked, the notified on date still empty, and the people involved listed" width={1440} height={900} caption="A serious injury under investigation. Reportable is ticked, so it cannot close until the notified date is recorded." />
+
+Open, Investigating, Closed. **Close** is refused in two cases: when the What Was Done box is empty, because an incident closed with an empty box is the one nobody can answer for later; and when the incident is reportable and **Notified On** is empty. Record the date and the authority's reference, or untick reportable and say why in the action taken. **Reopen** puts a closed incident back to Open.
+
+The scheduled action **Camp: chase serious incidents still open** runs daily and puts a to do activity for the camp boss on every Serious or Major incident that is not closed.
+
+## The gate register
+
+**Welfare, Gate Register** replaces the hardback book by the gate. Each entry has the visitor's name, a kind (Visitor, Inspector, Contractor, Delivery, Medical or Government Official), their organisation, the ID they showed, phone, vehicle, who they are here to see, the block, the purpose, the time in and out, the pass number and who escorted them.
+
+<Shot src="/odoo-guides/odoo-labour-camp-inspections-complaints/gate-register.webp" alt="Gate Register list in Odoo with visitors to both camps such as a municipality inspector, a pest control technician, catering and water deliveries and a visiting doctor, showing kind, organisation, purpose, time in, time out, an On Site toggle and a sign out icon on the rows still inside" width={1440} height={900} caption="The gate book: who came, why, and who is still on site." />
+
+The **ID Shown** field sits behind the same access right as an occupant's passport number. The guard records it but cannot read anybody else's. **Sign Out** on the row or the form stamps the time out. Inspectors and officials are their own kinds so that the entry anybody asks about later is easy to filter.
+
+The scheduled action **Camp: chase anybody still signed in at the gate** runs daily and gives the camp boss an activity for every entry still on site, because a gate book full of people who never signed out is worth nothing in a fire.
+
+<Callout title="The incident and gate reminders repeat every day">Unlike the papers and permit reminders, these two jobs do not check for an existing activity before adding one. A serious incident left open for a week, or a visitor never signed out, gives the camp boss a new activity each day. The gate job also chases anybody on site at the moment it runs, however recently they arrived. Close the incident or sign the visitor out to stop it.</Callout>
+
+## Who sees what
+
+| Role | Welfare access |
+|---|---|
+| Camp Staff | Raise and read complaints, read incidents, keep the gate register |
+| Camp Boss | Everything above, plus inspections, closing complaints and incidents, ID numbers at the gate |
+| Accommodation Manager | Everything, including permits and certificates and checklists |
+
+That covers the welfare side. The [hub page](/odoo-guides/odoo-labour-camp-management/) has the setup steps and the limits of the module in one place, and the [Labour Camp demo](https://labourcamp-demo.way4tech.com/) has thirteen inspections, fourteen complaints, eight incidents and a day at the gate to look through; [ask us for a login](/contact/).

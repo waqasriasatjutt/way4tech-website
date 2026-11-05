@@ -1,0 +1,145 @@
+---
+title: "Billing contractors for labour camp beds in Odoo: per bed, per man or per man night, plus mess, buses and cost per head"
+metaTitle: "Contractor Billing and Cost per Head"
+description: "Bill each contractor for camp beds per bed held, per man or per man night, add mess and buses on top, raise the invoice and see the cost per man in Odoo."
+targetQuery: "labour camp accommodation billing contractor odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "Accommodation agreements per contractor, the monthly charge worked out from the bed allocations, mess and transport billed on top, the customer invoice, and the meal headcounts, bus runs and utility readings behind the cost per head."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-labour-camp-management"
+seriesOrder: 3
+modules:
+  - name: "Labour Camp Management"
+    technical: "wt_labour_camp"
+    note: "USD 200, Odoo 19 Community, installs Employees and Invoicing"
+demo:
+  url: "https://labourcamp-demo.way4tech.com/"
+  label: "Labour Camp demo"
+related: ["odoo-labour-camp-management", "odoo-labour-camp-bed-allocation", "odoo-construction-ra-bill-job-costing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is the monthly accommodation charge worked out?"
+    a: "From the bed allocations of the men billed under the agreement that overlap the month. Per Bed Held bills the beds reserved on the agreement times the rate. Per Man Accommodated bills the number of different men times the monthly rate. Per Man Night bills the nights in the month times the nightly rate."
+  - q: "Is the invoice posted automatically?"
+    a: "No. A charge is drafted, a person approves it, and Raise the Invoice creates a draft customer invoice with one line each for accommodation, mess, transport and utilities where they have an amount. You confirm it in Invoicing like any other invoice."
+  - q: "Can food and transport be billed separately from the bed?"
+    a: "Yes. Untick Mess Included or Transport Included on the agreement. The charge then adds that contractor's share of the camp's meal costs or bus costs for the month, shared out by headcount."
+  - q: "Is there a button to work out this month's charges?"
+    a: "Not in the current version. Charges are drafted by the scheduled action Camp: draft last month's accommodation charges, which ships switched off and runs on the first of the month for the month before. A charge can also be created by hand with the figures typed in."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A camp is almost never a cost centre on its own. The beds belong to a main contractor and the men to its subcontractors, or the camp belongs to the group and each project pays for the men it has on site, or the camp is run for a client and every bed is billed on. Either way somebody receives a bill per man per month, and when that bill is built from a headcount counted by walking the blocks, the contractor disputes it and nobody can prove the number. This chapter of the [labour camp management series](/odoo-guides/odoo-labour-camp-management/) turns the allocations from the [bed allocation chapter](/odoo-guides/odoo-labour-camp-bed-allocation/) into an agreement, a monthly charge and an Odoo invoice, then looks at what the camp costs to run.
+
+## The agreement
+
+**Billing, Agreements** holds one agreement per contractor per camp. The Billing menu is shown to the Camp Boss and Accommodation Manager roles.
+
+| Field | What it does |
+|---|---|
+| Billed To | The contractor, subcontractor or group company that pays |
+| Camp | The camp the beds are in |
+| Basis | Per Bed Held, Per Man Accommodated or Per Man Night |
+| Rate | Per month, or per night on a nightly basis |
+| Beds Reserved | Only for Per Bed Held. An agreement on that basis with no beds is refused, because it would bill nothing |
+| Mess Included, Transport Included | Both ticked by default. Untick to bill that service on top |
+| Start and End dates | The period the agreement covers |
+
+<Shot src="/odoo-guides/odoo-labour-camp-contractor-billing/agreement-per-bed.webp" alt="Accommodation agreement ACC/2026/0001 in Odoo for Qamar Crest Contracting LLC at Desert Star Camp 1, Running, billed Per Bed Held with 40 beds reserved at 450 AED, mess and transport included, with smart buttons for the men under it and the monthly charges and the billed total" width={1440} height={900} caption="A main contractor holding forty beds whether they are slept in or not." />
+
+Which basis to use:
+
+| Basis | The charge is | Suits |
+|---|---|---|
+| Per Bed Held | Beds reserved times the monthly rate | A main contractor holding a block for a contract |
+| Per Man Accommodated | Number of men times the monthly rate | Simple monthly pricing per head |
+| Per Man Night | Nights slept times the nightly rate | Short or mixed stays, and bills that get disputed |
+
+An agreement starts as Draft. **Start** sets it Running, and only running agreements are charged. **End** sets it Ended and fills today as the end date if none was set. **Cancel** is refused once any of its charges has been invoiced: end it instead, or the ledger and the record disagree.
+
+### Putting men under an agreement
+
+Each occupant has a **Billed Under** field. That is what ties a man to an agreement, not his employer field, so a man can be carried by the camp itself (leave it empty) or billed to a different company from the one that sponsors him. The agreement's **Their Men** tab and smart button list everybody billed under it. Nothing checks that the man's employer and the agreement's contractor match, so set Billed Under when you register the man.
+
+## Month end: the charges
+
+A **monthly charge** is one record per agreement per month, holding the workings and the amount to bill. On the demo, **Billing, Monthly Charges** shows three months of them at every stage.
+
+<Shot src="/odoo-guides/odoo-labour-camp-contractor-billing/monthly-charges.webp" alt="Monthly Charges list in Odoo with charges for August, September and October 2026 per agreement, showing the date, agreement, contractor billed, men, man nights, the amount to bill and a Draft, Approved or Invoiced status, with the total" width={1440} height={900} caption="Three months of charges: older months invoiced, October still being checked." />
+
+The charges are drafted by the scheduled action **Camp: draft last month's accommodation charges**. It ships switched off, so a camp that bills nobody does not see charges appear. Switch it on in Settings, Technical, Scheduled Actions (developer mode), and on the first of each month it drafts a charge for every running agreement that covered the previous month. Run again for the same month, it refreshes the figures on charges still in Draft and leaves approved or invoiced ones alone. One agreement can only have one charge per period.
+
+For each agreement the job collects the allocations of the men billed under it that overlap the month and works out:
+
+- **Men**: the number of different men with an allocation in the month.
+- **Man Nights**: for each allocation, the nights between the later of its start and the first of the month and the earlier of its end and the last of the month.
+- **Accommodation**: beds reserved times rate, men times rate, or man nights times rate, by basis.
+- **Mess**, if the agreement does not include it: the camp's meal costs for the month times this contractor's men divided by the camp's men in camp.
+- **Transport**, if not included: each route's daily cost for each day it ran in the month, shared the same way.
+
+<Shot src="/odoo-guides/odoo-labour-camp-contractor-billing/charge-approved.webp" alt="Monthly charge for Duneway MEP Services LLC for October 2026 in Approved state, per man night agreement with 20 men and 587 man nights at 19 AED, accommodation 11,153 AED, transport billed on top 7,614.29 AED and a total to bill of 18,767.29 AED, with a Raise the Invoice button" width={1440} height={900} caption="A per man night charge with the buses billed on top, approved and ready to invoice." />
+
+<Callout title="Three things to check on a charge before approving it">The allocation search does not filter by state, so a cancelled reservation that overlaps the month is counted as a man, and on a nightly agreement its nights run to the end of the month. The night count stops at the last day of the month rather than after it, so a man in camp for all of October is counted for 30 nights, not 31. And the Utilities amount on a charge is never filled by the job; type it in if you bill utilities. The mess and transport share also divides by the men in camp on the day the job runs, not across the month. Read Men and Man Nights against the Bed Allocations list before you press Approve.</Callout>
+
+### Approve, then invoice
+
+1. **Approve.** A draft charge is checked and approved. The module asks for this step on purpose: the headcount is worth a second look before it goes to a contractor.
+2. **Raise the Invoice.** Only an approved charge can be invoiced. It creates one customer invoice for the agreement's contractor, dated today, with the charge's name as the source and a narration such as "20 men, 587 man nights, Desert Star Camp 2, Jebel Ali." There is one line for accommodation (with the month and the basis in the label), and one each for mess and catering, transport and utilities when they have an amount.
+3. **Confirm the invoice** in Invoicing. It is created in draft; nothing is posted by the camp module.
+4. **Open the Invoice** on the charge takes you back to it later.
+
+<Shot src="/odoo-guides/odoo-labour-camp-contractor-billing/accommodation-invoice.webp" alt="Printed Odoo tax invoice from Desert Star Accommodation LLC to Qamar Crest Contracting LLC with one line, Accommodation, October 2026 (Per Bed Held), 18,000 AED plus 5 percent VAT, the source charge reference and a narration of 35 men and 1,028 man nights" width={1440} height={900} caption="The invoice the charge raises: an ordinary Odoo customer invoice with the workings as lines." />
+
+The lines use the company's **Accommodation Product** and take that product's taxes for the company, which is how VAT lands on the invoice. Without a product the lines still carry the label and amount, but no tax and no product income account. In the current version that product field is not on the settings page or on any other screen, so it has to be set by whoever installs the module (on the demo it was set for you). Until it is, add the VAT on the draft invoice by hand before confirming it.
+
+A charge can be cancelled while it is a draft or approved. Once invoiced, cancel or credit the invoice first.
+
+## What the camp costs to run
+
+The same records that feed the bill also tell you what a man costs you. Three registers sit under **Services**.
+
+### Mess and meal headcount
+
+**Configuration, Mess and Catering** holds each mess: its camp, the caterer (empty if the camp cooks for itself), a rate per head for breakfast, lunch and dinner, the number of seats and the food licence expiry.
+
+**Services, Meal Headcount** is one line per mess, day and meal, with **Expected** (filled from the camp's occupied beds when the line is created, so the kitchen has a number before the men arrive), **Actually Served**, the **Over-cooked %** and the **Cost**: heads served, or expected if nothing was served yet, times the rate for that meal. A meal can only be counted once per day. The pivot view totals cost and waste by camp, week or meal.
+
+<Shot src="/odoo-guides/odoo-labour-camp-contractor-billing/meal-pivot.webp" alt="Meal Headcount pivot view in Odoo with meals actually served and their cost for breakfast, dinner and lunch, split by the two camps, in AED" width={1440} height={900} caption="Meal headcounts in the pivot: what was cooked against what was eaten, and what it cost." />
+
+### Buses
+
+**Configuration, Transport Routes** holds each route: the site it runs to, departure and return times, seats, the bus plate, the driver, the transport contractor if the bus is hired, and the **daily cost**.
+
+**Services, Bus Runs** logs one run per route, day and direction (To Site or Back to Camp) with the number on board. **Full %** is on board over seats, and a run with more men than seats is flagged **Overloaded**, because that is the most common finding against a labour transport contractor. The Camp Board counts overloaded runs for the period.
+
+### Utilities
+
+**Services, Utilities** (Accommodation Manager only) takes a reading per camp, or per block where blocks have their own meter, for electricity, water, gas or diesel: the date, the meter reading, the consumption, the invoiced amount and the invoice reference. Leave consumption empty and it is worked out from the previous reading on the same meter. **Men in Camp** is filled from the camp's occupied beds on the day, and **cost per head** is the amount over that.
+
+## The cost per head
+
+**Dashboards, Compliance and Cost** answers the question a contractor's quote depends on: what does a man cost us a month here.
+
+<Shot src="/odoo-guides/odoo-labour-camp-contractor-billing/compliance-and-cost.webp" alt="Compliance and Cost dashboard in Odoo with tiles for licences expired, renewals due, men with expired papers and inspection score, then rent, mess, utilities and cost per man in AED for the current month" width={1440} height={900} caption="The compliance board's cost row: rent, mess and utilities for the period over the men in camp." />
+
+For the chosen period (this month, quarter or year) and, optionally, one camp:
+
+- **Rent** is each camp's annual rent divided by twelve, times the part of the period that has passed.
+- **Mess** is the cost of every meal counted since the start of the period.
+- **Utilities** is every utility amount dated in the period.
+- **Cost per man** is the total over the men in camp today.
+
+<Callout title="The buses are not in the cost per head">The board's total is rent, mess and utilities only. Bus runs and route costs feed the charges and the overloaded count, but not the cost per man, even though the module description lists transport there. Early in a month the figure also leans heavily on whichever utility bills are already dated in it, since rent is only counted for the days gone. Compare full months.</Callout>
+
+## Where the money side stops
+
+- No contract document, deposit or security cheque is kept on the agreement.
+- No rate changes inside an agreement: a new rate means ending one agreement and starting another.
+- No credit notes, disputes or payments in the camp module; those are ordinary Invoicing work.
+- No pass through to project costing. If the contractor wants accommodation against each project, see the [construction job costing guide](/odoo-guides/odoo-construction-ra-bill-job-costing/).
+
+The [last chapter](/odoo-guides/odoo-labour-camp-inspections-complaints/) covers inspections, complaints, incidents and the gate book. The [Labour Camp demo](https://labourcamp-demo.way4tech.com/) has seven agreements and three months of charges to look through; [ask us for a login](/contact/).

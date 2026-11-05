@@ -1,0 +1,128 @@
+---
+title: "Cloud kitchen delivery and aggregator orders in Odoo 19: promised times, riders and channel references"
+metaTitle: "Delivery, Aggregators and Riders"
+description: "Takeaway, delivery and aggregator orders for an Odoo 19 cloud kitchen: promised time, late flag, Talabat-style references, delivery fees and riders."
+targetQuery: "odoo cloud kitchen aggregator orders riders"
+category: "Industry"
+summary: "How the Restaurant Management module handles the orders that never sit at a table: takeaway, phone delivery and aggregator orders with their own reference, the promised time and how lateness is decided, the delivery fee on the invoice, and riders with their status, deliveries and on-time rate."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-cloud-kitchen-qr-table-ordering"
+seriesOrder: 2
+modules:
+  - name: "Restaurant Management, Cloud Kitchen and QR Table Ordering"
+    technical: "wt_restaurant_management"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://restaurant.way4tech.com/"
+  label: "Restaurant and cloud kitchen demo"
+related: ["odoo-restaurant-delivery-online-orders", "odoo-restaurant-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is the promised delivery time worked out?"
+    a: "When the order is sent to the kitchen, the promised time is the send time plus the longest prep time of any dish on the order, plus 15 minutes for delivery and aggregator orders. Staff can overwrite it with what the customer was actually told."
+  - q: "When is a delivery marked late?"
+    a: "When its delivered time, or its served time if it was not marked delivered, is after the promised time. The order is ticked Is Late and carries a red Late ribbon, and the rider's on-time rate counts it."
+  - q: "Are aggregator orders imported automatically?"
+    a: "No. They are entered by staff with order type Aggregator, the channel (Talabat, Deliveroo, Uber Eats, Careem, foodpanda, Swiggy, Zomato or Other) and the app's own order number, which is required. There is no API connection to any aggregator."
+  - q: "Can a rider use Odoo on their phone?"
+    a: "The module is built for it: link the rider record to an Odoo user with the Delivery Rider right and record rules limit that user to their own deliveries and rider record. Test the login before rollout, because that right does not include read access to outlets or menu items, which the order form shows."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A cloud kitchen makes its money on orders that never sit down. They arrive by phone or on an aggregator tablet, the customer is told a time, and the food leaves with a rider. Three things go wrong most often: the time promised is a guess, nobody knows which orders were late until the complaints come in, and at the end of the night the aggregator's statement does not match the kitchen's count. This chapter shows how the [Restaurant Management module](/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/) handles takeaway, delivery and aggregator orders on Odoo 19 Community.
+
+## A cloud kitchen outlet
+
+Start with the outlet. Under **Configuration, Outlets**, set the type to **Cloud Kitchen**. It has no floors or tables and normally no service charge, but it does need a **Delivery Fee Product** on the Billing tab, because the fee becomes its own invoice line. It has its own code, so its orders number separately from the dining room's: on the demo, Zaytoun Express is ZX and the grill is ZG. A kitchen that runs several brands can be several outlets in the same company, each with its own code, journal and receipt footer.
+
+## Takeaway
+
+A takeaway order is the simplest of the three. Instead of a table, the order has a **Customer** block: pick a saved contact, or just type a name and phone number. Picking a contact fills both, plus the address. From there it follows the same kitchen path as any other order: Send to Kitchen, the stations cook, Ready, Serve.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/takeaway-order.webp" alt="Odoo restaurant takeaway order ZG/ORD/2026/00064 sent to the kitchen, with a Customer block instead of a table and two queued lines" width={1440} height={900} caption="A takeaway order on the demo: a customer block instead of a table." />
+
+## Delivery
+
+A delivery order adds a **Delivery** block with the address, the **Rider** (chosen from the riders of that outlet), the **Delivery Fee**, and four times: promised, dispatched, delivered and whether it was late.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/delivery-order-rider.webp" alt="Odoo delivery order with a delivery address, rider Omar Haddad, a 3.00 delivery fee and the promised time, being prepared" width={1440} height={900} caption="A delivery being cooked: address, rider, fee and the time promised to the customer." />
+
+A delivery order can be saved as a draft without an address while the call is still going, but it cannot leave the kitchen without one.
+
+### The promised time
+
+When the order is sent to the kitchen, the module works out a **Promised Time**:
+
+> send time + the longest prep time of any dish on the order + 15 minutes for delivery and aggregator orders
+
+The prep time comes from each menu item, so a mixed grill at 22 minutes sets the pace for the whole bag. Staff can overwrite the promised time with whatever the customer was actually told. Takeaway orders get the same calculation without the 15 minutes.
+
+### Dispatch, delivered, late
+
+Two buttons close the loop:
+
+1. **Serve** on a delivery order stamps the **Dispatch Time**: the food has left the kitchen.
+2. **Delivered** stamps the delivered time, and serves the order first if nobody had.
+
+If the delivered time is after the promise, **Is Late** is ticked and the order carries a red Late ribbon. The Orders list shows late orders in red and has a **Late** filter, so a manager can open every late delivery of the week in one click and look for the pattern: one rider, one dish, one time of day.
+
+## Aggregator orders
+
+Set the order type to **Aggregator** and the channel to the app it came from: Talabat, Deliveroo, Uber Eats, Careem, foodpanda, Swiggy, Zomato or Other. A **Channel Reference** field appears and is required. It holds the app's own order number, so each order in Odoo can be matched to a line on the aggregator's statement.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/aggregator-order-talabat.webp" alt="Paid Odoo aggregator order on the Talabat channel with its channel reference, delivery address, rider and dispatch and delivered times" width={1440} height={900} caption="A Talabat order already delivered and paid, with the app's reference kept on it." />
+
+Aggregator orders also carry the delivery block and the delivery fee, and the kitchen ticket prints the channel and reference so the bag can be matched to the rider who comes to collect it.
+
+<Callout title="No connection to the apps">
+Orders are typed in by staff. The module does not pull orders from Talabat, Deliveroo, Uber Eats or any other app, does not push menus or prices to them, and does not record the aggregator's commission. Commission is reconciled from the app's own statement, using the channel reference to match the two.
+</Callout>
+
+## How much came from where
+
+Group the Orders list by **Channel** to see how many orders and how much money came through each app, the phone and the dining room. The same grouping works in **Reporting, Sales**, which counts billed and paid orders only and can be broken down by outlet, order type, rider or date.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/orders-by-channel.webp" alt="Odoo restaurant orders grouped by channel: walk-in, phone and Talabat, with counts and totals" width={1440} height={900} caption="The demo month grouped by channel: walk-in, phone and Talabat." />
+
+## The delivery fee on the bill
+
+The delivery fee is added to the total of delivery and aggregator orders, never to dine-in or takeaway. When the order is billed it becomes its own invoice line, labelled Delivery, on the outlet's Delivery Fee Product, with that product's taxes. If an outlet charges a delivery fee but has no product set, billing stops with a message naming the outlet, so set the product before the first order.
+
+## Riders
+
+**Delivery, Riders** lists every rider with their phone, vehicle, plate, home outlet, how many deliveries they have out now, how many they delivered today, their on-time rate and their status.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/riders-list.webp" alt="Odoo Riders list with two riders, their vehicle, home outlet, orders out now, delivered today, on time percentage and status" width={1440} height={900} caption="Two riders on the demo: one available, one on a delivery." />
+
+A rider record holds:
+
+- **Vehicle**: Motorbike, Bicycle, Car, E-Scooter or On Foot, with a **Plate / ID** and **Licence Expiry**.
+- **Status**: Available, On Delivery, On Break or Off Duty. It is set by hand; it does not change on its own when an order is dispatched.
+- **On Time (%)**: the share of the rider's last hundred deliveries that arrived by the promised time.
+- A **Deliveries** button that opens every order assigned to them.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/rider-form.webp" alt="Odoo rider form for Imran Qureshi with vehicle motorbike, plate, home outlet, status On Delivery and the Deliveries button" width={1440} height={900} caption="A rider: vehicle, status and the deliveries button." />
+
+### A login for riders
+
+Link the rider to an **Odoo User**, and give that user the **Delivery Rider** right under Restaurant. Record rules then limit that login to the orders where they are the rider and to their own rider record, so they do not see the dining room, other riders' runs or the accounts.
+
+<Callout title="Test a rider login first">
+The Delivery Rider right grants orders, order lines and the rider record, but not outlets or menu items, which the order form also shows. Sign in as a test rider and open a delivery before you hand the login out. If the form refuses, give the rider Floor Staff as well, or ask for the access to be widened.
+</Callout>
+
+## A day in a dark kitchen, end to end
+
+1. The phone rings: New order, type Delivery, pick or type the customer, add the dishes, Send to Kitchen. The promised time appears.
+2. A Talabat order lands: New order, type Aggregator, channel Talabat, type the app's order number, add the dishes, Send to Kitchen.
+3. The grill and the cold section work their columns of the kitchen display. When the last dish is ready, the order is Ready.
+4. Assign the rider, print the kitchen ticket for the bag if you use paper, press Serve when it leaves.
+5. Press Delivered when the rider confirms the drop.
+6. At close: filter Late, group by rider; then group by channel and match each aggregator's count against its statement.
+
+## Try it on the demo
+
+On the [demo](https://restaurant.way4tech.com/), open ZG/ORD/2026/00065, a delivery being cooked, and ZG/ORD/2026/00042, a Talabat order already paid. Then Delivery, Riders, open Imran Qureshi and press Deliveries. The next chapter covers [menu engineering and recipe costing](/odoo-guides/odoo-menu-engineering-recipe-costing/).

@@ -1,0 +1,130 @@
+---
+title: "Set up kitchen screens by POS category in Odoo 19: routing, colour bands, auto clear and target times"
+metaTitle: "Kitchen Screens, Categories and Stages"
+description: "Set up kitchen display screens for the Odoo 19 Point of Sale: routing by POS category and till, amber and red thresholds, auto clear, stages and targets."
+targetQuery: "odoo kitchen display by pos category"
+category: "Industry"
+summary: "Field by field set-up of the POS Kitchen Display System: POS categories, one screen per station with its tills and categories, behaviour and colour bands, the live tickets tab, stages that map onto four states, target preparation time per product, user rights and the auto clear job."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-kitchen-display-screen"
+seriesOrder: 1
+modules:
+  - name: "POS Kitchen Display System"
+    technical: "wt_pos_kitchen_display"
+    note: "USD 39, Odoo 19, needs only Point of Sale"
+demo:
+  url: "https://kds-demo.way4tech.com/"
+  label: "Kitchen display demo"
+related: ["odoo-kitchen-display-system", "odoo-restaurant-pos-setup"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo decide which kitchen screen an item goes to?"
+    a: "By the product's POS category. Each screen lists the categories it cooks, child categories included, and an item goes to every active screen in the company that takes its category and listens to the till it was sold on. A screen with Every Category ticked takes everything."
+  - q: "Can one screen listen to only some tills?"
+    a: "Yes. Fill the Point of Sale field on the screen with the tills it should listen to. Leave it empty and the screen listens to every till in its company, so adding a new till needs no change to the screens."
+  - q: "How long do served tickets stay on the screen?"
+    a: "Served tickets drop off the display as soon as they are served, unless Keep Served on Screen is ticked. A scheduled action every five minutes then archives served and cancelled tickets once the screen's Clear After delay has passed, 10 minutes by default. Archived tickets still count in every report."
+  - q: "What are stages for if the display has no columns?"
+    a: "Stages put the kitchen's own words on the four states (New, Preparing, Ready, Served) on tickets, in the ticket filters and in the reports. Timing is measured on the state, so two sites with different stage names still compare."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A kitchen display is only as good as its routing. If the grill sees cocktails or the bar misses a dessert, the cooks stop trusting the screen and go back to shouting. This chapter goes through every setting of the [POS Kitchen Display System](/odoo-guides/odoo-pos-kitchen-display-screen/) on Odoo 19, in the order a new kitchen would set them, using the demo's Kitchen and Bar screens.
+
+## Step 1: products in POS categories
+
+Routing is by **POS category**, the category set on each product's Point of Sale tab. Before creating any screen, make sure every product the kitchen or bar makes has one: Grill, Bar, Desserts on the demo. A screen that takes a parent category also takes its children, so a Drinks parent with Beer, Wine and Cocktails underneath can feed one bar screen with a single tick.
+
+Products the kitchen never touches, such as bottled water handed over the counter, can stay outside every screen's categories. They are simply not sent anywhere.
+
+## Step 2: a screen per station
+
+**Kitchen, Configuration, Screens** lists every physical display with its code, the tills and categories it takes, how many tickets are open and late, and its average preparation time. **Open Display** on each line opens that screen full size, which is the page to bookmark on the station's tablet.
+
+<Shot src="/odoo-guides/odoo-kds-screens-categories-setup/screens-list.webp" alt="Odoo Kitchen Display Screens list with the Kitchen and Bar screens, their categories, open and late ticket counts, average preparation and Open Display buttons" width={1440} height={900} caption="Two screens on the demo, each with its Open Display button." />
+
+A screen form is split into four blocks.
+
+<Shot src="/odoo-guides/odoo-kds-screens-categories-setup/screen-kitchen-form.webp" alt="Odoo kitchen screen form for Kitchen with code KIT, categories Desserts and Grill, stages, send automatically, clear after 10 minutes, refresh every 8 seconds, amber after 5 and red after 10 minutes" width={1440} height={900} caption="The Kitchen screen: what it shows, how it behaves, its colour bands and reporting window." />
+
+### What it shows
+
+- **Name** and a two or three letter **Short Code** (KIT, BAR), printed on the docket so staff can tell which screen it came from.
+- **Point of Sale**: the tills this screen listens to. Empty means every till in the company, which is what a single-kitchen site wants.
+- **Product Categories**: what it cooks, children included.
+- **Every Category**: show everything regardless of category. Use it for a one-screen kitchen or as an expediter screen that sees every order.
+- **Stages**: the stage names this screen uses (step 4).
+
+A screen with no categories and Every Category off would never show anything, so it cannot be saved. A till that belongs to another company is refused too, because routing looks screens up by the till's company and it would never reach this one.
+
+### Behaviour
+
+- **Send Automatically**: raise tickets as soon as the till saves an order. Turn it off for a screen you only feed by hand with Send to Kitchen from the POS orders list.
+- **Keep Served on Screen**: leave served tickets visible until they are cleared, instead of dropping them the moment they are handed over.
+- **Clear After (min)**: how long after serving a ticket is archived. 10 by default; 0 keeps them.
+- **Refresh Every (s)**: how often the display asks the server for new tickets. 8 by default, never below 1.
+
+### Colour bands
+
+**Amber After** and **Red After**, in minutes, per screen. The demo's Kitchen goes amber at 5 and red at 10; the Bar at 3 and 6, because drinks should be quicker. Red cannot be set lower than amber, and neither can be negative.
+
+### Reporting
+
+**Average Over (days)** is the window for the screen's average preparation time, 7 days by default, shown on the form, in the list and in the top bar of the display.
+
+## Step 3: watch the live tickets
+
+The **Live Tickets** tab at the bottom of the screen form lists that screen's tickets with reference, table, item count, sent time, minutes waiting and state. **Clear Served** at the top archives every served and cancelled ticket on this screen at once, which is handy after a test service.
+
+<Shot src="/odoo-guides/odoo-kds-screens-categories-setup/screen-live-tickets.webp" alt="Live Tickets tab of the Odoo kitchen screen form listing tickets with reference, table, item count, sent time, minutes waiting and state" width={1440} height={900} caption="The screen's own tickets, live." />
+
+## Step 4: stages
+
+**Configuration, Stages** holds the names the kitchen uses for the four states. Four come with the module:
+
+| Stage | Maps to | Instruction |
+|---|---|---|
+| Queued | New | Sent by the till, nobody has picked it up yet |
+| Cooking | Preparing | Being made now |
+| On the Pass | Ready | Plated and waiting to be taken out |
+| Away | Served | With the customer (folded) |
+
+A kitchen can rename them or add its own, as long as each one **Maps To** one of the four states, and a stage can be kept to one company. Timing is always measured on the state, not the name, so a site that calls it the Pass and a site that calls it Expo still produce figures that compare.
+
+<Shot src="/odoo-guides/odoo-kds-screens-categories-setup/stages-list.webp" alt="Odoo Kitchen Display Stages list with Queued, Cooking, On the Pass and Away, each mapped to a state" width={1440} height={900} caption="The four stages loaded with the module." />
+
+<Callout title="Stages do not make columns on the display">
+The full-screen display shows tickets as one grid of cards, rush first then oldest first. It does not split them into a column per stage, and it does not show a stage's instruction line. Stages appear on the ticket form, in the ticket filters and groups, and in the reports.
+</Callout>
+
+## Step 5: target time per dish
+
+Averages alone only say what happened. A target turns them into something to manage. On each product, open **Point of Sale, Products** and set **Target Preparation (min)** in the Kitchen Display block at the bottom of the form. Only users with Configure Screens see the field.
+
+<Shot src="/odoo-guides/odoo-kds-screens-categories-setup/product-target-time.webp" alt="Odoo product form for Ribeye Steak with the Kitchen Display block showing a target preparation time of 14 minutes" width={1440} height={900} caption="Ribeye Steak should take 14 minutes." />
+
+A ticket's target is the longest target among its items, because a table's food goes out together. A ticket called ready after its target is **Over Target**, and so is any single item ticked done after its own. Leave the target at zero for anything you do not want to measure.
+
+## Step 6: who can do what
+
+Two rights sit under **Kitchen Display** on the user form:
+
+- **Work the Kitchen**: open the display, move tickets along, tick items off. Sees Display and Tickets.
+- **Configure Screens**: everything above, plus Configuration, Reporting, target times, and the right to correct a stamped time. The administrator gets it on install.
+
+Cashiers need neither. Tickets are raised in the background with the module's own rights, so selling never depends on kitchen permissions. Screens, tickets, items and stages are also limited to the companies a user may see.
+
+## Step 7: the clean-up job
+
+**Kitchen Display: clear served tickets** runs every five minutes for every company. It archives served and cancelled tickets once their screen's Clear After delay has passed. Archived tickets are not deleted: they stay in every report, and the **Archived** filter on Tickets shows them.
+
+## Test it
+
+Ring an order through the till with food and drink on it, then open each screen. You should see one ticket per screen with only its own items. Add an item at the till and the right ticket updates; tick one item done on the display and the ticket moves to preparing. When that works, look at the grouped ticket list to see which station holds the queue.
+
+<Shot src="/odoo-guides/odoo-kds-screens-categories-setup/tickets-by-screen.webp" alt="Odoo Kitchen Tickets list grouped by screen, Kitchen and Bar, with ticket counts" width={1440} height={900} caption="Tickets grouped by screen: which station has the queue." />
+
+Next: what the times tell you, in [kitchen preparation time reports](/odoo-guides/odoo-kitchen-preparation-time-report/).

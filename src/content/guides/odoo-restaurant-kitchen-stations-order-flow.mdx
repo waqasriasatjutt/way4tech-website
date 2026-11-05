@@ -1,0 +1,125 @@
+---
+title: "Restaurant orders and kitchen stations in Odoo 19: from the first dish to the pass"
+metaTitle: "Orders and Kitchen Stations"
+description: "How a restaurant order moves in Odoo 19 Community: dine-in, takeaway and delivery, Send to Kitchen, lines routed to stations, the board and the ticket."
+targetQuery: "odoo restaurant kitchen station routing"
+category: "Industry"
+summary: "Taking an order of any type in the Restaurant Management module, what Send to Kitchen does to the lines, the table and the stock, how each station works its column of the kitchen display, the 80 mm kitchen ticket, and how to void a line or cancel an order."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-cloud-kitchen-qr-table-ordering"
+seriesOrder: 1
+modules:
+  - name: "Restaurant Management, Cloud Kitchen and QR Table Ordering"
+    technical: "wt_restaurant_management"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://restaurant.way4tech.com/"
+  label: "Restaurant and cloud kitchen demo"
+related: ["odoo-kitchen-display-system", "odoo-pos-kitchen-display-screen", "odoo-restaurant-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo know which station cooks a dish?"
+    a: "Each menu item has a Cooked At station. When the dish is added to an order the line takes that station, and after Send to Kitchen the line appears in that station's column of the kitchen display. The station can be changed on the line if one dish is cooked somewhere else tonight."
+  - q: "Can a dish be sent to the kitchen if it has run out?"
+    a: "No. A dish switched off with the 86 button is marked unavailable, and Send to Kitchen refuses an order containing it, naming the dishes. Switch it back on when it is available again."
+  - q: "What happens to the stock if an order is cancelled?"
+    a: "The ingredients that were taken out of the kitchen stock location when the order was sent are moved back, every line is voided and the table is set to Needs Cleaning. An order whose invoice is already posted cannot be cancelled; credit the invoice instead."
+  - q: "Does the kitchen display refresh on its own?"
+    a: "It is a standard Odoo kanban view, so it shows new lines when it is reloaded. It does not play a sound, colour cards by waiting time or print tickets by itself. The kitchen ticket is an 80 mm PDF printed from the order."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A kitchen does not need to read orders. It needs to see dishes, grouped by who cooks them, in the order they came in. The floor, on the other hand, thinks in orders and tables. The whole job of a restaurant system between the two is to cut every order into dishes, send each dish to its station, and put the order back together when the last plate is ready. This chapter shows how the [Restaurant Management module](/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/) does that on Odoo 19 Community, using the half-cooked service the demo leaves in place.
+
+## Before the first order: stations
+
+Stations are set up once, under **Configuration, Kitchen Stations**. A station is wherever food is made: the charcoal grill, the cold larder, pastry, the bar. One station can be marked **Pass / Expediting**, the place that assembles plates and calls the order ready. Each station shows how many lines are queued or cooking at that moment.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/kitchen-stations.webp" alt="Odoo Kitchen Stations list with Charcoal Grill, Cold Larder, Pastry, Bar and Pass for the Zaytoun Grill outlet, with the number of lines in queue" width={1440} height={900} caption="Five stations on the demo. The Pass is the expediting one." />
+
+Every dish on the menu then names the station that cooks it in **Cooked At**, with a prep time in minutes. That single field is what routes the kitchen.
+
+## The Orders screen
+
+**Service, Orders** opens on the **Open** filter: everything sent to the kitchen and not yet paid. The list is coloured by status and a late order shows in red. Filters cover In the Kitchen, To Bill, Late, the four order types, Today and This Month, and you can group by outlet, type, channel, status, waiter, rider or date. The same orders are also available as a kanban board by status, a calendar by order time, and pivot and graph views.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/orders-open-list.webp" alt="Odoo restaurant Orders list filtered on Open orders, showing five orders with outlet, order type, table, total and status badges" width={1440} height={900} caption="The open orders of today's service on the demo: two sent, two cooking, one ready." />
+
+## Taking an order
+
+There are two ways to start one:
+
+1. **From the table.** On **Service, Floor Plan**, press **Open Order** on a free table. A dine-in order opens with that table, its outlet, and a guest count equal to the seats. If the table already has an order, the same button opens it.
+2. **From New.** On the Orders screen, press New, pick the outlet, the **Order Type** and the **Channel**. Choosing anything other than dine-in clears the table, and choosing Delivery sets the channel to Phone.
+
+In the **Items** tab, add one line per dish. Picking the dish fills in the description, the menu price, its station and the taxes of its product. Each line can carry **Options** from the dish's modifier groups (their extra prices are added to the line), a **Special Request** such as no onions, a quantity and a line discount. Below the lines are the order discount, service charge, delivery fee, tax, total and the tip.
+
+A dine-in order cannot be saved without a table. A delivery order can be saved as a draft without an address, but cannot leave the kitchen without one.
+
+## Send to Kitchen
+
+This is the button that matters. When it is pressed:
+
+- the order moves to **Sent to Kitchen** and the send time is stamped;
+- every draft line becomes **Queued** at its station;
+- the table is marked Occupied with this order on it;
+- if the outlet consumes ingredients and has a kitchen stock location, every ingredient of every dish is moved out of stock and listed on the order's Stock tab;
+- the chatter records it.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/order-sent-to-kitchen.webp" alt="Odoo restaurant order ZG/ORD/2026/00061 in Sent to Kitchen state with three queued lines for table T1 and Start Cooking, Ready and Print buttons" width={1440} height={900} caption="Just sent: every line is queued at its station and the table is occupied." />
+
+Send to Kitchen refuses an order with no lines, and an order that contains a dish switched off with the 86 button. The message names the dishes, so the waiter can swap them before trying again.
+
+<Callout title="Stock never stops the food">
+If the ingredients cannot be taken out of stock, the food still goes to the kitchen. The stock moves are dropped and the order carries a chatter message saying why, for the manager to put right. Check the chatter of a few orders in your first week.
+</Callout>
+
+## The kitchen note
+
+Anything the chef must know about the whole order goes in **Note for the Kitchen**, on the Kitchen tab. On the demo, table 3 has a coriander allergy. The same tab shows the send, ready and served times and the preparation minutes from send to ready, which is the figure the Orders list can show per order.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/order-kitchen-note.webp" alt="Kitchen tab of an Odoo restaurant order with the note Table 3 has a coriander allergy and the sent, ready and served times" width={1440} height={900} caption="The Kitchen tab: the note for the chef and the clock of the order." />
+
+A note on a single line, such as "No coriander - allergy" on the Shish Taouk, appears on that dish's card in the kitchen with a warning sign, so the grill sees it without opening the order.
+
+## Working the station board
+
+**Kitchen, Kitchen Display** shows every line that is queued, cooking or ready, grouped by station. Each card has the dish and quantity, the order number, the station, the table or order type, the special request and how long ago it was ordered.
+
+- **Start** on a queued card moves the dish to cooking, and the order to Preparing if it was only sent.
+- **Ready** on a cooking card marks the dish ready. When the last live dish of an order is ready, the order itself is called **Ready** and its ready time stamped, so the floor sees it on the Orders screen.
+
+The board also has a list view with the same two buttons on each row, which some cooks find quicker on a small screen, and a pivot of what is in the kitchen right now by category. Filters give On the Pass, Queued, Cooking, Ready and Today, and you can regroup by course, category or order.
+
+While the kitchen works by dish, the floor watches the same service by order. The Orders kanban has one column per status, so it shows at a glance which orders are still only sent, which are cooking and which are ready to go out.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/orders-service-board.webp" alt="Odoo restaurant Orders kanban with columns Sent to Kitchen, Preparing and Ready, each card showing the order number, type, table, item count and total" width={1440} height={900} caption="The floor's view of the same service: orders by status." />
+
+On a phone, the board scrolls sideways one station at a time, which is enough for a head chef walking the line.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/kitchen-display-phone.webp" alt="Odoo restaurant kitchen display on a phone screen showing the Charcoal Grill column with Ready and Start buttons and an allergy warning" width={780} height={1688} caption="The Charcoal Grill column on a phone." />
+
+The order can be moved along from its own form too: Start Cooking, Ready (which marks every line ready at once) and Serve. Serve stamps the served time and, if the company setting Bill When Served is on, creates the invoice there and then.
+
+## The kitchen ticket
+
+Kitchens that still want paper can print the **Kitchen Ticket** from the order, with Print Ticket or the Print menu. It is laid out for an 80 mm thermal roll: order type and number, table and guests or the aggregator reference, the time and the waiter, then the dishes grouped by station with their options and requests, the kitchen note, and for delivery the promised time and rider.
+
+<Shot src="/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/kitchen-ticket-80mm.webp" alt="80 mm kitchen ticket printed from Odoo for a dine-in order with dishes grouped by station and a coriander allergy note" width={1440} height={340} caption="The kitchen ticket, grouped by station so it can be torn and handed out." />
+
+<Callout title="What the kitchen board does not do">
+The board is a standard Odoo kanban view. It does not colour cards by waiting time, play a sound for a new ticket, or send tickets to a printer by itself; the ticket is a PDF you print. A kitchen that runs on screens all night is better served by the [POS Kitchen Display System](/odoo-guides/odoo-pos-kitchen-display-screen/) or the Restaurant Suite's [kitchen display](/odoo-guides/odoo-kitchen-display-system/).
+</Callout>
+
+## Void a line, cancel an order
+
+Mistakes happen at the pass. The ban icon at the end of an order line **voids** it: the line stays on the order for the record but drops out of the totals, the bill and the invoice. A line cannot be voided once the bill is out.
+
+**Cancel** asks for confirmation, then puts back any ingredients already taken out of stock, voids every line and sets the table to Needs Cleaning. An order whose invoice is posted cannot be cancelled; credit the invoice in Invoicing instead. A cancelled order with no invoice can be **Reset to Draft** and sent again.
+
+## Try it on the demo
+
+Open the [demo](https://restaurant.way4tech.com/) and go to Service, Orders. Open ZG/ORD/2026/00061 (sent), 00062 (cooking, with the allergy) and 00063 (ready), then Kitchen, Kitchen Display to see the same dishes by station. The next chapter, [delivery and aggregator orders](/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/), follows the orders that never sit at a table.

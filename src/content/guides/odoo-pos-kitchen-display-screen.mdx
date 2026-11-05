@@ -1,0 +1,156 @@
+---
+title: "A kitchen display screen for the Odoo 19 Point of Sale: one ticket per station, colour by waiting time, timed on the server"
+metaTitle: "POS Kitchen Display Screen for Odoo 19"
+description: "A kitchen display for any Odoo 19 Point of Sale: orders split into one ticket per screen by POS category, colour by waiting time, server-stamped times."
+targetQuery: "odoo pos kitchen display screen"
+category: "Industry"
+summary: "How the POS Kitchen Display System module puts Odoo Point of Sale orders on kitchen and bar screens: routing by POS category, one ticket and one clock per screen, Start, Ready, Served and Recall, items ticked off one by one, and times stamped by the server. With how it differs from the Restaurant Suite's kitchen display."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-kitchen-display-screen"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-pos-kitchen-display-screen.pdf"
+  pages: 29
+modules:
+  - name: "POS Kitchen Display System"
+    technical: "wt_pos_kitchen_display"
+    note: "USD 39, Odoo 19, needs only Point of Sale"
+demo:
+  url: "https://kds-demo.way4tech.com/"
+  label: "Kitchen display demo"
+related: ["odoo-kitchen-display-system", "odoo-restaurant-pos-setup", "odoo-cloud-kitchen-qr-table-ordering"]
+linkFrom: ["/products/wt-pos-kitchen-display/", "/modules/pos/"]
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch addons (no preparation display in Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+faqs:
+  - q: "Does the Odoo Point of Sale have a kitchen display in Community?"
+    a: "Odoo's own preparation display is an Enterprise feature. This module adds a kitchen display to the Point of Sale on Odoo 19, with nothing else to install: screens per station, tickets split by POS category, and preparation times."
+  - q: "Can the bar and the kitchen have separate screens?"
+    a: "Yes. Each screen takes its own POS categories, and optionally only certain tills. A table that orders a steak and two cocktails gets one ticket on the kitchen screen and one on the bar screen, each with its own clock."
+  - q: "What happens if the waiter changes the order after it was sent?"
+    a: "The ticket is updated, never duplicated. Items the chef has already ticked off are left alone, items removed at the till disappear if they were not done, and a new item on a ticket already called ready puts it back to preparing."
+  - q: "Do I need special hardware for the kitchen screen?"
+    a: "No. The display is an ordinary Odoo page, so any tablet, phone or computer with a browser that can reach your Odoo can be a kitchen screen."
+  - q: "How is this different from the Restaurant Suite kitchen display?"
+    a: "This is a single USD 39 module for any Odoo Point of Sale, routing by POS category and printing a PDF docket. The Restaurant Suite's Restaurant Kitchen Display (USD 149) works inside the Suite, with stations, an expo view and kitchen printers through POS Print Anywhere."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A printed docket tells the kitchen what to cook and nothing else. It cannot say how long the order has been waiting, it cannot be split between the grill and the bar unless you buy and wire a printer for each, and once it is in the bin the service cannot be measured. A kitchen display fixes all three, but most of them are separate systems with their own subscription, their own menu to keep in step and their own idea of what time it is.
+
+This guide covers the Way4Tech **POS Kitchen Display System** (technical name `wt_pos_kitchen_display`, USD 39) on Odoo 19. It reads the orders your Odoo Point of Sale already has, cuts each one into a ticket per kitchen screen, and times every step on the Odoo server. The demo is Bella Vista Bistro, with a Kitchen screen for the grill and desserts and a Bar screen for drinks.
+
+## Which Way4Tech kitchen display is this?
+
+Way4Tech has two kitchen displays, and the existing [kitchen display system guide](/odoo-guides/odoo-kitchen-display-system/) is about the other one.
+
+| | POS Kitchen Display System (this guide) | Restaurant Kitchen Display (Suite) |
+|---|---|---|
+| Technical name | `wt_pos_kitchen_display` | `w4_resto_kds` |
+| Price | USD 39 | USD 149, plus the free Suite Base |
+| Needs | The Odoo Point of Sale and nothing else | The Way4Tech Restaurant Suite |
+| Routing | By POS category, per screen, optionally per till | By station, with an expo view |
+| Paper | A printable PDF docket | Network and Windows kitchen printers |
+| Best for | Any POS restaurant, cafe or bar that wants screens and honest times | Restaurants running the whole Suite |
+
+If you already run, or plan to run, the Restaurant Suite with its waiter tablets and printing, use its kitchen display. If you have a standard Odoo Point of Sale and want screens in the kitchen this week, this module is the small, cheap fit. If you do not use the Point of Sale at all, the [Restaurant Management module](/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/) has a kitchen board of its own.
+
+## What standard Odoo does
+
+The Odoo 19 Point of Sale has [restaurant features](https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html) for floors, tables and sending orders to the kitchen. Odoo's own preparation display, the screen a chef works from, is part of Enterprise: the [19.0 Community addons](https://github.com/odoo/odoo/tree/19.0/addons) have no preparation display. On Community, the kitchen gets paper or nothing.
+
+## Three ideas behind the module
+
+**A screen is what it cooks.** Each screen says which POS categories belong to it, and optionally which tills it listens to. The bar screen never shows a burger and the grill never shows a gin and tonic.
+
+**One order, one ticket per screen.** When the till saves an order, every item is routed by its category. A table that orders a steak, a sea bass and two cocktails gets a Kitchen ticket with the food and a Bar ticket with the drinks, each with its own clock, so a slow bar does not make the grill look slow.
+
+**The server keeps the time.** Sent, started, ready and served are stamped by Odoo the moment they happen. A tablet with a wrong clock cannot change a figure, and nobody but a manager can type a time in.
+
+## The display
+
+**Kitchen, Display** opens a full-screen page made for a tablet on the wall. Pick the screen in the box at the top and it shows that screen's open tickets, rush first, then oldest first.
+
+<Shot src="/odoo-guides/odoo-pos-kitchen-display-screen/kitchen-screen.webp" alt="Odoo POS kitchen display for the Kitchen screen with ticket cards showing table, order reference, items with notes, a RUSH tag, running clocks and Start, Ready, Served and Recall buttons" width={1440} height={900} caption="The Kitchen screen on the demo. The demo's open tickets were raised more than a day ago, which is why every clock is past the red threshold." />
+
+Each card shows the ticket number and its clock, the table and receipt number, a RUSH tag if marked, each item with its quantity and note, the order note, and the buttons. The top bar shows the screen's average preparation time and how many tickets are open.
+
+The colour says how long the ticket has been waiting, against thresholds set per screen: a blue edge is on time, amber is slipping, red is late, and a faded green card is ready with its clock stopped at the time it took. The colour is decided on the server and worked out again between refreshes, so a ticket turns red on time.
+
+The Bar screen shows the same tables with drinks only, against shorter thresholds because a negroni should not take ten minutes.
+
+<Shot src="/odoo-guides/odoo-pos-kitchen-display-screen/bar-screen.webp" alt="Odoo POS kitchen display for the Bar screen with drink tickets for the same tables as the kitchen screen" width={1440} height={900} caption="The Bar screen: the same orders, drinks only, their own clocks." />
+
+### Working a ticket
+
+- **Start** moves a new ticket to preparing.
+- **Tap an item** to tick it done; tap again to put it back. Ticking the first item marks the ticket started, because nobody in a kitchen stops to press Start.
+- **Ready** marks any item still open as done and calls the ticket ready. It is never called ready on its own when the last item is ticked, because ready means somebody has checked the plate.
+- **Served** stamps the hand-over and the ticket leaves the screen.
+- **Recall** sends a ticket back to new and clears its started, ready and served times.
+
+Served tickets clear themselves: a scheduled action archives them after each screen's delay, 10 minutes by default, so nobody tidies the screen during a service.
+
+On a phone the same screen stacks the cards in one column, which is enough for a small bar or a head chef on the move.
+
+<Shot src="/odoo-guides/odoo-pos-kitchen-display-screen/kitchen-screen-phone.webp" alt="Odoo kitchen display on a phone screen with a rush ticket for table 8 and Start and Ready buttons" width={780} height={1688} caption="The Kitchen screen at phone width." />
+
+## When the till changes the order
+
+Real orders change. A second round of drinks, a starter cancelled, a steak added after the mains were called. The module handles each case the same way every time:
+
+- A till order has at most one open ticket per screen, so sending again updates it, never duplicates it.
+- An item a chef has already ticked done is never changed or removed, whatever the till now says. The food exists.
+- An item removed at the till disappears from the ticket if it was not done yet.
+- A new item on a ticket that was already ready puts it back to preparing, so the addition actually gets cooked.
+- If a screen no longer has anything to cook on that order, and nothing was done, its ticket is cancelled.
+- Refund lines are left out: nobody cooks a refund.
+
+Tickets are raised in the background with their own rights, so a cashier needs no kitchen permissions, and a badly set up screen never stops a sale.
+
+## Tickets and times in the back office
+
+**Kitchen, Tickets** lists every ticket, opening on the ones still cooking, with Start, Ready and Served on each line. A ticket's form keeps the full history: sent, started, ready and served, preparation minutes, minutes on the pass, total, the target from its slowest dish, and whether it went over. From there a manager can mark a rush, tick everything off, cancel, print the docket or send it back to the queue.
+
+<Shot src="/odoo-guides/odoo-pos-kitchen-display-screen/served-ticket-timing.webp" alt="Odoo kitchen ticket KDS/00120 served, with sent, started, ready and served times, preparation 23.48 minutes, on the pass 3.14 minutes, target 11 minutes and over target ticked" width={1440} height={900} caption="A served ticket: 23 minutes in the kitchen against an 11 minute target, then 3 minutes on the pass." />
+
+Keeping the pass time apart from the preparation time is the point: a slow front of house does not read as a slow kitchen. The [preparation time chapter](/odoo-guides/odoo-kitchen-preparation-time-report/) shows the reports built on these figures.
+
+## Setting it up, in short
+
+1. Install POS Kitchen Display System. It needs Point of Sale and Discuss, nothing else.
+2. Put every product the kitchen makes into a POS category: Grill, Bar, Desserts.
+3. Create a screen per station under **Configuration, Screens**: its categories, the tills it listens to (or none for all), the amber and red thresholds, and how long served tickets stay.
+4. Give chefs **Work the Kitchen** and the manager **Configure Screens**. Cashiers need neither.
+5. Optionally, set a **Target Preparation (min)** on each product.
+6. Open each screen's display on its tablet and bookmark it.
+7. Ring an order with food and drink through the till and watch it split.
+
+The [screens and categories chapter](/odoo-guides/odoo-kds-screens-categories-setup/) walks every field.
+
+## What this series covers
+
+- [Screens, categories and stages](/odoo-guides/odoo-kds-screens-categories-setup/): one screen per station, routing, colour bands, auto clear, stages and target times.
+- [Kitchen preparation time reports](/odoo-guides/odoo-kitchen-preparation-time-report/): the Preparation Time report, tickets and items analysis, and the docket.
+
+The full PDF guide covers every screen in 29 pages, with a 10-minute demo script.
+
+## Limitations
+
+From the module's code:
+
+- **No stage columns on the display.** Stages rename the four states on tickets and in reports; the display is one grid of cards.
+- **No sound or flash** when a ticket arrives. The display asks the server every few seconds, 8 by default.
+- **No direct kitchen printing.** The docket is a PDF on a normal page.
+- **No expo screen of its own.** A screen with Every Category ticked is the nearest thing.
+- **Item times come from ticking.** A kitchen that only ever presses Ready gets the same time on every item of the ticket.
+- **Tickets come from orders saved on the Odoo server,** not from items still being typed at the till.
+
+<Callout title="Try it before you buy">
+The [demo](https://kds-demo.way4tech.com/) is a working Point of Sale with both screens set up. Ask us for a login, or see the [other demos](/demos/). If your kitchen is laid out differently, [describe it](/contact/) and I will say whether it fits.
+</Callout>

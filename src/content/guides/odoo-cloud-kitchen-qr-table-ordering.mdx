@@ -1,0 +1,146 @@
+---
+title: "Odoo cloud kitchen and restaurant management without the POS: orders, stations, recipes and bills on Odoo 19"
+metaTitle: "Odoo Cloud Kitchen and Restaurant Back Office"
+description: "Run a cloud kitchen or small restaurant on Odoo 19 Community without the POS: orders, kitchen stations, riders, recipes, wastage and invoiced bills."
+targetQuery: "odoo cloud kitchen management"
+category: "Industry"
+summary: "What the Restaurant Management module does on Odoo 19 Community: one order for dine-in, takeaway, delivery and aggregator trade, a board per kitchen station, riders, tables and bookings, recipe costs and menu engineering, wastage and bills that become invoices. Includes what the QR table link is today and how it differs from the Restaurant Suite."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-cloud-kitchen-qr-table-ordering"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-cloud-kitchen-qr-table-ordering.pdf"
+  pages: 54
+modules:
+  - name: "Restaurant Management, Cloud Kitchen and QR Table Ordering"
+    technical: "wt_restaurant_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Invoicing (no Point of Sale)"
+demo:
+  url: "https://restaurant.way4tech.com/"
+  label: "Restaurant and cloud kitchen demo"
+related: ["odoo-restaurant-management", "odoo-kitchen-display-system", "odoo-restaurant-recipe-food-cost", "odoo-pos-kitchen-display-screen"]
+linkFrom: ["/products/wt-restaurant-management/", "/industries/restaurant-fnb/", "/solutions/restaurant-fnb/"]
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+faqs:
+  - q: "Can I run a cloud kitchen on Odoo without the Point of Sale?"
+    a: "Yes, with this module. Orders are entered on an Odoo form by staff, routed to kitchen stations, given a rider and a promised time, and billed as a customer invoice. It needs Inventory and Invoicing but not the Point of Sale app, and runs on Odoo 19 Community."
+  - q: "Does the QR table ordering let guests order from their phones?"
+    a: "Not on its own. Each table carries a QR link and each outlet has a QR Table Ordering switch, but this version has no guest ordering page behind the link and does not draw the QR image. Point the link at your own ordering page or menu, or plan that page as separate work."
+  - q: "Does it connect to Talabat, Deliveroo or Uber Eats?"
+    a: "No. Aggregator orders are typed in with the app's own order number in a required Channel Reference field, so the day can be matched against the aggregator's statement. Nothing is pulled from or pushed to the apps."
+  - q: "What is the difference between this module and the Way4Tech Restaurant Suite?"
+    a: "This module is one back-office app at USD 299 with orders on Odoo forms, a kanban board per station and recipe costing. The Restaurant Suite is built on the Odoo Point of Sale with tills, waiter tablets, a kitchen screen app, printers and cash control, from USD 999. Pick this one for phone, app and rider trade; pick the Suite when money is taken at a till."
+  - q: "Does it take ingredients out of stock?"
+    a: "Yes. When an order is sent to the kitchen, every ingredient of every dish is moved out of the outlet's kitchen stock location, if the outlet has Consume Ingredients on and a location set. Cancelling the order puts them back."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A cloud kitchen has no dining room to manage and no till to count at midnight. What it has is a phone that rings, three aggregator tablets that beep, a grill, a cold section and a bar that all need to know what to cook next, and riders waiting at the door. A small restaurant with a handful of tables has most of the same problems plus a floor plan and a few bookings. Neither needs a full point of sale. Both need the kitchen to see the work by station, the money to land in the books, and the menu to say what each plate costs.
+
+This guide covers the Way4Tech **Restaurant Management** module (technical name `wt_restaurant_management`, USD 299) on Odoo 19 Community. It is one back-office app: orders are entered on an Odoo form, the kitchen works from a board per station, and every bill is a normal customer invoice. The demo restaurant throughout is Zaytoun Grill, a grill with a hall, a terrace and a dark kitchen brand, already filled with a month of service.
+
+## Which Way4Tech restaurant product is this?
+
+Way4Tech sells two different restaurant products, and they are easy to confuse because both have kitchen screens and both say restaurant.
+
+| | Restaurant Management (this guide) | Restaurant Suite |
+|---|---|---|
+| Technical names | `wt_restaurant_management`, one module | `w4_resto_*`, a suite of modules |
+| Built on | Its own Restaurant app. No Point of Sale | The Odoo Point of Sale |
+| Orders taken | On an Odoo form, any browser | On POS tills and waiter tablets |
+| Kitchen | A board per station inside Odoo | A kitchen screen app with printers and expo |
+| Money | A customer invoice per order | POS payments, cash control, day close |
+| Price | USD 299 | From USD 999 for the full suite |
+
+The rule of thumb: **if money is taken at a till during service, look at the Suite**, covered in the [Odoo restaurant management guide](/odoo-guides/odoo-restaurant-management/). If orders come in by phone, by app and with riders, and what you need first is a kitchen that knows what to cook and a menu that knows what it costs, this module is the smaller and cheaper fit. A dark kitchen running two or three brands, a cafe with a counter and a few tables, a caterer, or a group that wants recipe costs and stock movement before it wants tablets, are the typical buyers.
+
+## What standard Odoo gives a food business
+
+Odoo 19 Community has a Point of Sale with [restaurant features](https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html): floors, tables, order notes and kitchen order printing, all built around the till. What it does not have is a back-office order that carries a rider, a promised time and an aggregator reference, a recipe on each dish that prices the plate and takes ingredients out of stock, a wastage log, or a way to grade the menu by what sells and what earns. Those are the gaps this module fills, without asking you to run a till at all.
+
+## How an order moves
+
+Every order, whatever its type, walks the same path: Draft, Sent to Kitchen, Preparing, Ready, Served, Billed, Paid. The four types share one document because they queue at the same grill:
+
+- **Dine In** needs a table and carries the service charge.
+- **Takeaway** has a customer name and phone.
+- **Delivery** adds an address, a rider, a delivery fee and a promised time.
+- **Aggregator** adds a required channel reference for the app's own order number.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/dine-in-order-preparing.webp" alt="Odoo restaurant order ZG/ORD/2026/00062 in Preparing state for table T3 with three dishes, a special request and the service charge in the totals" width={1440} height={900} caption="A dine-in order being cooked. Each line has its own state, and the special request travels to the kitchen." />
+
+**Send to Kitchen** is the step that matters. Every line is queued at the station that cooks it, the table shows as occupied, the time is stamped, and the recipe of each dish is taken out of the outlet's kitchen stock. From there the kitchen takes over.
+
+## The kitchen works by station
+
+The Kitchen Display is a board with one column per station, Charcoal Grill, Cold Larder, Pastry and Bar on the demo. A card shows the dish and quantity, the order number, the table or order type, any special request with a warning sign, and how long ago it was ordered. Start moves it to cooking, Ready marks it done, and when the last dish of an order is ready the whole order is called Ready for the floor.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/kitchen-display-stations.webp" alt="Odoo kitchen display kanban with columns Charcoal Grill, Cold Larder, Pastry and Bar, each card showing a dish, an order number and Start or Ready buttons" width={1440} height={900} caption="The kitchen display: every dish still in the kitchen, grouped by the station that cooks it." />
+
+This is a board inside the Odoo back office, not a dedicated kitchen screen. It does not colour cards by waiting time or bump them with a swipe. If that matters more than recipes and invoices, the [POS Kitchen Display System guide](/odoo-guides/odoo-pos-kitchen-display-screen/) covers the screen built for it. The [kitchen stations chapter](/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/) walks the whole order flow.
+
+## Outlets: one dining room or a group of dark kitchens
+
+An outlet is one place that sells food: a Restaurant, a Cloud Kitchen, a Counter or Kiosk, or a Food Truck. Each outlet has a short code printed in front of its order numbers, its own service charge, billing journal, fiscal position, kitchen stock location and the fiscal block printed on its bills. A group runs many outlets in one company, or one outlet per company where each branch is its own legal entity.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/cloud-kitchen-outlet.webp" alt="Odoo restaurant outlet form for Zaytoun Express - Dark Kitchen of kind Cloud Kitchen with code ZX, no service charge and a delivery fee product" width={1440} height={900} caption="A cloud kitchen outlet: its own code, no tables, no service charge, a delivery fee product." />
+
+## Tables, bookings and the QR link
+
+For a dining room there is a floor plan by area, with tables shown Free, Reserved, Occupied or Needs Cleaning, and Open Order on each card. Paying an order sets its table to Needs Cleaning rather than Free, so a table is never offered before it is cleared. Bookings check that the table is free for the whole duration and big enough for the party, can be emailed to the guest, and are released as no-shows automatically after the grace period.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/floor-plan.webp" alt="Odoo restaurant floor plan with Main Hall and Marina Terrace columns, tables marked Free, Occupied or Needs Cleaning, and Open Order buttons" width={1440} height={900} caption="The floor plan: three tables eating, one waiting to be cleared." />
+
+The module name says QR table ordering, so it is worth being exact about what that means in this version. Each table has a **QR Link** field, built from your Odoo address, the outlet and the table, and each outlet has a QR Table Ordering switch. Orders also have a Table QR channel so they can be counted apart. There is no guest ordering page at that address and no QR image is drawn: opening the link gives Odoo's page not found.
+
+<Shot src="/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/table-qr-link-404.webp" alt="Odoo website 404 page shown when opening the table QR link /restaurant/menu on the demo" width={1440} height={600} caption="The table QR link on the demo leads to a page not found. The link exists; the ordering page behind it does not." />
+
+<Callout title="QR ordering is a link, not a guest menu">
+Do not plan a launch on guests ordering from their phones with this module alone. Point the table link at your own ordering page or your menu PDF, print the codes with any QR tool, and record those orders with the Table QR channel. A guest ordering page is separate work.
+</Callout>
+
+## The menu knows what it costs
+
+Every dish is backed by an ordinary Odoo product, so invoices, taxes and reports work as usual. On top of that it has a recipe: ingredients with quantities and units, each priced at the ingredient's cost. The module adds them up into a recipe cost, a margin and a food cost percentage, and flags any dish above the company's target, 33% by default. It also grades the menu every day from 90 days of sales: stars, plough horses, puzzles and dogs. The [menu engineering chapter](/odoo-guides/odoo-menu-engineering-recipe-costing/) explains both, with a worked example.
+
+## Bills become invoices
+
+Bill creates a draft customer invoice with one line per dish, then the discount, the service charge and the delivery fee as their own lines. A cash guest goes to a shared Walk-in Guest contact so the books do not fill with one-off names. Mark Paid posts the invoice and frees the table. Each outlet can print a ZATCA style QR, a GSTIN line or a VAT line on its 80 mm bill. The [tables, bookings and billing chapter](/odoo-guides/odoo-restaurant-tables-bookings-billing/) has the details and three things to check before going live.
+
+## Setting it up, in short
+
+1. Install Restaurant Management. Inventory and Invoicing install with it; the Point of Sale is not needed.
+2. Make sure the company has a chart of accounts and sales taxes, then create two service products: one for the service charge and one for the delivery fee.
+3. Give people one of four rights under Restaurant: Floor Staff, Kitchen, Delivery Rider or Restaurant Manager.
+4. Create each outlet with its code, type, service charge, journal, kitchen stock location and fiscal block.
+5. Add floors and tables for a dining room, and the kitchen stations for every outlet.
+6. Build the menu: categories with a course, dishes with a product, price, station, prep time, allergens and a recipe in units that match the ingredient.
+7. Add riders, and link a rider to an Odoo user if they should sign in and see only their own deliveries.
+8. Take a test order of each type through to Paid and check the invoice before the first real service.
+
+## What this series covers
+
+- [Orders and kitchen stations](/odoo-guides/odoo-restaurant-kitchen-stations-order-flow/): taking an order, Send to Kitchen, the station board, the kitchen ticket, void and cancel.
+- [Cloud kitchen delivery and aggregator orders](/odoo-guides/odoo-cloud-kitchen-delivery-aggregator-orders/): takeaway, delivery, promised time and lateness, aggregator references, riders.
+- [Menu engineering and recipe costing](/odoo-guides/odoo-menu-engineering-recipe-costing/): dishes, recipes, modifiers, allergens, the four grades and wastage.
+- [Tables, bookings and billing](/odoo-guides/odoo-restaurant-tables-bookings-billing/): the floor plan, reservations, the bill, service charge, invoice and fiscal block.
+
+The full step-by-step PDF walks every screen of the module in 54 pages, with a 15-minute demo script and the list of limits.
+
+## Limitations
+
+These come from the module's code, not the listing:
+
+- **No guest ordering page** behind the table QR link, and no QR image.
+- **No aggregator connection.** Orders are typed in; commission is not recorded.
+- **No waitlist and no public booking page.** Bookings are entered by staff, and a deposit is a note, not an accounting entry.
+- **The kitchen board is a back-office view:** no colours by waiting time, no sound, no automatic printing.
+- **Modifier limits are not enforced on order lines,** and paid extras are not taken out of stock.
+- **Mark Paid posts the invoice but does not register the payment.** Record cash or card in Invoicing.
+- **Recipe units must match the ingredient's unit.** The module converts kg to Units without a warning, which is why the demo's cost figures are a thousand times too high.
+
+Walk through the [demo](https://restaurant.way4tech.com/) or the [other demos](/demos/), and if your kitchen works differently, [send a short description](/contact/) and I will say whether it fits as it is.

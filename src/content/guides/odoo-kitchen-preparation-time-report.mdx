@@ -1,0 +1,110 @@
+---
+title: "Kitchen preparation time reports in Odoo 19: per ticket, per dish, per hour, against a target"
+metaTitle: "Kitchen Preparation Time Reports"
+description: "Measure kitchen speed in the Odoo 19 Point of Sale: preparation and pass time per ticket, per dish and per hour, slowest ticket, share on target, docket."
+targetQuery: "odoo kitchen preparation time report"
+category: "Industry"
+summary: "What the POS Kitchen Display System measures and how to read it: preparation time from send to ready, time on the pass, per-item times, targets per dish, the Preparation Time report by screen, product or hour, the ticket and item pivots, and the printable docket."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-kitchen-display-screen"
+seriesOrder: 2
+modules:
+  - name: "POS Kitchen Display System"
+    technical: "wt_pos_kitchen_display"
+    note: "USD 39, Odoo 19, needs only Point of Sale"
+demo:
+  url: "https://kds-demo.way4tech.com/"
+  label: "Kitchen display demo"
+related: ["odoo-kitchen-display-system", "odoo-pos-dashboard"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is kitchen preparation time measured in Odoo?"
+    a: "With this module, from the moment the ticket reached the kitchen (sent) to the moment it was called ready, stamped by the Odoo server. The time the plate then waited before being served is kept separately as time on the pass, so a slow front of house does not read as a slow kitchen."
+  - q: "Can I see which dish is slowest?"
+    a: "Yes. Every item on a ticket has its own time, from the ticket being sent to that item being ticked done. Reporting, Items by Product averages it per product, and the Preparation Time report can break down by product with the slowest time for each."
+  - q: "Can staff edit the preparation times?"
+    a: "No. The times are stamped by the server when a ticket or item changes state. A user with only Work the Kitchen who tries to write a time is refused; only Configure Screens users can correct one."
+  - q: "Can I print the kitchen ticket?"
+    a: "Yes. Every ticket prints as a Kitchen Docket PDF with the screen, table, reference, items with notes and a done mark, and the sent, ready and preparation times. It is a normal page PDF, not a thermal roll layout, and is not sent to a printer automatically."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every kitchen manager has a feeling about which nights are slow and which dish holds the pass up. Most have never had the numbers, because the paper dockets that would tell them end up in the bin. Once a kitchen works from screens, every ticket and every item carries a time stamped by the server, and the question changes from "were we slow?" to "which dish, which station, which hour?". This chapter shows the reports of the [POS Kitchen Display System](/odoo-guides/odoo-pos-kitchen-display-screen/) on Odoo 19 and how to read them.
+
+## What is measured
+
+| Figure | From | To | Answers |
+|---|---|---|---|
+| Preparation | Sent | Ready | How long did the kitchen take? |
+| On the pass | Ready | Served | How long did the plate wait for a waiter? |
+| Total | Sent | Served | How long did the guest wait? |
+| Per item | Sent | That item ticked done | Which dish is slow? |
+
+Every time is written by the server when the state changes, through one function that also moves the stage. A tablet with a wrong clock cannot change a figure, and the display never decides a time: it only shows one. A user with only Work the Kitchen who tries to write a time directly is refused; only Configure Screens users can correct one.
+
+Each product can also carry a **target** preparation time. A ticket's target is the longest target of its items, and a ticket called ready after it is marked **Over Target**. So is any single item ticked done after its own target.
+
+<Callout title="Item times depend on ticking">
+An item's time runs from the ticket being sent to that item being ticked done. If a kitchen never ticks items and only presses Ready, every item on the ticket gets the same time and the per-dish figures stop telling you anything. Ask the line to tap each dish as it goes on the plate.
+</Callout>
+
+## The Preparation Time report
+
+**Kitchen, Reporting, Preparation Time** opens a small report window:
+
+1. Set **From** and **To**. It opens on the last seven days. From cannot be after To.
+2. Pick **Screens**, or leave it empty for every screen.
+3. Choose **Break Down By**: Screen, Product or Hour.
+4. Tick **Include Cancelled** only if you want cancelled tickets counted.
+5. Press **Work It Out**.
+
+<Shot src="/odoo-guides/odoo-kitchen-preparation-time-report/preparation-time-report.webp" alt="Odoo Preparation Time report for a week: 113 tickets, average preparation 16.40 minutes, slowest ticket 25.27 minutes, 14.16 percent within target, broken down by Kitchen and Bar screens" width={1440} height={900} caption="A week on the demo: 113 tickets, 16.4 minutes on average, 14% on target." />
+
+The result gives the number of tickets called ready in the period, the **Average Preparation**, the **Slowest Ticket** and the share **Within Target**, then one row per screen, product or hour with the count, items, average and slowest. **Open Tickets** opens the tickets behind the figures, so a bad number can be traced to the actual orders.
+
+By Hour uses the user's own timezone, so the busy hour in the report is the one on the kitchen clock. Running it by hour across a month is the quickest way to see whether the kitchen slows at 8 pm because of volume or because of a shift change.
+
+## Items by Product
+
+**Reporting, Items by Product** is a pivot of every item, grouped by product, with the average preparation and the quantity made. This is the report that answers which dish holds the service up.
+
+<Shot src="/odoo-guides/odoo-kitchen-preparation-time-report/items-by-product.webp" alt="Odoo Items by Product pivot with average preparation minutes and quantity for each dish such as Chargrilled Burger, Chocolate Fondant and Ribeye Steak" width={1000} height={640} caption="Average preparation per dish over the demo's week." />
+
+It also has a graph view and a list of items with ticket, screen, sent, done at, preparation, target and over target. Filters give Not Done, Done, Over Target and Today, and groups by product, screen or day sent. Filtering Over Target and grouping by product gives a short list of dishes that keep missing their target, which is usually a recipe, a station layout or a target set too optimistically.
+
+<Shot src="/odoo-guides/odoo-kitchen-preparation-time-report/items-list.webp" alt="Odoo list of kitchen display items with ticket, screen, product, quantity, note, sent time, done time, preparation minutes, target and over target" width={1440} height={900} caption="Item by item, with its own target." />
+
+## Tickets Analysis
+
+**Reporting, Tickets Analysis** is a pivot and graph of tickets. It opens on average preparation and total minutes by screen and day; add **On the Pass** from Measures, and regroup by stage, point of sale or day sent.
+
+<Shot src="/odoo-guides/odoo-kitchen-preparation-time-report/tickets-analysis.webp" alt="Odoo Tickets Analysis pivot of kitchen tickets with average preparation and total minutes for the Bar and Kitchen screens by day" width={1440} height={900} caption="Tickets Analysis: preparation and total minutes per screen, day by day." />
+
+Read the two columns together. A high preparation time with a short pass time is a kitchen problem. A normal preparation time with a long pass time means plates are sitting under the lamp waiting for the floor, and no amount of pushing the grill will fix it.
+
+## The screen's own average
+
+Each screen also carries its **Average Preparation** over its Average Over window, 7 days by default. It is shown on the screen form, in the screens list and in the top bar of the display itself, so the kitchen sees its own number every service.
+
+## The kitchen docket
+
+For a site that still wants paper as a backup, every ticket prints as a **Kitchen Docket**: ticket number, screen and code, table, receipt number, a rush line if marked, the customer, each item with its quantity, note and a done mark, the order note, and the sent, ready and preparation times.
+
+<Shot src="/odoo-guides/odoo-kitchen-preparation-time-report/kitchen-docket.webp" alt="Odoo kitchen docket KDS/00254 for the Kitchen screen with table Bar 4, three items with notes and done marks, sent and ready times and 9.05 minutes preparation" width={1440} height={420} caption="The docket of a ready ticket: 9 minutes from send to ready." />
+
+Print it with **Print Docket** on the ticket or from the Print menu of the Tickets list; the file is named after the ticket, such as Docket - KDS/00254. It is a PDF from Odoo's report engine on a normal page, not a thermal roll layout, and the module does not send it to a printer by itself.
+
+## A monthly routine
+
+1. Run Preparation Time for the month, by screen. Note the average and the share within target per screen.
+2. Run it again by product. Open the five slowest dishes and look at their targets: are they wrong, or is the dish?
+3. Run it by hour. Find the hour where the average jumps.
+4. Open Tickets Analysis and compare preparation with on the pass for that hour.
+5. Change one thing, a prep step, a station layout, a target, and run the same report next month.
+
+## Try it on the demo
+
+On the [demo](https://kds-demo.way4tech.com/), open Kitchen, Reporting, Preparation Time, press Work It Out, then change Break Down By to Product. Back to the [series overview](/odoo-guides/odoo-pos-kitchen-display-screen/), or to [setting up the screens](/odoo-guides/odoo-kds-screens-categories-setup/).

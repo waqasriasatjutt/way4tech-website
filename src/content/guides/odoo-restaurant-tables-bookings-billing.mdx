@@ -1,0 +1,146 @@
+---
+title: "Restaurant tables, bookings and billing in Odoo 19: floor plan, reservations, service charge and invoices"
+metaTitle: "Tables, Bookings and Billing"
+description: "The floor plan, table bookings with no-show release, and the bill in Odoo 19 Community: service charge, discount, tip, invoice and the ZATCA QR."
+targetQuery: "odoo restaurant service charge bill invoice"
+category: "Industry"
+summary: "The front of house in the Restaurant Management module: table statuses and the floor plan, reservations with double-booking and capacity checks, confirmation email and automatic no-show release, then the bill: how the total is built, the Walk-in Guest invoice, Mark Paid, and the ZATCA, GSTIN or VAT block on the 80 mm bill."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-cloud-kitchen-qr-table-ordering"
+seriesOrder: 4
+modules:
+  - name: "Restaurant Management, Cloud Kitchen and QR Table Ordering"
+    technical: "wt_restaurant_management"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://restaurant.way4tech.com/"
+  label: "Restaurant and cloud kitchen demo"
+related: ["odoo-restaurant-reservations-waitlist", "zatca-e-invoicing-odoo-community", "odoo-restaurant-cashier-day-close"]
+linkFrom: []
+sources:
+  - label: "ZATCA, E-invoicing (Fatoora) official page"
+    url: "https://zatca.gov.sa/en/E-Invoicing/Pages/default.aspx"
+faqs:
+  - q: "Is the service charge added to every order?"
+    a: "No. Only dine-in orders carry it. It is the outlet's percentage of the untaxed amount after the order discount, and becomes its own invoice line on the outlet's service charge product."
+  - q: "Does Mark Paid record the payment in accounting?"
+    a: "It posts the customer invoice and closes the order, but it does not register a payment. The invoice stays unpaid in Invoicing until the cash or card payment is recorded there, which is how the demo's paid orders look."
+  - q: "Is the QR code on the bill ZATCA Phase 2 compliant?"
+    a: "No. It is the five-field QR (seller, VAT number, time, total, VAT) of a simplified tax invoice, printed on the bill. Phase 2 also needs signed XML, a cryptographic stamp and reporting to ZATCA, which this module does not do."
+  - q: "Can two bookings hold the same table?"
+    a: "Not at overlapping times. A booking with a table is checked against every draft, confirmed or seated booking on that table for the whole duration, and also against the table's seats. Either clash is refused with a message."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The front of house has two jobs that bracket the kitchen's: getting guests to the right table, and getting the money from them when they leave. In between, the host needs to know which tables are free, which are booked, which are eating and which are waiting to be cleared. This chapter covers the floor plan, reservations and the bill in the [Restaurant Management module](/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/) on Odoo 19 Community.
+
+## The floor plan
+
+**Service, Floor Plan** shows every table grouped by floor. The badge on each card is its status, and an occupied table shows its current order:
+
+| Status | Colour | Set by |
+|---|---|---|
+| Free | Green | Free the Table, or a no-show or cancelled booking |
+| Reserved | Amber | Confirming a booking on a free table |
+| Occupied | Red | An order on the table |
+| Needs Cleaning | Grey | Paying or cancelling the order, or the button |
+| Out of Service | Grey | Set by hand |
+
+On a table, **Open Order** opens the running order or starts a new dine-in order with the table's seats as the guest count. **Needs Cleaning** flags it, and **Free the Table** releases it. A table cannot be freed while it carries an order that is neither paid nor cancelled.
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/table-occupied.webp" alt="Odoo restaurant table T3 in Occupied state with its current order, seats, shape and QR link, and Open Order, Needs Cleaning and Free the Table buttons" width={1440} height={900} caption="An occupied table with its current order and its QR link." />
+
+Paying an order does not set the table straight back to Free. It goes to Needs Cleaning, so the host never seats the next party at a table that still has the last one's plates on it.
+
+The table form also shows the **QR Link** for that table. As the hub explains, this version provides the link but not a guest ordering page behind it.
+
+## Reservations
+
+**Service, Reservations** opens a calendar of bookings, with a list view beside it. Filters show upcoming bookings, today's, those with no table yet and no-shows.
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/reservations-calendar.webp" alt="Odoo restaurant reservations calendar in day view with a booking in the evening" width={1440} height={900} caption="Today's bookings in the calendar." />
+
+A booking holds the guest's name (required), phone and email, or a saved contact that fills them in. Then the number of guests, the date and time, a **Duration** (1.5 hours unless changed), the table or just an **Area Preference**, the **Source** (Phone, Walk-in, Website, OpenTable, Social Media, Hotel Concierge, Other), the **Occasion**, a **Deposit** and notes.
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/reservation-confirmed.webp" alt="Confirmed Odoo table reservation RES/2026/00001 for four guests at table T4 with source phone, occasion anniversary and Email the Guest and Seat Guests buttons" width={1440} height={900} caption="A confirmed anniversary booking for four at T4." />
+
+The booking moves through Draft, Confirmed, Seated and Done:
+
+1. **Confirm** marks it Confirmed and sets a free table to Reserved.
+2. **Email the Guest** sends the Reservation Confirmed email with the reference, time, guests and table, and the outlet's phone if it has one.
+3. **Seat Guests** needs a table. It marks the booking Seated, opens a dine-in order on that table with the guest count, name and phone, and links the two.
+4. **Close** marks it Done once they have left.
+
+Two checks run every time a booking is saved. The table must not be held by another draft, confirmed or seated booking for any part of the same time, and the party must not be bigger than the table's seats. Either one is refused with a message naming the clash.
+
+### No-shows
+
+**No Show** and **Cancel** release a reserved table. A scheduled action, **Restaurant: release no-show reservations**, runs every 15 minutes and marks as no-show any draft or confirmed booking whose time has passed by more than the company's **No-show Grace Period**, 30 minutes by default.
+
+<Callout title="Bookings are entered by staff">
+There is no waitlist and no public booking page in this version, and the deposit is a note for the host, not an accounting entry. A booking that came from a website or OpenTable is typed in with that source. The Restaurant Suite's [reservations and waitlist guide](/odoo-guides/odoo-restaurant-reservations-waitlist/) covers a booking flow with those parts.
+</Callout>
+
+## How the bill is built
+
+The total on the order and on the printed bill is built in this order:
+
+1. **Lines**: quantity times the price plus any options, less the line discount. Void lines are left out.
+2. **Discount**: a flat amount off the whole bill, with a reason. It cannot be larger than the order.
+3. **Service charge**: dine-in only. The outlet's percentage of the untaxed amount after the discount.
+4. **Tax**: the taxes on each line.
+5. **Delivery fee**: delivery and aggregator orders only.
+
+The **Tip** is recorded under the total for the staff tip pool and printed on the bill, but it is not part of the total and is not invoiced, because it is not restaurant revenue.
+
+## Bill and Mark Paid
+
+**Bill** appears once the order is ready or served. It creates a draft customer invoice and moves the order to Billed:
+
+- one line per dish, with its options and special request in the label;
+- a Discount line, a **Service Charge** line such as "Service Charge 10.00%", and a Delivery line, each on the products set on the outlet;
+- the order's customer or, for a cash guest, the shared **Walk-in Guest** contact, so a busy night does not leave hundreds of one-off contacts;
+- the outlet's billing journal and fiscal position if they are set.
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/customer-invoice.webp" alt="Odoo customer invoice INV/2026/00059 for Walk-in Guest with four dish lines and a Service Charge 10.00% line" width={1440} height={900} caption="The invoice behind a dine-in bill: four dishes and the service charge line." />
+
+**Mark Paid** posts that invoice (billing it first if nobody did), moves the order to Paid and sets the table to Needs Cleaning. If the company setting **Bill When Served** is on, the invoice is created the moment the order is served, which suits a counter better than a dining room.
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/paid-order.webp" alt="Paid Odoo restaurant order ZG/ORD/2026/00050 with a Late ribbon, an Invoice Posted button and served lines" width={1440} height={900} caption="A paid order. The Invoice button shows the invoice is posted." />
+
+Billing refuses an order that is still a draft or cancelled, an order already billed, and an order whose outlet charges a service or delivery fee without a product for it.
+
+<Callout title="Three things to check before you go live">
+**Mark Paid does not register a payment.** It posts the invoice, which then stays unpaid in Invoicing until the cash or card is recorded there. On the demo every paid order's invoice still shows Pay.
+
+**Invoice tax can differ from order tax.** The service charge and discount lines take the taxes of the service charge product, while the order works its tax out on the dishes only. If that product is taxed, the invoice ends up a little higher: on the demo, order 00050 totals 68.75 and its invoice 69.58.
+
+**The kitchen note goes on the invoice.** The order's note for the kitchen is copied into the invoice's terms, so keep allergy notes off orders that will be invoiced to a company.
+</Callout>
+
+## The fiscal block on the bill
+
+Each outlet decides what its bill prints for the tax authority, on the outlet's Billing tab, along with the **Tax Registration No.** and a receipt footer.
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/outlet-billing-tab.webp" alt="Billing tab of an Odoo restaurant outlet with journal, fiscal position, pricelist, service charge 10 percent, service and delivery fee products, and the Receipt Fiscal Block set to Saudi Arabia ZATCA TLV" width={1440} height={900} caption="The outlet's billing tab: service charge, the fee products and the fiscal block." />
+
+| Receipt Fiscal Block | What is printed |
+|---|---|
+| None | The tax registration number, if entered, labelled VAT |
+| Saudi Arabia - ZATCA TLV | A QR code with five tagged values: seller name, VAT number, time, total and VAT, as on a simplified tax invoice |
+| India - GSTIN block | The GSTIN in plain text |
+| EU - VAT summary | The VAT registration in plain text |
+
+<Shot src="/odoo-guides/odoo-restaurant-tables-bookings-billing/customer-bill-zatca-qr.webp" alt="80 mm customer bill from Odoo for a dine-in order with subtotal, 10 percent service, tax, total 68.75 and a ZATCA QR code marked simplified tax invoice" width={1440} height={560} caption="The 80 mm customer bill with the ZATCA QR." />
+
+The ZATCA option prints the QR code only. Saudi [e-invoicing](https://zatca.gov.sa/en/E-Invoicing/Pages/default.aspx) in its second phase also needs signed XML, a cryptographic stamp and reporting or clearance with ZATCA, which this module does not do; the [ZATCA guide for Odoo Community](/odoo-guides/zatca-e-invoicing-odoo-community/) covers that part.
+
+## Printing
+
+Both documents print from the order on an 80 mm paper format: **Print Bill** for the customer bill and **Print Ticket** for the kitchen ticket, or the Print menu. They are PDFs; the module does not send them to a printer by itself.
+
+## Try it on the demo
+
+On the [demo](https://restaurant.way4tech.com/), open Service, Floor Plan, then RES/2026/00001 under Reservations, then the paid order ZG/ORD/2026/00050 and its Invoice button. Back to the [series overview](/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/), or [ask about your own setup](/contact/).

@@ -1,0 +1,141 @@
+---
+title: "Menu engineering and recipe costing in Odoo 19: plate cost, stars and dogs, modifiers, allergens and wastage"
+metaTitle: "Menu Engineering and Recipe Costing"
+description: "Recipe cost, margin and food cost per dish in Odoo 19 Community, the star, plough horse, puzzle and dog grades, modifiers, allergens and the wastage log."
+targetQuery: "odoo menu engineering matrix recipe cost"
+category: "Industry"
+summary: "How the Restaurant Management module turns a product into a dish: categories and courses, recipes priced from ingredient cost, the food cost target, the daily menu engineering grades, modifier groups and extras, the fourteen allergens, the 86 button, and the wastage log that scraps stock at cost."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-cloud-kitchen-qr-table-ordering"
+seriesOrder: 3
+modules:
+  - name: "Restaurant Management, Cloud Kitchen and QR Table Ordering"
+    technical: "wt_restaurant_management"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://restaurant.way4tech.com/"
+  label: "Restaurant and cloud kitchen demo"
+related: ["odoo-restaurant-recipe-food-cost", "odoo-restaurant-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo work out the food cost of a dish?"
+    a: "Each recipe line costs its quantity times the ingredient product's cost price, converted to the product's own unit. The dish's recipe cost is the sum of the lines, margin is menu price less recipe cost, and food cost percentage is recipe cost divided by menu price. A dish above the company target, 33% by default, is flagged."
+  - q: "What are stars, plough horses, puzzles and dogs?"
+    a: "The four menu engineering grades. A star sells more than the average dish and earns more margin than the average. A plough horse sells well but earns little. A puzzle earns well but sells little. A dog does neither. The module grades every dish together from billed and paid orders of the last 90 days, once a day or on demand."
+  - q: "Can I take a dish off the menu for one night?"
+    a: "Yes. Mark Unavailable (86) on the dish switches it off without deleting it, and an order containing it cannot be sent to the kitchen. Press it again to bring the dish back."
+  - q: "Does wastage come out of stock?"
+    a: "Yes. A wastage entry is priced at the product's cost and, when you press Post to Stock, creates and validates an Odoo scrap from the outlet's kitchen stock location."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A busy restaurant can be full every night and still lose money, because the dishes that sell are not the dishes that earn. Two numbers tell you which is which: what each plate costs to make, and how often it is ordered compared with the rest of the menu. Most kitchens know the first roughly and the second not at all. This chapter shows how the [Restaurant Management module](/odoo-guides/odoo-cloud-kitchen-qr-table-ordering/) keeps both, dish by dish, on Odoo 19 Community, and how it logs the food that ends up in the bin.
+
+If you run the Way4Tech Restaurant Suite on the Point of Sale instead, its recipe costing is in the [recipes and food cost guide](/odoo-guides/odoo-restaurant-recipe-food-cost/).
+
+## Categories and courses
+
+The menu is split into **Categories** (Menu, Categories): Cold Mezze, Charcoal Grill, Sides, Desserts, Beverages on the demo. Categories can nest, so Drinks can hold Hot and Cold. Each one has a **Course**: Starter, Main Course, Side, Dessert, Beverage or Other. The course travels with every order line, so the kitchen display and the dish report can be grouped by course as well as by station.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/menu-category-course.webp" alt="Odoo menu category form for Charcoal Grill with its course set to Main Course and the number of items" width={1440} height={900} caption="A category and its course." />
+
+## A dish, field by field
+
+**Menu, Menu Items** opens the menu as cards with price and allergen badges, and as a list. A dish form has three blocks:
+
+- **On the menu**: the category, the **Product** that is invoiced and reported on (one per dish), the **Menu Price**, the outlets it is **Sold At** (empty means all) and the company.
+- **Kitchen**: the station it is **Cooked At**, the **Prep Time** in minutes (which also drives the promised delivery time), **Available**, and the hours it is **Served Between**.
+- **Margin**: recipe cost, margin, food cost percentage and the menu engineering grade, all worked out for you.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/dish-form-kitchen.webp" alt="Odoo menu item form for Mixed Charcoal Grill showing category, product, menu price 28.00, cooked at Charcoal Grill, prep time 22 minutes and the Available switch" width={1440} height={530} caption="The top of a dish: what it is on the menu and how the kitchen makes it." />
+
+Pick the product first and the dish name and price are copied from it. A menu price cannot be negative, and a menu code (MZ01, GR01) can be used once per company.
+
+## The recipe and the plate cost
+
+The **Recipe** tab has one line per ingredient: the product, the quantity, the unit, its cost, whether the kitchen may leave it out, and a preparation note. Ingredients must be goods products, and a quantity must be above zero.
+
+Each line costs **quantity times the ingredient's cost price**, after converting the quantity into the ingredient product's own unit. The dish then shows:
+
+- **Recipe Cost**: the sum of the lines.
+- **Margin**: menu price less recipe cost.
+- **Food Cost %**: recipe cost divided by menu price.
+- **Over Target**: ticked, with a yellow warning on the form, when the food cost is above the company's **Target Food Cost** (33% unless changed in Settings).
+
+Because the cost comes from the product, a new purchase price changes every dish that uses that ingredient, with nobody updating a spreadsheet.
+
+Here is the demo's Hummus Beiruti, set up correctly:
+
+| Ingredient | Quantity | Cost price | Line cost |
+|---|---|---|---|
+| Chickpeas | 0.15 kg | 1.80 per kg | 0.27 |
+| Tahini | 0.04 kg | 5.40 per kg | 0.22 |
+| Olive oil | 0.02 kg | 8.00 per kg | 0.16 |
+| Pita bread | 2 units | 0.25 per unit | 0.50 |
+| **Recipe cost** | | | **1.15** |
+
+Against a menu price of 6.00 that is a food cost of 19.1% and a margin of 4.85, comfortably under the 33% target.
+
+<Callout title="Match the units, and do not trust the demo's cost figures">
+On the demo, the ingredient products were created in Units while their recipe lines are in kg. Odoo 19 converts 0.15 kg into 150 units without complaint, so every recipe cost on the demo is a thousand times too high and the food cost percentages run into the thousands. In your own database, give each ingredient product the unit you buy it in and use a unit that belongs with it on the recipe. The module does not warn you when the two do not match.
+</Callout>
+
+## Diet, allergens and the 86 button
+
+The **Description & Diet** tab holds the menu description, calories, spice level (Not Spicy, Mild, Medium, Hot), the Vegetarian, Vegan and Halal flags, and the allergens the dish contains.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/dish-diet-allergens.webp" alt="Description and Diet tab of an Odoo dish with menu description, calories, spice level, vegetarian, vegan and halal flags and allergen tags" width={1440} height={900} caption="Diet and allergens on the dish." />
+
+The fourteen allergens most menus have to declare are loaded on install, each with a short code such as G for cereals containing gluten or SE for sesame, under **Menu, Allergens**.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/allergens-list.webp" alt="Odoo Allergens list with fourteen declarable allergens and their short codes" width={1440} height={900} caption="The fourteen allergens loaded with the module." />
+
+When a dish runs out, **Mark Unavailable (86)** at the top of its form switches it off without deleting it. An order that contains an unavailable dish cannot be sent to the kitchen, and the message names it. The **86'd** filter lists everything that is off tonight.
+
+<Callout title="Served Between does not block orders">
+The serving hours are checked for sense when you save them, but sending an order does not look at the time of day. Use the 86 button for anything that must not be sold right now.
+</Callout>
+
+## Modifier groups and extras
+
+A **modifier group** (Menu, Modifier Groups) is a question with options: How would you like it cooked? or Add an extra. It has **Required**, a **Min** and a **Max**. Min 1, max 1 means exactly one answer; max 0 means as many as the guest likes. Each option can carry an **Extra Price**, and can name a product it **Consumes**.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/modifier-cooking-choice.webp" alt="Odoo modifier group How would you like it cooked with required set, minimum 1, maximum 1 and its options" width={1440} height={900} caption="A required cooking choice: exactly one answer." />
+
+A dish lists the groups it uses on its **Options** tab. The demo's mixed grill takes both the cooking choice and the extras.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/dish-modifier-groups.webp" alt="Options tab of the Mixed Charcoal Grill dish in Odoo listing two modifier groups" width={1440} height={900} caption="The modifier groups on a dish." />
+
+When an option is picked on an order line, its price is added to the line and its name printed on the bill and the invoice. Two things are not done in this version: the minimum and maximum are not enforced when options are picked on a line, and an option's Consumes product is not taken out of stock. Only the dish's own recipe is.
+
+**Combos** work the other way round: tick Combo / Meal Deal on a dish and a Combo tab appears where you list the dishes it contains, priced as one.
+
+## Menu engineering: stars, plough horses, puzzles, dogs
+
+Menu engineering sorts each dish by two questions: does it sell more than the average dish on the menu, and does it earn more margin than the average dish? The module answers both from billed and paid orders of the last 90 days.
+
+| Grade | Sells | Earns | What to do |
+|---|---|---|---|
+| Star | Above average | Above average | Keep it, feature it, protect the recipe |
+| Plough Horse | Above average | Below average | Reprice it or bring the plate cost down |
+| Puzzle | Below average | Above average | Move it, rename it, get the staff to recommend it |
+| Dog | Below average | Below average | Take it off the menu |
+
+**Menu, Menu Engineering** lists every dish grouped by grade with price, recipe cost, margin and food cost, and each dish's form shows its grade, the quantity and revenue of the last 90 days, and when it was last analysed. A dish that sold nothing in the period gets no grade.
+
+The averages only mean something across the whole menu, so the grades are refreshed for every dish at once: by the scheduled action **Restaurant: refresh menu engineering** once a day, or straight away with the refresh button on a dish, which reports how many dishes were reclassified. The margin side uses the recipe cost, which is one more reason to get the units right before reading the grades.
+
+## The wastage log
+
+The other way stock leaves a kitchen is the bin. **Kitchen, Wastage** records it: the date, outlet, product, quantity and unit, and a **Reason**: Spoiled / Expired, Dropped or Broken, Cooked Too Much, Staff Meal, Remade for a Guest, Training or Other, with a note. The **Cost** is the quantity at the product's cost price, and **Logged By** is whoever entered it.
+
+<Shot src="/odoo-guides/odoo-menu-engineering-recipe-costing/wastage-entry.webp" alt="Odoo kitchen wastage entry WST/2026/00001 for 1.5 kg of tomato, reason Spoiled or Expired, cost 1.65, with a Post to Stock button" width={1440} height={900} caption="A wastage entry waiting to be posted to stock." />
+
+**Post to Stock** creates and validates an Odoo scrap from the outlet's kitchen stock location, so the shelf count in Inventory matches the shelf. It needs that location set on the outlet. A posted entry cannot be cancelled; correct it with an inventory adjustment. The pivot view adds up quantity and cost by reason, outlet or product, which is the monthly conversation about what was thrown away and why.
+
+## Try it on the demo
+
+On the [demo](https://restaurant.way4tech.com/), open Menu, Menu Items, Mixed Charcoal Grill and click through its tabs, then Menu, Modifier Groups and Kitchen, Wastage. Read the cost figures with the callout above in mind. The last chapter covers [tables, bookings and billing](/odoo-guides/odoo-restaurant-tables-bookings-billing/).

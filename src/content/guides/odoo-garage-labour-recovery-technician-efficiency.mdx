@@ -1,0 +1,148 @@
+---
+title: "Bays, technicians and labour recovery in Odoo: flat rate hours against clocked hours"
+metaTitle: "Bays, Technicians and Labour Recovery"
+description: "Set up workshop rates, bays, technicians and a flat rate labour book in Odoo 19, clock time per operation, and read efficiency, recovery and gross profit."
+targetQuery: "odoo workshop labour efficiency flat rate clocked hours"
+category: "Industry"
+summary: "The workshop, bays, labour operations and technicians behind every job card, how technicians clock time, how sold and clocked hours become efficiency, recovery and labour cost, and the reports that show it."
+published: 2026-12-17
+updated: 2026-12-17
+series: "odoo-garage-management"
+seriesOrder: 3
+modules:
+  - name: "Garage Management"
+    technical: "w4t_garage_management"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://garage-demo.way4tech.com/"
+  label: "Garage Management demo"
+related: ["odoo-garage-management", "zkteco-adms-odoo", "odoo-car-wash-staff-commission"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What is the difference between efficiency and recovery?"
+    a: "Efficiency is hours sold divided by hours clocked on the work: above one hundred per cent the job beat the book. Recovery is hours sold divided by the hours the technician was paid to be there, taken from their contracted hours per week. Efficiency tells you how fast the work was done; recovery tells you how much of the paid week was sold."
+  - q: "Does the customer pay for the hours clocked or the flat rate?"
+    a: "The flat rate. The labour line sells the operation's flat rate hours at the rate on the line, whatever the clock says. Clocked hours only change the cost side, and so the margin."
+  - q: "What happens when a technician forgets to clock off?"
+    a: "A scheduled job runs every six hours and closes any clock that has been running for more than twelve hours, setting it to eight hours from the clock on time, with a note on the log and on the job card. A single time log longer than 24 hours is refused."
+  - q: "Does recovery use the attendance terminal?"
+    a: "No. Attended hours are worked out from the contracted hours per week on the technician record, times four, over the last 28 days. The module does not read Odoo Attendance or a clocking terminal."
+  - q: "Can technicians see the margin?"
+    a: "No. Cost per hour, labour cost, parts cost, gross profit and the Money tab on the job card are visible to the Workshop Manager group only. A technician sees their own jobs and clocks, without costs."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A workshop sells hours it has not worked yet. The customer pays for the book time on a clutch, five and a half hours, whether the job takes four or seven. Whether the business makes money depends on the gap between the hours sold and the hours the technicians actually spent, and on how much of their paid week they spent selling hours at all. This chapter of the [garage management series](/odoo-guides/odoo-garage-management/) shows the setup that makes that gap measurable in the Garage Management module, and the reports that show it.
+
+## The workshop: rates and where things post
+
+Each site is one record under **Configuration, Workshops**. Besides the code that prefixes job numbers and the opening and closing times, it holds the money side:
+
+- **Labour Rate / Hour**: what an hour sells for. Every operation is priced at its flat rate hours times this figure.
+- **Labour Cost / Hour**: what an hour on the ramp costs once wages and overheads are in. It is the fallback for gross profit when the technician on a line has no cost of their own. Managers only.
+- **Sundries (%)** and the **Sundries Product**: consumables recovered as a percentage of labour.
+- **Labour Product**: the fallback invoice product for labour lines whose operation has none, so revenue lands in the right account with the right tax.
+- **Billing Journal**, **Parts Issue Operation** and **Parts Store**: where invoices go and where parts are drawn from.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/workshop-rates.webp" alt="Workshop form in Odoo showing the rates block with labour rate per hour, labour cost per hour and sundries percentage, the accounting and stock block with labour product, sundries product, billing journal, parts issue operation and parts store, and the bays tab" width={905} height={420} caption="The workshop's rates and where its invoices and parts go." />
+
+## Bays
+
+Bays are listed on the workshop and under **Configuration, Bays**. A bay has a kind (general, two post lift, four post lift, pit, test lane, diagnostic, tyre bay, body shop or valet) and three facts the job card checks:
+
+- **Has a Lift**: a job with an operation that needs a lift cannot be put in a bay without one;
+- **Approved Test Lane**: only an approved lane takes a roadworthiness test job;
+- **Max Weight (t)**: a vehicle whose kerb weight is over this is refused.
+
+Two open jobs cannot hold the same bay over overlapping planned times, and Start Work refuses a job with no bay at all. The bay list shows the open jobs on each bay and which job is on the ramp now.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/bays.webp" alt="Bays list in Odoo with Bay 1, Bay 2, Bay 3 and a Test Lane, each with workshop, kind, has a lift, approved test lane, maximum weight in tonnes, open jobs and the job on the ramp now" width={1440} height={330} caption="Four bays on the demo, with the job on each ramp right now." />
+
+## The flat rate labour book
+
+**Configuration, Labour Operations** is your own book of times. Nothing is looked up from a manufacturer database: you write the times you sell at. Each operation has:
+
+- a **Code** (the franchise operation code, if you work to one) and a name;
+- a **Category**: servicing, engine, brakes, steering and suspension, transmission, electrical, air conditioning, exhaust and emissions, tyres and wheels, bodywork, diagnostics or roadworthiness;
+- **Flat Rate (h)**, the hours the customer pays for;
+- **Skill Level**, the lowest grade allowed on it (apprentice, technician, senior or master technician);
+- **Needs a Lift**, for anything done from underneath;
+- a **Labour Product** to invoice it under, so servicing and bodywork can post to different accounts;
+- **Repeat Every** months and distance for recurring work, which feeds the service reminders.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/labour-operations.webp" alt="Labour Operations list in Odoo with codes such as SVC-FULL, BRK-PAD-F and ENG-CAM, names, categories, flat rate hours, skill level and labour product" width={1440} height={630} caption="The demo's labour book: code, category, flat rate hours, skill level and invoice product." />
+
+## Technicians
+
+Each technician under **Configuration, Technicians** is linked to a workshop and, ideally, an Odoo user. The link is what lets them see their own job cards and clocks, sign their own quality checks and have new time logs default to them. The record holds:
+
+- **Code**, the clock number printed on the job card;
+- **Grade**, checked against each operation's skill level when they are put on a labour line;
+- **Can Sign Off Quality**, for the people allowed to pass work;
+- **Tester Licence**, needed to be named on a roadworthiness certificate (managers only);
+- **Contracted Hours / Week** (forty by default), used for recovery;
+- **Cost / Hour**, what their hour costs the business (managers only). This drives the labour cost on the jobs they do.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/technician.webp" alt="Technician form in Odoo for a master technician with code, workshop, grade, can sign off quality ticked, tester licence, contracted hours per week and cost per hour in AED" width={1440} height={470} caption="A technician: grade, sign off authority, contracted hours and cost per hour." />
+
+Under **Last Four Weeks** the form shows hours sold and clocked over the last 28 days, efficiency, and recovery.
+
+## Clocking time
+
+Time is recorded as time logs, either on the job card's **Time** tab or under **Workshop, Time Logs**. A log names the job, the **operation** (one of the job's labour lines), the technician, an activity and the times on and off. The activities are repair, servicing, diagnostics, road test, waiting on parts, rework and valet; waiting and rework show in a warning colour because they are the hours you never sell. A running log has a clock off button on the line and on the form.
+
+The rules on a log:
+
+- one technician can only have one running clock at a time;
+- a log cannot finish before it starts, or run longer than 24 hours;
+- the operation must be a labour line on the same job;
+- every six hours a scheduled job closes any clock left running more than twelve hours, at eight hours from its start, and notes it on the job card.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/time-logs.webp" alt="Time Logs list in Odoo with clocked on time, technician, job card, vehicle, activity, clocked off time and hours for each log" width={1440} height={900} caption="Time logs: who was on which job, doing what, and for how long." />
+
+There is no separate clock on button or terminal screen: a technician starts a log by adding a line with the clock on time and stops it with clock off. A job cannot go to quality check while any log on it is still running.
+
+<Callout title="Clock against the operation as well as the job">A log with no operation still counts towards the job's clocked hours and efficiency, but the labour cost is worked out per labour line from the logs on that line. Clock only against the job and the line's cost falls back to the sold hours, so an overrun never shows up in the margin. Pick the operation on every log.</Callout>
+
+## From hours to money
+
+For each labour line and each job the module works out:
+
+- **Sold Hours**: the hours on the labour lines;
+- **Clocked Hours**: the hours on the time logs;
+- **Efficiency**: sold hours divided by clocked hours. Under one hundred, the work took longer than the book. A job with clocked time under the company's **Target Efficiency** (one hundred by default, in the settings) is flagged **below target**, and the job list has an **Under Target Efficiency** filter.
+
+The labour cost of a line is its clocked hours (or the sold hours, until anyone clocks on) times the technician's cost per hour, or the workshop's labour cost per hour when the technician has none. A part's cost is its cost price, filled from the product's cost when the part is added, times the quantity. A line marked not chargeable sells nothing but keeps its cost.
+
+The **Money** tab on the job card, for managers, then shows labour revenue, labour cost and **Labour Profit**, parts revenue, parts cost and **Parts Profit**, sundries, and the **Gross Profit** and margin per cent for the job. Keeping labour and parts apart is the point: a workshop that only sees the total cannot tell whether the parts counter is carrying the ramps.
+
+**Recovery** on the technician record is hours sold over attended hours in the last 28 days, where attended hours are the contracted hours per week times four. It is the figure that pays the wages: a technician can be fast on every job and still sell only half the week.
+
+## The reports
+
+**Reporting, Gross Profit** opens invoiced jobs as a pivot by workshop and month with labour revenue, parts revenue and gross profit, plus a graph and a list.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/gross-profit.webp" alt="Gross Profit pivot in Odoo by workshop with amount labour, amount parts and gross profit for September and October 2026 and the total in AED" width={1440} height={380} caption="Gross Profit: labour, parts and profit per workshop, month by month." />
+
+**Reporting, Labour Recovery** lists every labour line grouped by technician, with sold hours, clocked hours, revenue and cost. Lines under eighty per cent efficiency are highlighted, and the filters **Took Longer Than the Book** and **Not Charged** pick out the overruns and the free work. Switch it to the pivot for sold against clocked hours per technician per month.
+
+<Shot src="/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/labour-recovery-pivot.webp" alt="Labour Recovery pivot in Odoo with technicians as rows and September, October and November 2026 as columns, showing sold hours, clocked hours and price subtotal in AED for each" width={1440} height={530} caption="Sold against clocked hours per technician, month by month." />
+
+A **None** row in that pivot is labour sold with no technician on the line. Those lines have no clocked hours against anyone, so put a technician on every line: the quality check refuses a job with an unassigned line anyway.
+
+The other reports round it out. **Parts Used** lists every part fitted with its supplier reference and warranty end date, the first place to look when a comeback lands. **Comebacks and Rework** groups comebacks and warranty jobs by reason. The time logs pivot by technician and activity shows how much of the day went on waiting for parts or rework. The job card list also has a graph of hours sold against hours clocked per technician.
+
+<Callout title="A display fault on percentage fields">On the demo, efficiency on the job card, the labour lines and the technician record, the margin per cent on the job's Money tab, recovery on the technician record and conversion on check sheets show the figure multiplied by a hundred (a job at 88.5 per cent reads as 8,850 per cent), and grouped rows in Labour Recovery add the percentages up. Sold and clocked hours and the money amounts are right, and the figures on the Workshop Floor and Trading boards in the Enterprise add-on read correctly. Work from the hours until this is fixed.</Callout>
+
+## Setting it up
+
+1. Create the workshop with its labour rate, labour cost per hour, sundries, products, journal and parts locations.
+2. Add every bay with its kind, lift, test lane approval and weight rating.
+3. Write your labour book: one operation per job you sell, with flat rate hours, skill level, lift flag and labour product.
+4. Add each technician with grade, sign off flag, tester licence where they have one, contracted hours and cost per hour, linked to their Odoo user.
+5. Set the target efficiency in **Configuration, Settings**.
+6. Agree with the technicians that every time log names the operation, and check the Labour Recovery report weekly for the first month.
+
+Technician commission on hours sold or job margin, and the Workshop Floor and Trading boards, come with the Enterprise add-on and are covered in the [service plans and claims chapter](/odoo-guides/odoo-garage-service-plans-insurance-claims/). If your technicians clock in on a ZKTeco terminal for attendance, the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) covers that side, which this module does not read. Back to the [garage overview](/odoo-guides/odoo-garage-management/).

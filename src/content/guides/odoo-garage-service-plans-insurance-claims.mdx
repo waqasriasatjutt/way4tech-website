@@ -1,0 +1,152 @@
+---
+title: "Garage Management Enterprise: service plans, insurance claims, rate cards and workshop boards"
+metaTitle: "Service Plans, Claims and Rate Cards"
+description: "The Odoo 19 garage add-on: rate cards per account, service plans and AMCs drawn down by jobs, insurance split invoices, sublet work and commission."
+targetQuery: "odoo garage service plan insurance claim split invoice"
+category: "Industry"
+summary: "What the Garage Management Enterprise add-on adds around the job card: rate cards, service plans, AMCs and extended warranties, insurance and warranty claims with the excess and shortfall, split invoices, sublet work, technician commission, statements and the two boards."
+published: 2026-12-17
+updated: 2026-12-17
+series: "odoo-garage-management"
+seriesOrder: 4
+modules:
+  - name: "Garage Management Enterprise"
+    technical: "w4t_garage_enterprise"
+    note: "USD 99 add-on, needs Garage Management, runs on Odoo 19 Community"
+  - name: "Garage Management"
+    technical: "w4t_garage_management"
+    note: "USD 199, the base module the add-on needs"
+demo:
+  url: "https://garage-pro.way4tech.com/"
+  label: "Garage Management Enterprise demo"
+related: ["odoo-garage-management", "odoo-maintenance-contracts-billing", "odoo-car-wash-staff-commission"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo bill an insurance repair with an excess?"
+    a: "With the Enterprise add-on, once the claim is approved, Invoice raises two invoices: one to the insurer for the approved amount (never more than the job value) and one to the owner for the rest of the job value: the excess plus anything the insurer would not pay. The two add up to the job value before tax."
+  - q: "Is a job on a service plan invoiced?"
+    a: "No. A job drawn against a service plan is marked invoiced without a customer invoice, because the plan was the sale. The plan covers the whole job, so take work the plan does not include off the plan by clearing the Service Plan field before you invoice it."
+  - q: "Does selling a service plan create an invoice?"
+    a: "No. The plan records what it was sold for, but the add-on does not invoice the plan itself. Invoice the plan sale in Odoo Sales or Accounting the way you sell any other product."
+  - q: "Can a fleet customer pay a different labour rate?"
+    a: "Yes. A rate card sets a labour rate per account, with rates per category of work or per operation and a parts discount. Put the card on the customer's contact or on their service plan and new labour lines on their jobs start at the card's rate."
+  - q: "Does the Enterprise add-on need Odoo Enterprise?"
+    a: "No. Enterprise is the name of the add-on. It needs only the Garage Management module and runs on Odoo 19 Community as well as Enterprise."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The base Garage Management module assumes the person who drove the car in is the person who pays. Often that is not true: a fleet pays a negotiated rate, a customer on a service package has already paid, an insurer pays most of a crash repair and the owner pays the excess. Each case changes who is invoiced and what the margin really is. This chapter of the [garage management series](/odoo-guides/odoo-garage-management/) covers the **Garage Management Enterprise** add-on (USD 99), which handles that money. Despite the name it runs on Odoo 19 Community and needs only the base module. The screenshots come from the demo with the add-on installed, a fictional Dubai workshop billing in AED.
+
+The add-on adds a **Plans and Claims** group, between Service Advisor and Workshop Manager, for the people who sell plans and handle claims. Rate cards and commission are for Workshop Managers.
+
+## Rate cards: what each account pays an hour
+
+**Configuration, Rate Cards** holds one card per kind of account: retail, trade, fleet, insurer or internal. A card has:
+
+- a **Labour Rate**, used for any work the card does not price specifically;
+- **Rates by Work** lines, each pricing either a whole category (bodywork, servicing and so on) or one named operation. A line naming the operation beats a line for its category, and both beat the card's own rate;
+- a **Parts Discount (%)**, put on parts lines as they are added to the job when the line has no discount yet;
+- optional start and end dates. A card outside its dates is not picked up.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/rate-card.webp" alt="Rate card form in Odoo for a fleet account with a labour rate of 143.50 AED, a 12 per cent parts discount, and rates by work for the servicing category and for one named panel repair operation" width={1440} height={900} caption="A fleet card: its own labour rate, a parts discount, a rate for servicing and one for a named bodywork operation." />
+
+Put the card on the customer's contact (**Labour Rate Card**) or on their service plan. A job takes the card from the plan first, then from the customer, and the card shows on the job. New labour lines on that job start at the card's rate for the operation. You can pick a different card on the job by hand; it is only replaced if the customer or the plan on the job changes. Clearing it falls back to the workshop rate. Changing the card does not reprice lines already on the job.
+
+<Callout title="Check the rate on lines you add by hand">In the version reviewed, choosing an operation on a labour line in the job card form fills in the workshop rate from the base module, and accepted work added from a health check is priced at the workshop rate too. The card's rate is applied when a line is created without a rate, for example by import or by the module itself. Until that is changed, check the Rate column on card customers' jobs and type the card rate where it differs. The card's Own Sundries Rate setting is also not used yet: sundries always follow the workshop percentage.</Callout>
+
+## Service plans, AMCs and extended warranties
+
+**Plans and Claims, Service Plans** holds the cover a customer has paid for in advance. A plan has a customer, optionally one vehicle (leave it empty for a fleet agreement covering whatever they bring in), a workshop, a start and end date, a **Mileage Limit** (an odometer reading at which cover ends, zero for none), the price it was **Sold For**, an optional rate card, terms, and **What It Covers**: lines of services with how many of each and their retail value.
+
+A **Service Package** is a number of services bought up front: each job drawn against it uses one, and when none are left it stops being picked up. An **Annual Maintenance Contract** and an **Extended Warranty** cover the term with no count limit. **Start It** makes a plan running, and refuses one with nothing under What It Covers.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/service-plan.webp" alt="Service plan form in Odoo for a service package on one vehicle with start and end dates, mileage limit, price sold for, the services it covers with how many and retail value, and totals for services sold, used, remaining, work drawn down and margin" width={1440} height={900} caption="A package with four services: three used, the value of the work drawn down, and what the plan made against it." />
+
+### How a job draws down a plan
+
+When a job card is raised, the add-on looks for a running plan for the same customer and company whose dates include the day the car was booked in, whose vehicle (if it names one) is this vehicle, whose mileage limit has not been passed by the reading in, and, for a package, which still has services left. A plan naming the vehicle wins over a fleet agreement. The plan goes into the job's **Service Plan** field, the job shows "Drawn against ... The customer has already paid for this one", and **Paid By** reads A Service Plan.
+
+When that job is invoiced, no customer invoice is created. The job is marked invoiced, and the chatter on the job and on the plan records that it was taken off the plan. On the plan, **Services Used** counts every job drawn against it that is not cancelled, **Remaining** is what is left, **Work Drawn Down** is the value of those jobs before tax, and **Margin** is the price sold for less the work drawn down. A daily scheduled job marks plans past their end date as expired and packages with nothing left as used up.
+
+<Callout title="A plan covers the whole job">The add-on does not compare the job's labour with the services listed under What It Covers. Any job for that customer and vehicle inside the dates is drawn against the plan and not billed, brake pads included. When the job carries work the plan does not include, clear the Service Plan field on the job before invoicing, and it is billed normally. The plan's Sold For figure is also not invoiced by the add-on: invoice the plan sale itself in Sales or Accounting.</Callout>
+
+### Renewals
+
+Select plans and use **Renew Service Plans** from the Actions menu. The wizard sets the new term in months from the later of the old end date and today, a price change in per cent across the batch, whether to carry unused services over (as their own "Carried over from" line), whether to start the new plans at once and whether to expire the old ones.
+
+## Insurance and warranty claims
+
+On a job card, **Raise a Claim** opens a claim linked to the job, as Insurance, or Manufacturer Warranty on a warranty job. A claim records who pays the bill (insurer, manufacturer or warranty company), the policy number, their claim number, the surveyor, the dates, the damage and cause, and two figures kept apart: **Excess Paid by Owner** and **Approved Amount**.
+
+The claim moves from **Draft** to **Submitted**, then **They Approved It** or **They Refused**, and finally **Settled**. Approval is refused without their claim number. Once approved, the **Shortfall** is the job value less the excess less the approved amount, and a red banner on the claim says somebody has to agree to pay it.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/insurance-claim.webp" alt="Settled insurance claim in Odoo linked to a job and vehicle, with the insurer who pays the bill, policy number, claim number, surveyor, dates reported, approved and settled, job value, excess paid by owner, approved amount and a shortfall of zero" width={1440} height={900} caption="A settled claim: the excess and the approved amount add up to the job value, so the shortfall is zero." />
+
+On the job, an approved claim sets **Paid By** to An Insurer or Warranty and shows what the owner still owes: the excess plus the shortfall.
+
+### The split invoice
+
+Press **Invoice** on a Ready job with an approved or settled claim and the add-on raises two invoices instead of one:
+
+1. **The insurer's invoice**, to the company on the claim, for the approved amount or the job value if that is lower, with the claim number as the reference. It is one priced line, "Authorised under claim ...", with the labour and parts listed underneath as notes, because an insurer pays an agreed figure rather than a line by line bill.
+2. **The owner's invoice**, to the customer, for the rest of the job value, labelled as the policy excess and work not covered.
+
+Both figures are before tax, so the two add up to the job value before tax. Both invoices are drafts, and the job's main invoice link points at the owner's bill, which is the one the front desk looks for.
+
+<Callout title="Points to watch on claim jobs">The split happens only once the claim is approved: a job invoiced while the claim is still draft or submitted, or after it was refused, gets one ordinary invoice to the owner for everything. The split lines take their tax from the workshop's labour product, so if your parts carry a different tax rate from labour, check both invoices before confirming them. Nothing stops work starting before the insurer approves, or the car leaving with a shortfall nobody agreed: the shortfall is shown on the claim and on the Trading board, and chasing it is a person's job.</Callout>
+
+## Sublet work
+
+Work sent to another shop (paint and body, wheel alignment, machining, unit rebuild, specialist diagnostics, glass, trim, other) goes on the job's **Sublet** tab or under **Plans and Claims, Sublet Work**, not as a made up part. A sublet line names the shop it was sent to and their reference, the date sent, promised back and back, the **Cost** they charge, a **Markup (%)** (25 by default), and the **Sold For** price worked out from the two, which can be typed over. Untick Chargeable for rework done under warranty: the cost still counts.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/sublet-work.webp" alt="Sublet work form in Odoo for paint and body work on a job, sent to another shop with their reference, sent and promised back dates, a cost of 980 AED, a 25 per cent markup, sold for 1,225 AED and a margin of 245 AED, with a warning that it is still out past its promised date" width={1440} height={900} caption="Outwork with its cost, markup and margin, flagged because it is past the date promised back." />
+
+**Send Out** and **Book Back In** move the line through To Send, With Them and Back. A line still out past its promised date is shown as overdue. The sold price is added to the job total and invoiced in its own **Sublet** section, the sublet line carries its own margin apart from the parts margin, and **Invoice** is refused while any sublet line on the job is still out.
+
+<Callout title="Read the sublet margin on the sublet line">In the version reviewed, the job's Gross Profit takes off the sublet cost but does not add the sublet sale price, so a job with outwork shows less profit than it made, and so does the Trading board. Until that is corrected, read the margin on the sublet line itself.</Callout>
+
+## Technician commission
+
+**Configuration, Commission Rules** says how technicians are paid on top of their salary. A rule can be limited to one workshop and to named technicians, and pays on one basis:
+
+- **Per Hour Sold**: an amount for every hour sold above the threshold;
+- **Percent of Labour Sold**: a percentage of the labour value sold;
+- **Percent of Job Margin**: a percentage of the gross profit on their jobs, shared by the hours each technician sold on the job, so two people on one job are not both paid on all of it.
+
+**Hours Before Paying** is the allowance the salary already buys. **Minimum Efficiency (%)** pays nothing for a month below that efficiency. The first rule, in sequence order, that applies to a technician is the one used.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/commission-rules.webp" alt="Commission Rules list in Odoo with a foreman rule paying four per cent of job margin and a technicians rule paying six AED per hour sold after sixty hours" width={1440} height={250} caption="Two rules on the demo: four per cent of margin for the foreman, six AED an hour above sixty hours for the technicians." />
+
+**Plans and Claims, Technician Commission** holds one line per technician per month with hours sold and clocked, efficiency, labour sold, job margin, number of jobs and the amount. Only labour on jobs that reached Ready or Invoiced counts, by the date the job was booked in; clocked hours are all the technician's time logs started in the month. Lines go Draft, Approved, Paid, and a paid line cannot be cancelled. The Jobs button lists the labour lines behind a line.
+
+<Callout title="How commission lines are created">The lines are drafted by the scheduled job **Garage: draft last month's technician commission**, which runs monthly and works out the month before the day it runs. It ships switched off and there is no button on the commission screens to work out a month by hand, so switch the scheduled job on (or run it from the scheduled actions list) when your rules are ready. Re-running a month updates the draft lines and leaves approved and paid ones alone. On a percentage rule, once the technician passes the threshold hours the percentage is paid on the whole month's labour or margin, not only on the part above the threshold. Commission is not posted to payroll or accounting.</Callout>
+
+## Account statements
+
+**Plans and Claims, Account Statement** prints one sheet per fleet, insurer or trade account for a period: every Ready or Invoiced job where the account is the customer or the insurer on the claim, with registration, work done, claim or plan reference, amounts and whether it is billed. On an insurer's statement the amounts are the full job values, not the insurer's share.
+
+## The Workshop Floor and Trading boards
+
+**Dashboards, Workshop Floor** is the service manager's morning view, for one workshop or all, over the last 30 days, this month, quarter or year. Every figure opens the records behind it:
+
+- **Holding the floor up**: jobs past the promised time, waiting for the customer's yes, promised for today, and ready to collect;
+- **On the ramps**: jobs open, being worked on, bays in use against the number of bays, and jobs below the efficiency target;
+- **Are the hours being earned**: hours sold and clocked on jobs whose work finished in the period with time clocked on them, and the efficiency, with a verdict of beating the book, near the target (at least 85 per cent of it) or losing hours.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/workshop-floor-board.webp" alt="Workshop Floor dashboard in Odoo with tiles for jobs past the promise, waiting for a yes, out today, ready to collect, jobs open, being worked on, bays in use at 75 per cent, below target, hours sold, hours clocked and efficiency of 101.8 per cent beating the book" width={1440} height={900} caption="The Workshop Floor board: what is holding the floor up and whether the hours sold are being earned." />
+
+**Dashboards, Trading**, for the Plans and Claims group, shows the money for the same periods: turnover of jobs finished, collected or invoiced, before tax; gross margin with a verdict (healthy from 45 per cent, thin from 30 per cent, too thin below); the average invoice; the total claims are short by; plans running; services still owed on them; plans running out inside sixty days; and claims waiting on an insurer with their value.
+
+<Shot src="/odoo-guides/odoo-garage-service-plans-insurance-claims/trading-board.webp" alt="Trading dashboard in Odoo with turnover, gross margin marked healthy, average invoice, claims short, plans running, services still owed, plans running out and claims waiting with their value in AED" width={1440} height={734} caption="Trading: what the workshop took and kept, plus money sitting in plans and claims." />
+
+## Setting it up
+
+1. Install the add-on and give the staff who sell plans and handle claims the **Plans and Claims** group.
+2. Build your rate cards and put each one on the customer contacts it applies to. Create insurers and warranty companies as contacts.
+3. Enter each service plan with its cover lines and start it, and invoice the plan sale in Sales or Accounting.
+4. Set up the commission rules, then switch on the monthly commission scheduled job.
+5. Run one insurance job and one plan job end to end on a copy of your database, and check the invoices, before using it on live work.
+
+The job card these features hang on is in the [job card chapter](/odoo-guides/odoo-garage-job-card-estimate-approval/), and the hours behind commission and the boards in the [labour recovery chapter](/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/). Back to the [garage overview](/odoo-guides/odoo-garage-management/).

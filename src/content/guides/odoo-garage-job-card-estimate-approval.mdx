@@ -1,0 +1,159 @@
+---
+title: "Garage job card in Odoo: estimate, customer authority, quality check and invoice"
+metaTitle: "Garage Job Card: Estimate to Invoice"
+description: "A car workshop job card in Odoo 19 step by step: estimate, the customer's authority ceiling, extra work approval, parts, quality check and invoice."
+targetQuery: "odoo garage job card estimate approval"
+category: "Industry"
+summary: "The job card from booking in to invoice: what the estimate sets, how authority is recorded and enforced, what blocks Start Work, how the quality check is signed off and what lands on the invoice."
+published: 2026-12-17
+updated: 2026-12-17
+series: "odoo-garage-management"
+seriesOrder: 1
+modules:
+  - name: "Garage Management"
+    technical: "w4t_garage_management"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://garage-demo.way4tech.com/"
+  label: "Garage Management demo"
+related: ["odoo-garage-management", "odoo-vehicle-health-check-service-reminders", "odoo-auto-parts-wholesale"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a technician start work before the customer has agreed the price?"
+    a: "No. Start Work is only available on an approved job card, and it is refused when the job is now worth more than the amount the customer authorised, or when the job has no bay. Writing the stage directly, from an import or a bulk edit, is refused as well."
+  - q: "What happens when extra work is found halfway through a job?"
+    a: "Add the new labour or parts lines, then press Ask for More Authority. The job goes back to Awaiting Approval and the chatter records the new total against the old authority. The advisor raises the Authorised Up To figure, records the authority again, and the job can carry on."
+  - q: "Does the customer approve the estimate online?"
+    a: "No. The estimate goes out by email and the customer replies or rings. A service advisor then records who authorised it, how (in person, phone, email, message or on screen) and up to what amount. There is a signature field on the Authority tab for a signature taken on the screen at the counter."
+  - q: "Can the technician who did the work pass their own quality check?"
+    a: "Not while the Second Pair of Eyes setting is on, which is the default. Pass also needs a technician marked Can Sign Off Quality, and a technician can only sign in their own name. A service advisor can record the sign off for someone else."
+  - q: "Is the invoice posted automatically?"
+    a: "No. Invoice creates a standard Odoo customer invoice in draft, with labour and parts in two sections, and opens it. You check it and confirm it in Accounting the way you confirm any other invoice."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most arguments at a workshop counter start with one of three sentences: "nobody told me it would cost that much", "it was fine when I brought it in" and "you said it would be ready at four". A job card that records the customer's words, the reading on the way in, the figure they agreed and the time they were promised settles all three before they start. This chapter of the [garage management series](/odoo-guides/odoo-garage-management/) follows one job card in the Garage Management module from booking in to the invoice, and shows what the module refuses at each step and why.
+
+## Booking the car in
+
+Open **Workshop, Job Cards** and create a job card. The number starts with the workshop's code, so a group with several sites reads the branch off it (AQ/JOB/2026/00031 on the demo).
+
+- **Vehicle and Customer.** Pick the vehicle and the owner fills in. A job card for a vehicle that belongs to somebody else is refused.
+- **Reading In** is required. It starts at the last reading on file, and a lower reading is refused (log a correction on the vehicle if the cluster was changed).
+- **Fuel level** on arrival, **Job Kind** (service, repair, diagnostic, roadworthiness test, tyres, bodywork, recall or sale preparation), bay, priority, service advisor and lead technician.
+- **Waiting For** says why an open job is not moving: parts, customer authority, warranty approval, diagnosis or a free bay. **Customer Waiting** marks the people sitting in reception.
+
+The **Date Promised** fills itself with the workshop's closing time that day, or the next day for a car booked in after closing. The job is flagged late once that time passes and it is not ready, so it goes red on the list and the board without anyone touching it.
+
+The **What Was Wrong** tab keeps three texts apart: **Reported Fault** in the customer's words, **Diagnosis** for what you found, and **Work Carried Out**, which prints on the invoice. A warranty dispute is argued on the difference between the first two. **Seen Before** lists the vehicle's last four finished visits.
+
+If the vehicle is inside its manufacturer warranty (by date or by distance, set on the vehicle), choosing it ticks **Warranty Job** with the reason Manufacturer Warranty. A warranty job must say who pays: manufacturer, parts supplier, your own workmanship, goodwill or an extended warranty policy.
+
+## Pricing the job
+
+The **Labour** tab takes one line per operation from your labour operation list. The description, the sold hours (the operation's flat rate hours) and the rate (the workshop's labour rate) fill in from the operation, and you can type over them. Each line has a discount, taxes, a technician and a **Chargeable** tick. Untick it for warranty or goodwill work: the line drops to zero on the bill but its cost still counts in the margin.
+
+The **Parts** tab takes Odoo products. Sale price and cost come from the product, the on hand quantity shows next to each line, and each part carries a supplier reference and a warranty in months (twelve by default), which is what a comeback is checked against later.
+
+Under the parts, the totals show labour, parts, sundries, untaxed amount, tax and total. **Sundries** are the workshop's consumables percentage (3 per cent by default) of the chargeable labour, taxed the same way as the chargeable labour lines. Set the percentage to zero on the workshop if you bill consumables as parts.
+
+<Shot src="/odoo-guides/odoo-garage-job-card-estimate-approval/estimate.webp" alt="Printed estimate in Odoo for a Toyota Hiace with the reported fault, one labour line for fitting and aligning four tyres at 1.20 hours, workshop sundries, subtotal, tax and total in AED" width={1440} height={490} caption="The printed estimate: the reported fault, labour at flat rate hours, sundries and the total the customer is asked to agree." />
+
+## The estimate and the customer's authority
+
+**Send Estimate** is for service advisors only. It refuses a job card with nothing on it, sets **Authorised Up To** to the current total if nobody has typed a figure, moves the job to **Awaiting Approval** with Waiting For set to Customer Authority, and emails the estimate if the customer has an email address. The email lists labour, parts and the total including tax, and tells the customer nothing starts until they say so. **Print Estimate** gives the same figures on paper.
+
+When the customer answers, the advisor fills the **Authority** tab:
+
+- **Authorised By**, the name of the person who said yes;
+- **Method**: in person, by phone, by email, by message, or signed on screen;
+- **Authorised Up To**, the ceiling they agreed;
+- **Signature**, a signature field the customer can sign on the screen at the counter.
+
+Then **Record Authority**. It refuses without a name and a method, stamps the approval date, and writes "Authorised by ... up to ..." in the chatter. Only a service advisor or a manager can change the authority fields at all, so a technician cannot authorise their own work.
+
+A scheduled job, **Garage: chase unanswered estimates**, puts a Call activity on the workshop manager (or the advisor) for every estimate still waiting after the days set in the settings (three by default). It ships switched off.
+
+## Start Work and what it checks
+
+**Start Work** is the gate the module is built around. It refuses when:
+
+1. the job is not approved;
+2. the **Signed Authority Before Work** setting is on (the default) and there is no name and no method or signature on the authority;
+3. the job is now worth more than **Authorised Up To**. A yellow warning sits at the top of the job card as soon as that happens;
+4. there is no bay on the job.
+
+The bay itself is checked whenever the job is saved: a roadworthiness test can only go into a bay marked as an approved test lane, a job with an operation that needs a lift cannot go into a bay without one, a vehicle whose kerb weight is over the bay's rating is refused, and two open jobs cannot hold the same bay over overlapping **Bay From** and **Bay Until** times. On the labour lines, a technician below the operation's skill level (an apprentice on a senior operation, for example) is refused.
+
+## Extra work found on the ramp
+
+The technician lifts the car and finds the discs are scored. Add the operation and the parts to the job card, then press **Ask for More Authority**. The job goes back to **Awaiting Approval**, the approval date is cleared, and the chatter records "Extra work found. The job is now worth ... against an authority of ...". The advisor rings the customer, raises **Authorised Up To**, and presses **Record Authority** again. Start Work then goes through, because the new total is inside the new ceiling.
+
+If the advisor records authority without raising the figure, the job approves but Start Work still refuses, so the call cannot be skipped.
+
+<Shot src="/odoo-guides/odoo-garage-job-card-estimate-approval/job-card-over-authority.webp" alt="Job card in Odoo in progress and marked late, with a warning that it is now worth more than the customer authorised, customer and vehicle details, bay, job kind, lead technician, and a chatter showing the amount total rising after six items were added from a health check against an authority recorded earlier" width={1440} height={880} caption="Six items accepted from a health check took this job past the figure the customer signed for, so the warning is up and the authority has to be raised. Shot on the demo with the Enterprise add-on, which adds the Service Plan, Rate Card and Paid By fields." />
+
+<Shot src="/odoo-guides/odoo-garage-job-card-estimate-approval/workshop-board.webp" alt="Workshop Board kanban in Odoo with job cards grouped into Approved, Estimate, In Progress, Quality Check and Ready columns, each card showing registration, customer, job number, bay, technician, total and Late or Waiting badges" width={1440} height={900} caption="The Workshop Board: every open job in its stage, with Late, Waiting and On parts badges." />
+
+The **Workshop Board** shows every open job card by stage, with badges for Late, Customer Waiting, Comeback and On parts. The cards cannot be dragged between columns on purpose: the stage only moves with the buttons on the job card, which run the checks.
+
+## Drawing the parts
+
+**Draw the Parts** is available on approved and in progress jobs with a parts list. It creates one Inventory transfer from the workshop's parts store to the customer location for every part that is a stock tracked product, confirms it and reserves the stock, and links it to the job card under the Parts Issue button. It can be used once per job; a second issue is done from Inventory. Parts that are not stock tracked products stay on the job and the invoice without a stock move.
+
+## Finished, Check It
+
+When the work is done, **Finished, Check It** moves the job to **Quality Check**. It refuses while:
+
+- any technician is still clocked on to the job;
+- any labour line has no technician against it;
+- **Work Carried Out** is empty, because that text goes on the invoice and is what a comeback is argued from.
+
+Clocking on and off, and what the hours do to the margin, are covered in the [labour recovery chapter](/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/).
+
+## Quality check: Pass or Send It Back
+
+Put the checker in **Signed Off By** on the Authority tab, then **Pass**. It refuses when:
+
+- nobody is named, or the person named is not marked **Can Sign Off Quality** on their technician record;
+- the **Second Pair of Eyes on Quality Check** setting is on (the default) and the checker is the job's lead technician;
+- the user pressing Pass is a technician signing in somebody else's name. Only an advisor can record a sign off on another person's behalf.
+
+A passed job is **Ready**. If nobody filled in **Reading Out**, it takes the reading in. The reading goes onto the vehicle's odometer history, and on a job of kind Service the open service reminders for the vehicle are closed and the next one is set from the reading and date of this visit (see the [health check and reminders chapter](/odoo-guides/odoo-vehicle-health-check-service-reminders/)). The customer gets a "ready to collect" email if they have an address.
+
+**Send It Back** needs a quality note, returns the job to In Progress, posts the note on the chatter and adds one to the fail count, so repeat failures are visible later.
+
+## The invoice
+
+**Invoice** is for advisors and only works on a Ready job. It refuses while the courtesy car on the job is still out with the customer. It creates a standard Odoo customer invoice in draft and opens it:
+
+- a **Labour** section with one line per chargeable labour line, named with the hours, invoiced under the operation's labour product or the workshop's fallback labour product, quantity in hours at the line's rate;
+- a **Workshop sundries** line, when the workshop has a sundries product set;
+- a **Parts** section with each chargeable part, its supplier reference added to the description;
+- a courtesy car line for a returned loan that carries a hire charge;
+- the reported fault and the work carried out in the invoice notes, and the job number and registration as the origin.
+
+Lines marked not chargeable stay off the bill. The invoice uses the workshop's billing journal if one is set. From here it is an ordinary Odoo invoice: confirm it, send it and register the payment in Accounting.
+
+<Callout title="Draft first, and cancelling has rules">Invoice creates the invoice in draft; nothing is posted until you confirm it in Accounting. A job with a live invoice cannot be cancelled: cancel or credit the invoice first. A job whose parts transfer is already done cannot be cancelled either until the parts are returned in Inventory; a transfer that is only reserved is cancelled with the job. Back to Estimate works only on a cancelled job.</Callout>
+
+## The printed job card
+
+**Print Job Card** prints the A4 work order for the bay: vehicle details, the reported fault, each operation with hours, technician and a Done box, each part with a Fitted box, space for the work carried out, and the authorisation wording with signature and date lines. It carries no prices; those stay on the estimate and the invoice.
+
+<Shot src="/odoo-guides/odoo-garage-job-card-estimate-approval/printed-job-card.webp" alt="Printed garage job card from Odoo with the reported fault, front brake pads operation at one hour with the technician and a Done box, the brake pad set part with supplier reference and a Fitted box, and the customer authorisation box with method and name" width={1440} height={645} caption="The printed job card is the technician's work order: operations, parts and the authority box, no prices." />
+
+## Comebacks and warranty work
+
+When a car comes back with the same fault, open the original job and press **Raise a Comeback** (available on Ready and Invoiced jobs). It opens a new estimate for the same customer and vehicle, linked to the original, with the reason set to Workmanship; change it to the real one (part failed, work not completed, wrong diagnosis, workmanship, unrelated fault or customer expectation). The reason is required, and a comeback on a different vehicle is refused. When you tick Comeback by hand on a job card and pick the original job, the reason suggests Part Failed if a part fitted on the original job is still inside its warranty. **Reporting, Comebacks and Rework** lists comebacks and warranty jobs grouped by reason.
+
+## Setting it up for this flow
+
+1. In **Configuration, Settings**, decide on Signed Authority Before Work, the Second Pair of Eyes and the estimate chase days.
+2. On the workshop, set the code, closing time, labour rate, sundries, labour product, journal and parts locations. Set the sundries product too: sundries count in the job total either way, but the invoice only carries them when that product is set.
+3. Mark who may pass work as **Can Sign Off Quality**, and link each technician to their Odoo user.
+4. Run one job end to end on a test vehicle, including an Ask for More Authority and a failed quality check, before the counter uses it.
+
+The money side of the same job, rate cards, service plans and insurance split bills, is in the [Enterprise chapter](/odoo-guides/odoo-garage-service-plans-insurance-claims/). The [garage overview](/odoo-guides/odoo-garage-management/) has the full map.

@@ -1,0 +1,140 @@
+---
+title: "Vehicle health checks and service reminders in Odoo: red, amber, green and date or distance"
+metaTitle: "Health Checks, Vehicles and Reminders"
+description: "Keep each customer car on its own Odoo record with odometer history and test certificates, sell red and amber check items, and remind owners by date or km."
+targetQuery: "vehicle health check service reminder odoo"
+category: "Industry"
+summary: "The vehicle record and its odometer history, roadworthiness certificates, the red, amber and green check sheet that turns advisories into priced work, service reminders by date or distance, and courtesy car loans."
+published: 2026-12-17
+updated: 2026-12-17
+series: "odoo-garage-management"
+seriesOrder: 2
+modules:
+  - name: "Garage Management"
+    technical: "w4t_garage_management"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://garage-demo.way4tech.com/"
+  label: "Garage Management demo"
+related: ["odoo-garage-management", "odoo-garage-job-card-estimate-approval", "odoo-fleet-documents-dispatch-readiness"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does a service reminder fire on the date or on the mileage?"
+    a: "On whichever comes first. A reminder carries a due date and a due reading. The daily reminder job emails the owner when the due date falls inside the lead time you set, or when the reading on file has already reached the due reading. The distance side only knows the readings the workshop has recorded."
+  - q: "Can an advisory on the health check go straight onto the job card?"
+    a: "Yes. Tick Accepted on the amber or red items the customer agrees to, then press Add Accepted Work to the Job. Each accepted item becomes a labour line on the open job card at the operation's flat rate hours. Items already added are not added twice."
+  - q: "Can a technician mark an item amber without writing anything?"
+    a: "No. An amber or red item is refused without a measurement or a comment, and the sheet cannot be completed while any item has no colour. A green item cannot be marked as accepted work."
+  - q: "Which roadworthiness schemes are supported?"
+    a: "The certificate record names its scheme: MOT (United Kingdom), ITV (Spain), Fahes (Qatar), RTA Vehicle Test (UAE), Hauptuntersuchung (Germany), Controle Technique (France), a generic roadworthy certificate or another scheme. The certificate is a record you keep; nothing is sent to a test authority."
+  - q: "What if the odometer reading really is lower, after a cluster change?"
+    a: "Add the reading on the vehicle's Odometer tab with Is Correction ticked. Without the tick a reading lower than an earlier one is refused, and corrections show in a different colour so nobody mistakes them for normal readings."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A workshop earns most of its next visit on the current one. The amber brake pad, the tyre at three millimetres and the certificate that runs out in six weeks are all work the customer will need, and whoever writes them down with a price and a date gets the booking. This chapter of the [garage management series](/odoo-guides/odoo-garage-management/) covers the side of the Garage Management module that looks after the car rather than the job: the vehicle record, the odometer history, roadworthiness certificates, the check sheet, service reminders and courtesy cars.
+
+## The vehicle record
+
+Every car that comes in gets one record under **Vehicles, Vehicles**, and every job card, check sheet, certificate and reminder hangs off it. The form holds:
+
+- **Registration**, kept exactly as typed. Two vehicles in the same company cannot share a registration.
+- **VIN**. A VIN with a space in it is refused, two vehicles cannot share one, and the **VIN Must Be 17 Characters** setting refuses anything else when you turn it on. Leave it off if you work on vehicles built before the standard.
+- **Make** and **Model** from editable lists (eighteen makes ship with the module). A model has to belong to the chosen make.
+- Variant, model year (1900 up to two years ahead of today), first registration, colour, and the body type from the model.
+- **Driveline**: engine code, engine size, fuel (petrol, diesel, LPG, hybrid, plug-in hybrid, electric, hydrogen), transmission, gears, drive, **kerb weight** (which the bay checks before the car goes up) and tyre size.
+- **Owner**, home workshop, and **Garage Vehicle** for the garage's own cars such as courtesy cars.
+- **Key / Radio Code**, held on the vehicle and visible only to service advisors and managers, so it is not written on a sheet that walks round the workshop.
+- **Warranty End Date** and **Warranty Ends At** (a distance). The vehicle counts as under warranty until either is passed, and a job card raised for it is ticked as a warranty job.
+
+<Shot src="/odoo-guides/odoo-vehicle-health-check-service-reminders/vehicle-record.webp" alt="Vehicle form in Odoo for a Toyota Land Cruiser with registration, make, model, year, VIN, engine code, fuel, transmission, kerb weight, tyre size, owner, and a Where It Stands block with odometer, test expiry, test status, last service and lifetime spend" width={1440} height={900} caption="One record per car: identity, driveline, owner, and where it stands today." />
+
+**Where It Stands** is worked out for you: the latest odometer reading and its date, when the roadworthiness test expires and its status, the last service date and reading, and the **Lifetime Spend** of invoiced jobs (advisors and managers only). Smart buttons open the vehicle's job cards, check sheets and open reminders, and the tabs below hold the odometer history, certificates, inspections, reminders and history. The vehicle list has filters for **Test Expired**, **Test Due Soon**, **Under Warranty** and **Garage Vehicles**.
+
+## Odometer history
+
+A reading is its own record, not a number typed over the last one. Readings arrive from the job card (in when it is created, out when it passes the quality check), from a completed check sheet, from a certificate and from a returned courtesy car, each with its source. You can also add one by hand.
+
+A reading lower than an earlier one is refused unless **Is Correction** is ticked, and corrections show in a different colour on the list. The automatic entries simply skip a reading that is not higher than the latest one on file. The unit, kilometres or miles, is one company setting under **Configuration, Settings**, and every interval in the module uses it.
+
+## Roadworthiness certificates
+
+**Vehicles, Roadworthiness Tests** keeps one record per certificate. Name the scheme on it: MOT (United Kingdom), ITV (Spain), Fahes (Qatar), RTA Vehicle Test (UAE), Hauptuntersuchung (Germany), Controle Technique (France), a generic roadworthy certificate, or another scheme. A workshop serving an expatriate fleet can hold more than one.
+
+Each certificate has a test date, an expiry (filled to one year less a day from the test date), the result (pass, pass with advisories, fail), the certificate number, the tester, the test station if it was done elsewhere, the reading at the test, and advisories and defects kept apart. The rules:
+
+- a pass needs its certificate number, and a certificate number can only be recorded once;
+- a certificate cannot expire before it was issued;
+- only a technician with a **Tester Licence** on file can be named as the tester;
+- the reading goes onto the vehicle's odometer history.
+
+<Shot src="/odoo-guides/odoo-vehicle-health-check-service-reminders/roadworthiness-tests.webp" alt="Roadworthiness Tests list in Odoo with certificate references, test date, vehicle, owner, scheme, result of pass or pass with advisories, expiry date, certificate number and tester" width={1440} height={900} caption="Certificates on file, with scheme, result, expiry and tester." />
+
+The newest passed certificate sets the vehicle's **Test Status**: valid, due soon (inside the certificate chase window, thirty days by default), expired, or not on file. **Set the Next Reminder** on a certificate creates a roadworthiness reminder for its expiry date, and refuses on a failed test. A daily job, **Garage: certificates about to expire**, emails each owner whose newest certificate runs out inside the window and marks it, so nobody is told twice. It ships switched off.
+
+## The check sheet: red, amber, green and a price
+
+Check sheet templates live in **Configuration, Check Sheets**. A template has a kind (vehicle health check, service check sheet, pre test check, pre delivery inspection or body damage report) and a list of items. Each item has a section (under the bonnet, under the vehicle, brakes, tyres and wheels, steering and suspension, lights and electrics, interior, body and glass, road test), a **Measured In** label such as "mm tread", guidance for the technician, and **Work If Advised**: the labour operation to quote when the item comes back red or amber. The module ships one 23 item Vehicle Health Check; point its items at your own operations so every advisory arrives priced.
+
+To run a check, open **Inspections, Check Sheets** (or the Checks button on a job card), pick the vehicle, the job card, the check sheet and the technician, and press **Load the Check Sheet**. The items drop onto the inspection. Then the technician marks each one:
+
+- **Green** passes, **Amber** will need work before long, **Red** needs work now, **Not Checked** is for anything the car does not have;
+- an amber or red item is refused without a **measurement** or a **comment**, because "brakes: amber" on its own sells nothing;
+- each item's **Estimate** is the operation's flat rate hours times the workshop labour rate, and can be typed over.
+
+<Shot src="/odoo-guides/odoo-vehicle-health-check-service-reminders/health-check-items.webp" alt="Vehicle health check items in Odoo with section, item, a green, amber or red result badge, measured in label, measurement, comment, the operation quoted as work needed, the estimated price in AED and accepted ticks" width={1440} height={900} caption="Every item with its colour, measurement, the work it needs and what that work is worth." />
+
+**Complete** refuses while any item has no colour, and a reading on the sheet lower than the vehicle's last one is refused when the sheet is saved. Once complete, the sheet shows red, amber and green counts, an overall result (Work Needed Now, Work Advised, No Work Needed), **Work Advised** (the value of the red and amber items), **Accepted Value** and the conversion between the two. **Send to Customer** emails the result (the customer needs an email address) and **Print** gives the A4 Vehicle Health Check report.
+
+## Turning advisories into work on the job
+
+When the customer says yes to some of the items, tick **Accepted** on those lines. Only an amber or red item can be accepted, and it has to carry an operation. Then press **Add Accepted Work to the Job**. Each accepted item becomes a labour line on the linked job card, named after the operation and the item, at the operation's flat rate hours and the workshop labour rate, with the inspecting technician against it. The item is marked as added so a second press does not add it again. A job card that is invoiced or cancelled is refused; raise a new job for the work instead.
+
+<Callout title="The new lines raise the job total">Accepted work goes onto the job card like any other labour line, so the job is now worth more. If the job was already approved, Start Work is refused until the authority is raised: use Ask for More Authority and record the new figure, as described in the [job card chapter](/odoo-guides/odoo-garage-job-card-estimate-approval/).</Callout>
+
+<Shot src="/odoo-guides/odoo-vehicle-health-check-service-reminders/health-checks-list.webp" alt="Inspections list in Odoo with completed vehicle health checks per car, the job card, the inspecting technician, red and amber counts, the value of work advised and the accepted value in AED" width={1228} height={900} caption="Completed checks with their red and amber counts, the work advised and what the customer accepted." />
+
+Two lists help the advisor sell the rest. **Inspections, Advised Work** lists every red and amber item across every sheet, with filters for Needed Now, Advised and Not Sold Yet, grouped by section or by the work needed. **Reporting, Inspection Conversion** is a pivot of advised against accepted value per technician and month, over completed sheets.
+
+## Service reminders by date or distance
+
+A reminder under **Vehicles, Service Reminders** carries a kind (service, roadworthiness test, cambelt, brake fluid, coolant, air conditioning, tyres, warranty work or other), the work due, a **Due Date** and a **Due At** reading, the interval in months and distance, and when it was last done. It is due on whichever arrives first, and the list shows days to go and distance to go. A reminder with neither a date nor a reading is refused, and so is one due at a reading no higher than the last one.
+
+Pick a labour operation as the work due and the interval comes from the operation (set **Repeat Every (months)** and **Repeat Every (distance)** on operations such as a cambelt or brake fluid change), otherwise from the company default of twelve months and fifteen thousand.
+
+<Shot src="/odoo-guides/odoo-vehicle-health-check-service-reminders/service-reminders.webp" alt="Service Reminders list in Odoo with vehicle, owner, kind of service, due date, due odometer reading, days to go, distance to go and open status" width={1440} height={900} caption="Open reminders: due date, due reading, and how far each car is from both." />
+
+You rarely create service reminders by hand. When a job card of kind **Service** passes its quality check, the module marks the vehicle's open service reminders as done and creates the next one from that day's date and reading out, using the interval on the job's first labour operation or the company default. A reminder moves through **Open**, **Customer Told**, **Booked In** and **Done** (or Cancelled), with a button for each on the form; a done reminder cannot be cancelled.
+
+The daily job **Garage: service reminders due** emails the owner of each open reminder whose due date falls inside the lead time (21 days by default, under **Chase Service Reminders** in the settings) or whose vehicle reading has already reached the due reading, and moves it to Customer Told. Owners without an email address are skipped. It ships switched off; turn it on once outgoing mail works and you have read the wording of the email template.
+
+<Callout title="Distance reminders only know the readings you record">The distance side compares the due reading with the latest reading on file, and readings only arrive when the car visits, is tested or someone types one in. There is no connection to the car itself. For a car that comes in once a year, the date is what will trigger the reminder.</Callout>
+
+## Courtesy cars
+
+A car can join **Courtesy Cars, Courtesy Fleet** only when its vehicle record is ticked as a Garage Vehicle, so it keeps its own odometer history, certificates and reminders. Each courtesy car has a status (in service, off the road, off fleet), a hire product, a daily rate, the free days that come with a job (one by default), a distance allowance per day, an excess rate per unit over it, and the date its insurance cover ends.
+
+A loan under **Courtesy Cars, Loans** names the car, the driver, their licence number (advisors only), the job card the customer's own car is on, the time out and the time due back (taken from the job's promised time). Then:
+
+- **Hand the Keys Over** refuses a car that is not in service or whose cover ends today or earlier, and takes the reading out from the car's record if none was typed;
+- a car cannot be booked to two people over overlapping times;
+- **Book It Back In** needs the fuel level and the reading on return, puts the reading on the car's odometer history, and flags a car that came back with less fuel than it left with;
+- the hire charge counts the days (any part of a day is a day), takes off the free days at the daily rate, and adds any distance over the allowance at the excess rate.
+
+A returned loan with a charge lands on the job's invoice as its own line, and the job cannot be invoiced while the car is still out. A scheduled job runs every four hours and, once a car is past its due time plus the grace hours in settings, posts an overdue note on the loan and on the job card, once.
+
+<Callout title="Fuel is flagged, not charged">A car that comes back short of fuel is ticked Came Back Short and the loan's chatter says to charge it on the job invoice, but no fuel line is added for you. Add a part or service line to the job for the fuel before you invoice.</Callout>
+
+## Setting it up
+
+1. In **Configuration, Settings**, set the distance unit, the VIN rule, the default service interval, and the chase windows for service reminders and certificates.
+2. Load your makes and models under **Configuration, Makes** and **Models**, or use the ones that ship.
+3. Set repeat intervals on the labour operations that recur, such as cambelt, brake fluid and coolant.
+4. Point every item of the Vehicle Health Check at one of your operations, and add your own templates for pre test checks or pre delivery inspections.
+5. Record a tester licence number on each technician who signs certificates.
+6. Add your courtesy cars as Garage Vehicles, then to the courtesy fleet with rates and insurance dates.
+7. Switch on the reminder and certificate emails only after a test email reaches you.
+
+How the hours behind each job turn into a margin is in the [bays, technicians and labour recovery chapter](/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/). Back to the [garage overview](/odoo-guides/odoo-garage-management/).

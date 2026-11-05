@@ -1,0 +1,109 @@
+---
+title: "Bill of quantities and project phases in Odoo: the budget a construction job is measured against"
+metaTitle: "BOQ and Project Phases in Odoo"
+description: "Set up a construction job in Odoo 19 with phases, planned dates and budgets, enter the bill of quantities, print it, and read BoQ budget against cost."
+targetQuery: "odoo bill of quantities (BOQ) construction"
+category: "Industry"
+summary: "How to turn an Odoo project into a construction job with phases and a bill of quantities, so every cost recorded on site has a budget to be compared with."
+published: 2027-02-04
+updated: 2027-02-04
+series: "odoo-construction-management"
+seriesOrder: 1
+modules:
+  - name: "Construction Management"
+    technical: "wt_construction_management"
+    note: "USD 10, Odoo 19 Community, needs Project, Employees and Invoicing"
+demo:
+  url: "https://construction.way4tech.com/"
+  label: "Construction Management demo"
+related: ["odoo-construction-management", "odoo-construction-ra-bill-job-costing", "odoo-project-boards-timeline-workload"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can I import a bill of quantities from Excel?"
+    a: "The base module has no BoQ template of its own, but the Bill of Quantities list accepts Odoo's standard import, so a sheet with project, work type, work item, phase, unit, quantity and rate columns loads in one go. The Enterprise add-on adds a dedicated Excel template that checks the bill row by row."
+  - q: "Should the BoQ rate be my selling rate or my cost rate?"
+    a: "The base module has one rate per line and labels the total as the BoQ budget, which the cost to date is compared with. Most contractors enter cost rates here and keep the selling value in the contract value field. If you need selling and cost rates on the same line, that is in the Enterprise add-on."
+  - q: "Is the phase budget the total of the BoQ lines in that phase?"
+    a: "No. The phase budget is a figure you type on the phase. BoQ lines can be linked to a phase, but their amounts are not added into the phase budget automatically."
+  - q: "How is overall project progress calculated?"
+    a: "It is the plain average of the progress percentages of the job's phases. A short mobilisation phase at 100 per cent counts as much as the frame at 45 per cent, so keep phases roughly comparable in size or read the phase list rather than the single figure."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Cost to date means nothing on its own. A job that has spent 1.7 million is fine if the budget for the work done so far was 1.9 million and in trouble if it was 1.2 million. The bill of quantities is that budget: every item of work with its unit, quantity and rate. Phases give it a timeline. Set both up properly on day one and every requisition, labour log and subcontract booked later lands against something. Skip them and the margin figure is a guess. This chapter walks through the job, its phases and its bill of quantities in the [Construction Management](/odoo-guides/odoo-construction-management/) module on Odoo 19.
+
+## Before you start: work types
+
+Work types are the trades or packages a BoQ item belongs to. Nine ship with the module under **Construction, Configuration, Work Types**, each with a code and a category (civil, structural, finishing, MEP, external, other): Earthwork and Excavation (EW), Concrete Works (RCC), Masonry (MAS), Steel and Reinforcement (STL), Plastering and Finishing (FIN), Painting (PNT), Electrical Works (ELE), Plumbing Works (PLB) and External and Landscaping (EXT). Add your own or rename these before you load a bill, because phases, BoQ lines and subcontracts all point at them, and grouping a cost report by work type is only as good as the list.
+
+## Step 1: create the construction project
+
+1. Go to **Construction, Projects, Projects** and click New. The list shows only projects marked as construction projects.
+2. Give it a name and a customer on the main form, and the planned dates as on any Odoo project.
+3. Open the **Construction** tab. **Construction Project** is already ticked when the project is created from this menu; on an existing Odoo project, tick it by hand.
+4. Fill in **Project Code** (your own job number), **Construction Stage** (planning, in progress, on hold, completed, handed over), **Site Supervisor** (an employee), **Contract Value** and **Site Address**.
+
+The project keeps everything standard Odoo gives it: tasks, stages, followers, the chatter. The construction fields sit alongside, and smart buttons for phases, BoQ, requisitions and subcontracts appear at the top of the form.
+
+## Step 2: break the job into phases
+
+Phases are added on the project's **Phases** tab, or from **Construction, Projects, Phases** for all jobs at once. Each phase carries a work type, planned start and finish, a budget, a supervisor, a progress percentage and a status. The planned finish cannot be before the planned start, and progress has to stay between 0 and 100.
+
+<Shot src="/odoo-guides/odoo-construction-boq-phases/project-phases-tab.webp" alt="Phases tab on an Odoo construction project listing mobilisation, excavation and foundations, substructure, superstructure frame, blockwork and MEP phases with work type, planned start and finish, progress bar, phase budget and status" width={902} height={335} caption="Phases on the job: dates, progress, budget and status in one list." />
+
+The buttons on a phase move it through its life:
+
+- **Start** sets it to in progress and stamps the actual start date the first time.
+- **Put on Hold** parks it.
+- **Complete** sets progress to 100 per cent and stamps the actual finish date.
+- **Reset** takes it back to not started.
+
+Planned against actual dates are kept side by side on the phase, which is what you need when a delay claim comes up a year later.
+
+<Shot src="/odoo-guides/odoo-construction-boq-phases/phase-form.webp" alt="Odoo construction phase form for a superstructure frame phase in progress, with project, work type, supervisor, planned start and finish, actual start, progress at 45 per cent and phase budget" width={1440} height={615} caption="A phase in progress, with the actual start stamped and progress at 45 per cent." />
+
+A scheduled job runs daily and looks for phases past their planned finish that are not completed. For each one it puts a to-do on the project for the project manager, "Phase overdue" with the phase name and its due date, and does not repeat it while that to-do is open. The dashboard's Overdue Phases tile counts the same phases.
+
+## Step 3: enter the bill of quantities
+
+BoQ lines go in on the project's **Bill of Quantities** tab, or in bulk from **Construction, Projects, Bill of Quantities**, which is an editable list across all jobs with a running total. Each line has:
+
+- **Work type** and **work item** (the description as it appears in the bill).
+- **Phase**, limited to phases of the same project.
+- **Unit** as free text: m3, m2, ton, No., L.S. for lump sums.
+- **Quantity** and **rate**. The **amount** is quantity times rate and the total of all lines is the job's **BoQ budget**.
+- **Remarks** for anything the line needs.
+
+<Shot src="/odoo-guides/odoo-construction-boq-phases/boq-list.webp" alt="Bill of Quantities list in Odoo across several construction projects with work type, work item, phase, unit, quantity, rate and amount, including excavation, dewatering, backfilling and blinding concrete items" width={1440} height={620} caption="The Bill of Quantities list: every job's items in one editable list." />
+
+For a bill of more than a few dozen lines, prepare it in a spreadsheet with one column per field and load it with Odoo's standard import from the list. Lines can be dragged into order; the order is what the printout uses.
+
+<Callout title="One rate per line, and no lock">The base module's BoQ has a single rate per line and nothing stops a quantity being changed after the job starts. Decide whether you enter cost rates (so the BoQ budget is your cost budget, and the contract value carries the selling side) or selling rates, and stick to it on every job. If you need selling and cost rates on the same item, or a bill that freezes once agreed, that is in the Enterprise add-on covered in the [RA bill chapter](/odoo-guides/odoo-construction-ra-bill-job-costing/).</Callout>
+
+## Step 4: print the bill
+
+**Print, Bill of Quantities** on the project gives a numbered bill with work item, work type, unit, quantity, rate and amount, the project code and client at the top, contract value and BoQ budget on the right and the total budget at the foot. It uses your company letterhead, so it is ready to attach to a tender or a budget review.
+
+<Shot src="/odoo-guides/odoo-construction-boq-phases/boq-print.webp" alt="Printed Bill of Quantities for a residential tower with seventeen numbered items from excavation to hard landscaping, each with work type, unit, quantity, rate and amount, and the total budget" width={1280} height={805} caption="The printed bill: numbered items with work type, unit, quantity, rate and amount." />
+
+## Reading budget against cost
+
+Once costs start arriving (the [site costs chapter](/odoo-guides/odoo-construction-material-requisition-labour/) covers how), the project's Construction tab shows the BoQ budget next to material, labour, subcontract and site expense cost and the actual cost total. Three habits make that comparison worth reading:
+
+1. **Link costs to phases.** Requisitions, labour logs, site expenses and subcontracts all have a phase field. Filled in, it lets you group any of those lists by phase and set the result next to the phase budget.
+2. **Keep phase budgets honest.** The phase budget is typed on the phase, not added up from the BoQ. When you load the bill, total the BoQ amounts per phase and put that figure on each phase, so the two budgets agree.
+3. **Watch the right progress figure.** The project's progress is the plain average of its phases. A finished two week mobilisation counts as much as a half done frame. For the director's monthly view, the **Project Progress Report** (Print menu on the project) lists every phase with dates, progress and status, then the cost summary down to margin.
+
+## Setting up a job: the checklist
+
+1. Review work types under Construction, Configuration, Work Types.
+2. Create the project, tick Construction Project, fill in code, stage, supervisor, contract value and site address.
+3. Add phases with planned dates, work type, supervisor and budget.
+4. Load the bill of quantities with every line linked to its phase.
+5. Put the BoQ total per phase on each phase budget.
+6. Print the bill and check the total against your tender.
+7. Start the first phase from its form so the actual start date is stamped.
+
+If you are taking over a job already on site, set completed phases to Complete (actual finish is stamped as today, so note the real date in the phase notes) and enter progress on the live ones. The costs to date can then be entered as one requisition, one labour log per trade and the subcontract figures as at your cut off date.

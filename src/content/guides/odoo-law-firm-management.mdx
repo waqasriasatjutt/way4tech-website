@@ -1,0 +1,130 @@
+---
+title: "Odoo law firm management: conflict checks, time, client money and bills on Odoo 19"
+metaTitle: "Odoo Law Firm Management Software"
+description: "Run a law firm on Odoo 19 Community: conflict checks, matters, a limitation diary, time on a rate card, a client account that cannot go overdrawn, bills."
+targetQuery: "odoo law firm management software"
+category: "Industry"
+summary: "What a solicitors' practice needs from its system, what standard Odoo leaves out, and how the Law Firm Management module runs matters, the diary, time, client money and billing on Odoo 19 Community."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-law-firm-management"
+seriesOrder: 0
+modules:
+  - name: "Law Firm Management"
+    technical: "wt_legal_practice"
+    note: "USD 299, Odoo 19 Community, needs Invoicing (installed with it)"
+demo:
+  url: "https://legal-demo.way4tech.com/"
+  label: "Law firm demo"
+related: ["odoo-project-management"]
+linkFrom: ["/solutions/legal-practice/", "/industries/legal-practice/", "/products/wt-legal-practice/", "/modules/accounting/"]
+sources:
+  - label: "odoo/odoo on GitHub, 19.0 branch, sale_timesheet addon manifest (Community)"
+    url: "https://github.com/odoo/odoo/blob/19.0/addons/sale_timesheet/__manifest__.py"
+  - label: "Odoo 19 documentation, Timesheets"
+    url: "https://www.odoo.com/documentation/19.0/applications/services/timesheets.html"
+faqs:
+  - q: "Can Odoo be used as practice management software for a law firm?"
+    a: "Standard Odoo can log hours against projects and invoice them, which covers simple time billing. It has no conflict search, no limitation diary, no client money ledger and no bill of costs. The Law Firm Management module adds those on Odoo 19 Community."
+  - q: "Does the legal module need Odoo Enterprise?"
+    a: "No. It depends only on the base, Discuss and Invoicing apps, all of which are in Odoo 19 Community. It also installs on Enterprise."
+  - q: "Is it built for one country's rules?"
+    a: "It is written around the way a UK solicitors' practice works: client account, limitation, bills of costs and disbursements. Labels, periods and limits are settings, and it carries no country's prescribed accounting forms or reports."
+  - q: "Can clients log in to see their matter or bill?"
+    a: "No. There is no client portal. Bills go out as an emailed PDF, and hearing reminders can be emailed from a template once you switch that job on."
+  - q: "Does it store and draft documents?"
+    a: "No. The document register records what is on each file, whether the firm holds the original and where the paper is. The files themselves are ordinary Odoo attachments. There are no precedent templates, no versioning and no OCR."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most of the risk in a law firm sits in a handful of moments. A new client walks in and nobody checks whether the firm already acts for the other side. A limitation date is written in one person's diary and that person goes on leave. Six minutes of a phone call become an hour on the bill because the time was typed in on Friday from memory. A court fee is paid out of the client account on a file where the client has not sent any money yet. None of those is a software problem until the software lets it happen. This guide covers what a practice needs its system to refuse, what standard Odoo gives you, and how the Law Firm Management module puts a solicitors' practice onto Odoo 19 Community.
+
+## What a law firm needs from its system
+
+Leave the feature lists aside. A practice needs the system to hold six lines:
+
+1. **No file without a conflict check.** The names on both sides are searched against everything the firm holds, including files in departments the searcher cannot normally see, and the result is kept.
+2. **No file without knowing the client.** Identity evidence on record and a signed engagement letter back before a matter number is issued.
+3. **A diary that cannot lose the limitation date.** One limitation date per file, warned about months ahead, and not deletable by somebody tidying up.
+4. **Time that is recorded as it happens, at the right rate.** A timer, a charging unit, a narrative the client can read, and a rate taken from a rate card rather than from somebody's memory.
+5. **Client money that is never the firm's money.** A ledger per client that cannot go overdrawn, and transfers to office only against a bill the client has received.
+6. **Bills that separate fees from outlay.** Professional fees, disbursements and tax shown apart, with disbursements kept out of fee income in the accounts.
+
+On top of that, partners want three numbers: work in progress, realisation (what was billed against what was recorded) and lock-up (how long cash sits in unbilled work and unpaid bills).
+
+## What standard Odoo does and does not cover
+
+Odoo 19 Community ships Invoicing, and with Project and Timesheets it can log hours on tasks. The Community **Sales Timesheet** addon then lets you sell those hours on a sales order, so the hours delivered become invoice quantities ([sale_timesheet manifest, odoo/odoo 19.0](https://github.com/odoo/odoo/blob/19.0/addons/sale_timesheet/__manifest__.py)). The [Timesheets documentation](https://www.odoo.com/documentation/19.0/applications/services/timesheets.html) covers that flow. For a consultancy billing hours, that is often enough.
+
+For a law firm it leaves most of the list above to paper and spreadsheets:
+
+- No conflict of interest search, and no record of who ran one.
+- No client due diligence gate before work starts.
+- No matter file with parties, court, claim number and the other side's reference.
+- No limitation diary and no warning before a claim runs out of time.
+- No rate card that picks a client rate, then a department rate, then a personal rate.
+- No write-off reasons or partner approval for large write-offs.
+- No client money ledger kept apart from office money, and nothing that stops it going into debit.
+- No bill of costs with disbursements posted to a recovery account instead of income.
+
+Studio can add fields, but the refusals are what matter here, and refusals need code. That is what the module adds.
+
+## The module: Law Firm Management
+
+[Law Firm Management](https://apps.odoo.com/apps/modules/19.0/wt_legal_practice/) (`wt_legal_practice`) is USD 299, licensed OPL-1, one purchase per Odoo version. It depends on the base, Discuss and Invoicing apps and nothing else, so it runs on Odoo 19 Community. It adds one app, **Legal**, with six menus: Files, Diary, Time and Costs, Billing, Reporting and Configuration.
+
+<Shot src="/odoo-guides/odoo-law-firm-management/matters-list.webp" alt="Matters list in the Odoo Legal app showing file references by practice area, client, responsible fee earner, limitation date, next key date, WIP, unpaid bills and lock-up days" width={1440} height={900} caption="The Matters list: every live file with its limitation date, next key date, WIP, unpaid bills and lock-up days." />
+
+| What the firm needs | Standard Odoo 19 Community | With Law Firm Management |
+|---|---|---|
+| Log hours and invoice them | Yes, with Timesheets and Sales Timesheet | Yes, on its own time entries |
+| Conflict search across every file | No | Yes, recorded with searcher and date |
+| Identity and engagement letter before opening | No | Yes, a setting that is on by default |
+| Limitation diary with warnings | No | Yes |
+| Rate card: client, department, personal | No | Yes, dated lines |
+| Write-off reasons and partner approval | No | Yes |
+| Client money ledger that cannot go overdrawn | No | Yes |
+| Bill of costs with fees and disbursements apart | No | Yes, posted as an Odoo invoice |
+| WIP, realisation and lock-up | No | Yes |
+
+## How a file moves through the system
+
+**Before the file.** A conflict check records the prospective client, the proposed matter and every name on the other side. Run the Search reads every client, every party on every file and every matter subject across the firm. Serious matches have to be reviewed, and going ahead over one needs a written reason. The client record holds identity evidence and the engagement letter date. [Conflict checks and opening a matter](/odoo-guides/odoo-legal-conflict-check-matter-opening/) walks through this.
+
+**The matter.** A matter is numbered with its practice area code (LIT, EMP, CON, FAM, COR and PRO ship with the module), and carries the client, the responsible fee earner, a supervising partner, the court, the claim number, the parties and the billing basis: time recorded, fixed fee, capped, monthly retainer or conditional fee.
+
+<Shot src="/odoo-guides/odoo-law-firm-management/matter-form.webp" alt="Odoo matter form for a civil litigation file with client, practice area, responsible fee earner, court, claim number, instruction and opening dates, limitation date and days left, and buttons to raise a bill, put on hold, close the file and print a file summary" width={1440} height={900} caption="A litigation matter: court and claim number, limitation date with days left, and the buttons that run the file." />
+
+**The diary.** Hearings, filing deadlines, court directions, completions, client appointments and file reviews sit in one diary with a calendar. Limitation dates have their own menu and their own rules. See [limitation dates and the court diary](/odoo-guides/odoo-legal-limitation-diary-hearings/).
+
+**Time and costs.** Fee earners start and stop a timer or type the hours, the rate comes off the rate card, and the entry is recorded as work in progress. Write-offs and write-downs need a reason. See [time recording and rate cards](/odoo-guides/odoo-legal-time-recording-rate-card/).
+
+**Money.** Disbursements are recorded apart from fees and can be paid out of office or client money. Bills gather the unbilled work, are approved, then delivered as a posted Odoo invoice. Money on account is applied against a delivered bill by the cashier or a partner. See [client account and bills of costs](/odoo-guides/odoo-legal-client-account-bills-of-costs/).
+
+**Closing.** A file will not close while it carries unbilled work, an unpaid bill, client money or an open key date. Once closed it can be marked destroyed when the paper leaves storage.
+
+## Who sees what
+
+The module ships four groups. A **Fee Earner** sees their own files, time, diary and documents. A **Cashier** sees bills and client money across the practice and can read time entries to bill them, without editing them. A **Supervising Partner** sees every file, the risk rating, politically exposed flag and due diligence notes on clients, the settlement authority on matters, and can approve write-offs over the limit. A **Practice Manager** looks after the rate card, practice areas, courts and disbursement types. The Settings page itself needs an Odoo administrator.
+
+## Reporting
+
+**Reporting, Work in Progress** cuts recorded time by fee earner and practice area. **Realisation and Lock-up** shows time recorded, fees billed and written-off value per fee earner and department. **Billing** shows fees, disbursements, totals and write-offs on bills by month. Lock-up on each matter is the age in days of the oldest unbilled billable time plus the age of the oldest unpaid delivered bill, flagged against the firm's target (60 days by default) and refreshed by a nightly job.
+
+<Shot src="/odoo-guides/odoo-law-firm-management/billing-pivot.webp" alt="Billing pivot in Odoo with amount of fees, disbursements, total and written-off value per fee earner for August 2026" width={1440} height={480} caption="The Billing report: fees and disbursements apart, with the write-offs that explain the gap." />
+
+## Setting it up
+
+1. Install Law Firm Management. Invoicing installs with it. With demo data you get a sample practice, Marchetti Osei LLP, to practise on.
+2. In **Configuration, Settings**, decide whether a matter may open without a cleared conflict check and without client due diligence (both are required by default), the limitation warning period (90 days), the charging unit (6 minutes), the write-off limit (250 in company currency), the lock-up target (60 days) and the sales journal bills post to.
+3. Review **Practice Areas**: code, limitation period in years, contentious flag (which makes a court compulsory), default hourly rate and the fee income account.
+4. Add **Disbursement Types** with their recovery account, taxes and whether they are normally paid from office or client money.
+5. Add **Fee Earners** linked to Odoo users, with grade, supervisor, standard rate and weekly chargeable target, and build the **Rate Card**.
+6. Add **Courts and Tribunals** you appear in.
+7. Assign the four groups before go-live.
+8. Run one file end to end on a test database: conflict check, client, matter, time, a disbursement, a bill, money on account, then close.
+
+<Callout title="What it does not do">There is no document storage or drafting beyond Odoo attachments, no client portal, no court or registry e-filing, no legal research connection and no automated identity or sanctions check. Client account rules stop at two: the ledger cannot go overdrawn and money moves to office only against a delivered bill. Interest calculation, bank reconciliation of the client account and any regulator's prescribed reports are not built in. Rates, bills and the ledger run in the company currency only.</Callout>
+
+You can look around the [law firm demo](https://legal-demo.way4tech.com/) or find it with the others on the [demos page](/demos/).

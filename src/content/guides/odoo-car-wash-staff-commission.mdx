@@ -1,0 +1,110 @@
+---
+title: "Car wash staff commission and sales targets in Odoo"
+metaTitle: "Staff Commission and Sales Targets"
+description: "Pay car wash technicians commission per service in Odoo 19: percentage or fixed rules, earnings from invoiced bookings, payout states and monthly targets."
+targetQuery: "car wash staff commission odoo"
+category: "Industry"
+summary: "How commission rules match a technician and a service, when commission is worked out, how it is confirmed and marked paid, and how monthly sales targets with a bonus work."
+published: 2027-01-21
+updated: 2027-01-21
+series: "odoo-car-wash-management"
+seriesOrder: 2
+modules:
+  - name: "Car Wash Management"
+    technical: "wt_carwash_management"
+    note: "USD 1,299, includes commission rules and sales targets"
+demo:
+  url: "https://carwash-app.way4tech.com/"
+  label: "Car wash demo"
+related: ["odoo-car-wash-management", "run-payroll-odoo-community", "odoo-salon-spa-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "When is a technician's commission calculated?"
+    a: "When the booking is invoiced, either with the one step Invoice button or through the invoice wizard. Each service line with a technician and a value gets one commission line from the first matching rule. Draft commission lines are deleted and worked out again if the booking is invoiced again."
+  - q: "Can two technicians share commission on one booking?"
+    a: "Yes, line by line. Each service line has its own technician, and commission is worked out per line, so the washer and the detailer on the same car each get commission on their own service. A single line cannot be split between two people."
+  - q: "Does the commission go into Odoo payroll?"
+    a: "No. Commission lines have their own states, draft, confirmed and paid, and you mark them paid yourself. Nothing posts them to a payslip or to accounting. Export the confirmed lines for the period and pay them with the wage."
+  - q: "Is commission worked out on the price with or without tax?"
+    a: "Without tax. A percentage rule uses the service line subtotal after discount and before tax. A fixed rule pays the fixed amount once per line, whatever the quantity."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In most car washes a good part of a washer's pay is commission, and that is where arguments start. A washer who did six cars on Saturday wants to see six lines, the detailer wants the coating counted at the higher rate, and the owner wants the figures to come from what was billed, not from a notebook at the bay. This chapter of the [car wash series](/odoo-guides/odoo-car-wash-management/) shows how the Car Wash Management module works out commission from invoiced bookings, how you confirm and pay it, and how monthly sales targets with a bonus sit on top.
+
+## Commission rules
+
+Rules live in **Staff, Commission Rules** and are visible to the Manager group only. A rule belongs to one technician and has:
+
+- a **type**: a percentage of the service value, or a fixed amount per service;
+- a **rate or amount**;
+- the **services** it applies to, or none for every service;
+- a **sequence**, where the lower number is tried first;
+- an active flag, valid from and valid to dates, and a note.
+
+<Shot src="/odoo-guides/odoo-car-wash-staff-commission/commission-rules.webp" alt="Commission rules list in Odoo with two rules per technician: twelve percent on premium packages and ceramic coatings, and eight percent or a fixed five AED on all washes, with total earned in AED" width={1440} height={900} caption="Two rules per technician on the demo: a higher rate on premium services, a standard rate on everything else." />
+
+The demo shows the usual pattern. Each technician has a rule for the premium work (packages and ceramic coatings at 12 per cent) and a catch all rule for everything else (8 per cent, or a flat AED 5 per service for two of them). The Total Earned column adds up the confirmed and paid commission each rule has produced.
+
+### How a rule is matched
+
+For each service line on a booking, the module takes the line's technician, or the booking's lead technician if the line has none. It then looks for that technician's active rules where the service list is empty or contains the line's service, and takes the first by sequence. So for the two rule pattern to work, give the specific rule a lower sequence than the catch all one. If both have the same sequence, either may be picked.
+
+A percentage rule pays that percentage of the line subtotal, which is the price times quantity less any discount, before tax. A fixed rule pays the fixed amount once per line. A line with no technician or a zero value gets no commission.
+
+<Callout title="Valid from and valid to are not applied">The rule form has validity dates, and the demo fills them in, but the matching does not look at them. A rule with an end date in the past still pays while it is active. When rates change, archive the old rule and create a new one rather than relying on the dates.</Callout>
+
+## When commission is worked out
+
+Commission is created at the moment a booking is invoiced, by the **Invoice** button or the **Invoice (Custom)** wizard. Booking a car, starting it or marking it done does not create commission, so a job that is never invoiced never pays out. If a booking is invoiced again, its draft commission lines are deleted and worked out afresh; confirmed and paid lines are left alone.
+
+<Shot src="/odoo-guides/odoo-car-wash-staff-commission/invoiced-booking.webp" alt="Invoiced car wash booking in Odoo for a three year ceramic coating with the technician on the line, totals with tax, and smart buttons for the sale order, one invoice and commission of 264 AED" width={1440} height={900} caption="An invoiced booking: the Commission button shows the AED 264 earned on a AED 2,200 coating at 12 per cent." />
+
+On the booking, the Commissions tab and the Commission smart button show the lines for that visit: technician, service, rule, base amount, type, rate and amount.
+
+## Commission earnings and payout
+
+**Staff, Commission Earnings** lists every commission line across all bookings, with date, booking, technician, service, type, rate, amount and status. Group it by technician and filter by date to get the pay period.
+
+<Shot src="/odoo-guides/odoo-car-wash-staff-commission/commission-earnings.webp" alt="Commission earnings list in Odoo with one line per service per booking, showing date, booking reference, technician, service, percentage or fixed type, rate, commission in AED and draft status" width={1440} height={900} caption="Commission Earnings: one line per service, ready to group by technician for the pay run." />
+
+Each line moves through three states:
+
+1. **Draft**, as created. Draft lines are the ones that get recalculated if the booking is invoiced again.
+2. **Confirmed**, when the manager has checked it. Select the lines and confirm them together.
+3. **Paid**, once the money has gone out. Only confirmed lines can be marked paid, and a paid line cannot be reset to draft.
+
+Technicians in the Technician group see their own commission lines only, which lets them check their own figures without seeing anyone else's.
+
+## Sales targets and bonus
+
+**Staff, Sales Targets** sets a sales figure per technician for a period: monthly, quarterly, yearly or custom dates. A target has a status (draft, active, done, cancelled) and an optional bonus:
+
+- **No bonus**;
+- **Percentage of excess**: a percentage of everything sold above the target;
+- **Fixed bonus**: a fixed amount once the target is reached.
+
+<Shot src="/odoo-guides/odoo-car-wash-staff-commission/sales-targets.webp" alt="Sales targets list in Odoo with monthly targets per technician for September to November 2026, showing the sales target, achieved sales, achievement percentage and status, with targets exceeded shown in green" width={1440} height={900} caption="Monthly targets: achieved sales against the target, with the ones that beat it in green." />
+
+Achieved sales are the totals of bookings in the Invoiced stage whose lead technician is the target's technician and whose start time falls in the period. From that the target shows the achievement percentage, what is left to reach it, the bonus earned and the commission earned in the same period (confirmed and paid lines only). On the demo, one technician sold AED 9,623.25 against an AED 8,000 October target with a 5 per cent bonus on the excess, which gives a bonus of AED 81.16.
+
+Three details matter when you rely on these numbers:
+
+- Achieved sales use the **booking total including tax**, while commission uses the line value before tax.
+- The whole booking counts for the **lead technician**, even if another technician did one of the lines.
+- The figures are stored and recalculated when the target itself is changed (technician, dates, amount or bonus). They are not refreshed every time a booking is invoiced, so before paying a bonus, open the Appointments button on the target, which lists the invoiced bookings for that technician and period, and check the total against it.
+
+<Callout title="A display fault on the target form">On the demo, the Achievement field on the target form shows the percentage multiplied by a hundred (12029.06% for a target reached at 120.29%). The list view and the progress bar show the right figure. Read the list until this is fixed.</Callout>
+
+## Setting it up
+
+1. Make sure each technician is an employee and is set on the booking lines they work on.
+2. Create one rule per technician per rate in **Staff, Commission Rules**. Put the specific rules (premium services) at a lower sequence than the general one.
+3. Agree the pay period and who confirms commission. Confirm lines once a week or once a month, then mark them paid when the wage is paid.
+4. If you run targets, create them per technician per month in **Staff, Sales Targets**, set the bonus type and rate, and activate them.
+5. Give technicians the Technician group so they can see their own commission and targets, and keep rules and other people's figures to managers.
+6. Invoice a few test bookings with two technicians on different lines and check the commission lines before you pay anyone from them.
+
+Commission lines are not posted to accounting or payroll. If you run Odoo payroll, the [Odoo Community payroll guide](/odoo-guides/run-payroll-odoo-community/) shows where an extra earning like this would be added to a payslip. Back to the [car wash overview](/odoo-guides/odoo-car-wash-management/), or see [online booking and the POS counter](/odoo-guides/odoo-car-wash-online-booking-pos/).

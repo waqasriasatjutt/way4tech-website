@@ -1,0 +1,131 @@
+---
+title: "Trips, trip expenses and trip invoicing in Odoo for a transport fleet"
+metaTitle: "Trips, Expenses and Trip Invoicing"
+description: "Record transport trips in Odoo 19: odometer and distance, fuel and toll expenses with approval, vendor bills, invoicing a trip and profit per trip."
+targetQuery: "odoo trip expenses and trip profit"
+category: "Industry"
+summary: "How the Transport Management base module runs a trip from draft to invoiced, records fuel, tolls and allowances against it, turns expenses into vendor bills and shows profit per trip and per vehicle."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-transport-management"
+seriesOrder: 1
+modules:
+  - name: "Transport Management"
+    technical: "wt_transport_management"
+    note: "USD 10, Odoo 19 Community, needs Fleet, Employees and Accounting"
+demo:
+  url: "https://transport-demo.way4tech.com/"
+  label: "Transport Management demo"
+related: ["odoo-freight-forwarding", "odoo-van-sales"]
+linkFrom: []
+sources:
+  - label: "Odoo 19 documentation, Fleet"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/fleet.html"
+faqs:
+  - q: "How is the distance of a trip worked out?"
+    a: "From the two odometer readings: Odometer In minus Odometer Out. If you have no readings, type the distance by hand; the field stays editable. Odometer In cannot be lower than Odometer Out, and completing the trip moves the vehicle's odometer forward when the new reading is higher."
+  - q: "Does a trip invoice carry VAT?"
+    a: "Yes. The invoice line takes the company's default sales tax, mapped through the customer's fiscal position, and books to the sales journal's default income account. Without a default sales tax set on the company the line goes out without tax, so check that setting before the first invoice."
+  - q: "Do expense vendor bills include tax?"
+    a: "No. The vendor bill raised from an expense has one line for the expense amount on the purchase journal's default account, with no tax on it. If the receipt carries VAT you can claim, add the tax on the draft bill before posting."
+  - q: "Does marking an expense paid record a payment in Accounting?"
+    a: "No. Register Payment on a transport expense only sets it to Paid with today's date. If the expense went through a vendor bill, pay the bill in Accounting as normal; if it was cash from the driver, it is reimbursed through payroll."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The trip is the record a transport business lives on. If every journey is entered with its vehicle, driver, customer and odometer readings, and every litre of diesel and every toll is booked against it, two questions answer themselves: did this job make money, and is this truck worth keeping. If trips are entered at the end of the week from memory, neither answer can be trusted. This chapter walks through how the Transport Management base module handles trips and their costs on Odoo 19 Community, from the first draft to the invoice.
+
+## Creating a trip
+
+Trips live in **Transport, Operations, Trips**. A trip carries:
+
+- **Assignment**: the vehicle (required), driver, co-driver, customer, trip type and the dispatcher. Drivers are employees marked as drivers. Trip types are Freight / Cargo, Passenger, Delivery, Pickup, Transfer, Rental / Hire and Other.
+- **Route and schedule**: origin and destination picked from your transport locations, a free text route, the scheduled time, and the actual departure and arrival.
+- **Journey**: odometer out and in, distance, cargo description, weight in tonnes and passenger count.
+- **Financials**: the trip charge to the customer, the driver allowance for this trip, total expense and net profit.
+
+When you pick the vehicle, the trip takes the vehicle's assigned transport driver and its current odometer as Odometer Out, so the dispatcher only corrects what is different today. Each trip gets a reference from a sequence (TRP/2026/00301 in the demo) and keeps a chatter, so the history of who changed the charge or the driver stays on the record.
+
+## Moving a trip through its states
+
+A trip goes Draft, Scheduled, In Progress, Completed and finally Invoiced, with Cancelled available until it is invoiced.
+
+1. **Schedule** confirms a draft trip is planned.
+2. **Start** moves it to In Progress and stamps the departure time if none was entered.
+3. **Complete** stamps the arrival time, posts "Trip completed" to the chatter and, if Odometer In is higher than the vehicle's last reading, updates the vehicle odometer.
+4. **Create Invoice** is only offered on a completed trip.
+
+Duration is worked out from departure and arrival. Distance is Odometer In minus Odometer Out, and the module refuses an Odometer In lower than Odometer Out.
+
+<Shot src="/odoo-guides/odoo-transport-trips-expenses/trip-financials.webp" alt="Financials tab of a completed trip in Odoo showing trip charge 950 riyals, driver allowance 60 riyals, total expense zero and net profit 890 riyals, with Create Invoice and Cancel buttons" width={1440} height={760} caption="The Financials tab: charge, allowance, expenses and the profit they leave." />
+
+Net profit is simply the trip charge minus the trip's expenses (rejected ones excluded) minus the driver allowance. It is a direct margin: lease payments, insurance and depreciation are not in it. The Enterprise add-on adds a separate true margin that includes those standing costs, covered in the [cost per km chapter](/odoo-guides/odoo-truck-cost-per-km-fuel/).
+
+## Seeing a vehicle's trips
+
+Every vehicle form gets smart buttons for its trips, expenses and documents. The trip list from a vehicle shows every run that truck has made, its driver, distance, charge, profit and state, which is the fastest way to see whether one vehicle is being given the poor jobs.
+
+<Shot src="/odoo-guides/odoo-transport-trips-expenses/vehicle-trips.webp" alt="List of 34 trips for one Mercedes-Benz Actros in Odoo with trip reference, driver, trip type, scheduled date, distance, trip charge, net profit and status from scheduled to invoiced" width={1440} height={900} caption="One truck's trips, opened from the Trips button on the vehicle." />
+
+## Recording trip expenses
+
+Expenses live in **Transport, Operations, Expenses**. Each one has a date, category, vehicle, trip, driver or employee, amount, vendor and receipt reference. For fuel you can enter the litres and unit price and the amount is worked out for you, and an odometer reading if the driver wrote one on the receipt.
+
+The module ships twelve expense categories: Fuel, Maintenance and Repair, Insurance, Toll and Road Charges, Fine / Penalty, Registration and Tax, Tyres, Spare Parts, Parking, Vehicle Cleaning / Wash, Driver Allowance and Miscellaneous. Each category has a kind behind it, and the fuel kind is what the vehicle's fuel figures are built from. Add your own categories in **Configuration, Expense Categories**; the demo, for example, has weighbridge charges and traffic fines under local names.
+
+Picking a trip on an expense fills in that trip's vehicle and driver.
+
+<Shot src="/odoo-guides/odoo-transport-trips-expenses/vehicle-expenses.webp" alt="Expense list for one truck in Odoo with fuel and gate and weighbridge charges, amounts in riyals and status submitted, approved or paid" width={1440} height={900} caption="Expenses for one vehicle: fuel and road charges, each with its approval state." />
+
+### The approval flow
+
+An expense goes Draft, Submitted, Approved, then Paid, or Rejected at any point before it is paid.
+
+- **Submit** sends it for approval. The dashboard counts submitted expenses as Expenses to Approve.
+- **Approve** accepts it and, if the expense carries an odometer reading higher than the vehicle's, moves the vehicle odometer forward. This is how fuel receipts keep the odometer current between trips.
+- **Reject** takes it out of every total: trip profit, vehicle cost and the dashboard all ignore rejected expenses.
+- **Register Payment** marks it Paid with today's date.
+
+### Vendor bills from expenses
+
+If the expense was charged by a supplier, set the vendor and press **Create Bill**. The module raises a draft vendor bill dated on the expense date, with the receipt reference, one line for the amount, booked to the purchase journal's default account. Each expense can have one bill, and the bill is linked from the expense.
+
+<Callout title="Check two things before relying on the money side">Expense bills carry no tax line, so add VAT on the draft bill if the receipt has recoverable VAT. Register Payment on an expense does not create an accounting payment; it is a status. Pay vendor bills in Accounting, and reimburse cash expenses through the payroll described in the [settlement chapter](/odoo-guides/odoo-truck-cost-per-km-fuel/).</Callout>
+
+## Invoicing a trip
+
+On a completed trip, **Create Invoice** checks three things: the trip has a customer, it has a trip charge above zero, and it has not been invoiced already. It then raises a customer invoice with one line, "Transport service" plus the trip reference, at the trip charge. The line books to the sales journal's default income account and takes the company's default sales tax, mapped through the customer's fiscal position. The trip moves to Invoiced and the chatter links the invoice.
+
+An invoiced trip cannot be cancelled. If a trip was invoiced in error, deal with the invoice in Accounting with a credit note.
+
+Invoicing one trip at a time suits a fleet doing a handful of jobs a day. A fleet that bills customers monthly against contracts needs the Enterprise charge sheets and consolidated run, covered in the [rate cards chapter](/odoo-guides/odoo-transport-rate-cards-billing/).
+
+## Maintenance and services
+
+The base module does not keep a separate workshop history. **Transport, Fleet, Maintenance and Services** opens Odoo Fleet's own service records, and **Odometer Logs** opens Fleet's odometer history, so whatever your workshop already records in Fleet shows up here and in Fleet's reports. Service types are Fleet's service types, under **Configuration**.
+
+<Shot src="/odoo-guides/odoo-transport-trips-expenses/maintenance-services.webp" alt="Maintenance and Services list in Odoo with service date, description, service type such as preventive service, tyre replacement or brake overhaul, vehicle, driver, vendor, cost and stage" width={1440} height={760} caption="Services are Odoo Fleet records, reached from the Transport menu." />
+
+Fleet services are not tied to a trip, and their cost is not added to trip profit. Maintenance paid through a transport expense in the Maintenance and Repair category is. Pick one route for each kind of cost so it is not counted twice.
+
+## Reports and the vehicle figures
+
+**Transport, Reporting** has Trip Analysis and Expense Analysis, both pivot and graph views you can group by month, trip type, vehicle, driver, customer or category.
+
+<Shot src="/odoo-guides/odoo-transport-trips-expenses/trip-analysis.webp" alt="Trip Analysis pivot table in Odoo by trip type and month showing trip charge, total expense, net profit and distance for delivery, freight, passenger and pickup trips" width={1440} height={480} caption="Trip Analysis: charge, expense, profit and distance by trip type and month." />
+
+On each vehicle, the Transport tab adds lifetime figures: distance travelled on completed trips, operational expenses, fuel cost, fuel efficiency (distance divided by litres of fuel booked) and cost per distance unit (all expenses divided by distance). These are simple lifetime averages, useful for comparing trucks but not a costing. The dashboard shows the same picture for the month: trips completed, revenue, profit, distance, fuel and expenses by category. Only completed and invoiced trips count as this month's revenue.
+
+Three PDF reports come with the module: a **Trip Sheet** on the trip, an **Expense Voucher** on the expense, and a **Payslip** on the payroll record.
+
+## Setting it up
+
+1. Create your locations in **Transport, Locations** with a type (depot, hub, warehouse, customer site, fuel station, workshop, parking, checkpoint) and coordinates if you have them.
+2. Give each vehicle a transport driver and a base location on its Transport tab.
+3. Review the expense categories and add local ones.
+4. Make sure your chart of accounts has a sales journal and a purchase journal with default accounts, and a default sales tax on the company.
+5. Decide who submits and who approves expenses. The module has Driver, Fleet Officer and Fleet Manager roles.
+6. Enter one week of trips and expenses, invoice the completed trips, and compare the dashboard with your own figures before going live.
+
+For the paperwork side, vehicle documents and driver licences, continue with the [documents and readiness chapter](/odoo-guides/odoo-fleet-documents-dispatch-readiness/). Trips and expenses can be tried on the [live demo](https://transport-demo.way4tech.com/).

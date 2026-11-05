@@ -1,0 +1,100 @@
+---
+title: "Car wash online booking and the POS counter in Odoo"
+metaTitle: "Online Booking and the POS Counter"
+description: "Take car wash bookings on your Odoo website, check technician availability, and run walk-ins and payments from a car wash screen inside Odoo 19 POS."
+targetQuery: "odoo car wash online booking pos"
+category: "Industry"
+summary: "The website services page and booking form, how a booking is checked and confirmed, the customer portal, and the car wash screen the POS add-on puts on the counter."
+published: 2027-01-21
+updated: 2027-01-21
+series: "odoo-car-wash-management"
+seriesOrder: 1
+modules:
+  - name: "Car Wash Management"
+    technical: "wt_carwash_management"
+    note: "USD 1,299, includes the website booking pages"
+  - name: "POS Car Wash"
+    technical: "wt_car_wash_pos"
+    note: "USD 1,299 add-on, needs Car Wash Management and Point of Sale"
+demo:
+  url: "https://carwash-app.way4tech.com/"
+  label: "Car wash demo"
+related: ["odoo-salon-front-desk-website", "odoo-salon-pos-till", "odoo-car-wash-management"]
+linkFrom: ["/products/wt-car-wash-pos/"]
+sources: []
+faqs:
+  - q: "Do customers need an account to book a wash online?"
+    a: "No. The booking form is public. The customer gives a name, an email and optionally a phone number. If no contact with that email exists, Odoo creates one. A signed in customer has the form filled in for them and can see their bookings under My Account."
+  - q: "Does online booking stop two cars being booked with the same washer?"
+    a: "Only when the customer picks a technician. The form then refuses a slot that overlaps that technician's other bookings or their blocked time. If the customer leaves No preference, the booking is taken without a check and you assign someone in the back office."
+  - q: "Can customers pay online when they book?"
+    a: "No. The website form creates the booking and sends a confirmation email. Payment is taken later, at the counter or by invoice."
+  - q: "What happens to the booking when it is paid in the POS?"
+    a: "The POS order is linked to the booking, the booking is moved to Done, an invoice is created and posted, a payment is registered against it and the booking moves to Invoiced. A refund of that POS order moves the booking back to Confirmed."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most car wash customers decide on the day. Some book ahead for the long jobs, a full detail or a ceramic coating, and they want to do it at ten at night from their phone rather than wait for someone to pick up. At the counter the problem is the opposite: a queue of cars, a cashier who needs to know which ones were booked and what was agreed, and no time to retype anything. This chapter covers both ends of the [car wash series](/odoo-guides/odoo-car-wash-management/): the booking pages the base module adds to your Odoo website, and the car wash screen the POS add-on puts inside Point of Sale.
+
+## The website services page
+
+Installing Car Wash Management adds two items to the website menu: **Our Services**, at `/carwash`, and **Book Appointment**, at `/carwash/book`. The services page lists every active service that has **Published on Portal** ticked, grouped by category, with its duration and price. Each card has a Book button that opens the form with that service already ticked.
+
+<Shot src="/odoo-guides/odoo-car-wash-online-booking-pos/website-services.webp" alt="Car wash services page on an Odoo website with a Book Your Appointment banner and service cards grouped into exterior wash, interior cleaning, full service and detailing, each with duration, price in AED and a Book button" width={1440} height={1120} caption="The public services page, built from the service menu in the back office." />
+
+Because the page reads the service menu directly, a price change in Odoo is on the website the moment you save it. To take a service off the website without deleting it, untick Published on Portal.
+
+## The booking form
+
+The form asks for a name, a phone number and an email, then lists the published services as tick boxes with their duration and price. Below that come a preferred technician (or No preference), a date, a time slot and a box for special requests.
+
+<Shot src="/odoo-guides/odoo-car-wash-online-booking-pos/website-booking-form.webp" alt="Online car wash booking form on an Odoo website with name, phone and email fields, a list of services with duration and price to tick, a preferred technician drop down, date and time pickers and a special requests box" width={1440} height={1740} caption="The booking form: services, technician, date and slot in one page." />
+
+The time slots come from three settings in **Configuration, Settings**: the first booking hour, the last booking hour and the slot length in minutes. Out of the box that is 9:00 to 19:00 every half hour. The same slots are offered every day; there are no opening hours per weekday and no closed days.
+
+When the customer presses Confirm Booking, Odoo:
+
+1. Checks the name, email, date, time and at least one service are filled in, and sends the customer back with a message if not.
+2. Looks for a contact with that email and creates one if there is none.
+3. If a technician was chosen, adds up the durations of the chosen services and checks the technician has no other booking overlapping that window, and no blocked time (a break, vacation or training) in it. Either one refuses the slot with a message asking for another time or technician.
+4. Creates the booking with the services at their current prices, the notes, and the source set to Online Portal. The booking starts in the first stage, New.
+5. Sends the booking confirmation email to the customer, if an outgoing mail server is set up, and shows a confirmation page.
+
+The booking then shows up on the back office board like any other, ready for the receptionist to confirm.
+
+<Shot src="/odoo-guides/odoo-car-wash-online-booking-pos/booking-calendar.webp" alt="Car wash booking calendar in Odoo week view with many bookings per day coloured by customer, a mini month calendar and a customer filter list on the right" width={1440} height={900} caption="Website bookings land on the same calendar as phone and walk-in bookings." />
+
+<Callout title="The technician list shows every employee">The Preferred Technician drop down lists every active employee in the company, not only the ones who wash cars. On the demo that includes the Administrator. If your office staff are employees in Odoo, either archive the ones customers should not pick or keep the car wash in its own company. Also note that the overlap check only runs on the website form. Bookings typed in the back office are not checked.</Callout>
+
+## The customer portal
+
+A customer who has a portal login sees a My Appointments tile under My Account, at `/my/carwash-appointments`. It lists their bookings page by page, and each one opens to show the services, date, technician and status. The confirmation email itself carries the booking details but no link to the portal. There is no cancel or reschedule button on the portal; the customer has to call.
+
+## The car wash screen in Point of Sale
+
+The POS Car Wash add-on is for the counter. Tick **Enable Car Wash** on the Point of Sale configuration and a CarWash button appears in the POS top bar. It opens a screen of bookings for a chosen day, today by default, which refreshes itself every thirty seconds.
+
+What the cashier can do there:
+
+- **Filter the day.** Pending, active, done, paid, unpaid, cancelled or all, with a count on each, and a search across reference, customer, service, technician and POS order.
+- **Switch the view.** Kanban or list, grouped by stage, technician, service, source, payment or time.
+- **Move a booking on.** Confirm, start, complete or cancel it from the card, and add a short timestamped note.
+- **Book or take a walk-in.** A new booking can be made from the screen for a chosen customer, services, technician and time, with a quick way to create a new customer. A walk-in is created already confirmed with the source set to walk-in.
+- **See the customer.** A side panel shows the customer's last ten visits, total visits, total spent, preferred technician and their notes.
+- **Load it onto the order.** This creates a POS order for the booking's customer with one line per service at the booked price, then opens the normal product screen to take payment. If an open order for that booking already exists, the screen switches to it instead.
+
+Once the order is paid, the add-on links the POS order to the booking and closes the booking out: it moves to Done, an invoice is created and posted, a payment is registered against it in the first bank or cash journal of the company and reconciled, and the booking moves to Invoiced. The POS receipt carries a car wash block with the booking reference, the service and the technician, and the POS order keeps the technician and service names for reporting. After payment the POS returns to the car wash screen.
+
+<Callout title="Check the accounting before go-live">Paying a booking in the POS can record the same sale twice: once as a POS order, which posts its own sales and payment entries when the session closes, and once as the booking's invoice and payment created by the add-on. Agree with your accountant how this should be handled, or test a full day with a session close, before you run real money through it. The demo does not have a POS session you can open, so this part is described from the module code rather than shown here.</Callout>
+
+## Setting it up
+
+1. In **Configuration, Settings**, set the booking hours and slot length for the website.
+2. Untick Published on Portal on any service you do not sell online, such as a surcharge.
+3. Write the booking confirmation email the way you want it in Settings, Technical, Email Templates, and set up outgoing mail.
+4. Plan technician breaks and leave around the website. The module has a blocked time record that the form checks, but this version has no menu or screen to enter it, so in practice the check is against other bookings only.
+5. For the counter, install POS Car Wash, open your Point of Sale configuration and tick Enable Car Wash. Make sure the service products are available in that POS.
+6. Book one test wash on the website, confirm it in the back office, load it in the POS, pay and refund it, and check the booking, the POS order and the invoice each time.
+
+Go back to the [car wash overview](/odoo-guides/odoo-car-wash-management/) for the booking stages and the service menu, or carry on to [staff commission and sales targets](/odoo-guides/odoo-car-wash-staff-commission/). You can try the website pages and the back office on the [car wash demo](https://carwash-app.way4tech.com/carwash).

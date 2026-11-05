@@ -1,0 +1,156 @@
+---
+title: "A leave policy in Odoo: monthly limits, half days, unpaid leave and late arrivals deducted from leave or salary"
+metaTitle: "Leave Policy, Lates and Unpaid Days"
+description: "Set up a real leave policy in Odoo 19: casual days with a monthly cap, half days, two-step sick leave, unpaid leave and lates taken from leave or salary."
+targetQuery: "odoo late arrival deduction from leave and salary"
+category: "Payroll and HR"
+summary: "One company leave policy built end to end in Odoo 19 Community: leave types and who approves them, a monthly limit on casual leave, half days, unpaid leave beyond the quota, and late arrivals after a grace time that come off the leave balance first and the salary second."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-hrms"
+seriesOrder: 9
+modules:
+  - name: "HR Leave Management"
+    technical: "wt_hrms_leave"
+    note: "USD 30, leave policies; the monthly limit needs version 19.0.4.2.0"
+  - name: "HR Attendance Management"
+    technical: "wt_hrms_attendance"
+    note: "USD 25, late flags and the monthly summary"
+  - name: "Payroll Unpaid Leave and Late Deductions"
+    technical: "wt_hrms_payroll_absence"
+    note: "Not on the Odoo Apps Store yet, no list price; needs HRMS Payroll, Leave and Attendance"
+related: ["odoo-leave-management", "odoo-attendance-shifts-overtime", "run-payroll-odoo-community", "zkteco-adms-odoo"]
+linkFrom: ["/modules/leaves/", "/products/wt-hrms-leave/"]
+faqs:
+  - q: "Can Odoo limit casual leave to 1.5 days a month?"
+    a: "Yes, with the Max Days Per Month field on the leave policy in HR Leave Management 19.0.4.2.0. All requests of that type in one calendar month count together, by the month each request starts in, and half days count as 0.5. A request that would go over is refused with a message that names the limit."
+  - q: "How do I deduct late arrivals from salary in Odoo?"
+    a: "With the Payroll Unpaid Leave and Late Deductions module. Set the time after which a check-in is late and how much of a day each late counts as, for example 0.25. Each payslip counts the month's lates, takes them off a leave balance you choose first, and deducts only the rest from salary at a day rate."
+  - q: "Is unpaid leave deducted from the payslip automatically?"
+    a: "Standard Odoo and the HRMS Payroll module pay the full monthly wage as shipped. With the deductions module, approved leave of the types you mark as unpaid is read onto each payslip and deducted at wage divided by the working days in the month."
+  - q: "What if the attendance machine was down for part of the month?"
+    a: "Late Arrivals, Unpaid Leave Days and Working Days on the payslip can be typed over while the payslip is a draft or computed, and the number HR types survives the next Compute. Refresh Leave and Lates reads them again from Time Off and Attendance on purpose."
+  - q: "When does the leave balance change for lates?"
+    a: "Only when the payslip is confirmed. Computing a draft again and again never moves anyone's leave. If a confirmed payslip is cancelled or deleted, the days are given back to the allocation and a note is posted on it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most leave policies in small companies fit on one page, and most of them are only enforced when somebody remembers. A typical one reads: fourteen casual days a year, but never more than a day and a half in one month. Half days are fine. Sick and emergency leave need the manager and then HR. Once the days are used up, leave is unpaid. And anyone who checks in after 09:15 has a quarter of a day taken off, first from their casual leave, then from their salary. On paper that is clear. In practice the monthly cap is checked by eye, lates are counted on a spreadsheet at month end, and the payroll officer works out unpaid days by hand and types them in, every month, for every person.
+
+This chapter builds exactly that policy in Odoo 19 Community, so the system refuses what the policy refuses and payroll deducts what it should without anyone counting. The general setup of leave types, policies, allocations and approval chains is in the [leave management chapter](/odoo-guides/odoo-leave-management/); read that first if you have not set up Time Off yet. The screens below are from the sample company used across this guide, Crescent Textiles in Lahore, paid in PKR.
+
+## The policy we are building
+
+| Rule | Where it lives in Odoo |
+|---|---|
+| Casual Leave, 14 days a year, no carry forward | Leave policy on the Casual Leave type |
+| At most 1.5 casual days in any calendar month | Max Days Per Month on that policy |
+| Half days allowed | Duration Type: Half-Day on the leave type |
+| Sick Leave, 8 days, manager then HR, document after 2 days | Leave type approval plus the Sick Leave policy |
+| Emergency Leave, 3 days, at most 3 in a row, manager then HR | Leave type approval plus the Emergency Leave policy |
+| Unpaid beyond the quota, manager then HR | An Unpaid Leave type with no allocation, marked as unpaid for payroll |
+| Late after 09:15, each late is 0.25 of a day | Payroll Deductions on the company |
+| Lates come off Casual Leave first, then salary | Payroll Deductions on the company |
+
+## Step 1: Leave types and who approves them
+
+Open **Time Off, Configuration, Time Off Types**. Archive the starter types you do not use, so nobody picks the wrong one, and make sure you have four: Casual Leave, Sick Leave, Emergency Leave and Unpaid Leave.
+
+On each type set:
+
+- **Duration Type: Half-Day** for Casual, Sick and Unpaid. Staff can then ask for a morning or an afternoon, and it counts as 0.5 of a day.
+- **Approval** under Time Off Requests. For Casual Leave, **By Employee's Approver** lets the line manager decide alone. For Sick, Emergency and Unpaid, choose **By Employee's Approver and Time Off Officer**: the manager approves first, then HR.
+- **Requires allocation** ticked on Casual, Sick and Emergency, because each has a yearly number of days. Untick it on **Unpaid Leave**: there is no balance to run out of.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/sick-leave-two-step-approval.webp" alt="Sick Leave time off type in Odoo with duration type Half-Day, approval By Employee's Approver and Time Off Officer, and Requires allocation ticked" width={1440} height={900} caption="Sick Leave: half days allowed, approved by the manager and then HR, with a yearly allocation." />
+
+The employee's approver is the **Time Off** field on their Work Information tab, normally their line manager. Fill it for everybody, otherwise the manager step has nobody to go to and only HR can decide.
+
+## Step 2: The leave policies
+
+Open **WT HRMS, Configuration, Leave Policies** and make one policy per leave type that has days. For Casual Leave:
+
+1. **Leave Type** Casual Leave, **Annual Days** 14, **Max Carry Forward Days** 0.
+2. **Probation Eligible** ticked, if people on probation may take casual leave.
+3. **Max Days Per Month** 1.5.
+4. Save, then click **Allocate Annual Days** to give everyone their fourteen days.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/casual-leave-policy.webp" alt="Casual Leave Policy in WT HRMS with leave type Casual Leave, 14 annual days, no carry forward, probation eligible, max days per month 1.5, and a chatter note saying 14 days were allocated to 8 employees" width={1440} height={800} caption="The Casual Leave policy: 14 days a year, at most 1.5 in a month. The note on the right is the allocation run." />
+
+Do the same for Sick Leave (8 days, **Requires Attachment** ticked, **Attachment After Days** 2, so anything longer than two days cannot be approved until a medical certificate is attached) and Emergency Leave (3 days, **Max Consecutive Days** 3).
+
+<Callout title="The monthly limit needs a recent version">Max Days Per Month is in HR Leave Management 19.0.4.2.0. If the field is not on your policy form, your copy is older. Everything else in this step works on the earlier versions.</Callout>
+
+The monthly limit counts every live request of that type in the same calendar month together, by the month a request starts in. A request that runs from 30 November into December belongs to November. Half days count as 0.5. When a request would take the month past the limit, it is refused as it is saved, with a message like this one:
+
+> Policy 'Casual Leave Policy' allows at most 1.5 day(s) of Casual Leave a month, and Shahid Iqbal would have 2.0 day(s) in October 2026 with this request. Ask your manager to approve it as a different leave type.
+
+That message is the policy talking: the extra day is still possible, but as Unpaid Leave or another type, which goes through its own approval.
+
+## Step 3: Requests and approvals
+
+Staff ask from **My Space, Time off**, pick the type, the dates and, for a half day, the morning or the afternoon. The balance they see counts only working days; weekends and the public holidays you entered under **Time Off, Configuration, Public Holidays** are not taken off.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/employee-leave-balance.webp" alt="Employee My Space in WT HRMS with the leave balance card showing Casual Leave 11 of 12.5, Sick Leave 8 of 8 and Emergency Leave 3 of 3, and buttons for Time off, Comp-off and Leave encashment" width={1440} height={600} caption="An employee's balances after October. The casual allocation dropped from 14 to 12.5 when lates were taken from it; 11 are left." />
+
+The line manager sees every request waiting for them at the top of their own My Space and approves or rejects in one click. For two-step types, HR then sees the same request in its own list.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/manager-waiting-decisions.webp" alt="Shift supervisor's My Space with Waiting for your decision listing a two day Sick Leave request and a one day Casual Leave request from his team, each with Approve and Reject buttons" width={1440} height={460} caption="The manager's list: a two day sick leave and a casual day, decided without leaving the page." />
+
+## Step 4: Tell payroll what to deduct
+
+The leave side is now enforced, but as shipped HRMS Payroll still pays the full monthly wage whatever happens. The Payroll Unpaid Leave and Late Deductions module (`wt_hrms_payroll_absence`) connects the two. It needs HRMS Payroll, HR Leave Management and HR Attendance Management.
+
+Open **Settings, Users & Companies, Companies**, open your company and the **Payroll Deductions** tab.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/payroll-deductions-settings.webp" alt="Payroll Deductions tab on the Odoo company form with Late After 09:15, each late counts as 0.25 days, lates come off Casual Leave, unpaid leave types Unpaid Leave, and one day is salary divided by working days in the month" width={1440} height={540} caption="The whole late and unpaid rule in five fields." />
+
+| Field | What it does | In the sample |
+|---|---|---|
+| Late After | The local time after which the first check-in of a day is late. Leave it empty to use the attendance module's own late flag, which is the schedule start plus five minutes. | 09:15 |
+| Each Late Counts As (days) | How much of a day one late is. 0.25 means four lates make one day. | 0.25 |
+| Lates Come Off | The leave balance lates are taken from first. Empty deducts every late from salary. | Casual Leave |
+| Unpaid Leave Types | Approved leave of these types is deducted from salary. | Unpaid Leave |
+| One Day Is Salary Divided By | Working days in the month (from the employee's schedule, company closures and public holidays left out) or calendar days. | Working days |
+
+A day counts as late at most once, judged on its first check-in, and in whole minutes: 09:15:40 is still 09:15 and not late.
+
+## Step 5: The payslip does the arithmetic
+
+Run the month as usual from **Pay, Payroll, Batches** (the [payroll chapter](/odoo-guides/run-payroll-odoo-community/) has the full routine). Each new payslip reads three numbers for its period: the working days, the approved unpaid leave days, and the late arrivals. **Compute** then works out the rest and adds one deduction line.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/payslip-unpaid-days-and-lates.webp" alt="October payslip for a machine operator in Odoo with 22 working days, 1 unpaid leave day, 6 late arrivals counted as 1.5 days all taken from leave, 1 day deducted and an Unpaid Days deduction line of Rs. 2,045.45, net Rs. 42,954.55" width={1440} height={900} caption="October for one operator: one unpaid day deducted, six lates covered by his casual leave." />
+
+Here is how the sample payslip reads, for a machine operator on a wage of Rs. 45,000:
+
+1. **Working Days in Period** 22: the weekdays of October on his Monday to Friday schedule.
+2. **Unpaid Leave Days** 1: one approved day of Unpaid Leave that started in October.
+3. **Late Arrivals** 6, so **Lates as Days** 6 × 0.25 = 1.5.
+4. He has casual leave left, so **Lates Taken from Leave** is 1.5 and **Lates Deducted from Salary** is 0.
+5. **Days Deducted** is the unpaid day plus the lates the balance could not cover: 1.
+6. **Unpaid Days Deduction** is 45,000 ÷ 22 × 1 = Rs. 2,045.45, shown as the line Unpaid Days (1.0). Net pay is Rs. 42,954.55.
+
+Had his casual balance run out, the same six lates would have added 1.5 days to Days Deducted instead.
+
+The leave balance is touched only when the payslip is **confirmed**. Computing a draft again changes nothing. On confirmation the 1.5 days come off his casual allocation and a note on the allocation says which payslip took them. Cancel or delete a confirmed payslip and the days go back, with another note.
+
+<Shot src="/odoo-guides/odoo-leave-policy-late-deduction/allocation-lates-taken.webp" alt="Casual Leave allocation for the employee in Odoo Time Off, reduced from 14 to 12.5 days, with a note saying 1.5 days were taken for 6 late arrivals on the October payslip" width={1440} height={560} caption="The allocation after the payslip was confirmed: 14 became 12.5, and the note names the payslip." />
+
+<Callout title="Check the late count before you confirm">The count reads the first check-in of each day and nothing else. In the sample, the operator took a morning half day on 7 October and checked in at 13:58: that day was counted as a late, so he shows 6 lates where the policy meant 5. The module does not look at half days of leave. Before you confirm, read the Late Arrivals figure for anyone with a half day in the month and type the right number over it; the typed figure survives the next Compute. The same applies to a month when the attendance device was down: there are no check-ins, so no lates, unless HR types them in. Refresh Leave and Lates reads all three numbers again from Time Off and Attendance and replaces anything typed.</Callout>
+
+A smaller case to know about: Odoo refuses an allocation of zero days. When the lates would empty an allocation that has never had leave taken against it, one late's worth stays on it and is deducted from salary instead.
+
+## The month, for this policy
+
+| When | Who | What |
+|---|---|---|
+| Any day | Staff and managers | Requests and approvals. The monthly cap and the document rule are checked as requests are saved. |
+| Day 25 to month end | Managers, then HR | Clear the waiting lists. An unapproved unpaid day is not deducted. |
+| Day 26 to 28 | HR | Correct missed punches in **Time, Attendance, Check In/Out**. |
+| Payroll day | Payroll officer | Generate and compute the batch. Read Unpaid Leave Days and Late Arrivals for anyone with a half day or a device gap, type over if needed, compute again. |
+| After checking | Payroll officer | Confirm. Lates now come off the leave balances. |
+
+<Callout title="Not on the Apps Store yet">Payroll Unpaid Leave and Late Deductions is not listed on the Odoo Apps Store at the time of writing and has no list price. Ask for it if you want this policy enforced end to end. Without it, the [attendance summary](/odoo-guides/odoo-attendance-shifts-overtime/) still counts lates and minutes late per person, and the payroll officer types the days by hand.</Callout>
+
+When the policy changes, for example the monthly cap goes from 1.5 to 2 days, change the figure on the policy and save. New requests use the new rule straight away; requests already approved stay as they are.

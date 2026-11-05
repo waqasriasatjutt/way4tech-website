@@ -1,0 +1,124 @@
+---
+title: "Odoo travel agency management: booking files, passports, departures and margin for a travel shop"
+metaTitle: "Odoo Travel Agency Management"
+description: "Run a travel agency or tour operator on Odoo 19: booking files with PNR, passport checks, segments with net and sell, departures, visas and refunds."
+targetQuery: "odoo travel agency management software"
+category: "Industry"
+summary: "What a retail travel agency and a tour operator need from Odoo, why standard Odoo does not cover it, and how the Travel Agency Management module runs the booking file, the ticketing desk, tours, visas and the money on Odoo 19 Community."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-travel-agency-management"
+seriesOrder: 0
+modules:
+  - name: "Travel Agency Management"
+    technical: "wt_travel_agency"
+    note: "USD 299, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://travel-demo.way4tech.com/"
+  label: "Travel Agency demo"
+related: ["odoo-travel-booking-file-pnr", "odoo-tour-packages-fixed-departures", "odoo-visa-application-tracking", "odoo-travel-deposits-cancellations"]
+linkFrom: ["/solutions/travel-agency/", "/industries/travel-agency/", "/products/wt-travel-agency/"]
+faqs:
+  - q: "Does this module book flights or hotels for me?"
+    a: "No. It does not connect to Amadeus, Sabre, Galileo, an airline, a bed bank or a cruise line. Your consultants book with the supplier the way they do now, then type the PNR, the confirmation number and the net cost onto the booking file. The module keeps that file correct and tells you what it earned."
+  - q: "Does it need Odoo Enterprise?"
+    a: "No. It is built and tested on Odoo 19 Community and needs only the standard Invoicing, Discuss and Products apps, which install with it. It costs USD 299 once per Odoo version."
+  - q: "Can customers book or pay online with it?"
+    a: "No. There is no booking website and no customer portal in the module. The customer gets the itinerary as a PDF, and receipts are recorded by your staff on the file."
+  - q: "Can a tour operator and a retail agency both use it?"
+    a: "Yes. The retail side is the booking file with its segments. The tour operator side is packages and dated departures with seat counts, a guarantee threshold and a passenger manifest. A file can be sold onto a departure, and the seats come off it when the file is confirmed."
+  - q: "Does it handle the tour operators margin scheme for VAT?"
+    a: "It works out the VAT on the margin from a tax you nominate and writes it on the invoice, which goes out with no VAT lines. It does not post its own journal entry or file a return, so your accountant still checks the figure against your local rules."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A travel shop rarely loses money on the trip it sold. It loses it on the details around the trip: a passenger whose passport runs out four months after the holiday and gets turned away at check-in, a hotel that was never actually confirmed, a cancellation refunded in full when the supplier kept thirty per cent, a balance that should have come in six weeks before departure and did not. Each of those is a fact somebody knew at the time, written in a notebook or an email, not on a record anybody could check. This guide covers what a travel agency or tour operator needs from Odoo, what standard Odoo leaves out, and how the Travel Agency Management module runs the whole file on Odoo 19 Community.
+
+## What a travel agency actually needs
+
+Take away the brochure and a travel business needs a handful of things from its system:
+
+1. **One file per trip.** The airline PNR, the IATA agency code it was sold under, the consultant, the customer and every passenger, in one place that everyone answers the phone from.
+2. **Passports checked before money changes hands.** Many destinations want six months of validity past the travel date. The system should name the passenger who fails that, before the file is confirmed, not at the airport.
+3. **Every part of the trip as its own line.** Flight, hotel, transfer, excursion, cruise, rail and insurance, each with its supplier, its net cost, its sell price and the locator the supplier gave back.
+4. **Margin that is real.** Markup over net plus the commission the supplier pays back, per line, per file and per consultant.
+5. **Seats that cannot be oversold.** A tour operator selling a coach of forty five cannot let three consultants sell forty eight.
+6. **Money in before tickets go out.** A deposit before ticketing, a balance by a set number of days before departure, and a list of who is late.
+7. **Cancellations priced by the rules you publish.** The agency fee and the supplier penalty both depend on how close to departure the change comes in.
+
+## What standard Odoo does and does not do
+
+Standard Odoo gives a travel business good general tools: contacts, sales quotations, invoices, payments and the accounting behind them. You can put a flight and a hotel on a quotation as two service products and invoice them.
+
+What it does not know is anything specific to travel. There is no PNR, no passenger list with passport expiry, no supplier confirmation number that has to exist before a segment counts as booked, no net cost against sell price per line with the supplier's commission on top, no fixed departure with a seat count, no visa checklist and no cancellation fee by days before departure. You could add some fields with Studio, but the controls (refusing to confirm a file because one passport is short, refusing to oversell a departure) need code. That gap is what this module fills. The [travel agency solution page](/solutions/travel-agency/) describes the wider setup.
+
+## The module and what it covers
+
+[Travel Agency Management](https://apps.odoo.com/apps/modules/19.0/wt_travel_agency/) (`wt_travel_agency`) is one module at USD 299, paid once per Odoo version. It installs on Odoo 19 Community with Invoicing, Discuss and Products, which come in as dependencies. It adds a Travel app with five menus: Sales, Operations, Tours, Reporting and Configuration.
+
+| Area | Standard Odoo | Travel Agency Management |
+|---|---|---|
+| Customer, quotation, invoice | Yes | Yes, invoice raised from the file |
+| Booking file with PNR and IATA code | No | Yes |
+| Passengers with passport expiry and a validity check | No | Yes |
+| Segments with supplier, locator, net, sell, commission | No | Yes |
+| Margin per file and per consultant | No | Yes |
+| Packages and dated departures with seat inventory | No | Yes |
+| Visa applications with a document checklist | No | Yes |
+| Deposit and balance plan with an overdue list | No | Yes |
+| Cancellation and amendment fees by days before departure | No | Yes |
+| Margin scheme VAT written on the invoice | No | Yes |
+| Live fares or booking through a GDS | No | No |
+
+<Shot src="/odoo-guides/odoo-travel-agency-management/booking-board.webp" alt="Odoo Travel booking files kanban grouped by status: Confirmed, Enquiry, Quoted and Ticketed, each card with file reference, customer, pax, destination, PNR, sell total and badges for passport problems and overdue balance" width={1440} height={900} caption="The booking board: one card per file, with passport and overdue balance warnings on the card." />
+
+### How a file moves
+
+A file opens as an **Enquiry**, moves to **Quoted** once something is on it, then **Confirmed**, **Ticketed** and **Travelled**, with Cancelled to the side. Each step has a gate. Confirm refuses a file with no travellers, nothing booked, no departure date, a passenger with no passport expiry, or a passport that runs out inside the validity window. Ticket refuses a file whose segments are still waiting on a supplier, or whose deposit has not come in. Mark Travelled refuses a file that still owes money while that block is switched on. The status cannot be written around the buttons: dragging a card across the board or importing a status is refused with an explanation, because those are the same write.
+
+### Who sees what
+
+There are three access groups. **Travel Consultant** sees the Sales menu and only their own files, travellers, receipts, visas and changes. **Operations and Ticketing** sees every file and the Operations menu. **Travel Manager** adds Reporting and Configuration. Every model carries a multi-company rule, and amounts on a file follow the currency of the company whose office sold it.
+
+### Reporting
+
+Three manager screens sit under Reporting. **Margin by Consultant** is a pivot of sold files with sell, supplier cost and gross margin by consultant and month. **Balance Due** lists every sold file past its balance date and still owing, grouped by departure month. **Load Factor** graphs seats booked against seats total on each departure.
+
+<Shot src="/odoo-guides/odoo-travel-agency-management/margin-by-consultant.webp" alt="Margin by Consultant pivot in Odoo with sell excluding tax, supplier cost and gross margin for three consultants, month by month from August to December" width={1440} height={900} caption="Margin by Consultant: sell, supplier cost and gross margin per consultant, by month." />
+
+## The chapters of this guide
+
+Each chapter covers one part of the job in enough detail to set it up and run it:
+
+1. [Booking files, PNR and passport checks](/odoo-guides/odoo-travel-booking-file-pnr/): opening a file, travellers and passports, itinerary segments, markup and commission, the operations board and the printed itinerary.
+2. [Tour packages and fixed departures](/odoo-guides/odoo-tour-packages-fixed-departures/): packages, dated departures with seats and a guarantee threshold, selling files onto a departure and the passenger manifest.
+3. [Visa applications and country rules](/odoo-guides/odoo-visa-application-tracking/): country rules by destination and passport, the document checklist, appointments and the at risk flag.
+4. [Deposits, refunds and margin scheme VAT](/odoo-guides/odoo-travel-deposits-cancellations/): the payment plan, receipts, the invoice, amendments and cancellations off a fee schedule, supplier settlement and margin scheme VAT.
+
+## Setting it up, in order
+
+1. Install Travel Agency Management. Installing with demo data gives you a sample office (Meridian Travel, City Centre) with consultants, suppliers, packages and files at every stage.
+2. Open **Travel, Configuration, Settings**: IATA agency code, default markup (12 per cent out of the box), passport validity window (six months), deposit percent (20), balance due days before departure (42), the block on ticketing without a deposit and travel without the balance, the visa chase window and, if you are a tour operator, the margin scheme and its tax.
+3. Add an office per branch under **Configuration, Offices**, with its code, its own IATA code and licence number if it has them, and the sales journal its invoices go to.
+4. Add consultants under **Configuration, Consultants**, linked to their Odoo user, with a margin target and a commission percent.
+5. Check **Configuration, Service Types** (flight, hotel, transfer, activity, cruise, rail, insurance, other): each needs the revenue product it invoices to, plus a default markup and commission.
+6. Add suppliers under **Configuration, Suppliers** with how they are settled, settlement days, credit limit and the commission they pay you.
+7. Load your visa rules and edit the fee schedule bands to match your booking conditions.
+8. Turn on the five nightly jobs under Scheduled Actions once outgoing mail works. They ship switched off.
+9. Run one real file end to end, enquiry to travelled, before going live.
+
+<Callout title="A back office, not a booking engine">Nothing in this module talks to a GDS, an airline, a bed bank or a cruise line, and it does not import the BSP billing file or enter supplier bills. PNRs, locators and net costs are typed in from the supplier's own system, and vendor bills are entered in Accounting as you do now. If you want live fares or an online booking page, this module is not it.</Callout>
+
+## Limitations
+
+These are the module's own statements about what it does not do:
+
+- **No GDS or supplier connection.** No live availability, fares or ticket issuing.
+- **No online booking or customer portal.** The itinerary goes out as a PDF.
+- **No BSP or ARC reconciliation.** The supplier record shows what is unsettled; it does not match the billing file line by line.
+- **No supplier bills.** What you owe a supplier is tracked on the segment and marked settled by hand.
+- **No dynamic packaging or seat maps.** Package prices are per adult and per child with a single supplement, and seats on a departure are a count.
+- **Not a tax filing.** The margin scheme figure is written on the invoice for the accountant; nothing is posted or filed.
+
+Try the flow on the [Travel Agency demo](https://travel-demo.way4tech.com/), or see the full list on the [demos page](/demos/). If your agency works in a way this guide does not cover, such as group files split across several invoices, [send a short description](/contact/) and I will tell you whether it fits.

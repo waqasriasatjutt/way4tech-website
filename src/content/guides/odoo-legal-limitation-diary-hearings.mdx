@@ -1,0 +1,95 @@
+---
+title: "Limitation dates and the court diary in Odoo for a law firm"
+metaTitle: "Limitation Dates and Court Diary in Odoo"
+description: "Keep a law firm's hearings, court directions and limitation dates in Odoo 19, with warnings months ahead and a limitation date nobody can quietly delete."
+targetQuery: "limitation date diary odoo"
+category: "Industry"
+summary: "How the Law Firm Management module proposes a limitation date for each matter, keeps one live limitation entry per file, warns the fee earner ahead of it, and runs hearings, deadlines and file reviews in one diary."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-law-firm-management"
+seriesOrder: 2
+modules:
+  - name: "Law Firm Management"
+    technical: "wt_legal_practice"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://legal-demo.way4tech.com/"
+  label: "Law firm demo"
+related: ["odoo-law-firm-management"]
+faqs:
+  - q: "How does Odoo work out the limitation date?"
+    a: "The module proposes it from the date of instruction plus the practice area's limitation period in years. The fee earner then corrects it, because the period runs from when the cause of action accrued, which only the fee earner knows."
+  - q: "How far ahead does it warn about a limitation date?"
+    a: "Ninety days by default, set per company in Legal settings. A daily job raises an activity on the fee earner attending, or the responsible fee earner, saying how many days are left."
+  - q: "Can a limitation date be deleted?"
+    a: "No. A limitation entry cannot be vacated, and the module refuses to delete one. If the claim has been issued, mark it done with a note saying so."
+  - q: "Does the diary sync with Outlook or Google Calendar?"
+    a: "The module does not add any calendar sync. Key dates are Odoo records with a list and a calendar view inside the Legal app."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Missing a hearing is embarrassing. Missing a limitation date ends the client's claim and starts a negligence claim against the firm. The fault is rarely ignorance of the law. It is a date written in one place, by one person, with nothing that shouts when it gets close. A practice diary has to do three things the ordinary calendar does not: hold one limitation date per file that cannot be tidied away, warn months ahead rather than the morning of, and show the whole practice's commitments in one place. This chapter covers how the Law Firm Management module does that on Odoo 19.
+
+## Two places a limitation date lives
+
+It helps to know this before you start, because it catches people out.
+
+1. **On the matter.** Each matter has a **Limitation Date** field, a **Days Left** count and a **Limitation Note**. When the instruction date and the practice area are set, the date is proposed as the instruction date plus the area's limitation period (worked in months, so a three month employment period lands on a real date). The fee earner overwrites it with the correct date and writes down in the note how it was worked out.
+2. **In the diary.** A key date of kind **Limitation Date**. This is the entry that the warning job reads, that the Limitation Dates menu lists, and that cannot be vacated or deleted.
+
+<Callout title="Add the diary entry yourself">The module does not create the Limitation Date diary entry from the field on the matter. If a file has a limitation date on the matter form but no Limitation Date entry in the diary, no warning will be raised for it. Make adding the diary entry part of opening every file that has a limitation period, and check the Limitation Dates menu against the list of live matters at each file review.</Callout>
+
+The practice areas that ship with the module carry these periods, which you can change in **Configuration, Practice Areas**: Civil Litigation 6 years, Employment 0.25 years, Residential Conveyancing 6, Family 0 (no date proposed), Corporate and Commercial 6, Wills and Probate 12. A date earlier than the instruction date is refused, with a message that such a file is a negligence enquiry rather than a new matter.
+
+<Shot src="/odoo-guides/odoo-legal-limitation-diary-hearings/limitation-dates.webp" alt="Limitation Dates list in the Odoo Legal app showing one limitation entry per matter with date, matter, client and diary state" width={1440} height={520} caption="Diary, Limitation Dates: one live entry per file, soonest first." />
+
+## Adding a limitation entry
+
+1. Open the matter and go to the **Key Dates** tab, or use **Legal, Diary, Limitation Dates**.
+2. Add a line with kind **Limitation Date**, the date in **When**, and tick **All Day**, since the day matters and the time does not.
+3. **Warn (days before)** fills in from the company setting (90 days by default). Change it on the entry if this file needs longer.
+4. Leave **Attending** empty to have the warning go to the responsible fee earner.
+
+A second live limitation entry on the same file is refused: amend the one that is there. The entry shows a red ribbon on its form and red rows in the lists.
+
+<Shot src="/odoo-guides/odoo-legal-limitation-diary-hearings/limitation-entry.webp" alt="Odoo limitation date entry for an employment matter, marked with a red limitation ribbon, all day, warning 90 days before, activity raised, with a note on how the date was counted and the chatter recording the warning" width={1440} height={900} caption="A limitation entry after the warning job has run: the activity is raised and the chatter says so." />
+
+## The warning
+
+The **Legal: limitation date warnings** job runs daily and is switched on when the module installs. For each limitation entry that is In the Diary or Confirmed and inside its warning window, it schedules a to-do activity on the matter for, in order of preference, the fee earner attending, the responsible fee earner, or the supervising partner. The activity is due on the limitation date and its note says how many days are left and what to do: issue, get a standstill agreement, or tell the client in writing that the firm will not. Each entry is warned once. If one file fails, the job carries on with the rest.
+
+The only way out for a limitation entry is **Done**, which needs an outcome written in, for example the date the claim was issued. **Vacate** is refused for a limitation date, and so is deleting it.
+
+## Hearings, deadlines and the rest of the diary
+
+**Legal, Diary, Key Dates and Hearings** shows every entry still to happen across the practice, as a list or a calendar. The kinds are Hearing, Limitation Date, Filing Deadline, Court Direction, Client Appointment, File Review and Completion Date. Each carries the matter, client, practice area, court, court room, the fee earner attending, instructed counsel, how long it is listed for and an outcome.
+
+<Shot src="/odoo-guides/odoo-legal-limitation-diary-hearings/key-dates-list.webp" alt="Key Dates and Hearings list in Odoo showing client appointments, court directions, completions, a limitation date, case management conferences and file reviews with matter, client, court, attending fee earner and state" width={1440} height={900} caption="The practice diary, filtered to what is still to happen. The red row is a limitation date." />
+
+An entry moves through these states with the buttons on its form:
+
+- **In the Diary** when created.
+- **Confirm** once the court or the other side has confirmed it.
+- **Done** marks it attended, and is refused until the outcome is written. An attendance note written a week later is worth nothing, as the message puts it.
+- **Adjourned** needs the outcome field to say why and what the new date is.
+- **Vacate** cancels it, except for a limitation date.
+
+A single entry cannot be listed for more than 24 hours; split a multi-day trial into days so the diary shows the real commitment. When you pick the matter, the court and the attending fee earner default from the file.
+
+<Shot src="/odoo-guides/odoo-legal-limitation-diary-hearings/hearing-entry.webp" alt="Odoo key date form for a confirmed case management conference with date, two hours listed, county court, attending fee earner, instructed counsel and a seven day warning" width={1440} height={900} caption="A confirmed hearing with court, counsel and the person attending." />
+
+## Reminders to the client
+
+A second job, **Legal: remind clients about hearings**, emails the client from a shipped template when a hearing, completion or client appointment is inside its warning window (seven days for anything that is not a limitation date). It skips clients with no email address and sends each reminder once. It is **off** when the module installs. Switch it on under Settings, Technical, Scheduled Actions (developer mode) only after the outgoing mail server works and you have read the template.
+
+## The diary and closing a file
+
+A matter will not close while it has any key date still In the Diary or Confirmed. Before closing, mark each entry done with its outcome or vacate it. Since a limitation entry cannot be vacated, it has to be marked done with a note, for example that proceedings were issued or that the client was told in writing the firm would not issue. The next key date also shows on the matter list, so a partner scanning live files can see which ones have something coming up.
+
+## Who sees the diary
+
+A Fee Earner sees key dates on their own files. A Supervising Partner sees the whole diary. Because the diary is read by people who cannot open every file, an entry on a file the reader has no rights over still shows its name and date without an error.
+
+Next: [time recording and rate cards](/odoo-guides/odoo-legal-time-recording-rate-card/).

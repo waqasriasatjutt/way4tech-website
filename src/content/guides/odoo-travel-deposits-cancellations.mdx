@@ -1,0 +1,120 @@
+---
+title: "Travel agency deposits, cancellation fees and margin scheme VAT in Odoo"
+metaTitle: "Deposits, Refunds and Margin Scheme VAT"
+description: "Deposits, balance dates, receipts, cancellation and amendment fees by days before departure, supplier settlement and margin scheme VAT in Odoo 19."
+targetQuery: "travel agency deposit balance cancellation fee odoo"
+category: "Industry"
+summary: "How the money side of a travel file works in Odoo: the deposit and balance plan, receipts, the customer invoice, cancellations and amendments priced off a fee schedule, what is owed to suppliers, and margin scheme VAT for tour operators."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-travel-agency-management"
+seriesOrder: 4
+modules:
+  - name: "Travel Agency Management"
+    technical: "wt_travel_agency"
+    note: "USD 299, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://travel-demo.way4tech.com/"
+  label: "Travel Agency demo"
+related: ["odoo-travel-agency-management", "odoo-travel-booking-file-pnr", "odoo-tour-packages-fixed-departures"]
+faqs:
+  - q: "How is the cancellation refund worked out?"
+    a: "The change counts the days between the request date and departure and picks the matching band from your fee schedule. The agency fee is a fixed sum or a percentage of the sale, and the supplier penalty is a percentage of the supplier cost. The refund is what the customer has paid less those two, and if they have paid less than the fee and penalty, the difference shows as an amount to collect."
+  - q: "Do receipts on the file post payments in Odoo Accounting?"
+    a: "No. Receipts are records on the booking file that drive its received and outstanding figures and the deposit and balance gates. They are not accounting payments, so payments against the customer invoice are still registered in Accounting."
+  - q: "Can I cancel a file that has been invoiced?"
+    a: "Not while the invoice is posted. Raise a credit note against the invoice first, then cancel. A draft invoice is cancelled together with the file."
+  - q: "Does the module enter supplier bills?"
+    a: "No. What you owe each supplier is tracked on the confirmed segments and shown per supplier against its credit limit. You tick a segment as settled when it is paid or cleared through BSP. The vendor bill itself is entered in Accounting."
+  - q: "Is the margin scheme VAT figure posted to the ledger?"
+    a: "No. The invoice goes out with no VAT lines and the VAT on the margin is written in the invoice note for the accountant. The module does not post a journal entry for it or fill in a return."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Travel is sold on other people's money. The customer pays a deposit, the agency holds space with an airline and a hotel that want paying on their own terms, and the balance comes in weeks later, if it comes in on time. When a customer cancels a month out, the refund depends on what the suppliers will keep and what your own booking conditions say. Get any of that wrong and the margin on the file disappears. This chapter covers how the module handles the money on a booking file.
+
+## The deposit and balance plan
+
+Every file carries a payment plan worked out from two settings:
+
+- **Deposit (%)**, 20 per cent by default. The deposit amount on the file is that share of the file total. You can type over it on a file, but a deposit larger than the file itself is refused.
+- **Balance due before departure (days)**, 42 by default, because six weeks is when airlines usually want ticketing. The balance due date is the departure date pulled back by that many days.
+
+A **deposit due date** can be set by hand for the day the supplier releases the space if the customer does not pay.
+
+With **Block Unpaid Departures** switched on (it is on by default), Ticket is refused until the deposit is received, and Mark Travelled is refused while any balance is outstanding. An agency that takes no deposit sets the percentage to zero, and ticketing is no longer held.
+
+The **Balance Overdue** flag is worked out against today every time it is read, so a file goes overdue at midnight without anybody touching it. **Reporting, Balance Due** lists every confirmed or ticketed file past its balance date and still owing, grouped by departure month.
+
+<Shot src="/odoo-guides/odoo-travel-deposits-cancellations/balance-due.webp" alt="Odoo Balance Due report grouped by departure month from September 2026 to January 2027, with pax, amount total and amount due per month and in total" width={1440} height={900} caption="Balance Due: sold files past their balance date, by departure month." />
+
+A nightly job emails the Balance Due template to every file past its date and still owing, and posts on the file that it did. It ships switched off, with the other four jobs.
+
+## Receipts
+
+Every payment against a file is a receipt under **Sales, Receipts** or on the file's Receipts tab: deposit, instalment, balance or refund, by cash, card, bank transfer, cheque, online or credit note, with a date and a reference. The file's received and outstanding figures come from these. A receipt for nothing is refused, and so is a refund larger than what has been taken.
+
+**Take Deposit** on the file books a receipt for whatever is still short of the deposit, as a card payment. Open the receipt and change the method if the customer paid another way.
+
+<Callout title="Receipts are not accounting payments">Receipts drive the file's figures and gates. They do not create payments in Odoo Accounting and nothing reconciles them against the invoice. Whoever runs Accounting still registers the customer's payment on the invoice, so agree in advance who records what, and check the two against each other at month end.</Callout>
+
+## The customer invoice
+
+**Create Invoice** raises one customer invoice from the file, once only, and only on a confirmed or later file. Each live segment becomes a line on the revenue product of its service type, with the segment's quantity, price and taxes. The invoice is raised in the company currency the file is priced in, on the office's sales journal when the office has one. Cancelled segments are left off.
+
+Once the invoice is posted, the file is locked for money: segments cannot be added, changed or removed, and the file cannot be cancelled or amended until the invoice is credited. A draft invoice is cancelled together with the file, so a cancelled trip never leaves an invoice waiting to be posted.
+
+## Amendments and cancellations
+
+A change is raised under **Sales, Amendments and Cancellations**, against a sold file, with its kind (amendment or cancellation), the request date and a reason: customer changed their mind, medical, visa refused, supplier failure, schedule change, weather or disruption, or other.
+
+The change takes a snapshot of the file when it is created: the sale, the supplier cost and what has been received. It counts the days before departure from the request date and picks the matching band from the fee schedule. Then it prices itself:
+
+- **Agency fee**: the band's fixed amount, or its percentage of the sale.
+- **Supplier penalty**: the band's percentage of the supplier cost.
+- On a **cancellation**, **refund** is what was received less the fee and penalty. If the customer has paid less than that, the difference shows as **to collect**.
+- On an **amendment**, the fee and penalty are the amount to collect.
+
+You can type over the fee or the penalty if the office waives part of it, and the refund recalculates.
+
+<Shot src="/odoo-guides/odoo-travel-deposits-cancellations/cancellation.webp" alt="Odoo cancellation AMD/2026/0001 in Applied state for a booking file, with departure date, file value, supplier cost and received to date, the change kind, request date, 31 days before departure, the fee band picked, reason, agency fee, supplier penalty, refund zero and an amount to collect" width={1440} height={900} caption="A cancellation 31 days out: the band, the agency fee, the supplier penalty and what is left to collect." />
+
+**Quote** refreshes what has been received and posts the fee and penalty on the change's chatter. **Apply** puts it through:
+
+- A **cancellation** cancels every segment, cancels a draft invoice, releases the seats on any fixed departure, books the refund as a receipt of kind refund against the file, and posts the fee, penalty and refund on the file.
+- An **amendment** posts the amount to collect on the file. It does not change the segments: edit those yourself for the new dates or names.
+
+What a change cost is written once and kept. Cancelling the file empties its segments, and a live calculation would otherwise rewrite the penalty to nothing. A change cannot be raised on a file that has not been sold (edit the file instead), and a file that has travelled cannot be amended.
+
+The fee and penalty are not added to the invoice automatically. If you bill an amendment fee, add it to the file or raise it in Accounting.
+
+### The fee schedule
+
+**Configuration, Fee Schedule** holds the bands by kind and days before departure, each with a fixed or percentage agency fee, the supplier penalty percent and a note. Six bands ship ready to edit: cancellation inside a week, one to four weeks, one to two months and more than two months out, and amendment inside a fortnight and beyond. A band whose end comes before its start is refused.
+
+<Shot src="/odoo-guides/odoo-travel-deposits-cancellations/fee-schedule.webp" alt="Odoo Fee Schedule with two amendment bands and four cancellation bands, each with days from and to before departure, fixed amount fee type, agency fee, supplier penalty percent and a note" width={1440} height={900} caption="The fee schedule that ships with the module, ready to match your booking conditions." />
+
+## What you owe suppliers
+
+Each supplier record (**Configuration, Suppliers**) carries its kind (airline, consolidator, hotel or chain, bed bank, ground handler, cruise line, rail operator, transfer company or insurer), how it is settled (BSP or ARC, direct invoice, prepaid before travel, credit account, or paid on commission), settlement days, a credit limit, the default commission it pays you, whether it is IATA registered, and the booking terms consultants should read before selling it.
+
+From the confirmed and ticketed segments, the supplier shows how many are booked, how many are still to settle and what they add up to, and is flagged when that exposure passes its credit limit.
+
+<Shot src="/odoo-guides/odoo-travel-deposits-cancellations/suppliers.webp" alt="Odoo Suppliers list with cruise line, airline, bed bank, insurer, ground handler and rail operator, each with code, kind, settlement method, commission percent, segments booked, segments to settle and amount owed" width={1440} height={900} caption="Suppliers with their settlement terms and what is still owed to each." />
+
+**Operations, Supplier Settlement** lists the unsettled segments grouped by supplier. **Mark Settled** ticks the segment as settled and stamps the date. Only a confirmed or ticketed segment can be settled. A settled segment cannot be deleted, and it cannot be cancelled on its own: raise a cancellation on the file, so the penalty and refund are worked out.
+
+## Margin scheme VAT for tour operators
+
+Switch on **Tour Operators Margin Scheme** in settings and nominate the standard rate tax. New files then open on the margin scheme, and each file can be moved between Normal VAT and Margin Scheme on its own.
+
+On a margin scheme file:
+
+- The file total is the net sell price; tax on the segments is ignored, so the customer is not asked for VAT the invoice will not show.
+- The invoice goes out with **no VAT lines**. If a segment's tax is price-included, it is taken back out of the line price first, so the invoice bills the same net the file counted.
+- The **VAT on margin** is worked out on sell less supplier cost, using the nominated tax, and written in the invoice note with the margin and the IATA code. Commission earned from suppliers stays out of the scheme margin.
+
+<Callout title="A figure for the accountant, not a filing">The margin scheme VAT is calculated and written on the invoice. The module does not post its own journal entry for it, does not fill in a VAT return, and does not decide whether the scheme applies to your business. Your accountant checks it against your local rules.</Callout>
+
+For the segments that all of this adds up, see [booking files, PNR and passport checks](/odoo-guides/odoo-travel-booking-file-pnr/). For seats released on a cancellation, see [tour packages and fixed departures](/odoo-guides/odoo-tour-packages-fixed-departures/). The [hub page](/odoo-guides/odoo-travel-agency-management/) has the setup order and the full limitation list.

@@ -1,0 +1,121 @@
+---
+title: "Conflict of interest checks and opening a matter in Odoo"
+metaTitle: "Conflict Checks and Matter Opening in Odoo"
+description: "Run a law firm conflict search in Odoo 19, review serious matches, record client due diligence and open a matter only once the checks are cleared."
+targetQuery: "conflict of interest check odoo law firm"
+category: "Industry"
+summary: "How the Law Firm Management module searches names across every file, records who cleared the check, holds identity evidence and the engagement letter, and refuses to open a matter until all of it is in place."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-law-firm-management"
+seriesOrder: 1
+modules:
+  - name: "Law Firm Management"
+    technical: "wt_legal_practice"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://legal-demo.way4tech.com/"
+  label: "Law firm demo"
+related: ["odoo-law-firm-management"]
+faqs:
+  - q: "What does the conflict search look at?"
+    a: "Every client name, every party recorded on every matter and every matter subject and file reference across the firm. It runs with the searcher's own access rules set aside, so a fee earner in one department still finds a file held in another."
+  - q: "What counts as a serious match?"
+    a: "Two cases. A name on the other side that is already a client of the firm, and the prospective client's own name turning up as an adverse party on another file. Both have to be ticked as reviewed, and the check needs a written reason before it can be cleared."
+  - q: "Can I open a matter without a conflict check?"
+    a: "Only if the practice switches the setting off in Legal settings. By default a matter will not open until a cleared conflict check is linked to it, the client's identity is verified and the engagement letter date is recorded."
+  - q: "Does it run electronic identity or sanctions checks?"
+    a: "No. Identity verification is a tick, a date and a written reference to the evidence seen. Nothing calls an external identity or sanctions service."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A conflict that slips through costs more than the fee on the new file. The firm may have to stop acting for both clients, explain itself to a regulator and write off the work already done. And when somebody asks about it two years later, the only questions that matter are who ran the check, on what day, against which names, and what it found. A conflict search done in somebody's head or in a spreadsheet cannot answer them. This chapter covers how the Law Firm Management module records the check, the client due diligence that goes with it, and the rules that stop a matter opening until both are done.
+
+## The order things happen in
+
+The module enforces a sequence that most practices already follow on paper:
+
+1. Somebody calls. A **conflict check** is raised with the prospective client's name, one line on the proposed work and every name on the other side.
+2. The search runs, the matches are reviewed, and the check is either **cleared** or marked **conflicted**.
+3. The **client** record is created or updated, with identity evidence and the date the signed engagement letter came back.
+4. The **matter** is created as an enquiry, linked to the cleared check, and opened. Only then does it get to the point of having time recorded on it.
+
+## Step 1: raise the conflict check
+
+Go to **Legal, Files, Conflict Checks** and create a check. Fill in:
+
+- **Existing Client** if the enquiry comes from somebody the firm already acts for, or **Prospective Client** with the name as typed by the person taking the call. One of the two is required.
+- **Proposed Matter**: one line on the work, so a later reviewer can see what was searched and why.
+- **Practice Area**, if known.
+- **Other Side**: one name per line. The other party, their directors, their insurer, anybody with an interest. Lines of two characters or fewer are ignored.
+
+This list is the search. A name left off is a check that did not happen, and the field help says exactly that.
+
+## Step 2: run the search and read the matches
+
+Click **Run the Search**. For each name it looks in three places across the whole firm: client names, parties recorded on any matter, and matter subjects and file references. The search sets the searcher's own access rules aside on purpose, because a conflict check that only looked at files the searcher can open would miss the matter in the next department.
+
+Each match is a line with the kind (Existing Client, Party on a File or Named in a Matter), the name searched, what was found, the matter it sits on and a note. Severity is set by the code:
+
+| Situation | Severity |
+|---|---|
+| A name on the other side is already a client of the firm | Serious |
+| The prospective client's name is recorded as an adverse party on another file | Serious |
+| The prospective client's own name matches an existing client | Look At It |
+| Any other party match, or a name found in a matter subject | Note |
+
+Parties count as adverse when their role is Other Side, Co-Defendant, Third Party or Insurer. The chatter records the run with the total and the number of serious matches, and the check records who searched and when.
+
+<Shot src="/odoo-guides/odoo-legal-conflict-check-matter-opening/conflict-check-serious-matches.webp" alt="Odoo conflict check form for a redundancy matter, cleared, with seven matches listed by severity, kind, name searched, name found, matter and note, three of them serious and ticked as reviewed" width={1440} height={900} caption="A cleared check with three serious matches, each ticked as reviewed before the check could be cleared." />
+
+## Step 3: clear it or mark it conflicted
+
+**Clear to Proceed** is refused unless:
+
+- the search has been run,
+- every serious match is ticked as reviewed, and
+- if there was any serious match, the **Decision** tab carries an override reason: an information barrier, written informed consent, the old file being unrelated.
+
+The **Conflicted** button needs a decision note, so the next person who takes the same call finds the reason. A check that already has a matter opened against it cannot be reset; the system tells you to raise a fresh check if the names have changed.
+
+<Shot src="/odoo-guides/odoo-legal-conflict-check-matter-opening/conflict-check-conflicted.webp" alt="Odoo conflict check marked Conflicted for a prospective client, with the names searched, the audit trail of who searched and when, and the chatter recording the reason the enquiry was declined" width={1440} height={900} caption="A conflicted check: the reason is in the chatter, where the next search will find it." />
+
+## Step 4: the client and due diligence
+
+**Legal, Files, Clients** holds a client record on top of an Odoo contact. It adds a client reference (CL00001 and so on), the client type (individual, company, partnership, trust, estate, charity, public body), a status from prospect to closed, the relationship partner, the client-since date and the engagement letter date. A separate **Send Bills To** contact and payment terms cover clients whose finance department pays.
+
+Under **Client Due Diligence**, type what was actually seen in **Identity Evidence** (a passport number, an electronic check reference, the certified copy on file) and click **Record Identity Check**. It refuses to tick the client as verified with that field empty, and records the date. The risk rating, the politically exposed flag and the due diligence notes are visible to the Supervising Partner group only.
+
+<Shot src="/odoo-guides/odoo-legal-conflict-check-matter-opening/client-due-diligence.webp" alt="Odoo client form for an individual client with relationship partner, client since date, engagement letter date, identity verified tick, verification date, identity evidence, risk rating and politically exposed flag" width={1440} height={900} caption="Demo client record: identity evidence written down before the verified tick was set." />
+
+## Step 5: open the matter
+
+Create the matter in **Legal, Files, Matters**. It starts as an **Enquiry**. Pick the client (the responsible fee earner defaults to the relationship partner), the practice area, a supervising partner if the fee earner is not running their own files, the conflict check, and the billing basis. A fixed fee file needs the agreed figure and a capped file needs the cap before it will save.
+
+**Open the File** checks, in order:
+
+1. a cleared conflict check is linked (when the setting is on),
+2. the client's identity is verified and the engagement letter date is set (when that setting is on),
+3. a contentious practice area has a court on the file,
+4. the instruction date is filled in.
+
+Any gap stops it with a message saying what is missing. Once open, the file gets its opening date, a prospect client becomes active, and the matter number reads like LIT/2026/0001, so the department is visible before anybody opens it. Nobody can supervise their own file.
+
+## The parties tab and the document register
+
+Every person on the file goes on the **Parties** tab with a role, the firm acting for them and their reference. This tab is what the next conflict search reads, so names should be spelled as they appear on the paperwork. The same name twice on one matter is refused.
+
+<Shot src="/odoo-guides/odoo-legal-conflict-check-matter-opening/matter-parties.webp" alt="Parties tab on an Odoo litigation matter listing the other side, a director and a witness with role, acting firm and their reference, under the linked conflict check" width={1440} height={450} caption="Parties on the file, with the conflict check it was opened against." />
+
+**Files, Document Register** is an index, not a document store. Each entry gets a DOC number and records the kind (correspondence, pleading, contract or deed, evidence, advice, identity evidence, court order, bill), whether it was received, sent or internal, whether the firm holds the original, where the paper is, and whether privilege is claimed. Originals are signed out with **Sign Out the Original**, which records the current user and the date, and returned with **Back on the File**. A copy cannot be signed out. A document cannot be dated in the future.
+
+<Shot src="/odoo-guides/odoo-legal-conflict-check-matter-opening/document-register.webp" alt="Odoo document register list with DOC index numbers, dates, document names, matter, kind, direction, original held and privileged flags and physical location" width={1440} height={900} caption="The document register: what is on each file, which originals the firm holds and where." />
+
+<Callout title="Limits of the check">The search matches names by contains, so "Harker Fabrication" finds "Harker Fabrication Ltd", but a misspelling or a trading name it has never seen will not match. It does not search outside the firm's own Odoo data, does not check company registries and does not call an identity or sanctions service. Keep names on clients and parties exactly as they appear on the documents.</Callout>
+
+## Settings that change this chapter
+
+In **Legal, Configuration, Settings**: **Conflict Check Before Opening** and **Client Due Diligence Before Opening** are both on by default. Turn the first off only if the firm runs its conflict searches in another system. The second, when off, lets a matter open without verified identity or an engagement letter, which most practices will not want.
+
+Next: [limitation dates and the court diary](/odoo-guides/odoo-legal-limitation-diary-hearings/).

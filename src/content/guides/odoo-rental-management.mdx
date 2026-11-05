@@ -1,0 +1,120 @@
+---
+title: "Odoo rental management on Community: hire pricing, availability, deposits and online booking"
+metaTitle: "Odoo Rental Management on Community"
+description: "Run a hire business on Odoo 19 Community: period rate cards, availability that will not oversell, pickup and return, late fees, deposits, online booking."
+targetQuery: "odoo rental management community"
+category: "Industry"
+summary: "What a hire business needs from Odoo, why the Rental app is not in Community, and how two modules cover back office rental orders and website booking on Odoo 19 Community, shown on a cargo bike hire demo."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-rental-management"
+seriesOrder: 0
+modules:
+  - name: "Rental Management"
+    technical: "wt_rental_management"
+    note: "USD 99, Odoo 19 Community, needs Sales and Inventory"
+  - name: "Online Rental Shop for Website and eCommerce"
+    technical: "wt_rental_website"
+    note: "USD 99, Odoo 19 Community, needs eCommerce"
+demo:
+  url: "https://rental-demo.way4tech.com/"
+  label: "Cargo bike hire demo"
+related: []
+linkFrom: ["/modules/rental/", "/products/wt-rental-management/", "/products/wt-rental-website/", "/modules/ecommerce/"]
+sources:
+  - label: "Odoo 19 documentation, Rental"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/rental.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch, Community addons"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+faqs:
+  - q: "Is the Odoo Rental app available in Community?"
+    a: "No. Odoo's own Rental app is part of Odoo Enterprise and is not in the Community source. On Community you need a module for rental pricing, availability, pickup and return. These two modules are built for Odoo 19 Community and also install on Enterprise."
+  - q: "Do I need both modules?"
+    a: "No. Rental Management is the back office: rental orders on the sales order, pickup and return, late fees, deposits and overdue reminders. The Online Rental Shop is the website booking: a date picker, live availability, cart holds and My Rentals in the portal. Each works on its own. If both are installed, the website also reads the back office rate tables and counts back office rentals against availability."
+  - q: "How is a hire priced?"
+    a: "From a rate table per product: so many hours, days, weeks or months for so much money. The single rate that covers the requested period for the least money wins, and part periods round up to whole blocks. Ten days on a 179 euro weekly rate is two weeks, 358 euros, when that is cheaper than ten day rates. Rates are not mixed within one hire."
+  - q: "Can two customers book the last unit at the same time?"
+    a: "No. On the website a hold is written the moment a hire goes into a cart, and every other visitor's availability is counted against holds as well as confirmed orders. The order is checked again at confirmation. In the back office, confirming a rental order that would oversell is refused."
+  - q: "Does it track individual machines by serial number?"
+    a: "Not as a tracked unit. Availability is a pool: a fixed number of units per product or the quantity on hand. A pickup can carry a note such as a serial number or who collected it. For a plant hire yard that needs each machine with its own meter and inspection certificates, the separate Equipment Rental module is the closer fit."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A hire business sells time, not goods. The same cargo bike, generator or party tent earns money again every time it comes back, which means the two questions that matter are always about dates: is one free from Tuesday to Friday, and is the one that went out on Monday back yet. Get those wrong and you either turn a customer away with stock in the yard or promise the same unit to two people. Odoo's sales order can carry a hire, but without rental logic it has no idea a product is out, when it is due back or what a week costs against a day. This guide covers what a hire business needs, what Odoo Community lacks, and how the two Way4Tech rental modules handle the back office and the website on Odoo 19.
+
+## Who this is for
+
+The modules suit any business that hires out a pool of identical or similar items for a period:
+
+- **Bike, cargo bike and scooter hire**, which is how the live demo is set up: a fictional cargo bike hire shop in Leipzig, with prices in euros and German VAT included.
+- **Event hire**: tables, chairs, tents, sound systems, lighting.
+- **Tool and equipment hire** where items are hired by quantity rather than tracked machine by machine.
+- **Camera, audio and specialist kit hire.**
+
+If every machine you hire needs its own record with an hour meter, inspection certificates and damage history, the [Equipment Rental module](/products/wt-equipment-rental/) is built for that and is a different product from the two covered here.
+
+## What a hire business needs from its system
+
+1. **Prices by period.** An hourly, daily, weekly and monthly rate per item, and a rule for which one applies.
+2. **Availability for the exact window.** Not "we have four", but "four are free from 10:00 Tuesday to 17:00 Friday", counting what is already promised.
+3. **A refusal, not a warning,** when a booking would oversell.
+4. **Pickup and return recorded** with real times and quantities, including part returns.
+5. **Late returns charged** from the same price list.
+6. **Deposits kept apart** from hire revenue, refunded with any deductions.
+7. **For many shops, online booking** with a date picker and a price before the customer commits.
+
+## What standard Odoo does and does not do
+
+Odoo has a [Rental app](https://www.odoo.com/documentation/19.0/applications/sales/rental.html) with rental pricing, pickup and return. It is an Odoo Enterprise app: it is not among the [Community addons on the 19.0 branch](https://github.com/odoo/odoo/tree/19.0/addons). On Odoo Community you have Sales, Inventory and eCommerce. A product can be sold, and a quotation can describe a hire in its text, but nothing knows the item is out, nothing stops a second booking for the same days, there is no period pricing and the website shop has an Add to cart button with no dates. The [Odoo Rental module page](/modules/rental/) on this site describes what the Enterprise app covers.
+
+## The two modules
+
+[Rental Management](https://apps.odoo.com/apps/modules/19.0/wt_rental_management/) puts hire on the sales order in the back office. [Online Rental Shop for Website and eCommerce](https://apps.odoo.com/apps/modules/19.0/wt_rental_website/) puts it in the website shop. Each is USD 99 on the Odoo Apps Store, each runs on Odoo 19 Community, and each works without the other.
+
+| Need | Odoo Community | Rental Management | Online Rental Shop |
+|---|---|---|---|
+| Rate table per product: hours, days, weeks, months | No | Yes | Yes |
+| Cheapest single rate wins, part periods round up | No | Yes | Yes |
+| Availability for the exact window, refusal on oversell | No | Yes | Yes |
+| Pool: fixed number of units or quantity on hand | No | Yes | Yes |
+| Rental order with pickup and expected return | No | Yes | Booked from the website |
+| Pickup and return wizards, partial quantities, movement log | No | Yes | No |
+| Late return charge with optional penalty percentage | No | Yes | No |
+| Deposit invoiced on its own, refunded by credit note | No | Yes | Deposit as its own order line |
+| Overdue flag and return reminder email | No | Yes | No |
+| Date picker and price breakdown on the product page | No | No | Yes |
+| Cart holds that lapse, blackout periods | No | No | Yes |
+| My Rentals in the customer portal, booking sheet | No | No | Yes |
+| Rental diary calendar, holds list, store settings per website | No | No | Yes |
+
+With both installed, the website can read the Rental Management rate tables (you choose which table wins), and the shop counts back office rentals so a machine going out on a counter hire is not also sold online.
+
+<Shot src="/odoo-guides/odoo-rental-management/rental-shop.webp" alt="Website shop of a fictional cargo bike hire company in Odoo with categories for family cargo bikes, business and transport and city bikes, and product cards for a Long John box bike, an e-longtail and two e-cargo trikes" width={1440} height={900} caption="The demo shop: each bike is a rentable product with its own rate card." />
+
+## How a hire is priced
+
+Both modules price the same way. Each rentable product has a rate table: a duration, a unit (hour, day, week or month) and a price. For the requested period, every rate is costed in whole blocks, rounded up, and the cheapest one wins. A rate priced at zero is skipped, so a half finished table cannot give the goods away.
+
+On the demo, the Long John box bike has rates for 4 hours, 1 day, 3 days, 1 week and 1 month. A hire from 09:00 on 7 December to 17:00 on 17 December is 10 days 8 hours. The week rate covers it in two blocks for 358 euros, cheaper than eleven day rates or four 3-day blocks, so the shop charges two weeks and adds the 300 euro refundable deposit on its own line.
+
+<Shot src="/odoo-guides/odoo-rental-management/hire-price-breakdown.webp" alt="Booking panel on a cargo bike product page with the rate card chips, pickup and return dates, units, and a breakdown showing a period of 10 days 8 hours, rate used 2 times 1 week, 358 euros hire total, 300 euros refundable deposit and 4 free for that period" width={1440} height={480} caption="Check dates and price: the period, the rate that won, the total, the deposit and what is free." />
+
+One rate prices one hire; the modules do not combine a week rate with three day rates. If you want 8 days charged as a week plus a day, add an 8 day rate to the table.
+
+## The chapters in this guide
+
+- **[Online rental booking on the Odoo website](/odoo-guides/odoo-rental-website-booking/)**: the booking panel, holds, blackouts, store settings, checkout, My Rentals and the back office diary. Online Rental Shop module.
+- **[Rental orders, pickup, return, late fees and deposits](/odoo-guides/odoo-rental-pickup-return-deposits/)**: the rental order, availability checks, the pickup and return wizards, late charges, deposit invoice and refund, overdue reminders. Rental Management module.
+
+## How to start
+
+1. Decide which you need first: a counter and phone business starts with Rental Management; a shop that takes bookings online starts with the Online Rental Shop.
+2. Install the module. Rental Management needs Sales and Inventory; the Online Rental Shop needs eCommerce.
+3. Mark the products you hire out as rentable, enter their rate tables and deposits, and decide for each whether the pool is a fixed number of units or the quantity on hand.
+4. Try a few bookings for overlapping dates and check that the third booking for a two unit product is refused.
+5. Set your pickup and return hours, minimum hire and, for the website, how long a cart holds units.
+
+<Callout title="Limits to know before you choose">Neither module tracks each unit as its own record with a serial number, meter or inspection history; availability is a pool per product. Rates are not mixed within one hire. Pickup and return in Rental Management are the module's own records and are separate from Odoo's delivery orders. There is no damage assessment workflow; a deduction on the deposit refund is a figure you enter. On the website, use version 19.0.1.0.2 or later: before it, entering the address at checkout could reset the hire line to the product's sale price.</Callout>
+
+The [live demo](https://rental-demo.way4tech.com/) is the cargo bike shop, with a customer portal and website booking; it runs the Online Rental Shop module. It is listed with the others on the [demos page](/demos/). If you are not sure whether your hire business fits a pool of units or needs machine level tracking, [get in touch](/contact/).

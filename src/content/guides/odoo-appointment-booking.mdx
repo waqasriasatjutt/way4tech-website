@@ -1,0 +1,139 @@
+---
+title: "Odoo appointment booking on Community: a website booking page that checks the real calendar"
+metaTitle: "Odoo Appointment Booking on Odoo Community"
+description: "Online appointment booking for Odoo 19 Community: bookable services, free slots worked out from the real calendar, staff or rooms, emails and cancel links."
+targetQuery: "odoo appointment booking community"
+category: "Operations"
+summary: "How to let customers book time from your Odoo website without Enterprise: appointment types, staff or resources, slots that respect the calendar and timezones, and what happens after the booking."
+published: 2027-01-28
+updated: 2027-01-28
+series: "odoo-appointment-booking"
+seriesOrder: 0
+modules:
+  - name: "Online Appointment Booking"
+    technical: "wt_appointment_booking"
+    note: "USD 79, Odoo 19 Community, needs Website and Calendar"
+demo:
+  url: "https://photography.way4tech.com/"
+  label: "Appointment booking demo (photography studio)"
+related: ["odoo-salon-spa-management", "odoo-salon-front-desk-website", "odoo-restaurant-reservations-waitlist"]
+linkFrom: ["/products/wt-appointment-booking/", "/modules/appointments/"]
+sources:
+  - label: "Odoo 19 documentation, Appointments"
+    url: "https://www.odoo.com/documentation/19.0/applications/productivity/appointments.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch, calendar addon (Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons/calendar"
+faqs:
+  - q: "Does Odoo Community have online appointment booking?"
+    a: "Not out of the box. Community has the Calendar app for meetings, but the Odoo 19.0 Community source has no appointment addon, so there is no public page where a customer picks a free slot. A module such as Online Appointment Booking adds that page on top of Website and Calendar."
+  - q: "Will a booking clash with meetings my staff already have?"
+    a: "No, for appointment types booked with staff. Free slots are worked out against every active meeting in Odoo Calendar where that staff member is an attendee, plus the buffer before and after. If a meeting is created in the slot, the slot disappears from the booking page."
+  - q: "Can customers in another country book in their own time?"
+    a: "Yes. Availability is written in the appointment type's timezone, and the page reads the visitor's timezone from the browser and shows each slot in local time. The booking is stored correctly in Odoo, and the page says which timezone the times are shown in."
+  - q: "Can customers pay a deposit when they book?"
+    a: "No. The module does not take payments, create sales orders or raise invoices. A booking is a calendar appointment with the customer's details and answers. If you need a deposit, that is a separate step in Sales or Accounting, or customisation."
+  - q: "Can customers cancel or move their own appointment?"
+    a: "Yes, if you allow it on the appointment type. The confirmation email links to a page where the customer can cancel, with an optional reason, or pick a new slot. Both close a set number of hours before the start, 24 by default."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every business that sells time has the same problem with bookings. The customer sends a message asking for Saturday, someone checks the diary, offers two times, the customer picks one a day later, and by then one of them has gone. Multiply that by forty enquiries a week and the front desk spends its day as a human availability engine. A booking page fixes it only if it knows the real diary. A page that offers a slot your photographer, consultant or treatment room is already using is worse than no page at all.
+
+This guide covers appointment booking on Odoo 19 Community: what Odoo gives you without Enterprise, what an appointment module has to do to be trusted, and how the Online Appointment Booking module works. The example business throughout is the demo's photography studio, but nothing in the module is about photography. A clinic, a consultant, a tutor, a car service bay, a meeting room or a showroom visit works the same way.
+
+## What a booking system has to get right
+
+Strip away the widget and a booking system has five jobs:
+
+1. **Offer only slots that are really free.** Free means no clashing meeting, no clashing booking, enough gap either side for setup or travel, not too soon and not too far ahead.
+2. **Know who or what the time is with.** Sometimes the customer books a person. Sometimes they book a room or a piece of equipment that can hold more than one booking at once.
+3. **Get the clock right.** The business works in its own timezone; the customer may not. Daylight saving changes must not move a booking.
+4. **Collect what you need before the day.** A wedding date and venue, a car registration, the reason for the visit. Asked once, at booking, and kept with the record.
+5. **Close the loop.** A confirmation, a reminder before the day, and a way for the customer to cancel or move it without phoning, inside the limits you set.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community includes the **Calendar** app ([odoo/odoo calendar addon, 19.0](https://github.com/odoo/odoo/tree/19.0/addons/calendar)). It holds meetings with attendees, sends invitations and shows each user's diary. What it does not have is a public booking page. Odoo documents an [Appointments app](https://www.odoo.com/documentation/19.0/applications/productivity/appointments.html) that publishes bookable slots on the website, but that app is not part of the Community code: the 19.0 branch of odoo/odoo has a calendar addon and no appointment addon. Our [Odoo Appointments overview](/modules/appointments/) goes through the licence question in more detail.
+
+So a Community database can record a meeting once somebody has agreed a time by phone or email, but it cannot let a customer pick the time. The usual workarounds are an outside booking service that never quite syncs back, or a contact form that still needs a human to answer it.
+
+| Need | Odoo 19 Community | With Online Appointment Booking |
+|---|---|---|
+| Meetings with attendees in a shared calendar | Yes, Calendar app | Yes, every booking becomes a Calendar meeting |
+| Public page where a customer picks a free slot | No | Yes, one page per appointment type |
+| Slots checked against existing meetings and bookings | Not applicable | Yes, with buffers before and after |
+| Book a room, chair, bay or kit with a capacity | No | Yes, resources with capacity |
+| Visitor sees times in their own timezone | Not applicable | Yes |
+| Questions asked at booking time | No | Yes, per appointment type |
+| Confirmation, reminder and cancellation emails | Calendar invitations only | Yes, its own three templates |
+| Customer cancels or reschedules from a link | No | Yes, within a notice period you set |
+
+## The module in one paragraph
+
+[Online Appointment Booking](https://apps.odoo.com/apps/modules/19.0/wt_appointment_booking/) is USD 79 and runs on Odoo 19 Community. It depends on Website, Calendar and Discuss and nothing else: no Enterprise app, no outside service. It adds an **Appointments** app with Bookings and a Configuration menu, a public page at `/appointment` on your Odoo website, and three email templates. The [product page](/products/wt-appointment-booking/) lists what is included.
+
+## How a booking moves through it
+
+**The visitor's side.** `/appointment` lists every published appointment type with its duration and location. If you only publish one, the page goes straight to it. Each type has its own address, so you can link a single service from a button, an email signature or a social profile.
+
+<Shot src="/odoo-guides/odoo-appointment-booking/booking-page-index.webp" alt="Odoo website page titled Book an appointment with nine appointment cards for a photography studio, each showing the duration in minutes and the location" width={1440} height={900} caption="The booking index on the demo: every published appointment type with its duration and where it happens." />
+
+The appointment page shows the free slots for the current month, grouped by day, with Earlier and Later to move between months. If the type lets the visitor choose, a row of buttons at the top picks the person or resource; Anyone means the system assigns whoever is free. The visitor clicks a time, fills in name, email, optional phone and any questions, and confirms.
+
+<Shot src="/odoo-guides/odoo-appointment-booking/slot-picker.webp" alt="Corporate Headshots booking page in Odoo with a 30 minute duration, a choice between two studios or anyone, and free half hour slots listed by day for November" width={1440} height={900} caption="The slot picker: half hour slots, only on days the type is available, with the choice of studio at the top." />
+
+**The server's side.** The slot posted from the browser is treated as a request, not a fact. Before anything is written, the module checks again that the time is inside the notice period and the booking window and that someone is still free. If another customer took it a moment earlier, the visitor is sent back with "that slot has just been taken". Otherwise it creates the booking with a reference such as APT/00011, matches the customer to an existing contact by email (or creates one), confirms it, creates the Calendar meeting and sends the confirmation email.
+
+**The back office.** Bookings open in a calendar view by default with the Upcoming filter on, and also have list, form and pivot views. Filters cover upcoming, past, confirmed, cancelled, no show and my bookings; you can group by appointment type, staff, resource, status or month.
+
+<Shot src="/odoo-guides/odoo-appointment-booking/bookings-calendar.webp" alt="Odoo Appointments Bookings calendar in week view for November 2026 with bookings shown by reference and start time" width={1440} height={900} caption="Bookings in the week view. Each block is a booking with its reference." />
+
+A booking is Draft, Confirmed, Attended, No Show or Cancelled. Bookings from the website arrive confirmed. Staff mark them Attended or No Show afterwards, which gives you a no show rate per service from the pivot view without any extra setup.
+
+<Shot src="/odoo-guides/odoo-appointment-booking/bookings-pivot.webp" alt="Bookings pivot table in Odoo counting upcoming bookings per appointment type for November and December 2026" width={1440} height={900} caption="The pivot view: upcoming bookings per appointment type, by month." />
+
+## Staff or resources
+
+Each appointment type is booked either with **staff**, who are your Odoo users, or with **resources**, which are things: a studio, a treatment room, a chair, a bay, a table, a drone kit. The difference matters:
+
+- **Staff** are checked against their whole Odoo calendar. Any active meeting where they are an attendee blocks the slot, whether it came from this module or not. Each staff member takes one booking at a time.
+- **Resources** are checked against bookings of this module only, and each has a capacity. A room with capacity 1 takes one booking at a time; a studio with capacity 12 takes twelve overlapping bookings before it shows as full.
+
+The demo studio books everything as resources, including its photographers. That keeps it simple, but it means a photographer's other Odoo meetings do not block their slots. The [availability chapter](/odoo-guides/odoo-appointment-types-availability/) explains when to use which.
+
+<Shot src="/odoo-guides/odoo-appointment-booking/appointment-types-list.webp" alt="Appointment Types list in Odoo with nine photography services, their duration, scheduled with resources, visitor chooses assignment, booking count and published flag" width={1440} height={900} caption="Appointment types with duration, who they are booked with, the assignment rule and how many bookings each has." />
+
+## Setting it up, in short
+
+1. Install Online Appointment Booking. Website and Calendar install with it if they are not there already.
+2. Give people the right access. **Handle Bookings** sees and manages bookings. **Configure Appointments** also creates appointment types, availability and resources. The admin user gets Configure Appointments on install.
+3. If you book things rather than people, create them under **Configuration, Resources** with a capacity.
+4. Create each service under **Configuration, Appointment Types**: duration, slot interval, buffers, notice, booking window, timezone, staff or resources, weekly availability, questions and the follow-up rules. The [availability chapter](/odoo-guides/odoo-appointment-types-availability/) goes field by field.
+5. Check your outgoing mail server, because the confirmation, reminder and cancellation all go by email. The [emails and cancellations chapter](/odoo-guides/odoo-appointment-confirmation-reminders-cancel/) covers what each one says.
+6. Publish the types you want online and add a link to `/appointment` in your website menu.
+7. Book one appointment yourself from a private browser window, then cancel it from the link in the email, before you share the page.
+
+## What this series covers
+
+- [Appointment types, slots and availability](/odoo-guides/odoo-appointment-types-availability/): how slots are worked out, buffers, notice, the booking window, staff against resources, capacity and timezones.
+- [Confirmations, reminders and cancellations](/odoo-guides/odoo-appointment-confirmation-reminders-cancel/): booking questions, the three emails, the customer's cancel and reschedule page, and the booking statuses your team works with.
+
+<Callout title="What it does not do">
+The module does not take payments or deposits, create sales orders or invoices, send SMS or WhatsApp messages, or create CRM leads. Availability is one weekly grid per appointment type, not a separate working pattern per staff member. If you need any of those, plan them as separate steps or as [customisation work](/services/odoo-customization/).
+</Callout>
+
+## Limitations
+
+These come from the module's code:
+
+- **No payment at booking.** There is no deposit, card payment or invoice. A booking is an appointment with contact details and answers.
+- **One availability grid per appointment type.** Every staff member or resource on the type shares the same weekly hours. Time off or a busy afternoon is handled by a meeting in the staff member's calendar, which blocks the slot.
+- **Resources ignore calendars.** A resource is only blocked by other bookings from this module, even if a user is linked to it.
+- **"Everyone must be free" still books one person.** With that assignment, a slot is offered only when all staff or resources on the type are free, but the booking and meeting go to one of them. The others' calendars are not blocked.
+- **Email only.** Confirmation, reminder and cancellation go by email. There is no SMS, WhatsApp or push channel.
+- **No calendar sync of its own.** Bookings become ordinary Calendar meetings; whatever you already use to sync Odoo Calendar with an outside calendar applies to them as it would to any meeting.
+
+Services that need more than a slot, such as a salon with stylists, packages and a till, are better served by an industry module; the [salon and spa guide](/odoo-guides/odoo-salon-spa-management/) shows that end, and the [restaurant reservations guide](/odoo-guides/odoo-restaurant-reservations-waitlist/) covers table booking. For everything else that sells time by the hour, this is the smallest piece that works on Community.
+
+Try the booking page and the back office on the [demo](https://photography.way4tech.com/), or see the [other demos](/demos/). If your booking rules do not fit the above, [send a short description](/contact/) and I will say whether it fits as it is.

@@ -1,0 +1,109 @@
+---
+title: "Personal training packages and trainer pay in Odoo"
+metaTitle: "PT Packages and Trainer Pay in Odoo"
+description: "Sell personal training as a block of sessions in Odoo 19, log each session against package and trainer, lapse unused ones and work out trainer pay."
+targetQuery: "personal training package trainer commission odoo"
+category: "Industry"
+summary: "How a club sells PT blocks with an expiry date, books and delivers sessions, invoices the package, and calculates trainer pay per class, per head or as a percentage."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-gym-management"
+seriesOrder: 4
+modules:
+  - name: "Gym Management"
+    technical: "wt_gym_management"
+    note: "USD 249, Odoo 19 Community, needs the Invoicing app"
+demo:
+  url: "https://gym-demo.way4tech.com/"
+  label: "Gym Management demo"
+related: ["odoo-salon-loyalty-packages-memberships"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does a no-show use up a personal training session?"
+    a: "Yes. A session marked No Show counts as used on the package, the same as a delivered one, so the member loses it. The trainer is not paid for a no-show: trainer pay is only worked out on delivered sessions."
+  - q: "What happens to unused PT sessions?"
+    a: "Each package has an expiry date, six months after the start by default (set in Settings). A nightly job marks active packages past that date as Expired, and no more sessions can be booked on them."
+  - q: "How is trainer commission on personal training calculated?"
+    a: "On a trainer paid as a percentage, each delivered session earns the package's price per session times the commission rate. A trainer paid per class or per attendee earns their fixed rate for each delivered session. A salaried trainer earns nothing extra."
+  - q: "Does the module pay trainers?"
+    a: "No. It works out and reports what each trainer has earned, by month, from finished classes and delivered PT sessions. Paying them, by vendor bill or payroll, happens outside the module."
+  - q: "Can a PT package be paid in instalments?"
+    a: "The Invoice button raises one invoice for the whole package, and it can only be raised once. Instalments would mean registering partial payments against that invoice the normal Odoo way."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Personal training is often the highest margin line in a club and the one tracked worst. Sessions are sold as a bundle at a discount, delivered over months, rescheduled by text message, and the trainer's pay is worked out at the end of the month from a diary nobody else can read. The questions that matter are simple: how many sessions has this member got left, which ones has the trainer actually delivered, how many will lapse unused, and what does the club owe the trainer. Gym Management keeps each of those as a number on a record. This chapter covers selling a package, delivering sessions against it, invoicing it, and the trainer pay that comes out of it.
+
+## Step 1: a product for PT and the validity period
+
+Create a service product for personal training, priced per session, with the right tax. When you pick it on a package, the package price is worked out as the product's sales price times the number of sessions, which you can then change for a discounted block.
+
+In **Configuration, Settings**, set **PT Package Validity (months)**: how long a block stays usable from its start date. The default is six.
+
+## Step 2: sell a package
+
+Go to **Personal Training, Packages** and create one:
+
+- **Member**: picking the member fills **Billed To** with their contact and **Branch** with their home club. Change Billed To for a package a parent or company pays for.
+- **Trainer**: the trainer the block is sold with.
+- **Product**, **Sessions Total** (10 by default), **Session Length (h)** and **Price**. The **Price Per Session** is worked out from them.
+- **Date Start**, and the **Expiry Date**, which is the start date plus the validity months. You can change the expiry on a single package.
+
+Confirm it to make it **Active**. Packages are numbered in their own sequence, `PT/2026/0001` and so on.
+
+<Shot src="/odoo-guides/odoo-gym-personal-training/pt-packages.webp" alt="Odoo PT Packages list with package number, member, trainer, sessions total, sessions used, sessions left, price, expiry date and state Draft, Active, Expired or Fully Used" width={1440} height={500} caption="PT Packages: what each member bought, what is used, what is left and when it lapses." />
+
+<Shot src="/odoo-guides/odoo-gym-personal-training/pt-package-form.webp" alt="Odoo PT package showing member Greg Sullivan billed to himself, trainer Marcus Bell, branch Riverside Fitness, product Personal Training Session, 10 sessions of one hour for 550 dollars at 55 dollars per session" width={902} height={240} caption="A package: who it is for, who trains them, and the price per session the rest is worked out from." />
+
+## Step 3: invoice the package
+
+**Invoice** on the package raises one customer invoice for the Billed To contact: a line described as "10 personal training sessions with" the trainer's name, quantity equal to the sessions, at the price per session, with the product's taxes. A package can only be invoiced once; a second click is refused.
+
+<Callout title="PT invoices are drafts and do not block sessions">As with membership invoices, the package invoice is created as a draft for accounts to confirm. Nothing ties sessions to payment: a package can be confirmed and its sessions booked and delivered whether or not the invoice has been raised or paid. Decide whether your club takes payment before the first session, and check the Invoice field on each package before booking.</Callout>
+
+## Step 4: book and deliver sessions
+
+On an active package with sessions left, click **Book a Session**. The dialog opens with the package's trainer and session length filled in. Set the date and time and, if you like, a **Focus** ("Lower body", "Mobility") and notes. The session starts as **Planned**.
+
+A planned session cannot clash with another PT session for the same trainer: an overlapping one is refused with the trainer's name. The check is against other personal training sessions; the class timetable runs its own trainer clash check.
+
+After the session, set it to one of:
+
+- **Delivered**: counts as used, and the trainer earns their pay for it. A session can only be delivered on a package that is active or fully used.
+- **No Show**: also counts as used, so the member loses the session, but the trainer earns nothing for it.
+- **Cancelled**: does not count, and the session goes back on the package.
+
+**Sessions Used** on the package is the number of delivered and no-show sessions. When it reaches the total, the package becomes **Fully Used**. Marking more sessions used than the package contains is refused. **Personal Training, Sessions** has a calendar of all sessions; a trainer signed in with only the Trainer role sees their own.
+
+The member's file shows their packages on its **Personal Training** tab, next to the **Measurements** a trainer records (see the [check-in and member file chapter](/odoo-guides/odoo-gym-member-check-in/)).
+
+## Step 5: expiry
+
+Every night the **lapse unused PT packages** job marks active packages whose expiry date has passed as **Expired**. The sessions left on them are lost and Book a Session is refused. The **Expiring This Month** and **Sessions Left** filters on the package list give the trainer a list of members to book in before their sessions lapse.
+
+## Step 6: trainer pay
+
+Each trainer (**Team, Trainers**) has a **Pay Basis**:
+
+| Pay basis | For a finished class | For a delivered PT session |
+|---|---|---|
+| Fixed per Class | the rate, once per class | the rate, once per session |
+| Per Attendee | the rate times members marked present | the rate, once per session |
+| Percentage of Revenue | the commission rate times the class's drop-in revenue | the commission rate times the package's price per session |
+| Salaried | nothing | nothing |
+
+So a trainer on 40 percent who delivers a session from a 550 package of ten sessions earns 22 for it (40 percent of 55). A trainer paid 45 per class earns 45 for each delivered PT session as well. On classes, the percentage basis only counts drop-in fees, because members on an inclusive plan add no revenue to a class.
+
+The trainer's form shows classes taught, attendees and class pay **this month**. **Reporting, Trainer Pay** is a pivot of delivered PT sessions with the **Trainer Pay** total by trainer and month, which is the figure to hand to whoever pays them.
+
+<Shot src="/odoo-guides/odoo-gym-personal-training/trainer-pay.webp" alt="Odoo Personal Training Pay pivot showing trainer pay by month for Marcus Bell, Priya Raman and Sean Doyle from June to August 2026, totalling 909 dollars" width={1440} height={440} caption="Reporting, Trainer Pay: what each trainer earned from personal training, month by month." />
+
+<Callout title="What trainer pay does not cover">The module calculates and reports trainer pay; it does not raise a vendor bill, a payslip or a payment. Class pay and PT pay are reported in different places (the trainer form for this month's classes, the Trainer Pay pivot for PT), so add the two together for a trainer who does both. The trainer's certification and insurance expiry are kept on file but do not stop them being booked.</Callout>
+
+## Putting it together
+
+A typical week for a PT manager on this module: on Monday, filter **Packages** on Expiring This Month and book those members in; through the week, trainers mark sessions Delivered or No Show from their own calendar; at month end, open **Trainer Pay**, group by trainer and month, and add each trainer's class pay from their form. The member file shows the progress side: the measurements trend and how many sessions are left on the block.
+
+That is the last chapter. Back to the [Gym Management overview](/odoo-guides/odoo-gym-management/).

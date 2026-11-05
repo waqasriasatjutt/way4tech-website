@@ -1,0 +1,107 @@
+---
+title: "Tour packages and fixed departures in Odoo: seat inventory, guarantee thresholds and manifests"
+metaTitle: "Tour Packages and Fixed Departures"
+description: "Run a tour programme on Odoo 19: packages with per person cost and price, dated departures with seats and a minimum to guarantee, and a manifest."
+targetQuery: "odoo tour operator fixed departures seat inventory"
+category: "Industry"
+summary: "How a tour operator sets up packages and dated departures in Odoo, sells booking files onto them without overselling, watches the load factor and prints the passenger manifest for the tour manager."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-travel-agency-management"
+seriesOrder: 2
+modules:
+  - name: "Travel Agency Management"
+    technical: "wt_travel_agency"
+    note: "USD 299, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://travel-demo.way4tech.com/"
+  label: "Travel Agency demo"
+related: ["odoo-travel-agency-management", "odoo-travel-booking-file-pnr", "odoo-travel-deposits-cancellations"]
+faqs:
+  - q: "How does Odoo stop a departure being oversold?"
+    a: "Seats booked on a departure are counted from every confirmed, ticketed or travelled file sold onto it, across all consultants. Confirming a file that needs more passengers than there are seats left is refused, with the number of seats left in the message."
+  - q: "When does a departure become guaranteed?"
+    a: "When the passengers booked reach the minimum you set to guarantee it. You can press Guarantee by hand once the departure is on sale and has enough passengers, and the nightly job does it for you the first time it runs after the minimum is reached."
+  - q: "Does picking a package price the booking file?"
+    a: "No. Choosing a package or a departure on a file fills the destination and, for a departure, the travel dates. The money still comes from the segments on the file, so add the flight, hotel and ground arrangements as segments with their net and sell."
+  - q: "Can I sell rooms or seats by number?"
+    a: "No. Seats on a departure are a count, not a seat map, and there is no room allocation. Package prices are per adult and per child with a single supplement, with no date based pricing grid."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A tour operator's risk sits in the calendar. Forty five seats on the Umrah departure on 19 December, a coach that needs fifteen paying passengers before it runs, three consultants selling the same seats from three desks. Sell too few and the departure loses money or has to be cancelled; sell too many and somebody is refunded at the last minute. The module treats each dated run of a tour as its own record with a seat count, so every file sold onto it comes off the same number.
+
+## Packages: the product you sell more than once
+
+Go to **Travel, Tours, Packages**. A package is the product, not the date. It carries:
+
+- **Name and code**, printed on the brochure and the file.
+- **Destination and country**, and a **kind**: escorted group, independent, cruise, pilgrimage, adventure or city break.
+- **Nights**, with the days worked out.
+- A one line **summary**, the **day by day itinerary** as the customer reads it, **inclusions** and **exclusions**, and a brochure image.
+- **Net cost per person**, **sell price per adult**, **sell price per child** and the **single supplement**.
+- **Minimum and maximum group** size. A minimum larger than the maximum is refused.
+
+Margin per person and margin percent are worked out from cost and adult price. The package kanban shows each one with its image, how many departures it has and how many seats are sold across them.
+
+<Shot src="/odoo-guides/odoo-tour-packages-fixed-departures/packages.webp" alt="Odoo Tours Packages kanban with Classic Nile, Golden Triangle by Rail, Umrah by Air, Dubai City Break, Istanbul and Cappadocia, Masai Mara and Zanzibar Beach, each with destination, nights, number of departures, seats sold and price per adult" width={1440} height={900} caption="Packages with their departures and seats sold, and the adult price." />
+
+## Departures: one dated run of a package
+
+Under **Travel, Tours, Departures**, a departure is one run of a package with its own sequence reference, departure and return dates and a tour manager. The seat block holds:
+
+- **Seats**: how many the operator has.
+- **Guarantee At**: how many paying passengers it needs before it runs.
+- **Seats Booked**, **Seats Available** and **Load Factor**, all counted from the files sold onto it.
+
+Cost per person, adult price, child price and single supplement default from the package and can be changed for that date. **Expected margin** is seats booked times margin per person.
+
+A guarantee threshold larger than the seat count is refused, and you cannot cut the seats below the number of passengers already booked.
+
+<Shot src="/odoo-guides/odoo-tour-packages-fixed-departures/departure-form.webp" alt="Odoo fixed departure DEP/2026/0007 for Umrah by Air 10 nights in Guaranteed state, with 45 seats, guarantee at 15, 6 booked, 39 available, load factor 13.33 per cent, cost and prices per person, expected margin and the two booking files sold onto it" width={1440} height={900} caption="A guaranteed departure: seats, the guarantee threshold, prices for the date and the files sold onto it." />
+
+### Departure states
+
+A departure runs **Planned**, **On Sale**, **Guaranteed**, **Closed**, **Departed**, with **Cancelled** to the side. The buttons on it are Close Sales, Departed, Print Manifest and Cancel, plus Guarantee while it is on sale.
+
+- **Guarantee** needs the departure on sale and the booked passengers at or above the threshold. The message tells you how many it has and how many it needs.
+- **Cancel** is refused while the departure carries sold files. Cancel those files first, so the fees and refunds are worked out on each one.
+- **Departed** cannot be pressed on a planned or cancelled departure.
+
+A nightly job moves the programme on by itself: a planned departure with seats goes on sale, an on sale departure that reaches its minimum is guaranteed with a note on the chatter, a full one is closed, and one whose date has passed is marked departed. Like the other four nightly jobs, it ships switched off.
+
+<Shot src="/odoo-guides/odoo-tour-packages-fixed-departures/departures.webp" alt="Odoo Departures list filtered to still to leave, with name, package, departure date, seats, guarantee threshold, seats booked, seats available, load factor, adult price, expected margin and state Planned, On Sale or Guaranteed" width={1440} height={900} caption="Every departure still to leave, with the load factor and expected margin." />
+
+## Selling a file onto a departure
+
+On a booking file, pick the **Package**, then the **Fixed Departure**. The departure list is limited to that package's departures, and picking a departure fills the package and the departure and return dates on the file. A departure that does not belong to the chosen package is refused.
+
+Seats come off the departure when the file is **confirmed**, not when it is quoted. Confirm checks the departure first:
+
+- A cancelled or departed departure is no longer selling, so the file will not confirm onto it.
+- If the departure has fewer seats left than the file has passengers, Confirm stops and says how many are left and how many the file needs.
+
+The seat count is worked out with full rights across the whole office. That matters: a consultant only sees their own files, and if the count were made with their rights it would only include their passengers and the coach would be oversold by everyone else.
+
+Cancelling a file gives its seats back on its own, because seats are counted from the files still sold.
+
+<Callout title="The package does not price the file">Choosing a package or a departure on a file fills the destination and the dates. It does not copy the package price or create segments. The file's total still comes from its itinerary segments, so build the flight, the hotels and the ground arrangements as segments with their net cost and sell price, exactly as for a tailor-made trip.</Callout>
+
+## Watching the programme
+
+**Reporting, Load Factor** graphs seats booked against seats total across departures, so you can see which dates need pushing and which are about to fill. The departures list shows the same figures as columns with the expected margin, and the package kanban shows seats sold per package.
+
+Inside a departure, the **Files on This Departure** tab lists every file sold onto it with lead passenger, pax, total, amount due and state, so the tour manager can see who has not paid the balance.
+
+## The passenger manifest
+
+**Print Manifest** on the departure gives the tour manager the passenger list: each traveller with passport expiry, file reference and special requests. Special requests come from the traveller record on each file, which is why it is worth filling them in at booking rather than on the coach.
+
+## What this part does not do
+
+- **No seat map or rooming list by room.** Seats are a count. If you need to allocate rooms per passenger, that is outside the module.
+- **No date based pricing grid.** Each departure can carry its own prices, but there is no season or occupancy matrix.
+- **No online sale of departures.** Departures are sold by your consultants on booking files.
+
+For the passengers and segments on each file, see [booking files, PNR and passport checks](/odoo-guides/odoo-travel-booking-file-pnr/). For deposits, balances and what happens to the seats on a cancellation, see [deposits, refunds and margin scheme VAT](/odoo-guides/odoo-travel-deposits-cancellations/). The [Travel Agency demo](https://travel-demo.way4tech.com/) has sample packages and departures to look at.

@@ -1,0 +1,116 @@
+---
+title: "Client account, disbursements and bills of costs in Odoo for a law firm"
+metaTitle: "Client Account and Bills of Costs in Odoo"
+description: "Hold client money in Odoo 19 on a ledger that cannot go overdrawn, keep disbursements out of fee income, and raise bills of costs as Odoo invoices."
+targetQuery: "client account ledger law firm odoo"
+category: "Industry"
+summary: "How the Law Firm Management module records disbursements, keeps a client money ledger per client, builds a bill from unbilled work, posts it to Odoo accounting, applies money on account and measures lock-up."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-law-firm-management"
+seriesOrder: 4
+modules:
+  - name: "Law Firm Management"
+    technical: "wt_legal_practice"
+    note: "USD 299, Odoo 19 Community, bills post through Invoicing"
+demo:
+  url: "https://legal-demo.way4tech.com/"
+  label: "Law firm demo"
+related: ["odoo-law-firm-management"]
+faqs:
+  - q: "Can the client account go overdrawn in Odoo?"
+    a: "No. Posting a payment out that would take the balance below zero is refused, and a database constraint on the ledger enforces the same rule however the data arrives."
+  - q: "When can money move from client account to office?"
+    a: "Only against a bill that has been delivered, for no more than that bill's total and no more than the client holds, and only by a user in the Cashier or Supervising Partner group."
+  - q: "Where do disbursements post in the accounts?"
+    a: "To the recovery account set on the disbursement type, not to the fee income account. Fees post to the income account on the matter's practice area."
+  - q: "Can a delivered bill be cancelled?"
+    a: "Not from the bill. Delivering posts the Odoo invoice, and the module refuses to cancel a bill whose invoice is posted. Raise a credit note against the invoice in Invoicing instead."
+  - q: "Does it reconcile the client account to the bank?"
+    a: "No. The ledger records money on account, payments out, transfers to office, returns and interest entered by hand. Bank reconciliation of the client account, interest calculation and accountants' reports are not built in."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Two kinds of money pass through a law firm, and the rules punish mixing them. Client money is held for the client and belongs to them until a bill has been delivered. A disbursement is money the firm lays out for the client, recovered pound for pound, and it is not turnover. A system that lets a court fee be paid from the client account before the client has sent anything, or reports counsel's fees as income, produces exactly the problem a file review or a compliance report finds six months later. This chapter covers how the Law Firm Management module keeps the two apart, and how a bill goes from unbilled work to a posted Odoo invoice.
+
+## Disbursements
+
+Set up **Configuration, Disbursement Types** first. The module ships seven: Court Issue Fee, Counsel's Fee, Expert's Fee, Searches, Land Registry Fee, Courier and Postage, Travel and Accommodation. Each type carries:
+
+- a **Recovery Account**, where the disbursement posts when billed. Do not point it at fee income.
+- **Taxes**, because court fees usually carry none and counsel and experts usually do.
+- a **Default Amount** for fixed fees.
+- **Normally Paid From**: office account or client account.
+
+Record a disbursement in **Time and Costs, Disbursements** with the matter, type, who was paid, the date, the net amount, taxes and the **Receipt** reference. Clicking **Record**:
+
+- refuses if the matter is not open or on hold,
+- if it is paid from the **client account**, creates and posts a "Paid Out for the Client" entry on the client's ledger. That is refused if the client has no open client account or not enough on it.
+
+A disbursement cannot be dated in the future or recorded on a closed file. Once paid out of client money it cannot go back to draft; the ledger entry would have to be reversed. Untick **billable** when the firm is standing the cost, or use Write Off with a reason.
+
+<Shot src="/odoo-guides/odoo-legal-client-account-bills-of-costs/disbursements.webp" alt="Disbursements list in Odoo with searches, expert fees, counsel's fees, a courier charge and court issue fees per matter, paid from office or client account, with receipt references and recorded or billed state" width={1440} height={670} caption="Disbursements on the demo practice, some paid out of client money and some out of office." />
+
+## The client money ledger
+
+Each client has one open **client account**, opened from the client form the first time you use it, or from **Billing, Client Accounts**. Its entries are of five kinds: Money on Account, Paid Out for the Client, Transfer to Office, Returned to Client and Interest Credited. Each has a date, amount, reference (the bank reference or cheque number) and, ideally, the matter.
+
+The rules:
+
+- A draft entry does nothing until it is **posted**. Posting one that would overdraw the account is refused with the balance held and the amount asked for, and the same rule is a constraint on the ledger itself.
+- An entry's matter must belong to the same client; money cannot move between clients.
+- A **Transfer to Office** needs a bill, the bill must be delivered, and the total transferred against it cannot exceed the bill.
+- Cancelling a posted entry is refused if that would leave the account in debit, or if it settled a bill already marked paid.
+- **Return the Balance** creates a draft refund for whatever is held. **Close** is refused while anything is held.
+- **Print Statement** produces a Client Account Statement PDF with a running balance.
+
+<Shot src="/odoo-guides/odoo-legal-client-account-bills-of-costs/client-account.webp" alt="Odoo client account for a company client with balance, ledger of money on account, a search fee paid out for the client and a transfer to office against a bill, and the chatter showing the balance after each posting" width={1440} height={760} caption="One client's ledger: money in, a search fee paid out, a transfer against a delivered bill." />
+
+**Billing, Client Ledger** is the cashier's view of every entry across the practice.
+
+<Callout title="Post money on account against the matter">Each matter shows an **On Account** figure, which is the sum of posted ledger entries carrying that matter. A file will not close while that figure is anything other than zero. If money on account is posted without a matter and later transferred against that matter's bill, the matter shows a negative figure and cannot be closed cleanly. Put the matter on every receipt.</Callout>
+
+## Building a bill
+
+A bill (fee note) belongs to one matter. Raise it with **Raise a Bill** on the matter, which creates the bill and gathers the work at once, or create it in **Billing, Bills**.
+
+1. **Period.** Set Period From and Period To to bill a window, or leave both empty to sweep up everything unbilled.
+2. **Gather Work in Progress** pulls every recorded, billable, unbilled time entry and disbursement on the file in that period onto the bill as lines, and claims them so a second bill cannot pick them up. Fee lines carry the hours and the rate after any write-down. Disbursement lines carry the net amount and their taxes.
+3. Check the lines. Add an **Adjustment** line if needed; it is the only kind of line allowed to be negative. To reduce a fee, write the time down instead.
+4. Write the **Covering Narrative**, the paragraph at the top of the bill.
+5. **Approve.** Refused if there are no lines, the total is zero, or the narrative is empty. On a capped matter it is refused if the bill would take billed fees past the cap. Approving marks the time and disbursements as billed.
+
+<Shot src="/odoo-guides/odoo-legal-client-account-bills-of-costs/bill-draft.webp" alt="Draft bill of costs in Odoo for a family matter with Gather Work in Progress and Approve buttons, covering narrative, professional fee lines by date, fee earner and rate, a disbursement line, and totals for fees, disbursements and tax" width={1440} height={900} caption="A draft bill after gathering: fee lines from recorded time, a disbursement line, totals kept apart." />
+
+<Callout title="Tax on fees">Gather copies taxes onto disbursement lines from the disbursement record, but fee lines arrive with no tax. If the firm charges VAT or another sales tax on professional fees, add it in the Taxes column of the fee lines while the bill is in draft, before approving.</Callout>
+
+## Delivering, money on account and payment
+
+**Deliver and Invoice** creates and posts a customer invoice in Odoo Invoicing. Fee lines post to the practice area's **Fee Income Account**, disbursement lines to their type's **Recovery Account**. The invoice uses the bill-to contact (the client, or Send Bills To when set), the client's payment terms, the matter's our-reference and the billing journal from Legal settings. If that journal keeps its books in a currency other than the company currency, delivery is refused.
+
+**Apply Money on Account** then draws down the client's balance against the delivered bill: the smaller of what is held and what is due. It posts a Transfer to Office entry and is refused for anyone outside the Cashier and Supervising Partner groups. The bill shows money applied and the amount due.
+
+<Shot src="/odoo-guides/odoo-legal-client-account-bills-of-costs/bill-delivered.webp" alt="Delivered bill in Odoo with Apply Money on Account, Email the Fee Note, Print and Mark Paid buttons, an invoice smart button, fee and counsel's fee lines, and the chatter showing the invoice raised and 750 transferred from client account" width={1440} height={900} caption="A delivered bill: invoice raised, then money on account applied by the cashier." />
+
+From there:
+
+- **Email the Fee Note** sends the shipped template to the bill-to contact, which needs an email address.
+- **Print** produces the Bill of Costs PDF, with professional fees, adjustments, disbursements and tax in separate sections, less money held on account, and what is now payable.
+- **Mark Paid** by hand, or let the daily **Legal: mark bills paid when the invoice settles** job do it once the invoice is paid, using the date the payment was reconciled.
+
+<Shot src="/odoo-guides/odoo-legal-client-account-bills-of-costs/bill-of-costs-pdf.webp" alt="Printed Bill of Costs from Odoo for the demo firm with client address, bill number, our reference, claim number, payment due date and a professional fees table by date, fee earner initials, narrative, hours, rate and amount" width={1440} height={900} caption="The Bill of Costs PDF: each fee line with date, initials, narrative, hours and rate." />
+
+**Cancel** works only before delivery. It is refused on a paid bill, on a bill whose invoice is posted (raise a credit note instead), and on a bill with client money transferred against it. A cancelled or approved bill can go **Back to Draft**; reviving a cancelled one is refused if its work has since been billed elsewhere.
+
+<Shot src="/odoo-guides/odoo-legal-client-account-bills-of-costs/client-ledger.webp" alt="Client Ledger list in Odoo showing transfers to office against bills, payments out for clients and money on account receipts across clients, with references and posted state" width={1440} height={670} caption="The client ledger across the practice: every transfer to office points at a bill." />
+
+## Lock-up and debtors
+
+Each matter carries **Unpaid Bills** (delivered bills less money applied) and **Lockup Days**: the age of the oldest unbilled billable time plus the age of the oldest unpaid delivered bill, flagged when over the firm's lock-up target (60 days by default). A nightly job refreshes it. **Reporting, Billing** shows fees, disbursements, totals and written-off value by fee earner and month. The **Legal: chase overdue bills** job raises an activity on the fee earner for delivered bills past their due date; it ships switched off.
+
+## A file closes on the money
+
+**Close the File** is refused while the matter carries unbilled work, unpaid bills, client money or a key date still in the diary. Bill or write off the WIP, collect or credit the bills, transfer or return the client money, deal with the diary, then close.
+
+<Callout title="What the client account does not do">The ledger cannot go overdrawn and money moves to office only against a delivered bill. That is the extent of it. It does not reconcile the client bank account, calculate interest, produce an accountants' report or any regulator's forms, and it runs in the company currency only.</Callout>

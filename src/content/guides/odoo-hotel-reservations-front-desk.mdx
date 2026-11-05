@@ -1,0 +1,118 @@
+---
+title: "Hotel reservations, check-in and housekeeping in Odoo"
+metaTitle: "Reservations, Check-in and Housekeeping"
+description: "Run a hotel front desk in Odoo 19: reservations with a room availability check, check-in and check-out, no-shows, registration cards and housekeeping."
+targetQuery: "odoo hotel reservation check in check out"
+category: "Industry"
+summary: "Taking a reservation, how Odoo refuses a double booked room, what check-in and check-out change, how no-shows are caught, the guest registration card and the housekeeping board."
+published: 2027-01-21
+updated: 2027-01-21
+series: "odoo-hotel-management"
+seriesOrder: 1
+modules:
+  - name: "Hotel Management PMS"
+    technical: "wt_hotel_management"
+    note: "USD 2,000, Odoo 19 Community"
+demo:
+  url: "https://hotel.way4tech.com/"
+  label: "Hotel demo"
+related: ["odoo-hotel-management", "odoo-labour-camp-management", "odoo-restaurant-reservations-waitlist"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo stop a hotel room being booked twice?"
+    a: "When a reservation is confirmed and again at check-in, every booked room is checked against all other reservation lines for that room whose dates overlap and that are not cancelled, no-show or checked out. An overlap, or a room set out of order, stops the reservation with a message naming the room and the dates."
+  - q: "Can I book a room type without choosing the room?"
+    a: "Yes. A reservation line needs a room type, and the room can be assigned later. Check-in is refused until every line has a room. Note that a line without a room is not counted against availability, so the module does not stop you selling more rooms of a type than you have."
+  - q: "What happens to a guest who does not arrive?"
+    a: "A daily scheduled job marks any confirmed reservation whose check-in date has passed as a no-show and posts a note on it. The front desk can also mark a confirmed booking as a no-show by hand. A no-show can be reset to draft and confirmed again if the guest turns up."
+  - q: "Does checking out create a housekeeping task?"
+    a: "Yes, when Auto Housekeeping on Check-out is on in Settings, which is the default. Each room on the reservation is set to available and dirty, and a full cleaning task is created for it dated that day."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The front desk's worst day is the one where two guests arrive for the same room. It usually traces back to a booking taken on the phone, written in the diary and never checked against the online booking for the same nights. The second worst is a dirty room handed to a guest because housekeeping was never told the last one had left. This chapter of the [hotel series](/odoo-guides/odoo-hotel-management/) walks through the reservation from first call to check-out, and the housekeeping work it leaves behind, as the Hotel Management PMS module handles it on Odoo 19 Community.
+
+## Taking a reservation
+
+**Reservations, Reservations** holds every booking. A reservation has:
+
+- the **guest** (a contact), with phone and email shown from the contact;
+- **check-in** and **check-out** dates, with the number of nights worked out;
+- **adults** and **children**;
+- a **source**: direct, walk-in, phone, email, website or OTA / travel agent;
+- the **front-desk agent**, who defaults to the user creating it;
+- one or more **room lines** and a notes tab.
+
+Each room line carries a room type, the room (filtered to that type), its own check-in and check-out, adults, children and a nightly rate. Picking a room fills the rate from the room, or from the room type's base rate if the room has none, and you can type over it for a negotiated price. The line subtotal is rate times nights, and the reservation shows the total as forecast room revenue. Because dates sit on each line, one reservation can hold a family in two rooms for different nights.
+
+<Shot src="/odoo-guides/odoo-hotel-reservations-front-desk/reservation-checked-in.webp" alt="Hotel reservation form in Odoo in the checked in state, showing the guest, phone, email and source, check-in and check-out dates, three nights, two adults, the front desk agent, and a room line for a deluxe room 201 at 135 dollars a night" width={1440} height={860} caption="A checked in reservation: one deluxe room for three nights, with the folio button at the top." />
+
+The **Booking Calendar** shows every reservation across the month, coloured by state, with filters by guest and status on the side. It is the quickest way to see a long weekend filling up.
+
+<Shot src="/odoo-guides/odoo-hotel-reservations-front-desk/booking-calendar.webp" alt="Hotel booking calendar in Odoo month view for November 2026 with reservations as bars across their nights, and guest and status filters on the right" width={1440} height={900} caption="The booking calendar: each stay as a bar across its nights." />
+
+## The availability check
+
+A reservation moves through **Draft**, **Confirmed**, **Checked In** and **Checked Out**, with **Cancelled** and **No Show** to the side. The availability check runs twice: when you press **Confirm**, and again when you press **Check In**.
+
+For every line with a room, the module looks for any other reservation line on the same room whose dates overlap, ignoring cancelled, no-show and checked out stays. The check-out day does not count as a night, so a guest leaving on the 6th and another arriving on the 6th do not clash. A room set **out of order** fails the check whatever the dates. If anything clashes, the button stops with a message naming the room and the dates.
+
+<Callout title="Unassigned rooms are not counted">The check only covers lines that have a room. A line with a room type but no room passes without a check, and nothing counts how many rooms of a type are already sold for a night. If you take bookings by type, assign the actual room at confirmation, or you can oversell a type without any warning. Occupancy per line (adults and children against the room type's maximum) is also not enforced.</Callout>
+
+Confirm also needs at least one room line, and only a draft reservation can be confirmed. The keyboard shortcuts on the form are C for confirm, I for check-in and O for check-out.
+
+## Check-in
+
+**Check In** is refused unless the reservation is confirmed and every line has a room. It then:
+
+1. runs the availability check again;
+2. sets the reservation to Checked In and records the actual arrival time;
+3. sets each room to **occupied**;
+4. opens the folio and posts the room charges and every daily recurring service, which the [folio chapter](/odoo-guides/odoo-hotel-folio-billing/) explains.
+
+The **Guest Registration Card** in the Print menu prints the reservation, guest name, nationality, ID type and number, phone and email, dates and nights, rooms and guest numbers, with lines for the guest's and the agent's signatures. A **Reservation Confirmation** print is there as well.
+
+<Shot src="/odoo-guides/odoo-hotel-reservations-front-desk/registration-card.webp" alt="Guest registration card printed from Odoo with the reservation number, guest name, nationality, passport number, phone and email, check-in and check-out dates with three nights, room 201 and two adults, and signature lines" width={1280} height={690} caption="The registration card, filled from the reservation and the guest's contact record." />
+
+The ID details come from the guest record. **Front Office, Guests** adds a hotel guest flag, VIP flag, ID type (passport, national ID, driving licence or other), ID number, nationality, date of birth and a preferences note to the normal contact, plus a button to every reservation the guest has made. Fill these before printing the card.
+
+## During the stay
+
+A daily job raises a to-do activity, "Departure due", on any checked in reservation whose check-out date is today or earlier, assigned to the front-desk agent. Another daily job keeps the folio's room charges in line with the stay, so extending the check-out date on a room line updates the number of nights charged.
+
+## Check-out
+
+**Check Out** works only on a checked in reservation. It records the actual departure time, sets the reservation to Checked Out and, for each room, sets the status back to available and the housekeeping state to dirty. With **Auto Housekeeping on Check-out** switched on in Settings, which is the default, it also creates a full cleaning task for each room dated today.
+
+Check-out does not check whether the folio has been invoiced or paid. Make invoicing the folio part of the departure routine, as the [folio chapter](/odoo-guides/odoo-hotel-folio-billing/) describes.
+
+## Cancellations and no-shows
+
+- **Cancel** works at any state except checked out. A cancellation of a checked in stay frees the rooms. There is a cancellation reason field on the form; no fee is charged automatically.
+- **No Show** can be set by hand on a confirmed reservation. A daily job also marks every confirmed reservation with a check-in date in the past as a no-show and posts a note on it.
+- **Reset to Draft** brings a cancelled or no-show reservation back so it can be confirmed again.
+
+<Callout title="The no-show job runs whatever the setting says">Settings has an Auto No-show Detection switch, but the daily job does not read it. If you do not want late arrivals marked automatically, switch off the scheduled action named "Hotel: Detect No-shows" in Settings, Technical, Scheduled Actions instead.</Callout>
+
+## The housekeeping board
+
+**Housekeeping** shows tasks as a kanban by state, with list and calendar views. A task has a room (and its floor), an optional reservation, a type, a priority (normal, high, urgent), a scheduled date, the user it is assigned to and notes.
+
+<Shot src="/odoo-guides/odoo-hotel-reservations-front-desk/housekeeping-board.webp" alt="Housekeeping kanban in Odoo with a maintenance task in progress for room G02 and full cleaning and turndown tasks to do for rooms 202 and 301, each with priority stars and a date" width={1440} height={400} caption="Housekeeping tasks by state, with priority stars and the scheduled date." />
+
+The task types are full cleaning, turndown, inspection, maintenance and linen change. Pressing **Start** sets the task in progress, stamps the start time and sets the room to cleaning in progress. **Mark Done** stamps the finish time and sets the room clean, or inspected for an inspection task. A maintenance task does not change the room's housekeeping state, so set the room out of order and back in service from the room itself.
+
+Only the cleaning task at check-out is created automatically. Turndown, linen changes and stay-over cleans are created by hand or by a supervisor at the start of the shift.
+
+## A front desk routine that works
+
+1. Each morning, open **Front Desk** and check arrivals, departures and dirty rooms.
+2. Assign rooms to today's arrivals and confirm any drafts.
+3. Check guests in as they arrive, print the registration card and have it signed.
+4. Add extras to the folio during the stay.
+5. At departure, invoice the folio, take payment in Invoicing, then check the guest out.
+6. Work the housekeeping board until every departed room is clean, then inspect.
+
+Back to the [hotel overview](/odoo-guides/odoo-hotel-management/), or on to [folio billing and invoicing](/odoo-guides/odoo-hotel-folio-billing/). The whole flow can be tried on the [hotel demo](https://hotel.way4tech.com/).

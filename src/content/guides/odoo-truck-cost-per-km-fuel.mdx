@@ -1,0 +1,133 @@
+---
+title: "Cost per km, fuel loss checks and driver settlement for a truck fleet in Odoo"
+metaTitle: "Truck Cost per km, Fuel and Driver Pay"
+description: "Work out a truck's true cost per km in Odoo 19 with leases and insurance, catch fuel loss tank to tank, track tyres and pay drivers and subcontractors."
+targetQuery: "odoo fleet cost per km"
+category: "Industry"
+summary: "How the Transport Management Enterprise add-on turns standing costs into a true cost per kilometre, checks every fuel fill, follows tyre casings, and settles drivers and subcontractors, next to the simple payroll in the base module."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-transport-management"
+seriesOrder: 4
+modules:
+  - name: "Transport Management"
+    technical: "wt_transport_management"
+    note: "USD 10, includes the simple driver and staff payroll"
+  - name: "Transport Management Enterprise"
+    technical: "wt_transport_management_enterprise"
+    note: "USD 90 add-on, costing, fuel, tyres and settlement runs"
+demo:
+  url: "https://transport-pro.way4tech.com/"
+  label: "Transport Enterprise demo"
+related: ["run-payroll-odoo-community"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What goes into the true cost per kilometre?"
+    a: "Running costs booked against the vehicle's trips in the period, such as fuel, tolls and driver or subcontractor pay, plus standing costs apportioned to the period: depreciation, finance or hire purchase, lease, insurance, road tax, operator licence, permits, inspections, telematics subscriptions and allocated overhead. The total is divided by the distance run."
+  - q: "Why is a cost period marked incomplete?"
+    a: "When the figure cannot be trusted, for example because too few kilometres were run for a per kilometre figure to mean anything, or because no standing costs are set up for the vehicle. An incomplete period is shown so you can see what is missing, but it is not published to the vehicle or used to warn on a quote."
+  - q: "How does the fuel check avoid false alarms?"
+    a: "Consumption is only measured between two consecutive full fills, against a baseline for that vehicle. A missing odometer reading on the earlier fill is treated as not written down rather than as zero. Alerts carry the money they represent and are sorted by it, so the worst one is at the top."
+  - q: "Does the settlement run post salaries to the accounts?"
+    a: "For a subcontractor, posting raises a self billed vendor document in Accounting. For an employed driver, posting creates a record in the base module's transport payroll, which itself does not post a journal entry. If you run Odoo Payroll or a payroll module, treat the transport payroll as the source of the trip pay figure."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A transport company can be busy, invoice every trip and still lose money, because the costs that decide profit never appear on a trip. The lease payment on the tractor unit, the annual insurance, depreciation and the operating permit are paid whether the truck runs or not. Spread them over the kilometres it actually ran and a rate that looked fine is below cost. Fuel is the other leak: a few litres a fill disappears without anybody seeing it unless consumption is measured fill by fill. This chapter covers how the Enterprise add-on measures both, how tyres are followed, and how drivers and subcontractors are paid for the work.
+
+## Standing costs
+
+**Transport, Costing, Standing Costs** holds every commitment that is not tied to a trip. Each one has a cost type, an amount and a basis (per day, per month, per year or per distance unit), a validity window, and either one vehicle or a vehicle tag. A tag lets one record cover many vehicles, for example a fleet insurance policy or head office overhead on every company owned truck.
+
+The cost types are depreciation, finance or hire purchase, lease or rental, insurance, road tax, operator licence, permit, inspection or certification, telematics or subscription, allocated overhead and other. Each row shows its cost per day, and a cash flag separates cash commitments from depreciation, so you can see a cash cost per kilometre as well as a full one.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/standing-costs.webp" alt="Standing Costs list in Odoo with depreciation and finance lease rows per truck, contract hire, operating cards and permits, fleet insurance and head office overhead by tag, amount, basis per month or per year, cost per day and valid from date" width={1440} height={900} caption="Leases, depreciation, insurance and overhead, per vehicle or per tag." />
+
+## Vehicle cost periods
+
+A nightly job builds a cost period per vehicle per month, or per quarter if the company is set that way. It refreshes the period in flight and closes the previous one. Each period shows:
+
+- **Distance**: distance run, earning distance, empty running and its percentage, and the number of trips.
+- **Cost**: running costs (fuel, driver and subcontractor pay), standing costs and how much of them is non cash, and the total.
+- **Result**: revenue, margin and margin percentage, cost per distance unit, cash cost per distance unit, and break even per earning kilometre.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/cost-period.webp" alt="Vehicle cost period in Odoo for a tanker for October, marked incomplete because only 220 distance units were run, with running costs, fuel, driver and subcontractor pay, standing costs, total cost, revenue, a negative margin and cost per distance of 17.12 riyals" width={1440} height={900} caption="A cost period that is flagged incomplete: the figures show, but are not published." />
+
+A period that cannot be trusted is flagged incomplete with the reason, and **Costing, Incomplete Figures** lists them. Complete periods publish a **true cost per distance** to the vehicle. On the vehicle you can also set a **target margin**; the add-on refuses a target of 100 per cent or more, because that would mean a price with no cost in it. **Rebuild** recomputes one period after you enter a lease you forgot, and **Costing, Rebuild Cost Periods** does it for a window and a set of vehicles.
+
+### True margin per trip
+
+Every trip in the add-on gets a true cost and a true margin beside the base module's net profit, which is left unchanged. When costs were booked against the trip, true cost is those costs plus the trip's share of standing costs. When nothing at all was booked, the trip falls back to the vehicle's published cost per distance times its distance. The rate is frozen onto the trip when it is completed. This is the figure a charge sheet is compared with when it is flagged below cost, as described in the [rate cards chapter](/odoo-guides/odoo-transport-rate-cards-billing/).
+
+## Fuel entries and fuel alerts
+
+**Transport, Fleet, Fuel Entries** holds every fill: date, vehicle, driver, volume, total, odometer and whether the tank was filled to full. Entries come from three places: typed by hand, imported from a fuel card statement, or created from a fuel expense.
+
+Consumption is measured tank to tank, only between two consecutive full fills, and compared with a **baseline** for the vehicle. A baseline is either an agreed figure someone has written down or a rolling average the add-on builds; an agreed figure wins over a rolling one, and a vehicle baseline wins over a company one. Baselines are dated, so an alert from March is still explained against the figure in force in March.
+
+Six checks run on each fill:
+
+1. **Over consumption** against the vehicle's baseline.
+2. **More than the tank holds.**
+3. **Odometer went backwards** since the last fill.
+4. **Impossible distance** between two fills for the days between them.
+5. **Two fills too close** together on the same vehicle.
+6. **Fill while off road**, on a vehicle the workshop has grounded.
+
+Each alert carries the money it represents and the list is sorted by that value, so an hour a week on fuel goes on the worst case first. Where a check cannot price what it found, such as an odometer typed wrongly, it records no value rather than a guess. Alerts move through New, Investigating, Confirmed, Recovered and Dismissed.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/fuel-alert.webp" alt="Fuel alert in Odoo for over consumption on a Volvo truck, severity serious, expected 32 per 100 against actual 40.33, variance 26 percent, 50 litres at risk worth 83 riyals, with a written finding and Investigate, Confirm and Dismiss buttons" width={1440} height={900} caption="One fuel alert: expected against actual, the volume at risk and its value." />
+
+### Importing a fuel card statement
+
+**Fleet, Import Fuel Card Statement** reads a CSV file from your fuel card provider. You set the separator, encoding, decimal mark, date format and whether the first row holds headings, then name the columns: date, vehicle, card, driver, station, transaction reference, volume, unit price, total, odometer and full tank. Vehicles are matched by number plate, chassis or VIN, vehicle name, or a fuel card used before.
+
+**Check File** is a dry run: it reads everything, shows each row as Will Import, Already Imported or Problem with the raw text, and writes nothing. **Import** then creates entries for the ticked rows only. Unknown stations are only created if you allow it.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/fuel-card-import.webp" alt="Fuel Card Import wizard in Odoo with CSV file upload, separator, encoding, decimal mark, date format, vehicle matching by number plate, full tank values and a column mapping for date, vehicle, card, station, reference, litres, amount and odometer" width={1440} height={900} caption="Map the statement's columns once; nothing is imported until the dry run is checked." />
+
+## Tyres
+
+**Fleet, Tyres** follows each casing through its life rather than "six tyres on a truck". A tyre has a brand, size, the vehicle and wheel position it is on (axle, side, single or inner and outer), tread depth, number of retreads, distance covered, total cost and cost per distance. Events are fit, rotate, inspect, remove, retread and scrap, each with the odometer at the time. Two casings cannot sit on one position, and nothing can happen to a casing after it is scrapped, which catches the common mistake of logging against the wrong tyre.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/tyres.webp" alt="Tyres list in Odoo with casing reference, brand, size, vehicle fitted to, wheel position, tread depth, retreads, distance covered, total cost, cost per distance and status fitted or in stock" width={1440} height={500} caption="Every casing with its position, tread, distance and cost per distance." />
+
+## Paying drivers: the base payroll
+
+The base module has a simple payroll in **Transport, Drivers, Payroll**: a basic salary for the period, components typed as allowance, bonus, deduction or other, and an expense reimbursement that **Compute Reimbursement** fills from the employee's approved and paid transport expenses in the period. Gross and net are worked out, and the record goes Draft, Confirmed, Paid. A Payslip prints from it.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/driver-payroll.webp" alt="Transport payroll record in Odoo for one month with housing and transport allowance lines and a GOSI employee share deduction, allowances, bonuses, expense reimbursement, gross pay and deductions" width={1440} height={900} caption="Base payroll: basic, typed components and reimbursed expenses." />
+
+It does not calculate statutory deductions or post to Accounting: the GOSI line in the demo was typed. For country payroll on Odoo Community, see [running payroll on Odoo Community](/odoo-guides/run-payroll-odoo-community/).
+
+## Settlement runs (Enterprise)
+
+A settlement run pays one payee for the work in a window, and the same model handles an **employed driver** and a **subcontractor**, because the trade pays both the same way.
+
+- **Pay schemes** in **Configuration, Pay Schemes** are built from components: per distance, per tonne, per pallet, per drop, per hour on duty, per waiting hour, per day, per trip, a percentage of revenue or a fixed amount, each an earning or a deduction. A scheme can be limited to drivers, subcontractors or anyone, and a trip type.
+- **Gather Trips** rebuilds the run's lines from the payee's trips in the window. Lines typed by hand are kept. Trip allowances can be included.
+- **Advances** handed out for fuel floats, tolls or a salary advance are records with a running balance, recovered all on the next settlement or by instalments. Each recovery line names the advance it came off.
+- **Confirm** freezes the figures. **Post** then creates the payment document: a self billed vendor document for a subcontractor, or a transport payroll record for an employed driver. **Mark Paid** closes it.
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/settlement-driver.webp" alt="Confirmed settlement run in Odoo for an employed driver on a per kilometre and night out pay scheme, with distance, per drop and allowance lines per trip and their rates and amounts" width={1440} height={900} caption="An employed driver's run: pay per kilometre and per drop, plus trip allowances." />
+
+<Shot src="/odoo-guides/odoo-truck-cost-per-km-fuel/settlement-subcontractor.webp" alt="Confirmed settlement run in Odoo for a subcontract owner operator paid 72 percent of the customer charge, with a fuel float advance recovered, gross 792, advances recovered 300 and net payable 492 riyals" width={1440} height={900} caption="A subcontractor's run: a share of the charge, less the fuel float advanced." />
+
+Subcontractors live in **Drivers, Subcontractors** as carriers: owner operator, haulage company, broker or forwarder, or driver agency. A carrier has a vendor contact for the self bill, a default pay scheme and a goods in transit policy with an expiry that the readiness check reads. A carrier never appears in payroll.
+
+Settlement lines have their own type for damage and fuel recoveries, and the recovery on an agreed claim goes onto the responsible payee's next open run, as described in the [rate cards chapter](/odoo-guides/odoo-transport-rate-cards-billing/).
+
+<Callout title="What the money side does not do">Fuel entries are not read from telematics or fuel tank sensors; they come from people, card statements or expenses. Cost periods are only as complete as the standing costs you enter. The employed driver's settlement lands in the transport payroll, which has no statutory calculations and no journal entry, so connect it to your real payroll process. Settlements must be in the company's own currency.</Callout>
+
+## Setting it up
+
+1. Enter standing costs for each vehicle: lease or finance, depreciation, insurance, road tax and permits. Use tags for fleet wide policies and overhead.
+2. Choose monthly or quarterly cost periods, wait for the nightly build or run **Rebuild Cost Periods**, then clear what **Incomplete Figures** lists.
+3. Set a target margin on each vehicle class you quote.
+4. Enter tank capacities and either agreed fuel baselines or a few weeks of full fills so rolling baselines can build. Map your fuel card statement once.
+5. Register tyre casings on the vehicles where tyre spend matters most.
+6. Write your pay schemes, add subcontractors as carriers, enter outstanding advances, and run a first settlement alongside your current method before switching.
+
+The demo fleet carries a full month of cost periods, fuel alerts and settlements: try them on the [Enterprise demo](https://transport-pro.way4tech.com/). The overview of both modules and their prices is on the [transport management hub](/odoo-guides/odoo-transport-management/).

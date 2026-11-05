@@ -1,0 +1,134 @@
+---
+title: "Dental clinic management in Odoo: appointments, treatments, online booking, commission and POS"
+metaTitle: "Dental Clinic Appointments and Portal"
+description: "Run a dental practice on Odoo 19: dentist appointments with priced treatments, online booking on your website, invoicing, commission rules and targets."
+targetQuery: "odoo dental clinic management software"
+category: "Industry"
+summary: "How a dental practice runs chair time in Odoo with the Dental Clinic Management app: the treatment catalogue, appointments and stages, the online booking page, invoicing and thermal receipts, dentist commission and sales targets, and the POS add-on."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-clinic-management"
+seriesOrder: 3
+modules:
+  - name: "Dental Clinic Management"
+    technical: "wt_dental_management"
+    note: "USD 1,299, Odoo 19 Community, needs Sales, Inventory, Manufacturing, Employees and Website"
+  - name: "POS Dental Clinic"
+    technical: "wt_dental_clinic_pos"
+    note: "USD 1,299 add-on, needs Dental Clinic Management and Point of Sale"
+demo:
+  url: "https://dental-app.way4tech.com/"
+  label: "Dental clinic demo"
+related: ["odoo-clinic-management", "odoo-patient-appointments-opd", "odoo-hospital-ipd-bed-management"]
+linkFrom: ["/solutions/dental-clinic/", "/products/wt-dental-management/", "/products/wt-dental-clinic-pos/"]
+faqs:
+  - q: "Does the dental module have a tooth chart or treatment plans?"
+    a: "No. This version has no dental chart, no multi-visit treatment plan record and no surgery or chair allocation, whatever older listing text says. An appointment carries treatment lines with a dentist, price, discount and duration, and the history is the list of the patient's appointments."
+  - q: "Can patients book online?"
+    a: "Yes. The module adds Our Services and Book Appointment pages to your Odoo website. The patient picks treatments, a dentist if they want one, a date and a time slot, and the booking arrives in the New stage with a confirmation email. If a dentist is chosen, the slot is checked against their other appointments and blocked time."
+  - q: "How is dentist commission calculated?"
+    a: "Each dentist has one or more rules: a percentage of the treatment value or a fixed amount per treatment, for all treatments or a chosen list, with the lowest sequence matched first. Commission lines are created when the appointment is invoiced, start as Draft, and move to Confirmed and Paid by hand."
+  - q: "Is the dental app part of Hospital Management?"
+    a: "No. It is a separate app. A dental patient is a normal Odoo contact, not a Hospital Management patient with an MRN, and the two modules do not share records."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A dental practice sells chair time. A crown takes ninety minutes, a check-up thirty, and an empty half hour between them is money that does not come back. The front desk juggles the phone, walk-ins and online requests against five dentists' calendars, and at month end someone works out each dentist's share by hand from the invoices. Dental Clinic Management puts the treatments, the calendar, the booking page, the invoice and the commission on the same records in Odoo 19.
+
+## What it is built on
+
+The app uses standard Odoo underneath, which is why it needs several apps installed: **Sales** (an appointment creates a sales order), **Invoicing**, **Inventory** and **Manufacturing** (treatments can consume materials through a bill of materials), **Employees** (dentists are employees), and **Website** with the customer **Portal** (online booking and My Appointments). A patient is an Odoo contact, with a preferred dentist, dental notes, an appointment count and the last visit date added to the contact.
+
+The menus are Appointments, Services, Staff and Configuration.
+
+## The treatment catalogue
+
+Under **Services**, each treatment has:
+
+- a **product** (a service product, required), whose sale price is the treatment's **price**;
+- a **category**, such as general dentistry, cosmetic, preventive or restorative;
+- a **duration** in hours, which sets how long an appointment runs;
+- **available dentists**, the ones qualified to do it (empty means everyone);
+- an optional **bill of materials**, for the materials it uses;
+- **published on portal**, an image and a description for the website.
+
+When an appointment with that treatment is marked done, the materials on its bill of materials are moved out of your main warehouse stock to the production location, so composite, anaesthetic or impression material is counted down as you use it.
+
+## Appointments
+
+Create an appointment from **Appointments**. It needs a customer and a date. The header holds the lead dentist, the **booking source** (walk-in, phone, online portal or staff booking), priority and a kanban state. The **Services** tab has one line per treatment with its dentist, quantity, duration, unit price, discount and taxes. The **end time** is the start plus the total duration of the treatments. Subtotal, taxes and total are worked out from the lines.
+
+Appointments open on a kanban by stage, a list with the payment status, and a calendar coloured by dentist. There is also a Today view.
+
+<Shot src="/odoo-guides/odoo-dental-clinic-management/appointment-board.webp" alt="Odoo Dental Clinic kanban board with New, Confirmed, In Progress and Done columns and folded Invoiced and Cancelled columns, each card with the appointment reference, date and time, customer and dentist initials and total in AED" width={1440} height={900} caption="The appointment board by stage, with invoiced and cancelled folded away." />
+
+### The stages
+
+Six stages ship with the module: **New**, **Confirmed**, **In Progress**, **Done**, **Invoiced** and **Cancelled**.
+
+1. **Confirm** moves the appointment to Confirmed and creates a **sales order** from the treatment lines, linked from a smart button.
+2. **Start Service** moves it to In Progress.
+3. **Mark Done** confirms the sales order and consumes the treatment materials, where the stock is there to reserve.
+4. **Invoice** raises the invoice straight from the treatment lines and opens it. **Invoice (Custom)** opens a wizard where the invoice date, payment terms and the lines can be adjusted first; when the sales order is confirmed, the wizard raises the invoice from it. Either way the appointment moves to Invoiced and its commission lines are calculated.
+5. **Cancel** cancels a draft sales order with it.
+
+The **Payment** column reads the posted invoices: not invoiced, unpaid, partial or paid. **Print Receipt** prints a thermal receipt for the counter.
+
+<Shot src="/odoo-guides/odoo-dental-clinic-management/appointment-form.webp" alt="Odoo dental appointment APPT/2026/11/0474 in Confirmed stage with customer, booking source phone, lead dentist, appointment date, end time and duration, a Dental Crown service line with dentist, duration and price, subtotal, taxes and total in AED, and a Sale Order smart button" width={1440} height={900} caption="A confirmed appointment with its sales order. The phone and email fields are hidden in this screenshot." />
+
+## Online booking on your website
+
+The module adds two pages to your Odoo website, with menu entries **Our Services** and **Book Appointment**.
+
+**Our Services** lists every published treatment by category with its duration, price and a Book button. **Book Appointment** is the form: full name, phone, email, one or more treatments, a dentist (optional), a date and a time slot. Slots come from three settings: booking start hour (9 by default), end hour (19) and slot interval (30 minutes).
+
+<Shot src="/odoo-guides/odoo-dental-clinic-management/online-booking-services.webp" alt="Odoo website page Book Your Appointment listing dental services by category, General Dentistry and Cosmetic Dentistry, each with duration, price in AED and a Book button" width={1440} height={900} caption="The public services page, built from the published treatments." />
+
+When the patient submits:
+
+- The contact is found by email, or created.
+- If a dentist was chosen, the slot is checked against that dentist's other appointments that are not cancelled and against their **blocked time** (breaks, vacation, training or other, kept per dentist). A clash sends the patient back to pick another time.
+- The appointment is created in **New** with source Online Portal, and the booking confirmation email goes out.
+
+A patient with a portal login sees their appointments under **My Appointments** in the customer portal.
+
+<Shot src="/odoo-guides/odoo-dental-clinic-management/booking-form.webp" alt="Odoo website Book an Appointment form with full name, phone and email fields and a list of dental services with duration, category and price to tick" width={1440} height={900} caption="The booking form: the patient's details, then the treatments they want." />
+
+<Callout title="Only portal bookings are clash checked">The dentist and blocked time check runs on the website booking form only. An appointment typed in by the front desk is not checked against the dentist's other appointments, so use the calendar view when booking by phone. The dentist list on the booking form shows every active employee, so keep non-clinical staff out of it by archiving or by keeping the clinic's employees separate.</Callout>
+
+## Commission and targets
+
+### Commission rules
+
+Under **Staff, Commission Rules**, each rule belongs to one dentist and is either a **percentage of service value** or a **fixed amount per service**, for all treatments or a chosen list. Rules are matched by sequence, lowest first, so put the specialist rule (for example 35 per cent on crowns, bridges and implants) above the general treatment share.
+
+When an appointment is invoiced, the module creates one commission line per treatment line, for the line's dentist or the lead dentist, from the first rule that matches. Lines start as **Draft** and move to **Confirmed** and **Paid** by hand. Each rule shows its total earned from confirmed and paid lines, and **Commission Earnings** lists every line.
+
+<Shot src="/odoo-guides/odoo-dental-clinic-management/commission-rules.webp" alt="Odoo dental Commission Rules list with specialist procedure rules at 35 per cent on clear aligners, crowns, implants and bridges, general treatment share rules at 30 and 10 per cent, valid from dates and total earned per rule" width={1440} height={900} caption="Commission rules per dentist, with a higher rate on specialist treatments." />
+
+A rule has Valid From and Valid To dates, but in this version they are not used when matching, so archive a rule that has ended rather than relying on its end date.
+
+### Sales targets
+
+**Staff, Sales Targets** sets a target per dentist for a month, quarter, year or custom period, with an optional bonus: a percentage of sales above the target, or a fixed bonus once the target is hit. The target shows achieved sales (the total of that dentist's invoiced appointments in the period), the remaining amount, the commission earned in the period and the bonus earned.
+
+<Shot src="/odoo-guides/odoo-dental-clinic-management/sales-targets.webp" alt="Odoo dental Sales Targets list with monthly targets per dentist for September, October and November 2026, sales target, achieved sales, achievement percentage and status Active or Done" width={1440} height={900} caption="Monthly targets per dentist with achieved sales and achievement." />
+
+In the current version, the **Achievement (%)** field on the target form shows the figure a hundred times too large (12.19 per cent appears as 1218.75%). The list view and the progress bar on the form show it correctly.
+
+## The POS add-on
+
+POS Dental Clinic adds a dental screen to the Odoo Point of Sale, switched on per POS with **Enable Dental Clinic**. From the POS, the counter can see the appointments for a day, each dentist's workload for today, a customer's dental history, book a new appointment, take a walk-in with a quick treatment picker, create a customer, add a quick note and edit an appointment. Loading an appointment puts its treatments on the POS order. After payment, the appointment is moved to Done, an invoice is created and posted for it, and it moves to Invoiced; the order records the dentist and treatments, and the receipt shows the treatment details. Refunding the order puts the appointment back to Confirmed.
+
+The public demo does not open the POS for the demo login, so there is no POS screenshot here.
+
+## What the dental app does not do
+
+- **No tooth chart, treatment plan or imaging.** There is no odontogram, no multi-visit plan and no X-ray archive.
+- **No chair or surgery allocation.** Appointments are per dentist, not per chair or room, in both the app and the POS add-on.
+- **No insurance claims.**
+- **No automatic reminders** before an appointment. The booking confirmation is sent on online bookings.
+- **No advance or deposit payments** in the POS add-on; payment is taken on the POS order.
+
+For a general clinic or a hospital, the [Hospital Management chapters](/odoo-guides/odoo-clinic-management/) cover patients with an MRN, the OPD queue and beds. Try the dental flow on the [Dental clinic demo](https://dental-app.way4tech.com/), or [describe your practice](/contact/) and I will say what fits.

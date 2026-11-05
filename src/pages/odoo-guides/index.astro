@@ -7,9 +7,11 @@ const CATEGORY_ORDER = ['Payroll and HR', 'Tax and compliance', 'Industry', 'Ope
 
 const live = await getLiveGuides();
 const chapterCount = (series: string) => live.filter(g => g.data.series === series).length;
-/* A series is carded once, by its hub; the chapters are linked from there. */
+/* A series is carded once, by its hub; the chapters are linked from there.
+   A live chapter whose hub is not live yet keeps its own card meanwhile. */
+const liveSlugs = new Set(live.map(g => g.slug));
 const guides = live
-  .filter(g => !g.data.series || g.data.series === g.slug)
+  .filter(g => !g.data.series || g.data.series === g.slug || !liveSlugs.has(g.data.series))
   .sort((a, b) => a.data.title.localeCompare(b.data.title));
 
 const groups = CATEGORY_ORDER

@@ -1,0 +1,129 @@
+---
+title: "Odoo serial numbers on purchase orders: capture every unit when it is received"
+metaTitle: "Odoo Serial Numbers on Purchase Receipts"
+description: "How to record serial numbers on goods bought on a purchase order in Odoo 19: settings, product tracking, import or generate serials on the receipt."
+targetQuery: "odoo serial numbers on purchase receipt"
+category: "Operations"
+summary: "Turn on serial tracking in Odoo 19, choose which products need it, and record each unit's serial on the receipt that comes from the purchase order, so every unit can be traced back to its vendor."
+published: 2026-12-17
+updated: 2026-12-17
+related: ["odoo-label-printing", "odoo-distribution-management"]
+linkFrom: ["/modules/inventory/", "/modules/purchase/"]
+sources:
+  - label: "Odoo 19 documentation, Inventory: serial numbers"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/serial_numbers.html"
+  - label: "Odoo 19 documentation, Inventory: lots"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/lots.html"
+  - label: "Odoo 19 documentation, Inventory: product tracking"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking.html"
+faqs:
+  - q: "Can I type serial numbers on the purchase order line in standard Odoo?"
+    a: "No. In Odoo 19 the purchase order line has no serial number field. The serials are entered on the receipt that the confirmed order creates, through the Details link on each line. Capturing them on the order itself needs a small custom module that writes them onto the receipt when the order is confirmed."
+  - q: "Do I need Odoo Enterprise for serial numbers?"
+    a: "No. Lots and serial numbers, the Generate and Import buttons on the receipt, the Lots / Serial Numbers list and the traceability report are all in Odoo 19 Community, with Purchase and Inventory installed. The Barcode app is Enterprise, but a USB scanner can still type serials into the import box in Community."
+  - q: "What happens if I switch a product to serial tracking while it has stock?"
+    a: "Odoo lets you save the change but warns that you have stock with no serial number and suggests an inventory adjustment to assign them. The units already on the shelf stay without serials until you do that, so it is cleaner to switch before the next delivery arrives."
+  - q: "Why will the receipt not validate?"
+    a: "A product tracked by serial number needs one serial per unit before the receipt can be validated. If any unit is missing one, Odoo stops with 'You need to supply a Lot/Serial Number for product' and names the product. If a serial is already in the system for that product, it stops with 'The serial number has already been assigned'."
+  - q: "How do I find which vendor supplied a unit?"
+    a: "Open Inventory, then Products, then Lots / Serial Numbers, and search the serial. The serial's form has a Purchases button that opens the purchase order it came on, and a Traceability button that shows the receipt, the vendor, the date and every later move."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A business that buys cameras, laptops, power tools or medical devices sells units that are not interchangeable once something goes wrong. The customer comes back with a faulty body, and the question is which supplier it came from, on which order, at what cost, and whether it is still under the vendor's warranty. If the serial was never recorded when the goods arrived, nobody can answer that without opening boxes or digging through supplier invoices.
+
+Odoo answers it with serial number tracking. Each unit gets its own record, created when the goods are received against the purchase order, and from then on the serial carries the vendor, the receipt, the location and every move after it. This guide covers the standard Odoo 19 Community way to do it, from the one-time setup to looking a serial up months later.
+
+## What standard Odoo does, and where the serials go
+
+The flow in Odoo is: purchase order, confirmed, creates a receipt, the receipt is validated when the goods arrive. Serial numbers belong to the receipt step, not to the purchase order. That is deliberate. The order says what you expect; the receipt records what physically arrived, and only the box in front of the storekeeper has a serial printed on it.
+
+What you get out of the box in Community:
+
+- A setting to switch on lots and serial numbers for the whole company.
+- A per-product choice: count by quantity, track by lots, or track by unique serial number.
+- On the receipt, a Detailed Operations window per line where serials can be typed one by one, generated as a sequence, or pasted in as a list.
+- A hard stop: a receipt for a serial-tracked product cannot be validated until every unit has a serial.
+- A list of every serial in the system, a form per serial with its location and its purchase order, and a traceability report.
+
+<Callout title="No serial field on the purchase order line">Standard Odoo 19 does not let you enter serials on the purchase order itself. If your team never really opens the receipt (they confirm it in one click because the quantities are always right), turning on serial tracking will stop that click working, because the receipt now needs serials. Either the person receiving the goods enters them on the receipt, or you add a small customisation that captures them on the order line and writes them onto the receipt at confirmation. This guide covers the standard route only.</Callout>
+
+## Step 1: turn on lots and serial numbers
+
+Go to Inventory, then Configuration, then Settings. Scroll to the Traceability section, tick **Lots & Serial Numbers** and click Save. This is a company-wide switch; nothing changes for any product until you choose to track it.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/settings-traceability.webp" alt="Odoo 19 Inventory settings, Traceability section with Lots and Serial Numbers ticked, plus options for GS1 barcodes, serials on delivery slips, expiration dates, consignment and serials on invoices" width={1264} height={290} caption="Inventory settings: the Traceability section after Lots & Serial Numbers is switched on." />
+
+Once it is on, a few related options appear next to it. Two are worth a look on day one: **Display Lots & Serial Numbers on Delivery Slips**, so the customer's paperwork shows which unit they received, and **Display Lots & Serial Numbers on Invoices**. Expiration Dates is only needed for products that carry an expiry date.
+
+## Step 2: choose which products get serials
+
+Open the product (Inventory, then Products, then Products) and stay on the General Information tab. Next to **Track Inventory** there is a checkbox and, beside it, a choice that reads as plain text until you click it. Click it and pick **By Unique Serial Number**, then save.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/product-track-serial.webp" alt="Odoo 19 product form for a camera body on the General Information tab, with Track Inventory ticked and set to By Unique Serial Number, and a Lot/Serial Numbers smart button at the top" width={1440} height={740} caption="Product form: Track Inventory set to By Unique Serial Number. A Lot/Serial Numbers button appears at the top." />
+
+Be selective. Track the items where one unit has its own warranty and value: camera bodies, lenses, laptops, generators. Do not track cables, bags, memory cards or consumables. Once a product is tracked by serial, every receipt, delivery, return and stock count of it needs a serial for each unit. That is the point for an expensive item and a burden for a low value one. Products that should still be counted but not serialised stay on By Quantity, which is the default. Do not untick Track Inventory to avoid serials: that stops Odoo counting stock for the product at all.
+
+If the product already has stock on hand when you switch it, Odoo saves the change but warns that you have stock with no serial number and suggests an inventory adjustment to assign them. The units on the shelf stay without serials until you do. For a clean start, switch the product before the next delivery or count it in with serials straight after switching.
+
+## Step 3: check the Receipts operation type
+
+Serials can only be created on an operation type that allows it. Go to Inventory, then Configuration, then Operations Types, and open **Receipts**. In the Lots/Serial Numbers section, **Create New** should be ticked; it is by default. Leave **Use Existing ones** unticked for receipts from vendors, since a unit arriving from a supplier should get a new serial, not reuse one already in the system.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/receipts-operation-type.webp" alt="Odoo 19 Receipts operation type form with the Lots/Serial Numbers section showing Create New ticked and Use Existing ones unticked" width={1440} height={520} caption="Receipts operation type: Create New allows serials to be created as goods arrive." />
+
+The [Odoo serial numbers documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/serial_numbers.html) points out that the import button on the receipt is hidden if Create New is off, which is the usual reason someone cannot find it.
+
+## Step 4: confirm the purchase order as usual
+
+Nothing changes on the purchase order. Create it, add the products and quantities, and confirm it. Odoo creates the receipt and shows it behind the **Receipt** button at the top of the order, or the **Receive** button in the header. Serialised and ordinary products sit on the same order and the same receipt.
+
+## Step 5: enter the serials on the receipt
+
+Open the receipt. Each line for a serial-tracked product has a **Details** link. Click it to open the Detailed Operations window, which shows one row per unit with an empty Lot/Serial Number column. There are three ways to fill it.
+
+**Type them.** Click each row and type the serial. Fine for two or three units.
+
+**Import a list.** Click **Import Serials/Lots**, put one serial per line in the box and click Generate. This is the method for a supplier who sends a packing list or a spreadsheet: copy the serial column and paste it in. It also suits a USB barcode scanner, which types each code it reads followed by a new line, so you can click into the box and scan the boxes one after another.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/import-serials.webp" alt="Import Serials dialog in Odoo 19 over the Detailed Operations window for four camera bodies, with serial numbers pasted one per line and a Keep current lines checkbox" width={1440} height={740} caption="Import Serials: one serial per line, pasted from the supplier's list or scanned." />
+
+**Generate a sequence.** If the units arrive numbered in a run, click **Generate Serials/Lots**, enter the **First Serial Number** and the **Number of SN**, and click Generate. Odoo follows the pattern of the first number, so LNS50-7781 with a count of 2 gives LNS50-7781 and LNS50-7782.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/generate-serials.webp" alt="Generate Serial numbers dialog in Odoo 19 for two lenses, with First Serial Number LNS50-7781, Number of SN 2 and a Keep current lines checkbox" width={1440} height={740} caption="Generate Serial numbers: a first serial and a count, for units that arrive in a numbered run." />
+
+Both dialogs have a **Keep current lines** checkbox. Tick it to add to serials already entered; leave it unticked to replace them. Click Save on the Detailed Operations window when the rows are filled. The same window is also reachable from the **Moves** button at the top of the receipt.
+
+One thing to watch: Odoo sets the received quantity from the number of serials. The documentation notes that if you generate more serials than the demand, Odoo still lets you receive that many. Check the count against the delivery note before you validate.
+
+## Step 6: validate the receipt
+
+Click **Validate**. If every serialised unit has a serial, the receipt moves to Done and each serial becomes its own record in stock. Use the column toggle at the right of the Operations tab and tick **Serial Numbers** to see them listed on the receipt.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/receipt-validated-serials.webp" alt="Validated Odoo 19 receipt in Done state with the Serial Numbers column showing four camera body serials and two lens serials, a shoulder bag line without serials, and a Traceability button at the top" width={1440} height={730} caption="The validated receipt: each serialised unit listed, the untracked bag line unchanged." />
+
+If a unit has no serial, Odoo stops and names the product.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/missing-serial-error.webp" alt="Odoo 19 Invalid Operation dialog saying You need to supply a Lot/Serial Number for product, followed by the camera body product name" width={1440} height={600} caption="Validation is blocked until every serialised unit has a serial." />
+
+The other message you will meet is **The serial number has already been assigned**, with the product and serial named. It means that serial is already in the system for that product. Either it is a typing or scanning mistake, or the same unit is being received twice, and the receipt will not go through until it is corrected.
+
+## Step 7: look a serial up later
+
+Go to Inventory, then Products, then **Lots / Serial Numbers**. Every serial is listed with its product and the date it was created. Search the serial and open it. The form shows the product, the quantity on hand and the location where the unit sits now. Two buttons at the top do the rest: **Purchases** opens the purchase order the unit came on, and **Traceability** opens the report of every move for that serial.
+
+<Shot src="/odoo-guides/odoo-serial-numbers-purchase-orders/traceability-report.webp" alt="Odoo 19 Traceability Report for one camera body serial showing the receipt reference, product, date, the vendor as From, WH/Stock as To, and a quantity of 1 unit" width={1440} height={284} caption="Traceability for one serial: received from the vendor into stock. Sales and returns are added as they happen." />
+
+When the unit is later sold, the delivery order asks for its serial in the same way, and the report then shows both ends: the vendor it came from and the customer it went to. That is what a warranty claim or a return needs. The [serial numbers documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/serial_numbers.html) covers the reporting options, including grouping the list by serial. The [product tracking overview](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking.html) lists the related lot and serial topics, such as reassigning serials and valuation by serial.
+
+## Serials or lots
+
+If you buy goods in batches rather than as individual units, for example a production run of paint or a batch of medicines, track **By Lots** instead. A lot covers many units under one number and is set up the same way, as described in the [Odoo lots documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/lots.html). Serial numbers are for items where each unit has its own identity.
+
+## Before you switch it on
+
+- Decide the product list first, and keep it short.
+- Tell whoever receives goods that the receipt now needs serials, and show them the Import button. That is the step that changes in their day.
+- Switch tracked products over before their next delivery, or plan an inventory adjustment for the stock already on the shelf.
+- If your receiving process cannot open the receipt, plan for the customisation that captures serials on the purchase order rather than turning tracking on and finding receipts stuck.

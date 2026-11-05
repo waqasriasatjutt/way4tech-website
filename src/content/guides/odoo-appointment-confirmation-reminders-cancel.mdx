@@ -1,0 +1,121 @@
+---
+title: "After the booking in Odoo: questions, confirmation and reminder emails, and customer cancel or reschedule"
+metaTitle: "Confirmations, Reminders and Cancellations"
+description: "What happens after an Odoo appointment is booked: booking questions, confirmation and reminder emails, the customer's cancel and reschedule page, no shows."
+targetQuery: "odoo appointment reminder email cancel reschedule"
+category: "Operations"
+summary: "The part of appointment booking that cuts no shows: questions asked at booking, the confirmation and reminder emails, a self-service page to cancel or move, and the statuses your team records."
+published: 2027-01-28
+updated: 2027-01-28
+series: "odoo-appointment-booking"
+seriesOrder: 2
+modules:
+  - name: "Online Appointment Booking"
+    technical: "wt_appointment_booking"
+    note: "USD 79, Odoo 19 Community, needs Website and Calendar"
+demo:
+  url: "https://photography.way4tech.com/"
+  label: "Appointment booking demo (photography studio)"
+related: ["odoo-appointment-booking", "odoo-salon-spa-management", "odoo-restaurant-reservations-waitlist"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does Odoo send appointment reminders automatically?"
+    a: "With this module, yes. A scheduled job runs every hour and emails each confirmed booking once it is inside the reminder period you set on the appointment type, 24 hours by default. Each booking gets one reminder, and cancelled bookings get none."
+  - q: "Can a customer cancel an appointment without logging in?"
+    a: "Yes. The confirmation email has a link to a page for that booking only, protected by a long random token. The customer can cancel there with an optional reason, as long as it is still before the cancellation deadline on the appointment type."
+  - q: "What happens to the calendar when a booking is cancelled?"
+    a: "The booking is marked cancelled and its Calendar meeting is archived, not deleted. The slot becomes free on the booking page straight away and the history stays on the booking, with the reason if one was given."
+  - q: "Can I add custom questions to the booking form?"
+    a: "Yes, per appointment type. Each question is a single line, a paragraph, a choose one list or a yes or no box, and can be required. Answers are kept on the booking and copied into the Calendar meeting's description."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Taking the booking is half the job. The other half decides whether the customer turns up: they need to know it went through, they need a nudge before the day, and if plans change they need an easy way to say so, because a customer who cannot cancel online simply does not come. For the business, the same stretch is where the useful facts arrive: the wedding date, the car registration, the reason for the visit, and afterwards whether they attended.
+
+This chapter covers that part of the [Online Appointment Booking](/odoo-guides/odoo-appointment-booking/) module on Odoo 19 Community: the questions on the booking form, the three emails, the customer's own page, and what your team does with a booking in the back office. Setting up the appointment type itself is in the [availability chapter](/odoo-guides/odoo-appointment-types-availability/).
+
+## Questions on the booking form
+
+Every booking asks for name and email, which are required, and phone, which is optional. Anything else you need goes on the appointment type's **Questions** tab. Each question has:
+
+- a **Question** text, which is the label the customer sees;
+- a **Question Type**: Single line, Paragraph, Choose one (a list, which needs at least one option) or Yes / no;
+- a **Required** flag, and an optional placeholder.
+
+<Shot src="/odoo-guides/odoo-appointment-confirmation-reminders-cancel/booking-questions-setup.webp" alt="Wedding Consultation appointment type in Odoo with the Questions tab open, showing a required paragraph question for wedding date and venue and an optional paragraph question asking how the customer heard about the studio" width={1440} height={900} caption="Two questions on the wedding consultation: the date and venue is required, the referral question is not." />
+
+On the website the questions appear under the contact fields, in the order you set. A required question left blank sends the customer back with "Please answer" and the question name, and the slot is not booked. Answers are cut at 2,000 characters.
+
+<Shot src="/odoo-guides/odoo-appointment-confirmation-reminders-cancel/booking-form-questions.webp" alt="Odoo website booking form with fields for name, email, optional phone, a required wedding date and venue question and a how did you hear about us question, above a Confirm booking button" width={1440} height={900} caption="What the customer fills in after picking a slot. Questions come from the appointment type." />
+
+Keep questions to what you would otherwise phone the customer to ask. Every extra required field loses a few bookings. The answers are kept on the booking and also copied into the description of the Calendar meeting, together with the phone number, so whoever opens the meeting sees them without switching apps.
+
+## What happens the moment they confirm
+
+When the form is posted, the module checks everything again on the server: name and email present, email that looks like an email, the slot still inside notice and window, and someone still free. Then it:
+
+1. creates the booking with the next reference (APT/00011 and so on) and a private access token;
+2. finds the customer's contact by email, ignoring case, or creates one, so a returning customer stays one contact;
+3. marks the booking Confirmed;
+4. creates a Calendar meeting with the customer and the staff member as attendees, the location, and the video call link where your build supports it;
+5. queues the confirmation email and sends the customer to their booking page.
+
+Odoo Calendar would normally email its own invitation to the attendees. The module switches that off for meetings it creates and sends its own confirmation instead, so the customer gets one email, not two.
+
+## The three emails
+
+All three come from your company's email address, go to the email the customer typed, and print the time in the timezone they booked from.
+
+- **Confirmation**, subject "Your appointment is confirmed" and the type name. It lists what, when (with the timezone), who it is with, where, the address, the video call link if any and the reference, with a **View or change this appointment** button.
+- **Reminder**, subject "Reminder" and the type name, with the time, address or video link and a **View this appointment** button.
+- **Cancellation**, subject "Your appointment was cancelled" and the type name, with the reason if one was given and an invitation to book again.
+
+The templates are ordinary Odoo email templates, so you can change the wording in **Settings, Technical, Email Templates** with developer mode on. They are sent through the mail queue, so nothing goes out until your outgoing mail server is set up. A mail failure is logged and never stops the booking itself.
+
+### When the reminder goes out
+
+A scheduled job, **Appointments: send reminders**, runs every hour and ships switched on. It picks confirmed bookings that have not had a reminder, whose type has **Send Reminder** ticked, and whose start is inside **Remind Before** hours (24 by default). Each booking is reminded once. Because the job is hourly, the reminder lands within the hour after the reminder point, not to the minute. A booking made inside the reminder period gets its reminder on the next run, right after the confirmation.
+
+## The customer's own page: cancel or reschedule
+
+The button in the email opens a page for that booking alone, at an address carrying a long random token. No login is needed and nobody can guess another customer's page. It shows the booking details and, where allowed, two actions.
+
+<Shot src="/odoo-guides/odoo-appointment-confirmation-reminders-cancel/cancel-reschedule-reminder.webp" alt="Corporate Headshots appointment type in Odoo with the Follow-up tab showing allow cancellation ticked, cancel up to 24 hours, send reminder ticked and remind before 24 hours" width={1440} height={900} caption="The Follow-up tab: whether the customer can cancel or move the booking, up to when, and when the reminder goes." />
+
+The **Follow-up** tab on the appointment type sets the rules:
+
+- **Allow Cancellation** and **Cancel Up To**, in hours before the start, 24 by default.
+- **Allow Reschedule**, which uses the same deadline.
+- **Send Reminder** and **Remind Before**.
+
+**Cancelling.** The customer can type an optional reason, up to 500 characters, and confirm. The booking becomes Cancelled, its Calendar meeting is archived so the slot is free again on the booking page, and the cancellation email goes out. Past the deadline, the page tells them it is too late to cancel online and to get in touch.
+
+**Rescheduling.** The customer sees the slot picker again for the same type. Their own booking does not count against them, so the slot next to it is not shown as taken. The booking stays with the same staff member or resource. On confirming, the module checks the new slot is still free, moves the booking and the meeting, sends a fresh confirmation, and logs the move on the booking's chatter. A booking already marked Attended, No Show or Cancelled cannot be moved.
+
+## The back office: statuses and what each means
+
+Bookings live under **Appointments, Bookings** in a calendar, list, form and pivot view. The status bar on the form runs Draft, Confirmed, Attended, with No Show and Cancelled to the side.
+
+<Shot src="/odoo-guides/odoo-appointment-confirmation-reminders-cancel/booking-status.webp" alt="Top of an Odoo appointment booking form with reference APT/00011, buttons for Attended, No Show and Cancel, a Meeting smart button and the Draft, Confirmed, Attended status bar" width={905} height={240} caption="A confirmed booking: mark it Attended or No Show after the appointment, or cancel it. The Meeting button opens the Calendar entry." />
+
+- **Confirm** turns a draft into a real booking: contact matched, meeting created, confirmation sent.
+- **Attended** and **No Show** are for after the appointment, and only from Confirmed.
+- **Cancel** archives the meeting and sends the cancellation email.
+- **Reset to Draft** works only on a cancelled booking. A cancelled booking cannot be confirmed again directly; reset it first, or book a new one.
+- The **Meeting** smart button opens the linked Calendar meeting.
+
+Marking attendance is the habit that pays for itself. Group the pivot by appointment type and status and you have a no show rate per service, which is the number that tells you whether a longer notice period, a reminder earlier than 24 hours, or a required phone number is worth adding.
+
+<Callout title="Bookings typed in the back office are not checked for clashes">
+The free slot check runs on the website. A booking created by hand under Appointments, Bookings is not checked against other bookings or meetings, and while it is in Draft it does not hold the slot at all: a draft has no Calendar meeting, and resources only count confirmed or attended bookings. When a customer phones, the safest route is to book them through the website page yourself, which runs every check and sends the email.
+</Callout>
+
+## Limitations
+
+- **Email only.** There is no SMS, WhatsApp or push reminder.
+- **One reminder per booking.** You cannot send a second one, for example a week before and a day before.
+- **No payment or deposit**, and so no cancellation fee. The deadline is the only lever.
+- **Rescheduling keeps the same person or resource.** A customer cannot switch to a different photographer while moving the time; cancel and book again for that.
+- **No calendar file in the email.** The customer copies the time into their own calendar themselves.

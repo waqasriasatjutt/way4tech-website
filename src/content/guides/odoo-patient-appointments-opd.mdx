@@ -1,0 +1,117 @@
+---
+title: "Patient registration, appointments and OPD visits in Odoo: tokens, vitals, diagnosis and prescriptions"
+metaTitle: "Patients, Appointments and OPD Visits"
+description: "Run an outpatient clinic in Odoo 19: patient records with MRN, appointments with a token queue, vitals and BMI, ICD diagnosis, prescriptions and billing."
+targetQuery: "odoo patient management appointments opd"
+category: "Industry"
+summary: "How the front desk registers patients and runs the OPD queue in Odoo, how the doctor records vitals, diagnosis, prescription and test requests on the visit, and how the visit becomes an invoice."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-clinic-management"
+seriesOrder: 1
+modules:
+  - name: "Hospital Management"
+    technical: "wt_hospital_management"
+    note: "USD 10, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://clinic.way4tech.com/"
+  label: "Clinic demo"
+related: ["odoo-clinic-management", "odoo-hospital-ipd-bed-management", "odoo-dental-clinic-management"]
+faqs:
+  - q: "How does the token number work?"
+    a: "A token is issued when the appointment is confirmed, or at check-in if it was not confirmed first. It is the next number for that physician on that day, so each doctor's queue starts at one every morning."
+  - q: "Does the patient need a separate customer record for billing?"
+    a: "No. When you register a patient, Odoo creates a billing contact for them automatically unless you pick an existing one. Invoices go to that contact, and the patient record shows the invoice count and the total billed."
+  - q: "Can the clinic print a prescription?"
+    a: "Yes. The module ships a Prescription PDF from the visit, as well as a Patient Registration Card and, for inpatients, a Discharge Summary."
+  - q: "What happens to appointments nobody closed?"
+    a: "A daily scheduled job marks any appointment still confirmed or checked in after its time as a no-show. It is switched on when the module installs, so close each day's visits before it runs, or switch it off under Scheduled Actions."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The outpatient department is where a clinic either flows or jams. Patients arrive with and without appointments, each doctor has a queue, the nurse takes vitals, the doctor writes the diagnosis and the prescription, and the cashier needs to know what to charge. When those steps are on paper, the doctor rewrites what the nurse measured and the cashier guesses at the tests. In Hospital Management, the appointment is the visit, and every step writes to the same record.
+
+## Register the patient
+
+Go to **Hospital, Front Desk, Patients** and create one. The patient record holds:
+
+- **Full name** and an **MRN** (medical record number) from a sequence, assigned on save. Search by name or MRN.
+- **Demographics**: gender, date of birth with the age worked out (in months for a baby under one), blood group, marital status, nationality, religion and a national ID or passport number.
+- **Contact**: phone, mobile, email, address, city and country, and an emergency contact with phone and relationship.
+- **Medical history**: allergies picked from your allergy list, chronic conditions, past surgeries, family history, current medications and vaccination history, plus a deceased flag and general notes.
+
+If you do not pick a billing **Contact**, the module creates one from the patient's name, phone and email. Smart buttons open the patient's appointments, admissions and invoices, and the record shows the total billed on posted invoices. The **Patient Card** report on the record's Print menu produces a registration card.
+
+<Shot src="/odoo-guides/odoo-patient-appointments-opd/patient-record.webp" alt="Odoo Hospital Management patient record with full name and MRN, demographics including gender, date of birth, age, blood group and marital status, contact details, billing contact, and the Medical History tab showing a penicillin allergy and chronic conditions, with smart buttons for appointments, admissions and invoices" width={1440} height={900} caption="A patient record: MRN, demographics, the billing contact and an allergy the doctor sees on every visit." />
+
+## Set up physicians first
+
+Each physician (under **Configuration, Physicians**) has a specialty, qualification, registration number, department, consultation fee, the consultation service that goes on the invoice, working days and available hours, and an optional Odoo user. Picking a physician on an appointment fills the department and the consultation fee. The physician's user is who gets the follow-up reminder.
+
+## Book the appointment
+
+Create an appointment under **Hospital, Front Desk, Appointments**. It needs a patient and a date and time. Pick the physician, and the department and consultation fee follow. The rest of the header:
+
+- **Type**: OPD, walk-in, follow-up or telemedicine.
+- **Priority**: normal, urgent or emergency.
+- **Chief complaint**, in the patient's words.
+
+Appointments open as a list, and there is a calendar coloured by physician with filters for each patient and doctor.
+
+### The queue: confirm, check in, consult, complete
+
+The status bar runs **Draft**, **Confirmed**, **Checked In**, **In Consultation**, **Completed**, with Cancelled and No Show to the side.
+
+1. **Confirm** issues the **token**: the next number for that physician on that day. Only a draft can be confirmed.
+2. **Check In** when the patient arrives. A walk-in that was never confirmed gets its token here.
+3. **Start Consultation** when the doctor calls them.
+4. **Complete** closes the visit. If a follow-up date is set, it raises a to-do for the physician's user on that date.
+
+**Hospital, Front Desk, OPD Queue** shows the live queue, and the dashboard counts confirmed, waiting, in consultation and completed for today.
+
+<Shot src="/odoo-guides/odoo-patient-appointments-opd/opd-vitals.webp" alt="Odoo OPD visit APP/2026/00001 in consultation with token 3, patient, physician, department, date, type and chief complaint, and the Vitals tab with temperature, blood pressure, pulse, respiratory rate, SpO2, weight, height and BMI" width={1440} height={900} caption="A visit in consultation, token 3, with the vitals taken and the BMI worked out." />
+
+<Callout title="The no-show job runs every day">A daily scheduled job marks every appointment that is still Confirmed or Checked In after its appointment time as No Show, and posts a note saying so. It is switched on when the module installs. A patient who was checked in but never moved to In Consultation or Completed before the job runs will be marked as a no-show, so close the day's visits, or switch the job off under Settings, Technical, Scheduled Actions if your clinic works differently.</Callout>
+
+## Record the consultation
+
+The visit form has five tabs, written in the order the visit happens.
+
+**Vitals.** Temperature, blood pressure (systolic and diastolic), pulse, respiratory rate, SpO2, weight and height. **BMI** is worked out from weight and height.
+
+**Consultation.** Symptoms, one or more **diagnoses** from your diagnosis list (each shown with its ICD code, for example "[M54.5] Low back pain"), free clinical notes, and a **follow-up date**.
+
+<Shot src="/odoo-guides/odoo-patient-appointments-opd/consultation-diagnosis.webp" alt="Consultation tab of a completed Odoo OPD visit with symptoms, a diagnosis tag M54.5 Low back pain with its ICD code, and a follow-up date" width={1440} height={900} caption="The consultation tab: diagnosis with its ICD code and the follow-up date that raises a reminder." />
+
+**Prescription.** One line per medicine: an optional link to a product, the medicine name, dosage, frequency (once a day, twice a day, three times, four times, at bedtime, when required or immediately), duration, quantity and instructions. The **Prescription** report on the visit's Print menu gives the patient a clean PDF.
+
+<Shot src="/odoo-guides/odoo-patient-appointments-opd/prescription.webp" alt="Prescription tab of an Odoo OPD visit with a line for Ibuprofen 400 mg twice a day for 7 days after food" width={1440} height={900} caption="A prescription line with dosage, frequency, duration and instructions." />
+
+**Lab and Radiology.** Requests raised from the visit, each with a type (laboratory or radiology), the test or study name, an optional priced service, a status (requested, sample collected, in progress, completed, cancelled), and the result or findings with a result date. Completing a request stamps the result date.
+
+**Billing.** The consultation fee and the invoices raised from the visit.
+
+### Keep the lists tidy
+
+Two lists drive the clinical tabs. **Configuration, Diagnoses** holds name, ICD code, category and description; load the codes your doctors actually use rather than the whole classification. **Configuration, Allergies** holds the allergy list that appears on the patient. The full ICD-10 catalogue is part of the Ultimate add-on.
+
+## Invoice the visit
+
+**Create Invoice** on the visit raises a customer invoice for the patient's billing contact. It carries:
+
+- the **consultation fee** as a line named after the physician, with the taxes of the physician's consultation service;
+- every **lab or radiology request that has a priced service**, at that service's price and taxes.
+
+A request typed as free text without a service is not billed. If there is nothing to bill, the button says so. The invoice is linked to the patient and the visit, so it shows on both, and posted revenue counts on the dashboard.
+
+Lines post to an income account. In this version the module uses the first income account it finds in your chart of accounts, not one per service, so check the account on the first invoices with your accountant. Nothing stops a second invoice being raised from the same visit, so the cashier should check the Billing tab first.
+
+## What the OPD part does not do
+
+- **No double booking check.** Two appointments for the same doctor at the same time are both accepted.
+- **No automatic reminders** to patients, even though a reminder setting is present. Send the Appointment Confirmation template from the chatter if you need it.
+- **No patient portal or online booking.**
+- **No dispensing from stock.** A prescription is a document; dispensing and stock deduction are in Ultimate.
+
+For patients who stay, go to [IPD admissions, wards and bed board](/odoo-guides/odoo-hospital-ipd-bed-management/). For a dental practice, see [dental clinic appointments and portal](/odoo-guides/odoo-dental-clinic-management/). The [hub page](/odoo-guides/odoo-clinic-management/) compares the editions.

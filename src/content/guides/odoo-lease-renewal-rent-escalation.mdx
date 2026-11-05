@@ -1,0 +1,128 @@
+---
+title: "Lease renewal and rent escalation in Odoo: deposits, renewals and the rent stepped up"
+metaTitle: "Lease Renewal, Rent Escalation and Deposits"
+description: "Manage leases in Odoo 19: rent per period, a security deposit with deductions and refund, agreed escalation, and one-click renewal at the new rent."
+targetQuery: "odoo lease renewal / rent escalation"
+category: "Industry"
+summary: "How to set up a lease in Odoo with its rent, deposit and escalation, catch it before it runs out, renew it with the rent stepped up, and settle the deposit at move-out."
+published: 2026-12-24
+updated: 2026-12-24
+series: "odoo-real-estate-management"
+seriesOrder: 3
+modules:
+  - name: "Real Estate Management"
+    technical: "wt_real_estate"
+    note: "Base module, USD 35: sale, rent and lease agreements"
+  - name: "Real Estate Management Enterprise"
+    technical: "wt_real_estate_enterprise"
+    note: "USD 69 add-on: rent, deposit, escalation and renewal on the lease"
+demo:
+  url: "https://realestate-pro.way4tech.com/"
+  label: "Real estate demo with the Enterprise add-on"
+related: ["odoo-real-estate-management", "odoo-post-dated-cheques-rent", "odoo-maintenance-contracts-billing"]
+faqs:
+  - q: "How do I renew a lease in Odoo with a rent increase?"
+    a: "With the Enterprise add-on, set Annual Escalation (%) on the lease and press Renew. A new draft agreement is created starting the day after the old one ends, for the same length of term, with the rent per period and the contract amount raised by the escalation percentage and a link back to the lease it renews."
+  - q: "Does the renewed lease bring its cheques with it?"
+    a: "No. The renewal starts with no cheques. Generate a new cheque book from the renewed lease once the tenant hands it over."
+  - q: "Do leases expire on their own?"
+    a: "No. A lease stays active until somebody presses Mark Expired. The dashboard counts active leases that end within sixty days, and that count includes any that have already passed their end date without being expired."
+  - q: "Does refunding the deposit pay the tenant?"
+    a: "No. Refund Deposit works out the figure to give back, the deposit less the deductions, records it on the lease and posts a note. The payment itself is made and recorded in Invoicing."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most of the money an agency loses on leases is lost at the two ends. At the start, a deposit is taken and written in a notebook, and at move-out nobody can say how much was held or what was agreed to be withheld. At the end of the term, the renewal date passes without anyone noticing, the tenant stays on at the old rent, and the escalation the owner agreed to in the first contract never happens. This chapter covers how a lease is set up in Odoo 19 with the Real Estate Management base and its Enterprise add-on so that both ends are on the record: the rent and deposit at the start, an escalation agreed up front, a warning before the term runs out, and a renewal that carries everything forward.
+
+## The lease in the base module
+
+In the base module a contract is a sale, rent or lease agreement, usually created from a deal with one button so it takes the property, buyer or tenant, seller or landlord, agent and agreed amount from the deal. It has a signing date, start and end dates, the terms and conditions as formatted text, legal documents attached (ownership papers, NOC, agreement copies) and internal notes. It moves through **Draft**, **Signed** and **Active**, with **Expired** and **Cancelled** to the side, and **Print Contract** produces the agreement as a PDF.
+
+The base module holds one amount on the contract, the contract amount. That is enough for a sale, not for a lease paid quarterly with a deposit. The Enterprise add-on fills that gap.
+
+## What the add-on adds to a lease
+
+On a rent or lease agreement, the add-on adds two sections to the form.
+
+**Rent and Deposit**
+
+- **Rent / Period**: the amount of each payment. This is what the cheque book is built from.
+- **Paid Every**: monthly, quarterly, half-yearly or yearly.
+- **Security Deposit**: the amount agreed.
+- **Deposit Held**: ticked once the deposit is actually received.
+- **Deductions at Move-Out** and **Deposit Refunded**: filled in at the end.
+
+**Renewal and Collection**
+
+- **Annual Escalation (%)**: the step up agreed for renewal.
+- **Cheque Pending**, **Cheque Cleared** and **Cheque Bounced Count**: worked out from the lease's cheques.
+- **Renewal Of**: on a renewed lease, the one it replaced.
+
+<Shot src="/odoo-guides/odoo-lease-renewal-rent-escalation/lease-contract.webp" alt="Lease agreement CON/2026/11/0027 in Odoo 19 for Al Quoz Industrial Warehouse 4, active, with buttons Generate Cheques, Renew and Refund Deposit, rent of 80,000 AED paid quarterly, security deposit 16,000 AED held, annual escalation 5 percent and 336,000 AED of cheques pending" width={1440} height={900} caption="A lease with its rent per period, the deposit held and a 5 per cent escalation agreed for renewal." />
+
+The lease also gets **Cheques** and **Maintenance** buttons at the top and tabs at the bottom, so everything to do with the tenancy is reached from one record.
+
+<Shot src="/odoo-guides/odoo-lease-renewal-rent-escalation/lease-cheques-tab.webp" alt="The Cheques tab on a lease in Odoo listing five registered cheques: four quarterly rent cheques of 80,000 AED and one security deposit cheque of 16,000 AED, with dates, cheque numbers and the bank" width={1440} height={900} caption="The cheques for the lease, rent and deposit, on the lease itself." />
+
+## Step 1: set up the lease at move-in
+
+1. Create the agreement from the deal, or directly under **Transactions, Contracts**, with contract type Rent or Lease.
+2. Fill in the start and end dates. Renewal needs an end date.
+3. Fill in **Rent / Period** and **Paid Every**.
+4. Fill in **Security Deposit**, and tick **Deposit Held** once the money or the deposit cheque is in.
+5. Enter the **Annual Escalation (%)** the owner and tenant agreed.
+6. Press **Generate Cheques** to build the cheque book, as covered in the [post-dated cheques chapter](/odoo-guides/odoo-post-dated-cheques-rent/). A deposit cheque can be added by hand with purpose Security Deposit.
+7. Mark the agreement signed, then active.
+
+## Step 2: watch for leases running out
+
+The portfolio dashboard has a **Leases running out** card: active rent and lease agreements whose end date falls within the next sixty days. Clicking it opens the list. Sixty days is about the last moment to agree the renewal and the new rent with both sides before the old term ends.
+
+<Callout title="Nothing expires by itself">There is no scheduled job that moves a lease to Expired. A lease past its end date stays active, and keeps counting on the dashboard, until somebody presses Mark Expired or renews it. That is deliberate in one way (a tenant holding over is still a tenant) but it means somebody has to own the list.</Callout>
+
+## Step 3: renew with the rent stepped up
+
+When the renewal is agreed, open the lease and press **Renew**. The add-on:
+
+1. Refuses if the agreement is a sale, has no end date, or has already been renewed.
+2. Creates a new agreement as a copy, in **Draft**, with today as the signing date.
+3. Starts it the day after the old one ends, and gives it the same length of term as the old one (or one year if it had neither a start date nor a signing date).
+4. Multiplies the **Rent / Period** and the **Contract Amount** by one plus the escalation percentage, rounded to the currency. With 80,000 a quarter and 5 per cent, the new rent is 84,000 a quarter.
+5. Carries the deposit amount and the escalation over, but clears **Deposit Held**, the deductions and the refund, so the new lease starts its own deposit record.
+6. Links the new agreement back with **Renewal Of**, and posts a note on the old one: renewed as the new reference, with the escalation used.
+
+The new agreement opens straight away. Check the dates and rent, attach the signed renewal, mark it signed and active, and generate its cheque book. Then mark the old lease expired when its term ends. The **Renew** button disappears from a lease once it has been renewed, so a lease cannot be renewed twice by accident.
+
+A change in the escalation for one tenant is simple: edit the percentage on the lease before pressing Renew, or edit the new rent on the draft renewal afterwards.
+
+## Step 4: settle the deposit at move-out
+
+When the tenant leaves:
+
+1. Enter **Deductions at Move-Out**: damage, unpaid utilities, whatever the lease allows you to withhold.
+2. Press **Refund Deposit**. The add-on works out the deposit less the deductions, writes it to **Deposit Refunded**, and posts a note with the refund and the amount withheld.
+3. Pay the tenant from your bank and record it in Invoicing.
+
+The button only shows while **Deposit Held** is ticked, and it refuses if no deposit is held.
+
+## How the lease feeds the dashboard
+
+The portfolio dashboard reads the leases directly:
+
+- **Occupancy** and **Vacant units**: properties listed for rent or lease, and how many of them have an active rent or lease agreement.
+- **Rent roll**: the sum of **Rent / Period** across active leases.
+- **Leases running out**: active leases ending within sixty days.
+- **Active leases**: the count of rent and lease agreements in Active.
+
+<Callout title="Read the rent roll with care">The rent roll adds each lease's rent per period as it stands, so a monthly lease and a quarterly lease are added together without converting either to a common period. If your portfolio mixes payment periods, treat the figure as a sum of instalments, not as monthly or annual rent. Rent escalation only happens at renewal; there is no mid-term increase. And nothing on the lease posts to the accounts: the deposit, deductions and refund are recorded figures, not journal entries.</Callout>
+
+## A renewal checklist
+
+- Every active lease has an end date, a rent per period and an escalation, even if the escalation is zero.
+- Somebody opens **Leases running out** every week.
+- Renewals are created with the button, not by hand, so the link back is kept.
+- The new lease gets its own cheque book and its own deposit record.
+- Old leases are marked expired once their term ends.
+
+The [hub page](/odoo-guides/odoo-real-estate-management/) covers both modules and setup, and the [owner statements chapter](/odoo-guides/odoo-owner-statements-property-maintenance/) covers what happens to the rent once it clears. Try a lease, its cheques and the dashboard on the [demo](https://realestate-pro.way4tech.com/); ask for a login through the [contact page](/contact/).

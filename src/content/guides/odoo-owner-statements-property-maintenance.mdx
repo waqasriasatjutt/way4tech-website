@@ -1,0 +1,99 @@
+---
+title: "Owner statements and property maintenance in Odoo: what you collected, spent and owe the landlord"
+metaTitle: "Owner Statements and Property Maintenance"
+description: "Build landlord statements in Odoo 19 from cleared rent cheques and owner-billed repairs: management fee, net payable, payout and maintenance."
+targetQuery: "odoo owner statement / landlord statement property management"
+category: "Industry"
+summary: "How an agency that manages property for owners records maintenance against each property, decides who pays, and builds a monthly owner statement that reconciles to what actually cleared."
+published: 2026-12-24
+updated: 2026-12-24
+series: "odoo-real-estate-management"
+seriesOrder: 2
+modules:
+  - name: "Real Estate Management Enterprise"
+    technical: "wt_real_estate_enterprise"
+    note: "USD 69 add-on, needs Real Estate Management (USD 35)"
+demo:
+  url: "https://realestate-pro.way4tech.com/"
+  label: "Real estate demo with the Enterprise add-on"
+related: ["odoo-real-estate-management", "odoo-cafm-facility-maintenance", "odoo-help-desk-work-orders-facility"]
+faqs:
+  - q: "How is the owner statement worked out?"
+    a: "Rent collected is the total of the owner's rent cheques that cleared inside the period. The management fee is a percentage of that. Maintenance is the cost of finished requests billed to the owner and completed inside the period. Net payable is rent collected less the fee, the maintenance and any other deductions you enter."
+  - q: "Can I change the management fee per owner?"
+    a: "Yes, on each statement. The percentage defaults to the company's management fee, five per cent out of the box, and can be changed on the statement before it is confirmed. There is no settings screen for the company default in this version."
+  - q: "Does paying the owner create a vendor bill or payment?"
+    a: "No. Mark Paid sets the statement to paid and stamps the payout date, and you can type the payout reference. The bank transfer itself is recorded in Invoicing."
+  - q: "Can a tenant report a fault online?"
+    a: "Not with this add-on. Requests are logged by the office in Odoo, with the tenant recorded as the person who reported it. There is no tenant portal for maintenance."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+An owner who hands a property to an agency to manage wants one thing at the end of each month: a statement that says what rent came in, what the agency kept, what was spent on the flat, and the figure that will land in his account. If that statement is built from what was planned rather than what happened, it will not match his bank, and the agency spends the next week explaining the difference. The usual culprits are a cheque that was counted but bounced, and a plumber's bill that was paid but never charged back. This chapter covers both halves in the Real Estate Management Enterprise add-on for Odoo 19: maintenance requests that know who pays, and owner statements built from cleared cheques and finished work only.
+
+## Maintenance requests
+
+Open **Management, Maintenance**. A request is one fault on one property.
+
+**What and where.** The property is required. When you pick it, the add-on looks for an active rent or lease agreement on that property and fills in the tenant as **Reported By** and the lease, so you do not have to look them up. The owner comes from the property and cannot drift from it. Add a **Category** (Plumbing, Electrical, Air Conditioning, Appliances and General / Handyman ship with the add-on; add your own under Configuration) and a **Priority** from low to urgent.
+
+**The fault and the work.** The **Fault** tab holds what was reported and is required. The **Work Done** tab is where the technician or the office writes what was actually done.
+
+**Handling.** Reported date, a scheduled date, the member of staff it is **Assigned To** and, if the job is sublet, the outside **Contractor**.
+
+**Cost and who pays.** Enter the **Cost** and choose **Bill To**: Owner, Tenant, or Agency (absorbed). Only owner-billed costs reach the owner statement.
+
+<Shot src="/odoo-guides/odoo-owner-statements-property-maintenance/maintenance-request.webp" alt="Maintenance request MNT/2026/0010 in Odoo 19 for Arabian Ranches Villa 17, with the lease, reporting tenant, category Electrical, urgent priority, handling dates, cost, bill to Owner, the owner, and the fault Water heater tripping" width={1440} height={840} caption="A request: property, tenant and owner filled in from the lease, with who pays the cost." />
+
+### The request board
+
+Requests move through **New**, **Assigned**, **In Progress** and **Done**, with Cancelled to the side. Assign is refused until the request has a person or a contractor on it. Mark Done stamps the completion date, and that date decides which owner statement the cost lands on. The board opens on the **Open** filter, and there are filters for Urgent, Unassigned and Billed to Owner, with grouping by property, category or who is billed.
+
+<Shot src="/odoo-guides/odoo-owner-statements-property-maintenance/maintenance-board.webp" alt="Maintenance kanban in Odoo with open requests in Assigned, In Progress and New columns, each card showing priority stars, property, category, reporting tenant, reference and date" width={1440} height={420} caption="Open requests by stage. Urgent ones carry three stars." />
+
+On each lease, a **Maintenance** button and tab list the requests raised against it, and the portfolio dashboard counts open and urgent requests.
+
+## Building an owner statement
+
+Open **Management, Owner Statements** and create one. Pick the **Owner**, the period **From** and **To** (it defaults to the first of this month to today), and check the **Management Fee (%)**, which defaults from the company. Then press **Build / Rebuild**.
+
+The add-on fills the lines from two sources:
+
+- **Rent collected**: every cheque for this owner with purpose Rent, status Cleared and a clear date inside the period. Each line names the property and the cheque number.
+- **Maintenance**: every request on this owner's properties that is billed to the owner, marked done with a completion date inside the period, and has a cost above zero.
+
+From the lines it works out:
+
+| Figure | How |
+|---|---|
+| Rent Collected | Sum of the rent lines |
+| Management Fee | Rent collected times the fee percentage |
+| Maintenance Total | Sum of the maintenance lines |
+| Other Deductions | Typed in by you |
+| Net Payable | Rent collected less fee, maintenance and other deductions |
+
+<Shot src="/odoo-guides/odoo-owner-statements-property-maintenance/owner-statement.webp" alt="Owner statement OST/2026/0009 in Odoo 19 in draft, for one owner from October 4 to November 4 with a 5 percent management fee, two rent lines from cleared cheques for two properties totalling 23,000 AED, management fee 1,150 AED and net payable 21,850 AED" width={1440} height={900} caption="A statement built from two cleared rent cheques: 23,000 collected, 5 per cent fee, 21,850 payable." />
+
+Because the statement only counts cleared cheques, a cheque that bounced or is still sitting in the drawer does not make the owner look richer than his bank says. Because it only counts finished, owner-billed repairs, a job still in progress waits for next month.
+
+### Confirm, pay and print
+
+1. Check the lines. If something is missing, fix the source (clear the cheque, finish the request) and press **Build / Rebuild** again. Rebuilding is allowed only in draft.
+2. Press **Confirm**. Confirmed statements show on the dashboard as statements to pay, and their net payable adds up to the **Owed to owners** figure.
+3. Transfer the money from your bank as usual, type the **Payout Reference**, and press **Mark Paid**. The payout date is stamped.
+4. Press **Print** for a PDF statement with the owner, period, the rent collected lines, the maintenance charged to the owner, the totals and, once paid, the payout date.
+
+Statements get references like OST/2026/0001 and can be filtered by draft, to pay and paid, and grouped by owner.
+
+<Callout title="Limits on the money side">The statement does not post anything to the accounts: there is no vendor bill to the owner, no payment and no fee income entry. Tenant-billed and agency-absorbed repairs are recorded on the request but not invoiced for you. Build / Rebuild deletes the lines and makes them again, so a line you added by hand is lost on rebuild; put a one-off charge in Other Deductions instead. The statement is in the company currency, and there is no owner portal, so the PDF is what you send.</Callout>
+
+## A month-end routine
+
+1. Make sure every cheque that cleared this month is marked cleared, with the [cheque register](/odoo-guides/odoo-post-dated-cheques-rent/).
+2. Mark finished maintenance done and check the cost and Bill To on each one; the **Billed to Owner** filter helps.
+3. Create one statement per owner for the month and press Build / Rebuild.
+4. Review, confirm, pay, mark paid and print.
+5. Open the dashboard: **Owed to owners** should be back to zero once every statement is paid.
+
+For heavier building maintenance with planned schedules, assets and SLA clocks, the [CAFM guide](/odoo-guides/odoo-cafm-facility-maintenance/) and the [help desk and work orders guide](/odoo-guides/odoo-help-desk-work-orders-facility/) go much further than the requests here. The [hub page](/odoo-guides/odoo-real-estate-management/) covers both modules, and the next chapter covers [lease renewal and rent escalation](/odoo-guides/odoo-lease-renewal-rent-escalation/). The [demo](https://realestate-pro.way4tech.com/) has open maintenance requests and owner statements; ask for a login through the [contact page](/contact/).

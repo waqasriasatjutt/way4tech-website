@@ -1,0 +1,113 @@
+---
+title: "Legal time recording in Odoo: timers, six minute units, rate cards and write-offs"
+metaTitle: "Legal Time Recording and Rate Cards in Odoo"
+description: "Record fee earner time in Odoo 19 with a timer and six minute units, price it from a dated rate card, and control write-offs with reasons and a limit."
+targetQuery: "legal time recording software odoo"
+category: "Industry"
+summary: "How fee earners time their work, how the module picks the right charge-out rate from a dated rate card, what a narrative has to say, and how write-offs and write-downs are recorded and approved."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-law-firm-management"
+seriesOrder: 3
+modules:
+  - name: "Law Firm Management"
+    technical: "wt_legal_practice"
+    note: "USD 299, Odoo 19 Community"
+demo:
+  url: "https://legal-demo.way4tech.com/"
+  label: "Law firm demo"
+related: ["odoo-law-firm-management", "odoo-project-management"]
+linkFrom: ["/modules/timesheets/"]
+faqs:
+  - q: "Does this use the Odoo Timesheets app?"
+    a: "No. The module keeps its own time entries against matters, with a timer, a charging unit, a rate card and write-off fields. It does not need Project or Timesheets installed."
+  - q: "How is time rounded?"
+    a: "Stopping the timer rounds the elapsed time up to the firm's unit, six minutes by default, with a minimum of one unit. Hours typed in by hand are kept as typed."
+  - q: "Which rate is charged when a client has negotiated a discount?"
+    a: "A rate card line agreed with that client wins over every other line. The order is client and practice area, then client, then the fee earner's rate for the area, then their general rate, then the practice area default, then the fee earner's standard rate."
+  - q: "Who can write off time?"
+    a: "Any fee earner up to the firm's write-off limit, 250 in company currency by default. Anything above it is refused unless the user is in the Supervising Partner group. Every write-off and write-down needs a reason from a fixed list."
+  - q: "What happens to a timer left running overnight?"
+    a: "A job every four hours stops any timer that has been running for more than ten hours, caps the entry at eight hours and puts it back to draft with a note, so the fee earner checks it before recording it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Time is the stock a law firm sells, and most of the loss happens before a bill is drafted. A call is not recorded, or it is recorded on Friday from memory as "attendance". A senior associate's hour goes out at last year's rate because nobody updated a spreadsheet. A partner writes off three thousand pounds of time to keep a client happy, and the realisation report never shows why. The fix is dull and specific: record as you go, round to an agreed unit, price from a rate card that keeps its history, and make every write-off say who and why. This chapter covers how the Law Firm Management module does each of those.
+
+## Set up fee earners and the rate card first
+
+**Legal, Configuration, Fee Earners** holds one record per person who records time. Link each to their Odoo user, so time entries default to them and activities reach them. Fill in:
+
+- **Initials**, which appear on bill lines and in the default our-reference on a matter.
+- **Grade** and **Supervised By**. The supervisor is who a large write-off is referred to. A chain that loops back to the same person is refused.
+- **Practice Areas** they work in.
+- **Standard Rate**, the last-resort charge-out rate.
+- **Weekly Chargeable Target** in hours, which drives the utilisation figure.
+
+The form shows **Hours This Week** (billable time from Monday, excluding written-off entries), **Utilisation** against the target, and **WIP** at that person's rates.
+
+<Shot src="/odoo-guides/odoo-legal-time-recording-rate-card/fee-earner.webp" alt="Odoo fee earner form for a senior associate with initials, grade, linked login, supervisor, practice areas, standard rate, weekly chargeable target, utilisation, WIP and two rate card lines" width={1440} height={900} caption="A demo fee earner with a department rate for Civil Litigation and a general rate." />
+
+The **Rate Card** (Configuration, Rate Card, or the tab on the fee earner) holds dated lines. Each line has the fee earner, an optional practice area, an optional client under **Agreed With**, the rate, a start date and an optional end date. When a time entry is priced, the module looks for a line valid on the date the work was done, most specific first:
+
+1. agreed with this client, for this practice area
+2. agreed with this client, any area
+3. this fee earner, this practice area
+4. this fee earner, any area
+5. the practice area's default hourly rate
+6. the fee earner's standard rate
+
+Two lines for the same person, area and client that overlap in dates are refused, because nobody could say afterwards which one the client should have paid. To change a rate, set an end date on the old line and add a new one. The old line stays, so a bill raised today for work done last year still comes out at last year's rate.
+
+<Shot src="/odoo-guides/odoo-legal-time-recording-rate-card/rate-card.webp" alt="Odoo rate card grouped by fee earner, showing a higher partner rate for Family work, a rate agreed with one client in the retainer letter, department rates and general rates, all dated" width={1440} height={740} caption="The demo rate card: a client-agreed rate, department rates and general rates, each with a start date." />
+
+## Recording time
+
+Fee earners work in **Legal, Time and Costs, Time Recording**. The list opens on their own time for the current month. Each entry carries the matter, fee earner, date, an activity code (attendance, drafting, research, telephone, correspondence, reviewing documents, at court, travel and waiting, negotiation, file administration), the narrative, hours, rate, amount, written-off value and what is left to bill.
+
+There are two ways to capture hours:
+
+- **Timer.** Create the entry, click **Start Timer**, and **Stop Timer** when done. Stopping rounds up to the firm's unit (6 minutes by default, set in Legal settings), with a minimum of one unit, so a two minute call is charged as six minutes. A fee earner can have only one timer running; starting a second is refused so the same minutes are not charged twice.
+- **Typed.** Enter the hours directly. They are kept as typed.
+
+The rate fills in from the rate card when the matter, fee earner and date are set. Click **Record** to commit the entry as work in progress. Recording is refused if the timer is still running, if there are no hours, or if the matter is not open or on hold.
+
+<Shot src="/odoo-guides/odoo-legal-time-recording-rate-card/time-recording-list.webp" alt="Odoo time recording list filtered to my time this month, with matter, fee earner, activity code, narrative, hours, rate, amount, billable flag, written off, to bill and state per entry" width={1440} height={740} caption="A fee earner's month: draft and recorded entries with rates taken from the rate card." />
+
+### The rules on an entry
+
+These are checked when the entry is recorded, not while it is a draft:
+
+- **Narrative.** A chargeable entry needs a narrative of at least twelve characters. "Attendance" alone is refused; the client has to be able to read what was done.
+- **Non-billable time.** Untick billable and pick a reason: internal work, file administration, training, dealing with a complaint, business development, or courtesy to the client.
+- **No time on a closed matter.**
+
+Two more rules apply at all times: an entry cannot be dated in the future, and one entry cannot hold more than 24 hours.
+
+Once an entry is on a bill it is locked. Hours, rate, matter, date, fee earner, narrative and the billable flag cannot be changed, and it cannot be deleted. To change it, the bill has to go back to draft first, and once a bill is delivered the route is a credit note.
+
+### Timers left running
+
+The **Legal: stop timers left running** job runs every four hours. Any timer running for more than ten hours is stopped, the entry is capped at eight hours, put back to draft, and a note on it tells the fee earner to check the time before recording it.
+
+## Write-offs and write-downs
+
+Both buttons sit on the time entry and both need a **reason** from a fixed list: work took longer than agreed, over the agreed cap, client goodwill, trainee learning time, duplicated work, our error, not recoverable from the client, or other.
+
+- **Write Off** takes the whole entry off. It becomes Written Off, its full value goes into the written-off column, and the matter chatter records the hours and the reason. It is refused on a billed entry.
+- **Write Down** reduces what will be billed and keeps what was recorded. Type the amount coming off in **Written Off**, pick the reason and click the button. It is refused if the amount is the whole entry (use Write Off) or if the entry is already billed.
+
+Any write-off or write-down over the firm's **Write-off Limit** (250 by default) is refused unless the user is in the Supervising Partner group, and the message names the person to ask: the fee earner's supervisor, then the matter's supervising partner. The same check applies when somebody types a figure straight into the Written Off field, so the list view is not a way round it. The entry records who wrote it off.
+
+<Callout title="Written-off value stays visible">A write-off does not delete anything. The recorded amount, the written-off amount and the reason stay on the entry, and roll up to the matter, the bill and the Realisation report. That is deliberate: realisation is only honest if the write-offs that explain it are on the record.</Callout>
+
+## Work in progress
+
+**Legal, Reporting, Work in Progress** is a pivot of time entries by fee earner and practice area, with hours, amount, written off and to bill. The time list also has a graph of hours by week. On each matter, **WIP** is billable recorded time not yet on a bill plus billable recorded disbursements, and **Time Recorded**, **Written Off Amount** and **Realisation (%)** (fees billed as a percentage of time recorded) sit beside it.
+
+<Shot src="/odoo-guides/odoo-legal-time-recording-rate-card/wip-pivot.webp" alt="Work in Progress pivot in Odoo with hours, amount, written off and to bill per fee earner across Civil Litigation, Employment, Residential Conveyancing, Family and Corporate" width={1440} height={560} caption="Work in progress by fee earner and department." />
+
+A weekly job, **Legal: chase unbilled work in progress**, raises an activity on the responsible fee earner for any open file whose oldest unbilled time is older than the lock-up target. It ships switched off.
+
+Next: [client account and bills of costs](/odoo-guides/odoo-legal-client-account-bills-of-costs/).

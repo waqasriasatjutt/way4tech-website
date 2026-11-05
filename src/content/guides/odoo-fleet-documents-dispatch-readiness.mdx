@@ -1,0 +1,122 @@
+---
+title: "Vehicle documents, driver licences and a readiness check before dispatch in Odoo"
+metaTitle: "Fleet Documents and Dispatch Readiness"
+description: "Track vehicle registration, insurance and licence expiry in Odoo 19, then block trips with lapsed papers, open defects or a double booked truck or driver."
+targetQuery: "odoo vehicle document expiry and driver licence tracking"
+category: "Industry"
+summary: "The vehicle document register and licence reminders in the Transport Management base module, then the Enterprise readiness check that refuses an unsafe or double booked trip, with loads, stops, defects and service plans."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-transport-management"
+seriesOrder: 2
+modules:
+  - name: "Transport Management"
+    technical: "wt_transport_management"
+    note: "USD 10, document register and licence reminders"
+  - name: "Transport Management Enterprise"
+    technical: "wt_transport_management_enterprise"
+    note: "USD 90 add-on, readiness check, loads, stops, defects, service plans"
+demo:
+  url: "https://transport-pro.way4tech.com/"
+  label: "Transport Enterprise demo"
+related: ["odoo-freight-forwarding"]
+linkFrom: []
+sources:
+  - label: "Odoo 19 documentation, Fleet"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/fleet.html"
+faqs:
+  - q: "Can Odoo warn me before a vehicle's insurance or registration expires?"
+    a: "With the Transport Management base module, yes. Each vehicle document has an expiry date and a reminder lead time. A daily job puts a to-do on the vehicle once a document is inside that window or has expired, and the dashboard counts the alerts."
+  - q: "Will the system stop a truck going out with expired papers?"
+    a: "Only with the Enterprise add-on. Its readiness check refuses to start a trip when a blocking check fails, such as an expired vehicle document, an expired licence, an immobilising defect or a vehicle already committed elsewhere. The setting Refuse Unready Trips can be switched off to record the same problems as warnings."
+  - q: "Which documents should block dispatch?"
+    a: "You decide per document type. A type is only dispatch blocking when you tick it, so installing the add-on does not suddenly refuse trips for vehicles whose road tax was never entered. Expired insurance blocks by default."
+  - q: "Does it track tachograph hours or driving time rules?"
+    a: "No. The add-on holds expiry dates for the driver CPC, medical, tachograph card and ADR certificate, and checks them before dispatch. It does not read tachograph data or check driving and rest hours."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most fines and most insurance disputes in transport come from paper, not driving. A truck goes out with an inspection certificate that lapsed last Tuesday, a driver's licence ran out in the spring and nobody noticed, a tanker job goes to a vehicle without the right approval. Each of these is a date somebody knew about once. This chapter covers how the base module keeps those dates and warns about them, and how the Enterprise add-on turns them into a check that refuses the trip before the truck leaves.
+
+## The vehicle document register (base module)
+
+Every vehicle gets a Documents list, and **Transport, Fleet, Documents** shows all of them across the fleet. A document has a type, a document number, issue and expiry dates, issuing authority, cost, a scan and a reminder lead time in days.
+
+The module ships document types for vehicle registration, insurance policy, fitness certificate, road tax, route permit, emission certificate, MOT or roadworthiness test and safety inspection. Rename them or add your own in **Configuration, Document Types**. The demo uses local ones such as Istimara, MVPI inspection and a TGA operating card. Each type can carry a default validity in months: enter the issue date and the expiry date is proposed for you.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/vehicle-documents.webp" alt="Vehicle Documents list in Odoo with vehicle, document type such as periodic technical inspection, motor insurance policy or operating card, document number, expiry date and status expired or valid" width={1440} height={900} caption="The fleet's paperwork in one list, expired items first." />
+
+A document is Valid, Expiring Soon once today is inside its reminder window, or Expired once the date has passed. A daily scheduled action raises a to-do on the vehicle for each expiring or expired document, once per document rather than every night. On the vehicle form, the Transport tab shows the documents, the next expiry date and the vehicle's running figures.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/vehicle-transport-tab.webp" alt="Transport tab of a truck in Odoo showing transport driver, base location, next document expiry, distance travelled, expenses, fuel cost, fuel efficiency and cost per distance, and a documents table with insurance, operating card, inspection and registration" width={1440} height={900} caption="The vehicle's Transport tab: assignment, running cost and its documents." />
+
+## Drivers and licences (base module)
+
+Any employee can be marked as a driver or as transport staff in the Driver / Transport tab of the employee form. That tab holds the licence number, licence class (free text, so B, C+E, HTV or CDL all fit), licence country, issue and expiry dates, and years of experience. The driver form also gets buttons for the driver's trips and assigned vehicles.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/driver-licence.webp" alt="Driver / Transport tab on an employee in Odoo with Is a Driver and Transport Staff ticked, eleven years experience, licence number, heavy transport class, country, issue and expiry dates and status valid" width={905} height={405} caption="The driver's licence details on the employee record." />
+
+A daily job puts a "Driving licence renewal due" to-do on each driver whose licence is expiring or expired. In the base module a licence counts as expiring 30 days before its date.
+
+## The readiness check (Enterprise)
+
+The add-on runs a list of checks against a trip before it starts. Each check either blocks the trip, only warns, or is switched off. The shipped checks are:
+
+- **Vehicle**: off the road, in the workshop (warns), immobilising defect open, document expired, document expiring (warns), dispatch blocking document not on file (warns), insurance lapsed, service overdue, service due soon (warns), already committed to another trip.
+- **Load**: more than the vehicle may carry, dangerous goods on a vehicle without ADR approval, temperature controlled goods on a dry vehicle.
+- **Driver**: no driver assigned (warns), licence expired, licence expiring (warns), a driver certificate expired or expiring, already committed to another trip.
+- **Subcontractor**: the carrier is not compliant, for example an expired goods in transit policy.
+
+**Check Readiness** on a trip runs all of them and lists every problem at once, in a banner on the trip and in the chatter, so there is a dated record of what dispatch was told. **Start Trip** runs the same checks first and refuses to start a blocked trip. With **Refuse Unready Trips** switched off in Settings, the same problems are recorded as warnings and the trip can start.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/trip-readiness.webp" alt="Scheduled passenger trip in Odoo with a red banner saying the coaster's motor insurance policy expired, and the Readiness tab showing status Blocked, one blocker, zero warnings and when it was checked and by whom" width={1440} height={900} caption="A blocked trip: the reason is on the trip, in the Readiness tab and in the chatter." />
+
+Severity, warning horizon, final notice days and the person to notify are records in **Configuration, Readiness Rules**, one per check, and can differ per company. Archiving a rule switches its check off. A vehicle document type only blocks dispatch when you tick it as dispatch blocking on the type; the base module's Mandatory flag is a reporting flag and is not reused for this.
+
+**Operations, Trips Not Ready** lists every trip that would currently fail, and **Operations, Double Bookings** lists trips that share a vehicle or driver over the same time.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/double-bookings.webp" alt="Double Bookings list in Odoo showing two scheduled trips on the same Volvo truck on the same day with different drivers, both marked Blocked" width={1440} height={270} caption="Two trips on one truck the same afternoon: both are blocked until one moves." />
+
+### Expiry chasing across the fleet
+
+A nightly sweep goes over vehicle documents, driver licences and certificates and subcontractor paperwork together. Each item keeps its own escalation level, Not Due, Reminder Sent, Final Notice or Lapsed, so a night that finds nothing new writes nothing new. **Drivers, Driver Compliance** shows the licence and the four certificates the add-on adds to the driver: Driver CPC, ADR certificate, medical and tachograph card.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/driver-compliance.webp" alt="Driver Compliance list in Odoo filtered to something expired or expiring soon, with three drivers, licence number, class, licence and medical expiry dates, compliance expired and escalation level" width={1440} height={280} caption="Driver Compliance, filtered to the drivers who need chasing." />
+
+## Defects and the vehicle's state (Enterprise)
+
+The add-on gives each vehicle an operational state, In Service, In Workshop or Off Road, which dispatch reads directly. **Take Off Road** on a vehicle first lists the trips already booked on it and asks again before grounding it.
+
+A defect is a fault reported on a vehicle with a category (brakes, tyres and wheels, lights, coupling, refrigeration and so on) and a severity: cosmetic, minor, major or immobilising. An immobilising defect takes the vehicle off the road and the readiness check blocks it; such a defect cannot be deferred, and the vehicle cannot be returned to service while it is open. Downtime between report and repair is costed. **Book Into Fleet** books the repair as an ordinary Fleet service record, so there is still one service history.
+
+## Service plans (Enterprise)
+
+A service plan says when a service falls due: every so many months, every so much distance, or whichever comes first. It applies to one vehicle or to every vehicle of a model. The plan reads the last Fleet service of its type to work out the next due date, and a scheduled action raises the service in Fleet when it falls due and warns ahead of it. The vehicle's service state then feeds the Service overdue and Service due soon checks.
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/service-plans.webp" alt="Service Plans list in Odoo with an Actros heavy service every 30,000 km or 3 months, a coaster service by meter, a lowbed annual inspection and a reefer unit service, with next due date and status overdue or up to date" width={1440} height={320} caption="Service plans by time, by meter or whichever comes first." />
+
+## Loads and stops (Enterprise)
+
+In the base module a trip has one origin and one destination. The add-on separates the customer's consignment from the journey:
+
+- A **load** is what the customer booked: its own number, customer reference, shipper and consignee, collection and delivery windows, and goods lines with quantity, weight and pallets. Loads are optional; a trip without loads works as before.
+- A **trip** can carry several loads, which is how one truck runs three customers on a groupage trip. A load can move to another truck after a breakdown and keep its number, chatter and history. Calls already made stay with the truck that made them.
+- **Stops** are the ordered calls on a trip, collection, delivery, waypoint, fuel, rest or customs, each with planned and actual arrival and departure. The trip's origin and destination follow the first and last stop. Waiting time at a stop is what detention charges are built on, covered in the [rate cards chapter](/odoo-guides/odoo-transport-rate-cards-billing/).
+
+<Shot src="/odoo-guides/odoo-fleet-documents-dispatch-readiness/trip-stops.webp" alt="Pending stops list in Odoo with trip, stop type collection or delivery, location, customer, window end time, detention hours and status pending" width={1440} height={660} caption="Stops still to be made, with their time windows." />
+
+A **Waybill / Consignment Note** and a **Proof of Delivery** print from the add-on. Completing a trip closes the loads that were delivered; a load whose delivery stop was skipped stays open rather than being marked delivered.
+
+<Callout title="Where the check stops">The readiness check reads dates, states and capacities that someone has entered. It does not read telematics, tachograph data or driving hours, and there is no driver app to confirm a walk round check. A document type only blocks dispatch once you tick it. In the base module the licence reminder window is fixed at 30 days; the add-on uses the company setting.</Callout>
+
+## Setting it up
+
+1. Enter every vehicle's current documents with expiry dates, and every driver's licence. Start with insurance and the roadworthiness test.
+2. In the base Settings, set the reminder lead times.
+3. After installing the add-on, open **Configuration, Document Types** and tick dispatch blocking only on the papers that must stop a truck.
+4. Review **Readiness Rules**: decide which checks block, which only warn, and who is notified.
+5. Fill the driver certificates you use, and the capacity, body type, ADR and temperature fields on vehicles if you carry those loads.
+6. Create service plans for each model, then run **Trips Not Ready** and fix what it lists before you switch enforcement on for everyone.
+
+The readiness check, loads and stops can be seen on the [Enterprise demo](https://transport-pro.way4tech.com/). Pricing those loads from contracts is the next chapter: [rate cards, charge sheets and consolidated invoicing](/odoo-guides/odoo-transport-rate-cards-billing/).

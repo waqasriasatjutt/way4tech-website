@@ -1,0 +1,123 @@
+---
+title: "Post-dated cheques in Odoo: a register for rent cheques that tells you what to bank"
+metaTitle: "Post-Dated Rent Cheques (PDC) in Odoo"
+description: "Track post-dated rent cheques in Odoo 19: build a cheque book from a lease, see what is due to bank, mark cleared or bounced, and replace it."
+targetQuery: "odoo post dated cheques / PDC management for rent"
+category: "Industry"
+summary: "How a letting agency keeps a tenant's book of post-dated cheques in Odoo: generated from the lease, banked on their dates, bounced cheques charged and replaced, and nothing sitting forgotten in a drawer."
+published: 2026-12-24
+updated: 2026-12-24
+series: "odoo-real-estate-management"
+seriesOrder: 1
+modules:
+  - name: "Real Estate Management Enterprise"
+    technical: "wt_real_estate_enterprise"
+    note: "USD 69 add-on, needs Real Estate Management (USD 35)"
+demo:
+  url: "https://realestate-pro.way4tech.com/"
+  label: "Real estate demo with the Enterprise add-on"
+related: ["odoo-real-estate-management", "odoo-maintenance-contracts-billing"]
+faqs:
+  - q: "How do I record post-dated cheques in Odoo?"
+    a: "With the Real Estate Management Enterprise add-on, open the lease and press Generate Cheques. Give the number of cheques, the first date, the amount each and the bank, and the add-on creates one cheque per rent period, stepping the date forward by the lease's payment period."
+  - q: "Does marking a cheque cleared create a payment in Odoo?"
+    a: "No. The cheque register tracks the cheque's status and dates. It does not create a payment, a journal entry or a bank reconciliation line, so record the receipt in Invoicing as you do today."
+  - q: "What happens to a bounced cheque?"
+    a: "You record the bounce with a reason and the charge to the tenant, then press Replace. A new cheque for the same amount is created as registered, without a cheque number, and the two are linked so you can see which replaced which."
+  - q: "Can it number a whole cheque book in sequence?"
+    a: "Yes. If you enter the first cheque number when generating the book and it is all digits, the rest are numbered up from it. Otherwise the numbers are left blank for you to fill in."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In Dubai, Riyadh, Doha and across much of Pakistan, a tenant often pays a year's rent on the day the lease is signed, as a book of post-dated cheques: one, two, four or twelve, each dated for its period. The landlord or the agency keeps them and banks each one on its date. It sounds simple and goes wrong all the time. A cheque sits in a drawer three weeks past its date. One bounces and nobody chases the tenant for the replacement. At the end of the year nobody can say which of the eighty cheques in the safe have cleared. The money is real, it is just not tracked. This chapter shows how the Real Estate Management Enterprise add-on turns that drawer into a register in Odoo 19.
+
+## What a cheque register has to answer
+
+Whatever tool you use, the register is only worth keeping if it answers four questions without anybody counting by hand:
+
+1. **What do I bank this week?** Every cheque on or past its date that has not been deposited.
+2. **What bounced, and has it been replaced?** With the reason, the charge to the tenant and the new cheque.
+3. **What has actually cleared?** By tenant, by property and by period, because that is what an owner gets paid from.
+4. **What is still to come on this lease?** So a lease with two cheques left is not a surprise.
+
+Standard Odoo has no record for a cheque that has not been banked yet. Invoicing records a payment once money has arrived, which is the last step of the story, not the first.
+
+## Step 1: set the rent on the lease
+
+The cheque book is built from the lease, so the lease needs the rent first. Open the agreement under **Transactions, Contracts** and fill in the **Rent and Deposit** section:
+
+- **Rent / Period**: the amount of each payment.
+- **Paid Every**: monthly, quarterly, half-yearly or yearly.
+- **Security Deposit** and **Deposit Held**, covered in the [lease renewal chapter](/odoo-guides/odoo-lease-renewal-rent-escalation/).
+
+Pressing **Generate Cheques** without a rent per period is refused, with a message telling you which lease to fix.
+
+## Step 2: generate the cheque book
+
+On the lease, press **Generate Cheques**. A small form opens:
+
+- **Number of Cheques**: twelve by default.
+- **First Cheque Date**: the lease start date by default.
+- **Amount Each**: the rent per period by default.
+- **Bank**: the tenant's bank, written on every cheque.
+- **Purpose**: rent or sale installment.
+- **First Cheque No.**: optional. If the cheques run in sequence and you give the first number, the rest are numbered up from it.
+
+Press generate and the add-on creates one cheque per period, the date stepping forward by the lease's payment period: a quarterly lease with four cheques gets dates three months apart. Each cheque takes its property, tenant and owner from the lease. A note is posted on the lease saying how many cheques were created and for how much, and the cheque list for that lease opens.
+
+<Shot src="/odoo-guides/odoo-post-dated-cheques-rent/cheque-registered.webp" alt="A registered post-dated cheque CHQ/2026/0150 in Odoo 19 with buttons Mark Deposited, Mark Cleared, Mark Bounced and Cancel, the cheque date, amount 5,200 AED, bank, purpose Rent, and the contract, property, tenant and owner" width={1440} height={590} caption="One cheque in the register. Property, tenant and owner come from the lease." />
+
+You can also add a single cheque by hand from **Management, Cheques**, for a deposit cheque, a commission cheque or anything else. Every cheque gets a reference of the form CHQ/2026/0001, must be for a positive amount, and can be tied to a lease or stand on its own.
+
+## Step 3: work the register
+
+Each cheque moves through a short life:
+
+| Status | Meaning | Buttons that move it |
+|---|---|---|
+| Registered | Received, not yet banked | Mark Deposited, Mark Cleared, Mark Bounced |
+| Deposited | Paid in, waiting to clear | Mark Cleared, Mark Bounced |
+| Cleared | Money in the bank | none |
+| Bounced | Returned unpaid | Replace |
+| Returned | Handed back to the tenant | none |
+| Cancelled | Void | none |
+
+Deposit, clear and bounce each stamp their date on the cheque, and clearing or bouncing posts a note in its history. A cheque that is not waiting to be banked cannot be marked deposited, and only a registered or deposited cheque can bounce. A **Reset** button puts a cheque back to registered if something was marked by mistake.
+
+The **Cheques** menu opens on the **Due to Bank** filter: registered cheques dated today or earlier. This is the list somebody takes to the bank, with the total at the bottom.
+
+<Shot src="/odoo-guides/odoo-post-dated-cheques-rent/due-to-bank.webp" alt="Cheques list in Odoo with the Due to Bank filter showing three registered cheques with dates, tenants, properties, cheque numbers and amounts totalling 70,000 AED" width={1440} height={320} caption="Due to Bank: every cheque on or past its date that nobody has deposited yet." />
+
+Take the filter off and switch to the board to see the whole register by status. The same cheques are also on a calendar by cheque date, which is the easiest way to see a heavy week coming.
+
+<Shot src="/odoo-guides/odoo-post-dated-cheques-rent/cheques-kanban.webp" alt="Cheques kanban in Odoo grouped by status: 2 bounced, 53 cleared, 1 deposited and 40 registered, each card with tenant, amount, date, cheque number and property" width={1440} height={900} caption="The full register by status on the demo: bounced, cleared, deposited and still to bank." />
+
+## Step 4: handle a bounce
+
+When the bank returns a cheque:
+
+1. Open it, fill in **Bounce Reason** (for example insufficient funds) and **Bounce Charge**, the amount you charge the tenant for it.
+2. Press **Mark Bounced**. The bounce date is stamped and the reason goes into the cheque's history.
+3. Once the tenant gives you a new cheque, press **Replace**. A copy is created for the same amount and date as registered, with no cheque number, bounce reason or charge. Fill in the new number.
+
+The two cheques are linked both ways, **Replaced By** on the old one and **Replaces** on the new one, so the trail is never lost. A cheque can only be replaced once, and only after it has been marked bounced.
+
+<Shot src="/odoo-guides/odoo-post-dated-cheques-rent/cheque-bounced.webp" alt="A bounced cheque CHQ/2026/0082 in Odoo with status Bounced, bounce date, reason Insufficient funds, bounce charge 500 AED, and Replaced By CHQ/2026/0150" width={1440} height={820} caption="A bounced cheque with its reason, the charge to the tenant and the cheque that replaced it." />
+
+On the lease itself, the **Cheques** tab lists every cheque with its status, and the Renewal and Collection section shows the totals pending and cleared and the number bounced. The dashboard counts bounced cheques that have not been replaced yet, so the chase does not depend on somebody remembering.
+
+<Callout title="The register is not the bank book">Marking a cheque cleared does not create a payment, a journal entry or a bank statement line, and the bounce charge is a figure on the cheque, not an invoice to the tenant. Record receipts and the bounce charge in Invoicing as you do now. There is also no automatic reminder for cheques coming due: the Due to Bank filter and the dashboard are where you look. A default bounce charge field exists on the company but has no settings screen and is not filled in on the cheque for you in this version.</Callout>
+
+## How cleared cheques feed the owner
+
+Cleared rent cheques are what the owner statement is built from. When you build a statement for an owner and a period, the add-on picks up every cheque for that owner with purpose Rent, status Cleared and a clear date inside the period. That is why clearing a cheque on the day it clears, rather than a week later, matters: a cheque cleared late lands on the next statement. The [owner statements chapter](/odoo-guides/odoo-owner-statements-property-maintenance/) takes it from there.
+
+## A weekly routine
+
+- Monday: open **Due to Bank**, take the list to the bank, mark each one deposited.
+- When the bank confirms: mark them cleared.
+- When one comes back: mark it bounced with the reason and charge, call the tenant, replace it.
+- Month end: check the dashboard's bounced count is zero, then build the owner statements.
+
+The [hub page](/odoo-guides/odoo-real-estate-management/) covers both modules and setup. Try the register on the [demo](https://realestate-pro.way4tech.com/), which has a full year of cheques with cleared, deposited and bounced ones; ask for a login through the [contact page](/contact/).

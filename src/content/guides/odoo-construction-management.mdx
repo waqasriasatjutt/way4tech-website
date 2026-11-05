@@ -1,0 +1,140 @@
+---
+title: "Odoo construction management for contractors: projects, phases, BOQ and site costs"
+metaTitle: "Odoo Construction Management for Contractors"
+description: "Run construction jobs on Odoo 19 Community: phases, a bill of quantities, material requisitions, labour, equipment, subcontracts and budget against cost."
+targetQuery: "odoo construction management"
+category: "Industry"
+summary: "What a contractor needs from Odoo on site and in the office, what the standard Project app leaves out, and how the Construction Management module turns a project into a costed construction job."
+published: 2027-02-04
+updated: 2027-02-04
+series: "odoo-construction-management"
+seriesOrder: 0
+modules:
+  - name: "Construction Management"
+    technical: "wt_construction_management"
+    note: "USD 10, Odoo 19 Community, needs Project, Employees and Invoicing"
+  - name: "Construction Management Enterprise"
+    technical: "wt_construction_management_enterprise"
+    note: "USD 349 add-on, needs the base module; RA bills, valuations, retention, job cost sheet"
+demo:
+  url: "https://construction.way4tech.com/"
+  label: "Construction Management demo"
+related: ["odoo-construction-ra-bill-job-costing", "odoo-project-management", "odoo-labour-camp-management", "zkteco-adms-odoo"]
+linkFrom: ["/solutions/construction/", "/products/wt-construction-management/", "/modules/project/"]
+sources:
+  - label: "Odoo 19 documentation, Project"
+    url: "https://www.odoo.com/documentation/19.0/applications/services/project.html"
+  - label: "Odoo 19 documentation, Analytic accounting"
+    url: "https://www.odoo.com/documentation/19.0/applications/finance/accounting/reporting/analytic_accounting.html"
+faqs:
+  - q: "Does Odoo have a construction module?"
+    a: "Not in the standard apps. Odoo Project handles tasks, stages and milestones, and analytic accounts can collect costs per project, but there is no bill of quantities, no material requisition from site, no labour log by trade and no subcontract register. Those come from an add-on module such as Construction Management."
+  - q: "Does Construction Management need Odoo Enterprise?"
+    a: "No. It is built for Odoo 19 Community and installs with Project, Employees and Invoicing. It also runs on Enterprise if that is what you already have."
+  - q: "Is the margin on the dashboard a forecast?"
+    a: "No. It is contract value minus the cost recorded so far, so a job that is a third built shows a very large margin. Use it to watch cost build up against the bill of quantities, not as a forecast of final profit. Forecast final cost and cost to complete are in the Enterprise add-on's Job Cost Sheet."
+  - q: "Does issuing materials move stock in Odoo Inventory?"
+    a: "No. The base module does not depend on Inventory. Issuing a requisition records the quantity issued and its cost against the job, but no stock picking is created. If you run a central store in Inventory, the transfer to site is a separate step."
+  - q: "Can site engineers see costs and margins?"
+    a: "Yes. The cost summary on the project is not hidden by role, so anyone who can open the job sees it. The roles control what people can change: site engineers raise requisitions, log labour, record expenses and update phase progress, while approvals, the bill of quantities, subcontracts and the Reporting menu sit with the Project Manager role."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A contractor usually knows the contract value of every job to the last digit and the cost of it to within a few hundred thousand. The bill of quantities lives in Excel, materials are requested on WhatsApp, the foreman keeps the labour count in a notebook, the crane hire invoice turns up six weeks late and the subcontract file sits in a cupboard. Each piece is fine on its own. The problem is that nobody can put them side by side until the job is over. This guide covers what a construction business needs Odoo to hold, where standard Odoo stops, and how the Construction Management module brings the site and the office into one record per job on Odoo 19.
+
+## What a contractor needs from the system
+
+Strip it back and a building contractor needs six things recorded against each job:
+
+1. **The job itself, in construction terms.** Contract value, client, site address, a project code and a stage that means something on site: planning, in progress, on hold, completed, handed over.
+2. **Phases with dates and budgets.** Mobilisation, substructure, frame, blockwork, MEP, finishes. Each with a planned start and finish, a supervisor, a budget and a progress figure, so a late phase is visible before the client points it out.
+3. **A bill of quantities.** Work items with unit, quantity and rate, grouped by work type and phase. Its total is the budget the job is measured against.
+4. **Materials requested from site and approved in the office.** A requisition with what was asked for, what was issued and what it cost, and an approval step in between.
+5. **Labour and plant by the day.** Headcount by trade, days worked and the day rate, plus a register of owned and hired machinery and where it is.
+6. **Subcontracts and site expenses.** What each subcontractor was let, what they have billed and been paid, and the small site costs (transport, permits, PPE, fuel, site office) that add up.
+
+With those six in one place, cost to date per job is a figure you read, not a figure you build at month end.
+
+## What standard Odoo does and does not do
+
+Odoo 19 ships a Project app with tasks, stages, milestones and planning views ([Odoo 19 documentation, Project](https://www.odoo.com/documentation/19.0/applications/services/project.html)). Accounting can tag journal entries to analytic accounts, which "helps track costs and revenues and analyze a project's or service's profitability" ([Odoo 19 documentation, Analytic accounting](https://www.odoo.com/documentation/19.0/applications/finance/accounting/reporting/analytic_accounting.html)). Purchase and Inventory handle buying and stock. The [Project module overview](/modules/project/) on this site goes through the standard app in more detail.
+
+That is a good base for a services firm. For a contractor it leaves gaps:
+
+| Need | Standard Odoo 19 | With Construction Management |
+|---|---|---|
+| Contract value, site address, construction stage on the project | No | Yes, on a Construction tab |
+| Phases with planned dates, budget, supervisor and progress | Tasks and milestones only | Yes, with overdue reminders |
+| Bill of quantities with unit, quantity and rate | No | Yes, total becomes the BoQ budget |
+| Material requisition from site with approval | No site request with an approval step | Draft, submitted, approved, issued |
+| Daily labour by trade with headcount and day rate | No (timesheets are per person, per hour) | Yes, costed per job and phase |
+| Plant register, owned or hired, assigned to a job | No | Yes, kanban by status |
+| Subcontract with contract value, advance, retention %, billed and paid | No | Yes, with balance |
+| Site expenses with approval and vendor bill | Expenses app is for employee claims | Yes, draft vendor bill from an expense |
+| Budget against actual cost per job | Analytic reporting, if every entry is tagged | Live on the project and a dashboard |
+
+You can get part of the way with analytic accounts, but only if every bill and every timesheet is tagged correctly, and you still have no bill of quantities to compare against.
+
+## The modules and what each covers
+
+[Construction Management](https://apps.odoo.com/apps/modules/19.0/wt_construction_management/) is the base module, USD 10, for Odoo 19 Community. It extends the standard Project app rather than replacing it, so tasks, stages and the project chatter still work as normal, and adds the six records above plus a dashboard, two analysis reports and three printouts. It installs Project, Employees and Invoicing with it. The [product page](/products/wt-construction-management/) lists what is included.
+
+[Construction Management Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_construction_management_enterprise/) is a USD 349 add-on for the commercial side: contracts, the measurement book, valuations, payment certificates, the retention ledger, variations, budget control and the RA Bill print. Despite the name it also runs on Community. It is covered in the last chapter of this guide.
+
+## How a job looks in the module
+
+A construction project is an ordinary Odoo project with **Construction Project** ticked. That opens a Construction tab with project code, stage, site supervisor, contract value and site address on the left, and a cost summary on the right: BoQ budget, material, labour, subcontract and site expense cost, actual cost and margin. Below it, tabs hold the phases and the bill of quantities. Smart buttons at the top open the phases, BoQ lines, requisitions and subcontracts for that job.
+
+<Shot src="/odoo-guides/odoo-construction-management/project-cost-summary.webp" alt="Construction tab on an Odoo project showing project code, construction stage, site supervisor, contract value and site address, with a cost summary of progress, BoQ budget, material, labour, subcontract and site expense cost, actual cost and margin" width={902} height={372} caption="The Construction tab: the job's details on the left, cost to date on the right." />
+
+How each cost figure is counted matters, because it decides what the margin means:
+
+- **Material cost** is the total of requisitions that are approved or issued. An approved requisition counts before the material has left the store.
+- **Labour cost** is every labour log: headcount times days times the day rate.
+- **Subcontract cost** is what live subcontracts have billed. The full order value is kept separately as **subcontract committed**, so letting a large subcontract does not wipe out the margin on the day it is signed.
+- **Site expense cost** is approved and paid expenses only.
+- **Margin** is contract value minus actual cost. **Progress** is the plain average of the phase progress figures.
+
+<Callout title="The margin is cost to date, not a forecast">Margin here is contract value minus what has been spent so far. On a job that is a third built it will look very healthy, because two thirds of the cost has not happened yet. Compare actual cost with the BoQ budget, phase by phase, to see whether the job is on track. Cost to complete and forecast final cost come from the Enterprise add-on.</Callout>
+
+## The Construction Control dashboard
+
+**Construction, Dashboard** adds every construction project together: active projects, total contract value, actual cost and margin at the top; then phases in progress, overdue phases, requisitions waiting for approval and equipment in use; a cost breakdown bar for materials, labour, subcontracts and site expenses; projects by stage; and counts of equipment, active subcontracts, total projects and the combined BoQ budget. The tiles open the records behind them, so "3 requisitions to approve" is one click from the three requisitions.
+
+<Shot src="/odoo-guides/odoo-construction-management/dashboard.webp" alt="Construction Control dashboard in Odoo with active projects, contract value, actual cost and margin, tiles for phases in progress, overdue phases, requisitions to approve and equipment in use, a cost breakdown bar chart and projects by stage" width={1440} height={900} caption="Construction Control: the whole order book on one screen, every tile clickable." />
+
+## The printouts
+
+Three PDF reports come with the module. The **Bill of Quantities** prints the work items with work type, unit, quantity, rate and amount, with contract value and BoQ budget at the top. The **Project Progress Report** prints every phase with its dates, progress and status, then the cost summary down to margin, which is the page most directors actually want each month. The **Material Requisition** prints a single request for the store or the supplier.
+
+<Shot src="/odoo-guides/odoo-construction-management/progress-report.webp" alt="Printed Project Progress Report with project, code, client and stage, overall progress, start and expected finish, a phase table with planned dates, progress and status, and a cost summary from contract value to margin" width={1280} height={845} caption="The Project Progress Report: phases on top, the cost summary below." />
+
+## Roles
+
+The module adds three roles under the Construction heading in user settings:
+
+- **Site Engineer**: raises material requisitions, logs labour, records site expenses and updates phase progress. Can read the bill of quantities and subcontracts but not change them.
+- **Project Manager**: everything above, plus the bill of quantities, approving requisitions and expenses, subcontracts, equipment and the Reporting menu.
+- **Construction Administrator**: everything, plus configuration (work types, labour types, expense categories, settings), and it brings the Invoicing user and Employees officer rights with it.
+
+Assign these before the first engineer logs in, not after.
+
+## The chapters
+
+1. [Bill of quantities and project phases](/odoo-guides/odoo-construction-boq-phases/): setting up the job, phases with dates and budgets, entering the BoQ, and reading budget against cost.
+2. [Material requisitions and site costs](/odoo-guides/odoo-construction-material-requisition-labour/): requisitions from draft to issued, daily labour logs, the equipment register, subcontracts and site expenses with vendor bills.
+3. [RA bills and job costing](/odoo-guides/odoo-construction-ra-bill-job-costing/): the Enterprise add-on, from measurement to a certified RA bill, retention and the monthly cost value reconciliation.
+
+## Limitations
+
+These come from the module's code, so read them before you plan around it:
+
+- **No stock moves.** Requisitions do not create Inventory transfers, and materials are not reserved or deducted from a warehouse.
+- **No purchase orders.** A requisition is an internal request. Buying the material is done in Purchase, if you use it, as a separate document.
+- **Equipment is a register, not a costing engine.** The daily hire rate is stored on the machine, but cost only reaches the job when you record a site expense (the Equipment Rental category, linked to the machine).
+- **Subcontract billing is typed in.** Billed and paid amounts are entered on the subcontract by hand; retention is a percentage you record, not money the module calculates. Valuations and subcontractor certificates are in the Enterprise add-on.
+- **No timesheets or payroll link.** Labour logs are headcount by trade and a day rate, not hours per named employee, and nothing flows to payroll.
+- **No accounting entries except one.** A site expense can raise a draft vendor bill; everything else stays inside the construction records.
+
+For workforce housing see the [labour camp guide](/odoo-guides/odoo-labour-camp-management/), and for site attendance from biometric terminals the [ZKTeco guide](/odoo-guides/zkteco-adms-odoo/). The [construction solution page](/solutions/construction/) lists the wider set of modules. To walk through your own BoQ and cost codes against the [demo](https://construction.way4tech.com/) before deciding, [send a short description](/contact/) of the jobs you run.

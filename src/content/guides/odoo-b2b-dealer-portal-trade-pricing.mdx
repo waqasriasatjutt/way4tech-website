@@ -1,0 +1,128 @@
+---
+title: "A B2B dealer portal in Odoo: approved dealers, trade prices, pack sizes and reorder"
+metaTitle: "Odoo B2B Dealer Portal and Trade Prices"
+description: "Run a dealer-only shop on Odoo 19: approve dealer companies, give each a price tier, round orders to whole packs, show fast movers and reorder."
+targetQuery: "odoo b2b dealer portal / trade only shop"
+category: "Industry"
+summary: "Who gets into the trade shop and how: approving a dealer company, one pricelist per tier, pack and minimum order rounding, the hot products wall and reorder from a past order."
+published: 2026-12-24
+updated: 2026-12-24
+series: "odoo-auto-parts-wholesale"
+seriesOrder: 2
+modules:
+  - name: "Auto Parts Wholesale and Dealer Portal"
+    technical: "w4t_auto_parts_wholesale"
+    note: "USD 399, Odoo 19 Community. Not yet on the Odoo Apps Store: ask for it."
+demo:
+  url: "https://autoparts-demo.way4tech.com/"
+  label: "Auto parts dealer shop demo"
+related: ["odoo-auto-parts-wholesale", "odoo-distribution-management", "odoo-delivery-cash-collection-credit"]
+sources:
+  - label: "Odoo 19 documentation, Sales: pricelists"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/sales/products_prices/prices/pricing.html"
+faqs:
+  - q: "How do I make an Odoo shop visible only to approved customers?"
+    a: "With this module, the shop, product pages and cart redirect anyone who is not staff or an approved dealer to a dealer landing page. You approve a customer by ticking Approved Dealer on the Dealer tab of their company. The setting Shop open to approved dealers only turns the gate on and off."
+  - q: "Do I approve every login separately?"
+    a: "No. Approval sits on the dealer's company, so every contact and portal login under that company gets in with one tick."
+  - q: "How are dealer prices set?"
+    a: "With Odoo's own pricelists. Create one pricelist per tier, for example trade, preferred and key account, and put each dealer company on one. The shop then shows that dealer their pricelist's price."
+  - q: "What happens when a dealer orders half a carton?"
+    a: "On a website order, the quantity is rounded up to whole packs and to the minimum order. Seven of a part sold in packs of four becomes eight. Orders keyed in the back office are not rounded, so your staff can still sell a single piece."
+  - q: "Is the hot products list set by hand?"
+    a: "It is worked out from confirmed sales over a window you set, 30 days by default, and refreshed every night, whenever an order is confirmed and when the settings are saved. You can also tick Hot Product by hand on a new part that has not sold yet."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The hard part of a dealer shop is not the catalogue, it is the door. Every wholesaler has a list of customers it sells to on trade terms, and a longer list of people who would like to see those prices: retail buyers, competitors, a dealer's own customers. If the shop is open to all of them, the trade price list is public within a week. If it is shut so tight that a new dealer cannot get in without a phone call to IT, nobody uses it. This chapter covers the door and what happens behind it: approving dealers, giving each the right price, selling in the units you actually ship, and making the repeat order quick.
+
+## Approving a dealer
+
+Approval is a tick on the dealer's company in Odoo. Open **Auto Parts, Dealers** (or any customer under Contacts) and go to the **Dealer** tab.
+
+<Shot src="/odoo-guides/odoo-b2b-dealer-portal-trade-pricing/dealer-tab.webp" alt="Dealer tab on the Al-Madina Auto Traders company in Odoo 19 with Approved Dealer ticked, dealer code D-1003, dealer since date, and the credit limit field set to 800,000" width={1440} height={700} caption="The Dealer tab: one tick opens the shop for every login under this company." />
+
+- **Approved Dealer** lets the company into the trade shop. When you tick it, **Dealer Since** fills in with today's date if it was empty.
+- **Dealer Code** is your own code for the dealer, for your records.
+- **Credit Limit** is Odoo's own credit limit field, placed here so it sits next to the approval.
+
+The approval is read from the dealer's company, not from the person. A dealer with three staff who each have a portal login needs one tick, and taking the tick off shuts all three out at once.
+
+The **Dealers** menu lists only approved companies, as cards with their email and city, so it doubles as a quick view of who is trading.
+
+<Shot src="/odoo-guides/odoo-b2b-dealer-portal-trade-pricing/dealers-kanban.webp" alt="Dealers kanban in the Odoo Auto Parts app with six approved dealer companies in Karachi, Multan, Faisalabad, Rawalpindi, Lahore and Gujranwala" width={1440} height={400} caption="Approved dealers only. A customer without the tick does not appear here." />
+
+### What each kind of visitor sees
+
+| Visitor | Shop, product pages, cart | Dealer landing |
+|---|---|---|
+| Not signed in | Sent to the landing with a sign in notice | Company name, sign in, apply, hot part names, no prices |
+| Signed in, not approved | Sent to the landing with a not approved yet notice | Same page |
+| Signed in, approved dealer | Open, at their own price | Sent straight to the shop |
+| Your staff | Always open | Sent straight to the shop |
+
+The gate covers the shop pages, every product page and the cart. If you ever want to open the shop to everyone, turn off **Shop open to approved dealers only** in **Auto Parts, Configuration, Settings**.
+
+New dealers apply through the **Apply for a dealer account** button on the landing page. It opens your website's normal contact form; there is no separate application form or approval queue, so treat those messages as leads and tick the company once you have checked them.
+
+## Trade prices per dealer
+
+Prices come from Odoo's standard [pricelists](https://www.odoo.com/documentation/19.0/applications/sales/sales/products_prices/prices/pricing.html). The module adds nothing to them, which is deliberate: the price a dealer sees on the website is the same price your counter staff get on a sales order for that dealer.
+
+1. In Sales, create a pricelist per tier, for example Dealer Trade, Preferred and Key Account, with the discount or fixed price rules you use.
+2. On each dealer company, set the pricelist on the Sales and Purchase tab.
+3. Sign in as a test login under that dealer and check a few prices on the shop.
+
+Because a visitor who is not approved never reaches a product page, no price is shown to the public at all, whatever the pricelist says.
+
+## Packs and minimum orders
+
+On the **Auto Part** tab of each product, set:
+
+- **Pack / Carton Qty**: how many pieces make one pack. Must be at least one on a part.
+- **Minimum Order Qty**: the smallest quantity a dealer may order. Zero means no minimum.
+
+On a website order, every cart line for a part is rounded up: first to whole packs, then to the minimum if it is still below it. Some examples with a pack of four:
+
+| Dealer asks for | Pack | Minimum | Cart carries |
+|---|---|---|---|
+| 7 | 4 | none | 8 |
+| 4 | 4 | none | 4 |
+| 3 | 4 | 12 | 12 |
+| 1 | 1 | 10 | 10 |
+
+Rounding happens when the line is added and whenever its quantity changes on the website, and it only touches orders that came through the website. A sales order keyed in the back office keeps whatever quantity your staff type, so a counter sale of one spark plug from a box of ten is still possible.
+
+## What is moving: the hot products wall
+
+A part counts as hot when it has sold at least the **hot products threshold** (in pieces, one by default) on confirmed orders inside the **hot products window** (30 days by default). Draft quotations never count. The figure is refreshed:
+
+- every night by a scheduled job,
+- for the parts on an order whenever that order is confirmed,
+- for every part when you save the settings.
+
+The hot list is used in two places. The public dealer landing shows up to eight hot parts as "What is moving this month", by name and brand only, ranked by pieces sold. And the shop cards carry ribbons: **Hot** for a part that is selling, **New** for a part that has not sold in the window, and **Low stock** for a stocked part with between one and five on hand.
+
+<Shot src="/odoo-guides/odoo-b2b-dealer-portal-trade-pricing/hot-products-wall.webp" alt="Public dealer landing page in Odoo with the Shaheen Auto Parts Trade Counter heading and a What is moving this month grid of eight hot parts such as Headlight Bulb H4, Wiper Blade Pair, Oil Filter and Brake Fluid DOT4, with brand names and no prices" width={1440} height={760} caption="The hot wall on the public landing: real fast movers, by name, with no prices." />
+
+You can tick **Hot Product** by hand on a part that has just arrived and not sold yet. The automatic refresh leaves that hand-set flag alone until the part has sales of its own.
+
+## Reorder from a past order
+
+Most trade orders are last month's order again. When a dealer opens a confirmed order in their portal, a **Reorder** button sits at the top of the order. Pressing it adds every line of that order to their current cart at the quantity bought before, and takes them to the cart to check it and check out. Parts that have since been archived or taken off the website are left out. Pack rounding applies as usual, so a part whose pack size has changed since is rounded to the new pack.
+
+<Shot src="/odoo-guides/odoo-b2b-dealer-portal-trade-pricing/portal-reorder.webp" alt="Customer portal view of sales order S00031 for Al-Madina Auto Traders in Odoo 19 with a Reorder button at the top right, Odoo's own Order Again button on the left, and order lines for radiator, clutch pressure plate, battery, wiper blades and brake fluid" width={1440} height={760} caption="A past order in the dealer portal. The module's Reorder button sits beside Odoo's own Order Again." />
+
+The button only appears on confirmed orders, and the portal's own access check applies, so a dealer cannot reorder somebody else's order by changing the number in the address bar. A dealer whose approval has been removed is sent back to the landing page instead.
+
+<Callout title="Credit and payment are yours to set up">The Dealer tab shows Odoo's credit limit, but this module does not check it at checkout and adds no payment method. A dealer pays, or orders on account, through the payment options you enable in eCommerce, and whatever Odoo itself does with the credit limit in your setup still applies. Also note that when a reorder skips a delisted part, the dealer is not shown a message saying so; they simply see a cart without it.</Callout>
+
+## A sensible order of work
+
+1. Set up pricelists for your tiers before approving anyone.
+2. Fill in pack and minimum quantities on the fast movers first; those are the lines most often ordered wrong.
+3. Approve two or three trusted dealers, ask them to place a real order, and watch the orders that come in.
+4. Only then send the landing page link to the rest of your dealer list.
+
+The [hub page](/odoo-guides/odoo-auto-parts-wholesale/) covers what the module is and how to install it, and the [fitment chapter](/odoo-guides/odoo-auto-parts-fitment-oem-search/) covers vehicles and part numbers. If your dealers also buy on credit with cash collected on delivery, the [delivery and cash collection guide](/odoo-guides/odoo-delivery-cash-collection-credit/) covers that side. The [demo](https://autoparts-demo.way4tech.com/) has six approved dealers; ask for a login through the [contact page](/contact/).

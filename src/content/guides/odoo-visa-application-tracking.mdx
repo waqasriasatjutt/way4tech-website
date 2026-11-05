@@ -1,0 +1,100 @@
+---
+title: "Visa application tracking in Odoo: country rules, document checklists and appointments"
+metaTitle: "Visa Applications and Country Rules"
+description: "Track visa applications in Odoo 19 for a travel agency: rules by destination and passport, document checklists, appointments, at risk flags and fees."
+targetQuery: "odoo visa application tracking travel agency"
+category: "Industry"
+summary: "How a travel agency keeps visa rules per destination and nationality in Odoo, opens one application per traveller with the document checklist copied in, books the appointment, lodges the file and records the decision."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-travel-agency-management"
+seriesOrder: 3
+modules:
+  - name: "Travel Agency Management"
+    technical: "wt_travel_agency"
+    note: "USD 299, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://travel-demo.way4tech.com/"
+  label: "Travel Agency demo"
+related: ["odoo-travel-agency-management", "odoo-travel-booking-file-pnr", "odoo-travel-deposits-cancellations"]
+faqs:
+  - q: "Does the module apply for visas online?"
+    a: "No. It does not connect to any embassy, e-visa portal or visa centre. It holds the rules, the checklist, the dates, the fees and the decision, so the agency knows what is in hand and what is still missing. The application itself is made through the mission's own channel."
+  - q: "Where do the visa rules come from?"
+    a: "You write them. A rule is a destination plus a passport held, or any passport, with the requirement type, processing days, consular fee, agency fee, biometrics, a validity note, a standing note and the document checklist. Rules change often, so keep them under review."
+  - q: "What does the at risk flag mean?"
+    a: "It means the processing days will not fit before the trip. Processing days are counted as working days, so seven become ten calendar days, and the passport has to be back before the flight. An application still open with that many days or fewer to departure is flagged."
+  - q: "Can a visa refusal cancel the trip without penalty?"
+    a: "The module records the refusal and makes you write the reason, and a cancellation raised against the file can use Visa Refused as its reason. The fee band still comes from your fee schedule; whether a refusal is penalty free is your booking conditions, which you set in the bands."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Visa work is where a travel agency is most exposed and least organised. The consultant who sold the trip often handles the visa too, from a document list in their head and a calendar reminder. Then one bank statement is missing at the appointment, the processing time is longer than anyone checked, and the passport comes back the day after the flight. The module gives every application its own record with the checklist copied from a rule you maintain, so the gaps show on screen before they show at the embassy counter.
+
+## Write the country rules first
+
+Go to **Travel, Configuration, Visa Requirements**. A rule is one destination for one passport held. Leave the passport empty and the rule applies to any passport, which is useful as a fallback for an embassy application. Each rule holds:
+
+- **Requirement**: no visa needed, travel authorisation, e-visa, visa on arrival or embassy application.
+- **Processing days**, as the mission quotes them in working days.
+- **Consular fee** and **agency fee**.
+- **Biometrics required**, which forces an appointment before the file can be lodged.
+- A **validity note** and a **standing note** for that nationality, which the consultant reads before selling.
+- The **document checklist** every application starts from, each line marked required or optional with a note (for example, "white background, taken within the last six months").
+
+The booking file reads the same rules: its visa note shows what the destination asks of the passports on that file.
+
+<Shot src="/odoo-guides/odoo-visa-application-tracking/visa-requirements.webp" alt="Odoo Visa Requirements list with Egypt for United Kingdom passports as e-Visa, Egypt for any passport as embassy application with biometrics, India e-Visa, Spain and Turkiye no visa needed, with processing days and consular fee" width={1440} height={900} caption="Country rules by destination and passport held, with processing days and fees." />
+
+## Open one application per traveller
+
+Applications live under **Travel, Operations, Visa Applications**, and the Visas tab and smart button on a booking file open the ones for that file. An application is one traveller for one destination, linked to the booking file. The traveller must be on that file.
+
+As soon as you set the destination, the **country rule** is picked from the destination and the passport the traveller holds. It brings the requirement type, processing days and biometrics flag with it.
+
+Press **Start Documents** to move the application to Gathering Documents. At that moment the rule's checklist is copied onto the application, and the consular and agency fees are filled from the rule if you have not typed them. From then on the checklist belongs to the application: tick **In Hand** and the received date as each document arrives. The application counts documents missing and shows whether the checklist is complete.
+
+<Shot src="/odoo-guides/odoo-visa-application-tracking/visa-application.webp" alt="Odoo visa application VIS/2026/00003 for a traveller going to Egypt on a United Kingdom passport, with booking file, departure date, days to departure, the country rule e-Visa, processing days, consular and agency fees, the appointment date and a Too close to departure ribbon" width={1440} height={900} caption="A visa application with its country rule, fees and dates. The ribbon shows it is at risk." />
+
+## The application states
+
+An application moves **To Start**, **Gathering Documents**, **Appointment Booked**, **Submitted**, then **Approved** or **Refused**, and finally **Collected**. Cancelled sits to the side. Each move checks something:
+
+1. **Appointment Booked** needs an appointment date and a complete checklist. The mission will not take an incomplete file, so neither does the module. An appointment after the departure date is refused.
+2. **Lodged** moves it to Submitted. It needs the checklist complete, and an appointment if the rule asks for biometrics. The submitted date is stamped if you have not entered one, and the **expected date** is worked out from the processing days.
+3. **Approved** needs the visa number, because it is what the airline checks at the gate. Validity dates and the entries (single, double or multiple) go on the same record. A visa number can only be recorded once per country, and a visa that expires before it starts is refused.
+4. **Refused** needs a written reason. It decides whether the trip can be cancelled without penalty under your terms.
+5. **Handed to Traveller** moves it to Collected. It needs an approved visa, and records when the passport went back to the traveller.
+
+A decision dated before the submission is refused, and so is a document received in the future.
+
+<Shot src="/odoo-guides/odoo-visa-application-tracking/visa-checklist.webp" alt="Checklist tab of an Odoo visa application listing passport scan, digital photograph, return flight confirmation, hotel booking confirmation and previous Egyptian visa, each with required and in hand ticks, received date and a note, with documents missing zero and documents complete ticked" width={1440} height={900} caption="The checklist copied from the country rule, ticked off as documents arrive." />
+
+## The at risk flag
+
+Each application counts days to the appointment and days to departure. It is flagged **at risk** when it is still open (to start, gathering documents, appointment booked or submitted) and the processing time will not fit before the trip.
+
+The arithmetic is deliberately cautious. Processing days are working days, so the module converts them to calendar days at seven for every five and rounds up. The passport has to be back before the flight, so a processing time that ends on departure day is already too late. Seven working days become ten calendar days, and an application ten days or fewer from departure is at risk.
+
+The visa board shows the flag on each card as "Too close to departure", with the documents still needed.
+
+<Shot src="/odoo-guides/odoo-visa-application-tracking/visa-board.webp" alt="Odoo Visa Applications kanban in progress, grouped into Appointment Booked, Gathering Documents and Submitted, each card with the traveller, destination, application and file reference, documents still needed and a Too close to departure badge" width={1440} height={900} caption="The visa board: what stage each application is at, what is missing and which are too close to departure." />
+
+## The nightly visa chase
+
+One of the five nightly jobs chases visas. For each company it looks at applications still to start, gathering documents or with an appointment booked, whose departure falls inside the visa chase window (30 days by default, a setting). It refreshes the at risk flag against today, emails the Visa Appointment template to the traveller when there is an appointment date and an email address, and posts a note on the booking file with the state and the days left.
+
+Like all five jobs, it ships switched off. Turn it on under Scheduled Actions once outgoing mail is set up.
+
+## Print the checklist
+
+**Print Visa Checklist** gives the customer the document list to bring in, from the application's own checklist. Give it to them the day you start the application, not the week before the appointment.
+
+<Callout title="Rules are yours to keep current">The module ships no visa rules for real countries and checks nothing against an official source. The demo rules are examples only. Whoever owns visas in your office should review the rules your consultants sell against, because an out of date rule copies an out of date checklist onto every new application.</Callout>
+
+## Where visas meet the money
+
+The consular fee and agency fee sit on the application with their total. They are not added to the booking file's total automatically; if you charge the visa to the customer, add it to the file as a segment so it is invoiced. A refused visa is one of the reasons you can pick when raising a cancellation on the file, covered in [deposits, refunds and margin scheme VAT](/odoo-guides/odoo-travel-deposits-cancellations/).
+
+For the passengers and their passports, see [booking files, PNR and passport checks](/odoo-guides/odoo-travel-booking-file-pnr/). The [hub page](/odoo-guides/odoo-travel-agency-management/) lists the rest of the series.

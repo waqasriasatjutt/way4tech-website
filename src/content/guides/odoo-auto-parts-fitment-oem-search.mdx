@@ -1,0 +1,120 @@
+---
+title: "Vehicle fitment and part number search in Odoo: find the part by the car or the number"
+metaTitle: "Vehicle Fitment and Part Number Search"
+description: "Set up vehicle fitment in Odoo 19: makes and models, parts linked to the cars they fit, OEM and cross reference numbers, and a find-by-vehicle shop filter."
+targetQuery: "odoo vehicle fitment / auto parts search by OEM number"
+category: "Industry"
+summary: "How to give every part in Odoo the vehicles it fits and the numbers it is known by, so a dealer finds it on the shop by the car or by the number on the old box."
+published: 2026-12-24
+updated: 2026-12-24
+series: "odoo-auto-parts-wholesale"
+seriesOrder: 1
+modules:
+  - name: "Auto Parts Wholesale and Dealer Portal"
+    technical: "w4t_auto_parts_wholesale"
+    note: "USD 399, Odoo 19 Community. Not yet on the Odoo Apps Store: ask for it."
+demo:
+  url: "https://autoparts-demo.way4tech.com/"
+  label: "Auto parts dealer shop demo"
+related: ["odoo-auto-parts-wholesale", "odoo-garage-management", "odoo-trade-counter-cash-and-carry"]
+faqs:
+  - q: "Can Odoo search products by OEM part number?"
+    a: "Standard Odoo website search looks at the product name and a few standard fields. With this module the OEM number and every cross reference number on the part are added to the shop search, so typing either one finds the part."
+  - q: "Does the search ignore dashes and spaces in part numbers?"
+    a: "No. The shop matches the number as it is stored, so 16510-61A01 finds the part and 16510 61A01 with a space does not. Store numbers the way your dealers usually write them, and add the other spelling as a cross reference if both are common."
+  - q: "Can the shop filter by model year?"
+    a: "Not as a separate filter. Each model carries a year range, which shows in its name in the dropdown, for example a model with 2014 to 2020 reads as Toyota Corolla (2014-2020). If two generations of a car take different parts, create them as two models."
+  - q: "Can I import fitment for thousands of parts?"
+    a: "Fitment is a normal many-to-many field on the product, so it can be filled with Odoo's standard import once makes and models exist. The module itself does not bring a fitment database; the data is yours."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A parts man at a garage counter thinks in two ways. Either he knows the car ("front pads for a Suzuki Alto") or he has the old part in his hand with a number printed on it. Sometimes that number is the genuine manufacturer number, often it is an aftermarket maker's number, and on older stock it is a number the manufacturer has since replaced. A parts shop that only searches product names fails him on both counts, and he picks up the phone. This chapter sets up the two things that let him find the part himself: the vehicles each part fits, and every number it is known by.
+
+## Why fitment and numbers are worth the data entry
+
+Fitment data is the slowest part of building a parts catalogue, and it is tempting to skip it and rely on names like "Oil Filter (Toyota)". That works until you stock three Toyota oil filters. The cost of skipping it shows up in three places:
+
+- **Wrong parts sent.** A dealer guesses from the name, the part does not fit, it comes back, and you have paid delivery twice.
+- **Phone orders.** Every call to ask "which one fits a 2015 Civic" is a member of staff not doing something else.
+- **Missed sales.** An aftermarket number the dealer types that is nowhere in your catalogue is a sale that goes to the next supplier.
+
+Once the data is in, the same records serve the website, your own counter staff and anyone answering the phone, because all three look at the same product.
+
+## Step 1: makes and models
+
+Open **Auto Parts, Vehicles, Makes** and add the manufacturers you stock for: Suzuki, Toyota, Honda and so on. A make has a name, an optional short code and a sequence that sets the order in the shop dropdown. Make names are unique, so the list cannot fill up with "Toyota" and "TOYOTA".
+
+Then open **Vehicles, Models** and add each model under its make, with **From Year** and **To Year** where the generation matters. Both are optional:
+
+- With both years, the model reads as "Toyota Corolla (2014-2020)".
+- With only a first year, "Toyota Corolla (2021 onward)".
+- With only a last year, "Suzuki Mehran (up to 2019)".
+- With neither, just "Suzuki Mehran".
+
+A last year earlier than the first year is refused. The model list also shows how many parts are fitted to each model, which is a quick way to spot a model nobody has filled in yet.
+
+<Callout title="One model per generation that takes different parts">The shop filter picks a model, not a year. If the 2014 and the 2021 Corolla take different brake pads, create them as two models with their own year ranges, so a dealer who picks one sees only the parts for that generation.</Callout>
+
+## Step 2: mark the product as a part and link its vehicles
+
+Open any product in **Auto Parts, Parts Catalogue** and go to the **Auto Part** tab. Tick **Auto Part**. That flag is what puts the product in the parts catalogue, gives it the pack rules and makes it count towards the hot products wall.
+
+Then fill in the part section:
+
+- **Part Brand**: Genuine, OEM or the aftermarket maker. Brands are their own list under **Auto Parts, Brands**, so they stay consistent.
+- **OEM / Part Number**: the genuine manufacturer number.
+- **Pack / Carton Qty** and **Minimum Order Qty**: covered in the [dealer portal chapter](/odoo-guides/odoo-b2b-dealer-portal-trade-pricing/).
+
+Under **Fits Vehicles**, add every model the part fits. The field reads like tags, so a filter that fits six cars shows six tags.
+
+<Shot src="/odoo-guides/odoo-auto-parts-fitment-oem-search/part-fitment-tab.webp" alt="Auto Part tab on an Air Filter product in Odoo 19 with part brand Premium, OEM number 17801-0D010, pack and minimum order of 10, the hot product flag, sold in window 530, and fits vehicles Toyota Corolla, Vitz, Yaris and Honda BR-V, City, Civic" width={1440} height={900} caption="The Auto Part tab: brand, OEM number, pack rules, the hot flag and the vehicles the part fits." />
+
+## Step 3: cross reference numbers
+
+Below the fitment sits **Cross References**: a list of other numbers that reach this part. Each line has a number and a type:
+
+- **OEM / Genuine**: a manufacturer number, for example where two car makers use the same part under different numbers.
+- **Aftermarket**: another maker's number for the same part.
+- **Superseded**: an old number this part now replaces.
+
+You can add as many as you need. The module keeps a joined copy of all of them on the product, updated whenever a line changes, and that copy is what the shop search reads.
+
+## How the shop uses it
+
+**The vehicle filter.** Above the products on the shop page is a bar labelled **Find parts for your vehicle** with one dropdown. Models are grouped under their make, and only makes and models that have at least one published part appear, so the list never offers a car you have nothing for. Picking a model and pressing Find narrows the shop to the parts fitted to that model. The choice stays on the page as the dealer moves through pages or changes the sort order, and a Clear link takes it off.
+
+<Shot src="/odoo-guides/odoo-auto-parts-fitment-oem-search/shop-vehicle-filter.webp" alt="Odoo shop filtered to Suzuki Alto with the Find parts for your vehicle dropdown, a Clear link, and part cards for Oil Filter OF-100, Air Filter Suzuki AF-201 and Fuel Filter FF-220" width={1440} height={900} caption="The shop narrowed to one vehicle. Only parts fitted to the Suzuki Alto are left." />
+
+The filter also works with the normal search box: a dealer who has searched for "filter" and then picks the Alto keeps the search, and sees only the Alto filters.
+
+**Part number search.** The OEM number and the joined cross references are added to the fields the shop search matches. A dealer who types the genuine number or an aftermarket number lands on the same part.
+
+<Shot src="/odoo-guides/odoo-auto-parts-fitment-oem-search/cross-reference-search.webp" alt="Odoo shop search results for W-67/80 showing one result, the Oil Filter OF-100, found by its aftermarket cross reference number" width={1440} height={800} caption="Searching an aftermarket number finds the part it cross references to." />
+
+**The product page.** For any product marked as a part, the product page shows a Part details table: brand, OEM number, pack size (when it is more than one), minimum order, the vehicles it fits and the cross reference numbers. The cross reference row can be switched off in the settings if you would rather not show competitors' numbers to your dealers.
+
+<Shot src="/odoo-guides/odoo-auto-parts-fitment-oem-search/product-part-details.webp" alt="Oil Filter product page in Odoo 19 with price, add to cart, and a Part details table listing brand Genuine, OEM number 16510-61A01, 12 per pack, minimum order 12, the Suzuki models it fits and cross references C-111 and W-67/80" width={1440} height={800} caption="The product page shows what a parts man checks before he orders: number, pack, fitment." />
+
+## Getting the data in
+
+For a catalogue of a few hundred parts, typing fitment on the Auto Part tab is manageable. For thousands, use Odoo's standard import:
+
+1. Create makes and models first, so the import has something to point at.
+2. Export a few products with the fitment column to see the format Odoo expects.
+3. Fill the sheet and import it into the product list.
+
+Cross references are lines on the product, so they can go into the same product import as sub-lines with a number and a type.
+
+<Callout title="Limits worth knowing">There is no VIN or registration lookup and no connection to an outside fitment catalogue; makes, models and fitment are data you own. The search matches numbers as stored, without stripping spaces or dashes. The year range is part of the model name, not its own filter. And fitment is by model only: there is no engine code or trim level field.</Callout>
+
+## Checklist before go-live
+
+- Every make and model you sell for exists, with year ranges where generations differ.
+- Every product a dealer might buy has **Auto Part** ticked, a brand and an OEM number.
+- The common aftermarket numbers for your fast movers are entered as cross references.
+- You have picked three real cars and checked that the shop filter shows the right parts for each.
+- You have typed a genuine number and an aftermarket number into the shop search and landed on the right part.
+
+The [hub page](/odoo-guides/odoo-auto-parts-wholesale/) covers what the module is and how it is installed. The next chapter, [the dealer portal](/odoo-guides/odoo-b2b-dealer-portal-trade-pricing/), covers who gets into the shop and at what price. You can try the filter and the search on the [demo](https://autoparts-demo.way4tech.com/); ask for a login through the [contact page](/contact/).

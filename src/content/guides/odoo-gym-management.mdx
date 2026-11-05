@@ -1,0 +1,131 @@
+---
+title: "Odoo gym management: memberships, door check-in, classes and personal training for a fitness club"
+metaTitle: "Odoo Gym and Fitness Club Management"
+description: "Run a gym on Odoo 19 Community: membership plans with recurring invoices, holds, a door check that refuses with the reason, classes with waitlist and PT."
+targetQuery: "odoo gym management software"
+category: "Industry"
+summary: "What a gym or studio needs from Odoo, what standard Odoo leaves out, and how the Gym Management module covers contracts, the front desk, the timetable and personal training."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-gym-management"
+seriesOrder: 0
+modules:
+  - name: "Gym Management"
+    technical: "wt_gym_management"
+    note: "USD 249, Odoo 19 Community, needs the Invoicing app"
+demo:
+  url: "https://gym-demo.way4tech.com/"
+  label: "Gym Management demo"
+related: ["odoo-salon-spa-management", "odoo-salon-loyalty-packages-memberships"]
+linkFrom: ["/solutions/gym-fitness/", "/industries/gym-fitness/", "/products/wt-gym-management/"]
+sources: []
+faqs:
+  - q: "Does Odoo have a gym module out of the box?"
+    a: "No. Odoo 19 has no app that knows what a membership plan, a hold, a door check or a class waitlist is. Recurring invoicing is the Subscriptions app, which is part of Odoo Enterprise. The Gym Management module adds the club side and runs on Community with the standard Invoicing app."
+  - q: "Does the gym module need Odoo Enterprise?"
+    a: "No. It is built for Odoo 19 Community and depends only on the base, mail, product and account modules. It also installs on Enterprise."
+  - q: "Can members book classes or buy a membership online?"
+    a: "Not with this module. There is no member portal, app or public booking page. The front desk books members into classes and sells contracts from the back office."
+  - q: "Does it connect to turnstiles, card readers or biometric devices?"
+    a: "No device is driven by the module. A visit records how the member came in (front desk, access card, QR or app, biometric) as a label, and the check itself runs from the Check In button on the member. A reader integration would be a separate project."
+  - q: "Does it handle more than one club?"
+    a: "Yes. Each club has its own code, which prefixes member and contract numbers, its own studios, capacity and an optional billing journal. Every record also carries the company, so a group running several companies keeps them apart."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A gym does not usually go broke on one bad month. It leaks: a member who stopped paying in March still swiping in during June, a three week "holiday freeze" that somehow became three months, a spin class with twelve names on the waitlist while four booked riders never turn up, a personal trainer paid for ten sessions when the member only used six. Each of those is a small number. Together they are the margin. A club system earns its keep by making those leaks visible and, where it can, refusing them at the moment they happen. This guide explains what a fitness club needs from Odoo, what standard Odoo 19 gives you, and how the Way4Tech Gym Management module fills the gap. The four chapters after it go through each part step by step.
+
+## What a gym actually needs
+
+Strip out the brochure words and a club needs five things from its system:
+
+1. **A contract with rules, not a membership flag.** A plan has a length, a price per period, a billing rhythm, a joining fee and a limit on how long it can be put on hold. The member's contract inherits those rules, and the end date should move by itself when a hold is taken.
+2. **Invoices that raise themselves.** A monthly plan has to be invoiced every month without somebody remembering. Annual and up front plans need one invoice, with the joining fee on the first one only.
+3. **A front desk that can say no, with a reason.** Expired, on hold, unpaid, out of credits. If the desk only ever sees "denied", staff learn to wave everybody through.
+4. **A timetable that fills itself and polices itself.** Recurring slots written into the diary weeks ahead, capacity per class, a waitlist that moves up when someone cancels, and a late cancellation rule so a place is not held for nothing.
+5. **Personal training sold as a block.** Ten sessions sold, each one delivered against the block and against the trainer, with an expiry date and the trainer's pay worked out per session.
+
+On top of those sits the member file: a signed health declaration, emergency contact, consent flags, body measurements and a sense of who is drifting away.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community gives you contacts, products, the Invoicing app, Discuss and the activity tools. You can sell a membership as a product on an invoice, and you can keep a contact list of members. That is where it stops:
+
+- No membership plan with duration, holds, credits or age limits.
+- No recurring invoices. Odoo's [Subscriptions app](/modules/subscriptions/) does recurring billing, but it is an Enterprise app and it knows nothing about gym holds or door access.
+- No check-in against a contract, no occupancy figure, no visit history.
+- No class timetable, booking capacity, waitlist or no-show count.
+- No personal training packages or trainer pay.
+
+You can get part of the way with Enterprise apps and Studio, but the rules that matter (refusing entry when a member is in arrears, refusing a hold past the allowance, moving the waitlist up) need code.
+
+## The module and what it covers
+
+[Gym Management](https://apps.odoo.com/apps/modules/19.0/wt_gym_management/) (technical name `wt_gym_management`, version 19.0.1.0.0) is one application, USD 249, built for Odoo 19 Community. It depends on `base`, `mail`, `product` and `account`, so it installs next to the standard Invoicing app and needs nothing from Enterprise. It appears in Odoo as a **Fitness Club** app with five menus: Members, Classes, Personal Training, Team and Reporting, plus Configuration for managers.
+
+<Shot src="/odoo-guides/odoo-gym-management/members-kanban.webp" alt="Odoo Fitness Club members kanban showing member cards with member number, Active or Cancelled status, an At Risk tag on some members, visits in the last 30 days and contract expiry" width={1440} height={900} caption="Members: status, churn flag, visits in the last 30 days and when the contract ends, on one card." />
+
+| Area | Standard Odoo 19 Community | With Gym Management |
+|---|---|---|
+| Membership plan with term, billing rhythm, joining fee | No | Yes |
+| Recurring membership invoices | No (Subscriptions is Enterprise) | Yes, nightly job |
+| Hold with an allowance that moves the end date | No | Yes |
+| Door check against contract and balance | No | Yes, with the reason |
+| Class timetable, capacity and waitlist | No | Yes |
+| Personal training packages and trainer pay | No | Yes |
+| Health declaration, measurements, churn risk | No | Yes |
+
+### Who sees what
+
+The module adds three roles under a Fitness Club privilege, each including the one before it:
+
+- **Trainer**: the classes and personal training menus. A trainer linked to an Odoo user sees their own class roster rather than everybody's.
+- **Front Desk**: adds contracts, the check-in list and the team menu, and sees the whole timetable.
+- **Club Manager**: adds arrears, the at-risk list, reporting and configuration. Medical notes on the member file are visible to managers only.
+
+## How the parts fit together
+
+Everything hangs off the **member**. A member belongs to a home club, has a contact in Odoo that is invoiced, and holds one running contract at a time. The module refuses to activate a second contract while another one is active or on hold.
+
+<Shot src="/odoo-guides/odoo-gym-management/member-form.webp" alt="Odoo gym member form for Karim Aziz with Check In, Sell a Contract and Print Card buttons, status bar showing Active, home club, current contract, expiry date, churn risk and a Contracts tab" width={1440} height={900} caption="The member file: the Check In button, the current contract, expiry and churn risk at the top." />
+
+From there the work splits into four areas, one chapter each:
+
+1. **[Membership plans, recurring billing and holds](/odoo-guides/odoo-gym-membership-billing/)**: setting up plans, activating a contract, how the nightly job raises invoices, holds and the freeze allowance, renewals, cancellation and the arrears list.
+2. **[Door check-in and the member file](/odoo-guides/odoo-gym-member-check-in/)**: what the Check In button tests and in which order, check-out, live occupancy, the printed card with its barcode, health declaration and consent, measurements and the churn risk list.
+3. **[Class timetable, bookings and waitlist](/odoo-guides/odoo-gym-class-booking-waitlist/)**: class types, studios, recurring slots, booking with credits and drop-in prices, the waitlist, late cancellation, closing a class and counting no-shows, and trainer clash checks.
+4. **[Personal training packages and trainer pay](/odoo-guides/odoo-gym-personal-training/)**: selling a PT block, booking and delivering sessions, expiry, invoicing the package and the three ways of paying trainers.
+
+## The scheduled jobs that do the routine work
+
+Most of the value is in what happens overnight without anyone clicking. The module installs seven scheduled actions:
+
+- **Expire and renew contracts** (daily): an active contract past its end date is expired, or renewed if Auto Renew is ticked.
+- **Raise recurring membership invoices** (daily): every active contract billed monthly, quarterly or annually whose next invoice date has arrived gets its invoice. If one fails, the reason is posted on the contract and the job carries on.
+- **Send renewal reminders** (daily): members whose contract ends in the configured number of days (14 by default) get an email.
+- **Start and end contract holds** (daily): a hold whose start date has come begins, and one that has run out ends, putting the member back on the contract.
+- **Extend the class timetable** (daily): recurring slots are written into the diary as far ahead as the club wants (4 weeks by default).
+- **Close finished classes** (every 2 hours): booked members not marked present become no-shows.
+- **Lapse unused PT packages** (daily): packages past their expiry date are marked expired.
+
+<Shot src="/odoo-guides/odoo-gym-management/arrears.webp" alt="Odoo gym Arrears list showing six active contracts with member, plan, branch, start and end dates, price and outstanding amounts totalling 2,001 dollars" width={1440} height={420} caption="Arrears: running contracts with unpaid posted invoices. These members are stopped at the door." />
+
+<Callout title="What the module does not do">There is no member portal, mobile app or online booking page, and nothing takes card payments. Turnstiles, card readers and biometric devices are not connected: the visit records the method as a label. Trainer pay is calculated and reported, but no vendor bill or payslip is raised from it. Drop-in prices are recorded on the booking, not invoiced. The plan's minimum term, notice period, guest passes and "all clubs" flag are stored on the plan for reference, but in version 19.0.1.0.0 nothing calculates or enforces them.</Callout>
+
+## Setting it up, in order
+
+1. **Install** Gym Management from the Odoo Apps store on an Odoo 19 database that has Invoicing.
+2. **Settings** (Fitness Club, Configuration, Settings): the renewal reminder window, late cancellation hours, PT package validity in months and how many weeks of timetable to generate.
+3. **Clubs**: one per site, with a short code (it prefixes member and contract numbers), opening hours, capacity and, if each club invoices into its own sales journal, that journal.
+4. **Studios**: the rooms classes run in, with their capacity.
+5. **Products**: a service product per plan and one for the joining fee, with the right tax. Plans invoice these products, so the income account and tax come from them.
+6. **Membership plans**, **class types**, **trainers** and **recurring slots**, then generate the timetable.
+7. **Users**: give each person Trainer, Front Desk or Club Manager, and link trainers to their user so they see their own roster.
+8. **Members**: import or create them, record the health declaration, and sell each one a contract.
+
+Plan the order of steps 5 and 6 before migrating members: a contract takes its price and joining fee from the plan when you pick it, and every invoice after that uses the plan's product.
+
+## Is it the right fit?
+
+It fits a single club or a small group that wants contracts, the door, the timetable and PT in the same database as its accounting, on Community, with someone at a desk. It is a weaker fit for a chain that sells everything online or needs turnstile integration on day one; those need a portal or device work on top. You can try the module on the [live demo](https://gym-demo.way4tech.com/) (ask us for a login, or see all demos on the [demos page](/demos/)), and the chapters above walk through each screen.

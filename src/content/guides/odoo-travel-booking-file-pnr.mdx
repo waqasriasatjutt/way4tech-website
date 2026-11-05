@@ -1,0 +1,119 @@
+---
+title: "Booking files in Odoo: PNR, passengers, passport checks and itinerary segments"
+metaTitle: "Booking Files, PNR and Passport Checks"
+description: "Set up travel booking files in Odoo 19: PNR and IATA code, passengers with passport expiry, flight and hotel segments, markup, commission and margin."
+targetQuery: "odoo travel booking file pnr passport check"
+category: "Industry"
+summary: "How a consultant opens a booking file in Odoo, adds the passengers and their passports, builds the itinerary from supplier segments with net, sell and commission, and moves the file from enquiry to ticketed."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-travel-agency-management"
+seriesOrder: 1
+modules:
+  - name: "Travel Agency Management"
+    technical: "wt_travel_agency"
+    note: "USD 299, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://travel-demo.way4tech.com/"
+  label: "Travel Agency demo"
+related: ["odoo-travel-agency-management", "odoo-tour-packages-fixed-departures", "odoo-travel-deposits-cancellations"]
+faqs:
+  - q: "Why will a booking file not confirm?"
+    a: "Confirm refuses a file with no travellers, nothing on the itinerary, no departure date, a traveller with no passport expiry recorded, or a passport that expires inside the validity window after departure. The error names the passenger, and the Check Passports button gives the same answer without trying to confirm."
+  - q: "Can I change the six month passport rule?"
+    a: "Yes. The window is a setting in months, six by default. Some destinations want three and a few want none, so set it to what your main markets need."
+  - q: "Why can a segment not be confirmed?"
+    a: "A segment needs the supplier's confirmation number before it can be confirmed. A segment with no locator is one nobody has actually booked, and the file cannot be ticketed while any segment is still To Book or Requested."
+  - q: "How is margin worked out on a segment?"
+    a: "Markup is the sell price before tax less the net cost. Commission is the percentage the supplier pays back on the sell price. Gross margin is markup plus commission, and the file adds up every live segment. Cancelled segments drop out of all totals."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ask a consultant where a customer's trip stands and the honest answer is often "let me check my emails". The PNR is in the airline system, the hotel confirmation is in an inbox, the passport copy is on WhatsApp and the price is on a spreadsheet. The booking file puts all of that on one record, and then refuses to move the file forward while something on it is wrong. This chapter covers the file itself: opening it, the passengers, the itinerary and the margin.
+
+## Open the file
+
+Go to **Travel, Sales, Booking Files** and create a file. Every file opens as an Enquiry; a file cannot be created already confirmed, because confirming is where the checks run.
+
+The header carries:
+
+- **Reference** from a sequence, prefixed with the office code when the office has one.
+- **PNR**, the airline record locator.
+- **IATA Agency Code**, filled from the office if it holds its own code, otherwise from the settings. You can type over it for a file sold under another plate. The code must be seven or eight digits.
+- **Office** and **Consultant**. The consultant defaults to the logged-in user's consultant record, and both the margin reports and the access rules key off it.
+- **Lead Passenger / Account**, which is who gets invoiced. On a corporate file that is the company, not the person flying.
+- **Trip**: booking date, departure and return dates (nights are worked out), from, to, destination country and trip type (leisure, business, group, pilgrimage, honeymoon or educational).
+
+Return before departure, or departure before the booking date, are refused.
+
+<Shot src="/odoo-guides/odoo-travel-booking-file-pnr/booking-file.webp" alt="Odoo booking file CTY/TRV/2026/00030 in Confirmed status with lead passenger, consultant, office, IATA agency code, trip dates from and to, package and fixed departure, and the payment plan with deposit amount and balance due date" width={1440} height={900} caption="A confirmed file: customer, trip, package and the payment plan, with the status history in the chatter." />
+
+## Add the passengers and their passports
+
+When you pick the lead passenger, the file adds them as the first traveller. Add the rest on the **Travellers** tab. Each traveller has title, type (adult, child or infant), date of birth with the age worked out, gender, nationality, passport number, issuing country and expiry, months left on the passport, email and phone, ticket number, frequent flyer number, seat and meal preference, and a special request that prints on the manifest.
+
+The traveller record checks itself before it saves:
+
+- A date of birth in the future, or a passport that has already expired, is refused.
+- A traveller typed as an infant who will be two or older on the return date is refused, because the airline will not carry them as an infant.
+- A child must be between two and eleven at travel, and an adult cannot be under twelve.
+
+**Check Passports** on the file header answers on the spot. It lists who has no passport expiry recorded and whose passport runs out inside the validity window after the departure date, without blocking anything. The same rule is the gate on Confirm, so the button is how a consultant finds out early.
+
+Under **Operations, Passport Watch** you get every traveller on a live file whose passport will not last the trip. A nightly job raises one to-do per file on the consultant who sold it, naming the passenger.
+
+## Build the itinerary from segments
+
+The **Itinerary** tab holds one line per thing bought from one supplier. A segment has a service type (flight, hotel, transfer, activity or excursion, cruise, rail, insurance, other), a description the customer reads, the supplier and the supplier's own reference, the confirmation number, start and end, passengers and quantity, net cost, markup, sell price, taxes and commission.
+
+The service type fills in sensible defaults: its default markup (or the company default when it has none), its default commission, and the taxes from its revenue product. A supplier with its own default commission overrides the commission when you pick it.
+
+Kind specific fields sit on the segment too. Flights carry carrier, flight number, class and baggage. Hotels and cruises carry room type and board basis, and the nights are worked out from the dates.
+
+### Markup, commission and margin
+
+Each segment prices itself one of three ways:
+
+- **Percent on net**: sell price is net cost plus a percentage.
+- **Fixed amount**: sell price is net cost plus a fixed sum.
+- **Sell price typed in**: the consultant types the price.
+
+Commission is the percentage the supplier pays you back on the sell price. Gross margin on the segment is markup plus commission, and a segment sold below net is flagged as a loss. The file adds the live segments up into supplier cost, sell before tax, tax, total, markup, commission, gross margin and margin percent, then deposit due, received and outstanding.
+
+<Shot src="/odoo-guides/odoo-travel-booking-file-pnr/itinerary-margin.webp" alt="Itinerary tab of a ticketed Odoo booking file with flight, two hotels and an excursion, each with supplier, start, quantity, net cost and sell price, and the file totals for supplier cost, sell, markup, commission, gross margin, margin percent, paid and due" width={1440} height={900} caption="The itinerary of a ticketed file, with the money block worked out from the segments." />
+
+A segment cannot claim more passengers than there are travellers on the file. Its net cost, markup and commission cannot be negative, and commission is capped at 100 per cent.
+
+## Move the file forward
+
+The buttons in the header move the file, and each one checks something:
+
+1. **Quote** needs at least one segment.
+2. **Confirm** runs the traveller and passport checks above, and refuses a file booked onto a fixed departure that does not have enough seats left. On confirm, every segment still To Book moves to Requested, and a note on the chatter records how many passengers and the departure date.
+3. **Ticket** refuses while any segment is still To Book or Requested, and, with the block switched on in settings, while the deposit has not been received. Confirmed segments move to Ticketed or Issued.
+4. **Mark Travelled** refuses a file that still owes money while the block is on.
+
+A sold file cannot be deleted, only cancelled, so the seats are released and the change is on record. A file with an invoice on it cannot be deleted at all until the invoice is dealt with.
+
+<Callout title="The status follows the buttons">Writing the status directly is refused: dragging a card between columns on the kanban, a bulk edit or an import. That is deliberate, because the buttons are what check the passports, hold the seats, wait for the deposit and wait for the balance. The same applies to segment status.</Callout>
+
+## The operations board
+
+**Operations, Operations Board** is the ticketing desk's view: every segment on every sold file, opening on the ones still to book and grouped by supplier. Filters cover to book, awaiting confirmation, loss making, unsettled and departing from today.
+
+Segments move To Book, Requested, Confirmed, Ticketed or Issued. Confirm on a segment needs the confirmation number first; without it there is nothing to chase when the customer arrives and the room is not there. A segment that has been settled with the supplier, or one that is confirmed and held, cannot be deleted; cancel it instead so the locator stays on the file. Once the file's invoice is posted, segments are locked until the invoice is credited.
+
+A nightly job chases supplier confirmations: every requested segment that has not come back is posted on its file, so the desk sees it in the morning.
+
+<Shot src="/odoo-guides/odoo-travel-booking-file-pnr/operations-board.webp" alt="Odoo Operations Board grouped by supplier with Gulf Air flights and Halcyon Bed Bank hotels, each segment with booking file, kind, description, start date, cost total, price subtotal, gross margin and status Requested or To Book" width={1440} height={900} caption="The operations board, grouped by supplier, showing what is still to book and what is waiting on the supplier." />
+
+## Print the itinerary
+
+**Print Itinerary** on the file produces the customer's PDF: the passengers with passport expiry and ticket numbers, then every segment in order with its confirmation number. A Booking Confirmation email template ships with the module for when you email the customer from the file; edit its wording under Email Templates.
+
+## Who sees the file
+
+A Travel Consultant sees only their own files and the travellers, receipts, visas and changes on them. The operations board, supplier settlement and visa applications are behind the Operations and Ticketing group. Cost and margin reporting is for the Travel Manager group. Set the groups before go-live.
+
+Next, if you run your own tours, read [tour packages and fixed departures](/odoo-guides/odoo-tour-packages-fixed-departures/). For deposits, invoices and cancellations, go to [deposits, refunds and margin scheme VAT](/odoo-guides/odoo-travel-deposits-cancellations/). The [hub page](/odoo-guides/odoo-travel-agency-management/) has the full setup order.

@@ -1,0 +1,106 @@
+---
+title: "IPD admissions and bed management in Odoo: wards, rooms, a bed board, discharge and billing"
+metaTitle: "IPD Admissions, Wards and Bed Board"
+description: "Manage inpatients in Odoo 19: wards, rooms and beds with a daily charge, admit to a bed, services during the stay, discharge summary and the invoice."
+targetQuery: "odoo hospital bed management ipd admission"
+category: "Industry"
+summary: "How a hospital or day care clinic sets up wards, rooms and beds in Odoo, admits a patient to a bed, records services and prescriptions during the stay, discharges with a summary and bills room and board with the services."
+published: 2027-01-14
+updated: 2027-01-14
+series: "odoo-clinic-management"
+seriesOrder: 2
+modules:
+  - name: "Hospital Management"
+    technical: "wt_hospital_management"
+    note: "USD 10, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://clinic.way4tech.com/"
+  label: "Clinic demo"
+related: ["odoo-clinic-management", "odoo-patient-appointments-opd", "odoo-dental-clinic-management"]
+faqs:
+  - q: "How does the bed board know which beds are free?"
+    a: "Every bed has a status: available, reserved, occupied, cleaning or maintenance. Admitting a patient sets the bed to occupied, discharge sets it to cleaning, and the ward staff set it back to available. The bed board is a kanban grouped by that status."
+  - q: "How is the length of stay counted?"
+    a: "In whole days from the admission date to the discharge date, or to now while the patient is still in, with a minimum of one day. Room and board on the invoice is that number of days times the bed's daily charge."
+  - q: "Can a patient be moved to another bed?"
+    a: "Not with a transfer step. The admission holds one bed. Moving a patient means changing the bed on the admission and setting the old and new bed statuses by hand, and the room and board charge then uses the new bed's rate for the whole stay."
+  - q: "Can an admitted patient be admitted to an occupied bed by mistake?"
+    a: "No. Admit is refused without a bed, and refused if the bed is already occupied. The bed list on the admission only offers available or reserved beds."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A ward runs on two questions asked a hundred times a day: which bed is free, and what has this patient had since they came in. When the answer lives on a whiteboard and a paper chart, the bed shows as free while it is still being cleaned and the bill at discharge misses the dressing changes from Tuesday. Hospital Management keeps each bed as a record with a status, and each stay as an admission that collects its services until discharge.
+
+## Set up wards, rooms and beds
+
+Under **Hospital, Configuration**:
+
+- **Wards** have a name, code, department, building or block, floor and a ward type: general, private, ICU, CCU, NICU, isolation or maternity. A ward shows its bed count and opens its beds.
+- **Rooms** sit inside a ward.
+- **Beds** have a bed number and code, the ward (required) and room, a bed type (standard, electric, ICU, paediatric or bariatric) and a **daily charge**, which is the room and board rate per day of stay.
+
+Every bed has a status: **Available**, **Reserved**, **Occupied**, **Cleaning** or **Maintenance**. Buttons on the bed set it available, cleaning or maintenance. The bed shows its current admission and patient while someone is in it.
+
+## The bed board
+
+**Hospital, Inpatient, Bed Board** is a kanban of every bed grouped by status, with the ward, the bed type and, for an occupied bed, the patient's name. This is the screen the admissions desk keeps open. The dashboard shows the same figures as counts and an occupancy percentage.
+
+<Shot src="/odoo-guides/odoo-hospital-ipd-bed-management/bed-board.webp" alt="Odoo Hospital bed board kanban with columns Available, Cleaning, Maintenance and Occupied, each bed card showing the bed number, ward, bed type and, for occupied beds, the patient's name" width={1440} height={900} caption="The bed board: free beds, beds being cleaned, one in maintenance and two occupied." />
+
+## Admit the patient
+
+Create an admission under **Hospital, Inpatient, Admissions**. It holds:
+
+- **Patient**, **attending physician** and **department** (the department follows the physician).
+- **Bed**, chosen from beds that are available or reserved. The ward follows the bed.
+- **Admission date** and the **reason for admission**.
+
+**Admit** is refused without a bed and refused if the bed is already occupied. On admit, the admission moves to Admitted, the bed becomes Occupied and a note on the chatter records which bed. Only a draft admission can be admitted.
+
+The **length of stay** is counted in whole days from the admission date to the discharge date, or to now while the patient is still in, and is never less than one.
+
+<Shot src="/odoo-guides/odoo-hospital-ipd-bed-management/admission.webp" alt="Odoo IPD admission ADM/2026/00002 in Admitted state with patient, attending physician, department, reason for admission, bed, ward, admission date and length of stay, the Services tab and the estimated total" width={1440} height={900} caption="An admitted patient: the bed, the length of stay so far and the estimated total." />
+
+## During the stay
+
+The admission has five tabs:
+
+- **Services**: one line per chargeable item with a date, a service from your list (which fills the description and price), quantity, unit price and subtotal. Nursing care, procedures, pharmacy items and anything else you bill go here.
+- **Diagnosis and Notes**: diagnoses from your list with ICD codes, and admission notes.
+- **Prescription**: the same structured medicine lines as an OPD visit.
+- **Lab and Radiology**: requests with status and results, as on a visit.
+- **Discharge**: the discharge type and the discharge summary.
+
+The **estimated total** at the bottom is the bed's daily charge times the length of stay, plus all service lines. It moves every day the patient stays.
+
+## Discharge
+
+**Discharge** moves the admission to Discharged, stamps the discharge date, and sets the bed to **Cleaning**, so it does not show as free until the ward staff have turned it round and set it back to Available. Only an admitted patient can be discharged.
+
+On the Discharge tab, choose the **discharge type**: recovered, referred, left against medical advice, or deceased, and write the summary. The **Discharge Summary** report on the admission's Print menu produces the PDF for the patient and the referring doctor.
+
+<Shot src="/odoo-guides/odoo-hospital-ipd-bed-management/discharge-summary.webp" alt="Discharge tab of a discharged Odoo admission with a three day length of stay, discharge type Recovered and the written discharge summary" width={1440} height={900} caption="A discharged admission: three days, recovered, with the summary written on the record." />
+
+Cancelling an admitted patient's admission sets the bed back to available.
+
+## Bill the stay
+
+**Create Invoice** on the admission raises a customer invoice for the patient's billing contact with:
+
+- a **room and board** line: the bed's daily charge times the length of stay, named after the bed and the number of days;
+- one line per **service**, at its quantity and unit price, with the service's taxes.
+
+The invoice is linked to the patient and the admission and counts towards the dashboard's monthly revenue once posted. You can raise it at discharge, or raise interim invoices during a long stay. Each press creates a new invoice from everything on the admission, though, so an interim invoice followed by a final one bills the same lines twice unless you adjust the second.
+
+<Callout title="Check room and board before posting">The room and board line carries no tax and uses the bed's current daily charge for the whole stay. If a patient moved from a general bed to a private one, the whole stay is charged at the private rate, so correct the line on the draft invoice. As with OPD invoices, lines post to the first income account found in your chart of accounts in this version; agree the account with your accountant.</Callout>
+
+## What the IPD part does not do
+
+- **No bed transfer step.** An admission holds one bed. A move is an edit to the bed field plus two manual status changes, and the history is only in the chatter.
+- **No reservation calendar.** A bed can be set to Reserved, but there is no booking of a bed for a future date.
+- **No nursing chart or medication administration record.** Prescriptions are listed; doses given are not recorded. ICU observation charts are part of the Ultimate add-on.
+- **No theatre booking in the core.** Operation theatres, surgeries and consumables are in the Enterprise add-on.
+- **No insurance split.** The invoice goes to the patient's contact. Insurance policies and claims raised from invoices are in Enterprise, and pre-authorisation and insurer tariffs are in Ultimate.
+
+For the outpatient side, see [patients, appointments and OPD visits](/odoo-guides/odoo-patient-appointments-opd/). The [hub page](/odoo-guides/odoo-clinic-management/) compares the core with the Enterprise and Ultimate add-ons, and the [Clinic demo](https://clinic.way4tech.com/) has a small ward to look at.

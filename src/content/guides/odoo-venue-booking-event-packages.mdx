@@ -1,0 +1,124 @@
+---
+title: "Venue booking and event packages in Odoo: the diary, per head pricing and the deposit that holds the date"
+metaTitle: "Venue Booking and Event Packages in Odoo"
+description: "Set up venues, layouts and packages in Odoo 19: double bookings refused with a turnaround gap, per head or flat pricing, a contracted minimum and deposits."
+targetQuery: "odoo venue booking event packages"
+category: "Industry"
+summary: "How a planner or function venue keeps a diary that cannot double book, sells costed packages per head or flat, sends the proposal and holds the date only once the deposit is in, on Odoo 19."
+published: 2027-01-28
+updated: 2027-01-28
+series: "odoo-event-management"
+seriesOrder: 1
+modules:
+  - name: "Event Management"
+    technical: "wt_event_management"
+    note: "USD 249, Odoo 19 Community, needs Accounting (Invoicing)"
+demo:
+  url: "https://event.way4tech.com/"
+  label: "Event Management demo"
+related: ["odoo-event-management", "odoo-hotel-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo stop two events being booked into the same hall?"
+    a: "With the Event Management module, each venue has a turnaround time and a number of rooms. When an event is quoted or confirmed, any other quoted or confirmed event at that venue inside the window, widened by the turnaround at both ends, counts as a clash, and the save is refused once the venue's rooms are all taken. Enquiries do not hold the room."
+  - q: "Can a package be priced per head with a minimum number of guests?"
+    a: "Yes. A per head package has a price per head and a minimum numbers figure. The event is charged on the final numbers, or the expected numbers before then, but never below the contracted minimum, which itself cannot be set lower than the package minimum."
+  - q: "Can I stop an event being confirmed before the deposit is paid?"
+    a: "Yes, and it is on by default. Confirm the Date refuses while the deposit milestone is not marked paid. The setting A Date Is Held by the Deposit turns it off if somebody else watches the bank."
+  - q: "Does the deposit follow the invoice payment automatically?"
+    a: "No. Raise the Invoice creates a draft customer invoice in Accounting for the stage. When the money arrives, the milestone is marked paid with its own Mark Paid button. The invoice's payment status is shown next to it, but it does not move the milestone by itself."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The two most expensive mistakes in a function business both happen at the booking stage. One is holding the same room for two parties, or for one party with no time to turn the room round after the last. The other is selling a package that loses money, because nobody added up what the canapes, the wine and the centrepieces cost per head before it went on the price list. This chapter covers the venue, the package and the first money, in the [Event Management](/odoo-guides/odoo-event-management/) module for Odoo 19 Community.
+
+## Venues: what the room can take
+
+Each venue sits under **Configuration, Venues**. The record holds what the diary needs to know about the room:
+
+- **Kind**: your own venue, a partner venue, client premises, or an outdoor or marquee site.
+- **Seated and standing capacity.** No layout may seat more than the seated figure, and a standing reception layout is capped at the standing figure.
+- **Rooms available.** A hotel with two function suites can run two events at once; a single hall runs one.
+- **Turnaround (h).** How long the room needs between events to strip and reset.
+- **Curfew.** The latest the music can play, as a clock time such as 23:30.
+- **Hire fee.** Copied onto the event budget as the venue hire line when the event is quoted.
+- **Licences.** Alcohol licence number and expiry, public entertainment licence number and expiry, with a status of in date, expiring soon or expired.
+- **Access and notes**: where the vans go, door widths, lifts, anything the crew needs.
+
+<Shot src="/odoo-guides/odoo-venue-booking-event-packages/venue-form.webp" alt="Venue form in Odoo for a partner venue with contact, phone and email, seated capacity 200, standing capacity 320, two rooms available, 14 hour turnaround, curfew 23:30, hire fee, alcohol and entertainment licence numbers with expiry dates, and a layouts tab with banquet and long table layouts" width={1440} height={900} caption="A venue with two rooms, a 14 hour turnaround, a curfew and both licences in date." />
+
+### Layouts and the crew call
+
+A venue has one or more layouts: banquet rounds, long tables, theatre, cabaret, boardroom, U shape or standing reception. Each layout carries its own capacity, the number of tables it puts in the room, and the set up hours it takes to dress. The event's **Venue Access** time is worked back from the guests' arrival by those set up hours (three hours if the layout does not say), so the crew call is a real time. A layout belongs to one venue, and an event cannot use a layout from a different one.
+
+## The double booking check
+
+The clash check runs whenever an event's venue, dates or status change. It looks for other events at the same venue that overlap the window, with the venue turnaround added to both ends. If the clashes already fill every room the venue has, the save is refused with the name of the event in the way and the turnaround it needs.
+
+Two details matter in practice:
+
+- **Enquiries do not hold the room.** Only events at Proposal Sent or later count, so you can take three enquiries for the same Saturday and the first to be quoted wins.
+- **Cancelled events release the room** straight away.
+
+Capacity is checked on the same save. The working number (final numbers if set, otherwise expected) has to fit the layout's capacity, or the venue's seated capacity if no layout is picked, plus an overbooking allowance set in Settings (5 per cent by default; set it to zero where the fire officer counts heads).
+
+<Callout title="Licences and curfew are checked at confirmation">Event types say whether they need an alcohol licence or a public entertainment licence. Confirm the Date refuses if the venue has no licence number on file, or if the licence expires before the event day. It also refuses an event that finishes after the venue curfew, read in local time, unless the curfew extension box is ticked because the venue agreed in writing.</Callout>
+
+## Event types
+
+Event types live under **Configuration, Event Types**. The module ships ten (wedding, civil ceremony and lunch, corporate dinner, conference, product launch, awards night, birthday party, anniversary, charity gala, Christmas party). Each has a typical length used to fill the finish time, a usual lead time in days that flags short notice enquiries, the two licence flags, a wedding flag that turns on guest side and top table fields, and a usual package offered first on a new enquiry.
+
+## Packages priced the way the trade sells them
+
+Packages sit under **Configuration, Packages**. A package is sold either **per head** or as a **flat fee**, and carries:
+
+- **Price per head** or the flat fee, and the product it is invoiced as, so revenue lands on the right income account with the right tax.
+- **Minimum numbers.** The package is not sold below this headcount.
+- **Covers (h).** How many hours of service the price covers. It also sets the finish time on an event using the package.
+- **Sold for.** The event types it is offered on. An event cannot use a package that is not sold for its type.
+- **Inclusions.** Each line has a category (catering, drinks, staffing, sound and lighting, decor and flowers and so on), a quantity per head, what one costs you, and a note for the proposal. Three canapes a head is a quantity of 3; one centrepiece per table of ten is 0.1.
+
+From the inclusions, the package shows its cost per head, margin per head and margin percentage. For a flat fee package the margin is worked out per head at the minimum numbers.
+
+<Shot src="/odoo-guides/odoo-venue-booking-event-packages/package-form.webp" alt="Package form in Odoo for a classic wedding breakfast sold per head at 165 with a minimum of 50 guests and 10 hours of cover, cost per head 107.90, margin per head 57.10, margin 34.61 per cent, sold for wedding and civil ceremony, with inclusions for drinks, a three course breakfast, wine, evening food, linen and centrepieces" width={1440} height={900} caption="A per head package with every inclusion costed, so the margin is known before it is sold." />
+
+## From enquiry to proposal
+
+1. Create the event under **Diary, Events**: title, client, event type, venue, layout, package, the guests' arrival time, the expected number and the contracted minimum. Picking the type offers its usual package; picking the package raises the contracted minimum to the package minimum if it was lower.
+2. Check the **Charges** tab. The package line is kept in step with the headcount: per head packages charge the guests charged figure (final numbers, otherwise expected, never below the contracted minimum); flat fee packages charge one fee. Add extra charge lines for anything outside the package.
+3. Press **Send Proposal**. It needs a venue and at least one charge. It builds the estimated budget from the package inclusions plus the venue hire fee, creates the payment schedule, moves the event to Proposal Sent and emails the proposal if the client has an email address.
+4. Print the client proposal from the Charges tab when you want a PDF: package description, inclusions, the charges, tax and total, and the payment schedule.
+
+<Shot src="/odoo-guides/odoo-venue-booking-event-packages/client-proposal.webp" alt="Printed client proposal for a partner lunch showing client, reference, event type, date, venue and guest number, the corporate dinner package description and inclusions, and what it comes to with subtotal, tax and total" width={1280} height={680} caption="The client proposal: package copy, inclusions and the price for the headcount." />
+
+## The payment schedule and the deposit
+
+When the event is quoted, the module builds a standard schedule of three stages:
+
+| Stage | Share | Due |
+|---|---|---|
+| Deposit to hold the date | Deposit percentage from Settings (25 by default) | Seven days from today, or the event day if sooner |
+| Interim payment | Half of the remainder | 60 days before the event |
+| Balance on final numbers | The other half | The final numbers deadline (14 days before by default) |
+
+You can change any stage or add fixed amount stages on the Payments tab, and an event with no schedule gets the standard one from the "Build the standard payment schedule" link there. The schedule refuses to add up to more than the event is worth, allows only one deposit, and refuses a stage due more than a month after the event.
+
+Each stage is billed with **Raise the Invoice**, which creates a draft customer invoice in Accounting against the package product, with the event's tax. When the money is in, **Mark Paid** records it. With the default setting on, **Confirm the Date** stays refused until the deposit stage is marked paid.
+
+<Shot src="/odoo-guides/odoo-venue-booking-event-packages/payment-schedule.webp" alt="Payments tab on an Odoo event showing the deposit at 25 per cent marked paid with its invoice, interim payment and balance on final numbers at 37.5 per cent each still scheduled, with deposit held, amount on the schedule, invoiced, paid, outstanding and payments behind" width={1440} height={900} caption="The deposit is paid and the date is held; the other two stages are still scheduled." />
+
+### Chasing what is behind
+
+A stage counts as behind once it is past its due date plus the grace days from Settings (three by default, because bank transfers take time). **Money, Overdue Payments** lists those stages and **Money, Events Behind on Payment** lists the events. The scheduled job "Events: chase overdue payment milestones" emails the client and notes the chase on the record, once a day at most per stage. It ships switched off; turn it on under Settings, Technical, Scheduled Actions (developer mode) once your mail server is set up.
+
+<Callout title="Marking paid is a manual step">The milestone does not watch the invoice. When the client pays and your accountant reconciles it in Accounting, someone still presses Mark Paid on the stage. The invoice's payment status is shown beside the stage so the two are easy to compare.</Callout>
+
+## Questions to settle before you load your venues
+
+- Do you want enquiries to hold a room? In this module they do not. If your venue pencils dates in for a week, quote them sooner or keep pencil bookings as a note.
+- What overbooking allowance does each venue accept? The setting is company wide, so set it to the strictest venue you work with.
+- Is your package price the same for children? The package has one price per head. Child pricing goes on a separate charge line.
+
+The next chapter covers [supplier quotes and the event budget](/odoo-guides/odoo-event-supplier-quotes-budget/): how the estimate built here turns into committed and settled cost. You can try the booking flow on the [Event Management demo](https://event.way4tech.com/).

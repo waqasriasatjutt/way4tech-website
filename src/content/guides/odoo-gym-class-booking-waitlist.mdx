@@ -1,0 +1,113 @@
+---
+title: "Gym class timetable, booking and waitlist in Odoo"
+metaTitle: "Gym Class Booking and Waitlist in Odoo"
+description: "Run a gym class timetable on Odoo 19: weekly slots written into the diary, capacity, credits and drop-in prices, a waitlist that moves up, late cancels."
+targetQuery: "gym class booking waitlist odoo"
+category: "Industry"
+summary: "How a club sets up class types, studios and weekly slots, books members with credits or drop-in prices, runs the waitlist and late cancellation rule, and closes the class register."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-gym-management"
+seriesOrder: 3
+modules:
+  - name: "Gym Management"
+    technical: "wt_gym_management"
+    note: "USD 249, Odoo 19 Community, needs the Invoicing app"
+demo:
+  url: "https://gym-demo.way4tech.com/"
+  label: "Gym Management demo"
+related: ["odoo-salon-spa-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does the waitlist move up automatically?"
+    a: "Yes. When a booked member cancels, the members waiting longest are moved into the free places and a note is posted on each member's record. The class flips between Open and Full by itself."
+  - q: "What is a late cancellation?"
+    a: "A booking cancelled closer to the start than the Late Cancellation hours in Settings, 12 by default. The booking is cancelled and the place is released, but on a credit plan the member keeps paying for it: the credit is not refunded."
+  - q: "Can a trainer be booked into two classes at once?"
+    a: "No. A class that overlaps another class for the same trainer is refused, and so is a class that overlaps another in the same studio. Cancelled classes do not count."
+  - q: "Can people who are not members book a class?"
+    a: "The front desk can book anyone set up as a member record. Without a contract that includes classes, the booking carries the class type's drop-in price. The price is recorded on the booking; the module does not raise an invoice for it."
+  - q: "Can members book classes themselves online?"
+    a: "Not with this module. There is no member portal or booking page. Bookings are made by staff from the class or the Bookings list."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A full class is good for the club; a class that looks full and is half empty is not. The usual reason is the gap between booking and turning up. Members book three classes to keep their options open, cancel one twenty minutes before, never turn up to another, and the person on the waitlist who would have come never hears there was a place. A timetable system has to fill classes from the waitlist on its own, make late cancellations cost something, and count no-shows so the club can see who does it. This chapter sets up the timetable and walks through a class from booking to the closed register.
+
+## Step 1: class types and studios
+
+**Configuration, Class Types** is the catalogue: Spin, Vinyasa Yoga, HIIT 30 and so on. For each one set:
+
+- **Duration (h)** and **Intensity** (low, moderate, high, all out);
+- **Default Capacity**, used when a class is created without its own capacity;
+- **Credits**: how many session credits it costs a member on a credit plan. A 45 minute Reformer class can cost two while a yoga class costs one;
+- **Drop In Price**: what somebody without a class-inclusive membership pays;
+- a description, a "what to bring" note and an image.
+
+<Shot src="/odoo-guides/odoo-gym-class-booking-waitlist/class-types.webp" alt="Odoo gym Class Types list showing Spin, Vinyasa Yoga, HIIT 30, Barbell Strength and Reformer Pilates with intensity, duration, default capacity, credits and drop-in price" width={1440} height={345} caption="Class types: length, intensity, capacity, credit cost and the drop-in price." />
+
+**Configuration, Studios** holds the rooms of each club, each with a **Capacity** and a kind (group studio, gym floor, pool, court, spin room, mat room). A studio must hold at least one person.
+
+## Step 2: trainers
+
+**Team, Trainers** holds each instructor with the class types they teach, their certification, insurance expiry date, and their pay basis (covered in the [personal training chapter](/odoo-guides/odoo-gym-personal-training/)). Link the trainer to an **Odoo User** so they can sign in: a user with only the Trainer role sees the classes they teach rather than the whole timetable.
+
+The insurance expiry date is stored for the manager to check. The module does not stop a trainer with lapsed cover from being rostered.
+
+## Step 3: recurring slots
+
+**Classes, Recurring Slots** (Club Manager) is the weekly pattern: Monday 06:30 Spin with Sean in the Spin Room, Wednesday 18:30 Barbell Strength with Marcus in Studio One. Each slot has a club, class type, trainer, studio, weekday, start time, duration, an optional capacity (zero means use the studio's capacity) and optional start and end dates, so a summer-only class can stop by itself.
+
+<Shot src="/odoo-guides/odoo-gym-class-booking-waitlist/slots.webp" alt="Odoo gym Timetable Slots list with weekday, start time, class type, trainer, studio, branch, duration and capacity for seven weekly classes from Monday Spin at 06:30 to Saturday HIIT 30 at 10:00" width={1440} height={430} caption="Recurring slots: the week written once. The nightly job copies it into the diary." />
+
+The **extend the class timetable** job runs every night and writes every active slot into the diary as far ahead as Settings says (4 weeks by default). It skips classes that already exist, so it never doubles up. A slot added today appears in **Classes, Timetable** after the next run.
+
+Each generated class is checked as it is written: a class that would put a trainer in two places at once, or two classes in one studio at the same time, is refused.
+
+<Callout title="Check class times after the first run">In version 19.0.1.0.0 the slot's start time is written into the diary as a UTC time. Odoo shows times in each user's own time zone, so in a club whose users are not on UTC the generated classes appear shifted by the time zone difference (on the demo, an 18:00 slot shows at 21:00). Until this is fixed, enter slot start times in UTC, or check one generated class against the slot before relying on the timetable.</Callout>
+
+## Step 4: book members into a class
+
+Open a class from **Classes, Timetable** (calendar, list or pivot) and click **Book a Member**, or create a booking from **Classes, Bookings**. When the booking is saved the module decides:
+
+- **Booked or waitlist**: if the class has seats left the member is booked, otherwise they go on the waitlist. A member can only be on a class once.
+- **Price**: zero if the member's current contract includes classes (all included or credits). Otherwise the class type's drop-in price.
+- **Credits**: on a plan where classes cost credits, a booked place charges the class type's credit cost to the contract. If the member does not have enough credits left, the booking is refused with the numbers.
+- **Closed classes**: a class that is finished or cancelled cannot be booked.
+
+The class shows **Booked**, **Waitlist**, **Seats Left** and **Fill Rate (%)**, and its state flips between **Open** and **Full** as places are taken and released. The **Revenue** figure on a class is the total of drop-in prices on its bookings; members on an inclusive plan add nothing.
+
+## Step 5: cancellations and the waitlist
+
+Cancel a booking from the class register or the Bookings list:
+
+- **In time** (earlier than the Late Cancellation hours in Settings, 12 by default): the booking is cancelled with the reason "Cancelled in time" and any credits are refunded to the contract.
+- **Late**: the booking is cancelled with the reason "Late cancellation, credit kept". The place is released but the credit is not refunded.
+
+Either way, the place goes straight to the waitlist: the members who have been waiting longest are moved to Booked for every free place, and a note "A place opened on ... and the booking is confirmed" is posted on each promoted member's record. A waiting member can also be moved up by hand with the promote button on the register, which is refused if the class is full.
+
+<Callout title="Waitlist promotion does not charge credits">In version 19.0.1.0.0 credits are charged when a booking is created as Booked. A member who joins the waitlist and is then promoted, automatically or by hand, is not charged the class's credits. On a credit plan, check promoted bookings, or keep credit classes off the waitlist until this is changed.</Callout>
+
+## Step 6: run and close the class
+
+On the class form:
+
+- **Start** moves an open or full class to Running.
+- On the **Register** tab, mark each member present with the attend button. Marking a member present records a visit at the club linked to the booking, without charging a second credit.
+- **Close the Class** finishes it. Every member still Booked becomes a **No Show**, and anyone still on the waitlist is cancelled.
+
+<Shot src="/odoo-guides/odoo-gym-class-booking-waitlist/session-form.webp" alt="Odoo gym class Register tab listing members with the time they booked and the state Attended for each one" width={902} height={400} caption="The class register after the class: each booking marked Attended, with buttons to attend, promote or cancel while it runs." />
+
+If nobody closes a class, the **close finished classes** job does it every two hours once the class end time has passed, so no-shows are always counted. The member record keeps a **No Show** count from these, which is the number to look at before a member's next booking.
+
+**Cancel the Class** is for when the club calls a class off. Every booking and waitlist place is cancelled with credits refunded, whatever the notice, each affected member with an email address is sent the "Class Cancelled" email, and the class's chatter records how many bookings were refunded and how many members were emailed.
+
+## Step 7: class reporting
+
+**Reporting, Class Performance** (Club Manager) is a pivot of finished classes by class type and month, with **Attended Count** and **Fill Rate (%)**. Read the fill rate per class type and month cell; the totals row adds the percentages together, so it is not an average. Group by trainer or studio to compare instructors and rooms.
+
+<Callout title="What the timetable does not do">There is no online or app booking, no member-facing calendar and no reminder before a class. Drop-in prices are recorded on the booking but not invoiced, so take drop-in payments at the till or on a manual invoice. The late cancellation rule keeps a credit; it does not charge a fee to members on an unlimited plan.</Callout>
+
+Next: [personal training packages and trainer pay](/odoo-guides/odoo-gym-personal-training/).

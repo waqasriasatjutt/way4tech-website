@@ -1,0 +1,128 @@
+---
+title: "Transport rate cards, charge sheets and monthly invoicing in Odoo"
+metaTitle: "Transport Rate Cards and Charge Sheets"
+description: "Price transport jobs in Odoo 19 from contract rate cards per km, tonne, pallet, drop or zone, with fuel surcharges, detention and monthly invoices."
+targetQuery: "odoo transport rate card freight pricing"
+category: "Industry"
+summary: "How the Transport Management Enterprise add-on prices a job from the customer's contract, shows buy and sell side by side on a charge sheet, bills waiting time, invoices a month in one run and handles claims."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-transport-management"
+seriesOrder: 3
+modules:
+  - name: "Transport Management Enterprise"
+    technical: "wt_transport_management_enterprise"
+    note: "USD 90 add-on, needs Transport Management (USD 10)"
+demo:
+  url: "https://transport-pro.way4tech.com/"
+  label: "Transport Enterprise demo"
+related: ["odoo-freight-charges-invoicing", "odoo-freight-forwarding"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Which rate card wins when a customer has more than one?"
+    a: "A card nominated by hand on the trip, the load or the customer always wins. Otherwise, among active cards whose dates cover the job and whose customer, lane, vehicle class and service match or are left blank, the most specific wins. The customer counts 4, each end of the lane 1, and a vehicle class or service 1. Ties go to the card with an end date, then the sequence, then the newest card."
+  - q: "Can a rate card charge per tonne and per drop on the same job?"
+    a: "Yes. A card holds several bands, each with its own basis: per distance, per tonne, per pallet, per drop, per chargeable waiting hour, a flat trip price or a zone to zone slab. Each band that applies writes its own line on the charge sheet."
+  - q: "How does the fuel surcharge work?"
+    a: "A surcharge can be indexed on a fuel price. The card names a base fuel price; the office updates the current price, and the surcharge is the movement between the two applied to the share of the job's cost that is fuel. Surcharges can also be a percentage of the linehaul, a fixed amount, per distance or per tonne."
+  - q: "Can I change a price on the charge sheet by hand?"
+    a: "Yes. A hand edited line is kept when the sheet is re priced from the contracts, and the undo icon on the line puts it back on the contract price. The sheet records how each line was priced, so a changed figure is visible."
+  - q: "Does the base module have rate cards?"
+    a: "No. In the base Transport Management module the trip charge is typed on the trip. Rate cards, charge sheets, detention, consolidated invoicing and claims all come with the Enterprise add-on."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In most transport offices the price of a job lives in somebody's head or in a spreadsheet on one laptop. The dispatcher types a figure on the trip, the invoice goes out, and three months later the customer's accounts team finds the contract said something else. Contract pricing is the part of a transport system that pays for itself fastest, because it stops two people disagreeing about the price of the same journey. This chapter covers how the Enterprise add-on prices a job from a rate card, puts the buy side next to the sell side, and gets it onto an invoice.
+
+## Rate cards
+
+**Transport, Pricing, Rate Cards** holds the agreed tariffs. A card has:
+
+- **Side**: Sell, charged to a customer, or Buy, paid to a carrier you subcontract to.
+- **Who it prices**: a customer (or a carrier for a buy card), a service (the trip type) and vehicle classes, each optional.
+- **Lane**: a From Zone and a To Zone, also optional.
+- **Validity**: valid from and until. Draft, Active and Expired states.
+- **Money**: currency, how bands combine, and a minimum charge.
+
+<Shot src="/odoo-guides/odoo-transport-rate-cards-billing/rate-card.webp" alt="Active sell rate card in Odoo for a food trading customer with contract reference, customer, empty lane and vehicle class, specificity 4, valid from March to March 2027, currency SAR, banding mode and a minimum charge of 520 riyals" width={1440} height={900} caption="A customer's national contract: who it prices, its lane, validity and minimum charge." />
+
+### Bands
+
+The Rates tab holds the priced bands. Each band has a basis, an optional quantity range and a rate held to four decimals, because a rate such as 2.7500 per kilometre loses money when it is rounded to the cent. The bases are per distance (km or mi), per tonne, per pallet, per drop, per chargeable waiting hour, a flat price per trip, and a zone to zone slab.
+
+The card's banding setting decides how ranges combine: either the band the quantity lands in prices the whole quantity, or each band prices only the part inside it. A quantity below every band is priced on the lowest band, and the minimum charge catches the rest.
+
+<Shot src="/odoo-guides/odoo-transport-rate-cards-billing/rate-card-bands.webp" alt="Rates tab of a rate card in Odoo with per distance up to 500 km at 3.10, per distance over 500 km at 2.75, per drop 120 and per chargeable waiting hour 95 after two hours free" width={1440} height={900} caption="Distance bands, a drop rate and waiting time on one card." />
+
+### Surcharges
+
+The Surcharges tab adds extras on top of the linehaul: fuel, tolls, congestion or city access, ferry or tunnel, dangerous goods, temperature controlled, night or out of hours, weekend, handling and other. Each is calculated one of five ways: indexed on a fuel price, a percentage of the linehaul, a fixed amount, per distance or per tonne. The fuel index works the way most road haulage escalators do: the contract names a base fuel price, the office updates the current one, and the surcharge moves with the difference.
+
+### Zones
+
+**Configuration, Rate Zones** groups places the way customers quote them. A zone is built from transport locations, postcode ranges, states or countries. The demo has Eastern, Central and Western Region zones, so a card can price "Eastern to Central" without listing every site.
+
+### Which card applies
+
+You never pick a card in code or by memory. A card nominated on the trip, the load or the customer's contact card wins outright. Otherwise the add-on looks at active cards valid on the pricing date and chooses the most specific match: naming the customer counts 4, each end of the lane 1, and a vehicle class or service 1. The specificity figure is shown on each card. Ties go to the card with an end date, because a spot rate is usually agreed on top of an annual contract.
+
+A scheduled action expires lapsed cards and gives notice on cards about to lapse, so an old contract does not keep pricing quietly.
+
+## Charge sheets
+
+A charge sheet is the priced job: one per customer on a trip, with sell lines charged to the customer and buy lines paid to a carrier. **Price Job** on a trip, or **Price from Contracts** on the sheet, resolves the cards and writes the lines. Each line shows what it was charged on, the quantity and unit, the unit price, and in plain words how it was priced: which card, which contract reference, which lane and which band.
+
+<Shot src="/odoo-guides/odoo-transport-rate-cards-billing/charge-sheet.webp" alt="Confirmed charge sheet in Odoo for a reefer trip with sell rate card and buy rate card applied, a per distance line of 173 km at 7.20 riyals totalling 1,245.60 and an explanation of the card, contract, validity and lane that priced it" width={1440} height={900} caption="A confirmed charge sheet: the contracts applied and how the line was priced." />
+
+What happens on the sheet:
+
+- **Hand edits are kept.** Change a line and re-pricing leaves it alone. the undo icon on the line puts it back on the contract price.
+- **Confirm Price** publishes the price to the trip. This is the only place the add-on writes the trip charge. On a groupage trip carrying several customers, the trip charge is the sum of their confirmed sheets, not the last one confirmed.
+- **Below cost** is flagged when the price falls under the vehicle's true cost per distance for the job (see the [cost per km chapter](/odoo-guides/odoo-truck-cost-per-km-fuel/)). Confirming such a sheet records a dated note on its chatter that it was confirmed below cost.
+- **Cancel** on the trip cancels its sheets too, after the base module has decided the trip may be cancelled at all.
+
+Margin and margin percentage show on every sheet, and the Charge Sheets list shows sell, buy and margin per job.
+
+## Detention and waiting time
+
+Detention terms are records in **Configuration, Detention Rules**: free time in hours, a rate per hour, a billing increment in minutes, an optional daily cap, whether the clock starts at actual arrival or at the booked slot, which days it applies on, and a validity window. A rule can name a customer, a location and a stop type, and the most specific rule wins, the same way as rate cards. The demo has rules for port and industrial city gates.
+
+Chargeable waiting is worked out per stop from its arrival and departure times, so detention is only as good as the stop times the office records.
+
+## Invoicing
+
+A trip with a charge sheet invoices from the sheet: **Create Invoice** on the trip uses the confirmed sheet's lines. A trip without a sheet still invoices exactly as in the base module, which is the promise to anyone who installs the add-on on a running database.
+
+For customers billed monthly, **Billing, Consolidated Invoicing** gathers confirmed sheets over a period. You choose:
+
+- the period, with a shortcut for last month, and optionally which customers;
+- one invoice per customer, per customer and month, per customer and trip, per customer and load, or per charge sheet;
+- the journal and invoice date, and whether to post immediately;
+- whether to include detention and surcharges and deduct agreed claims.
+
+**Preview** lists every sheet that would be billed, with any warning, before **Create Invoices** raises them. Both routes, one trip at a time and the monthly run, produce the same invoice lines.
+
+<Shot src="/odoo-guides/odoo-transport-rate-cards-billing/consolidated-invoicing.webp" alt="Consolidated Invoicing wizard in Odoo with period from and to, customers, one invoice per customer, journal, invoice date, post immediately, include detention, include surcharges and deduct agreed claims, with Preview and Preview Last Month buttons" width={1440} height={900} caption="The monthly run: choose the period and grouping, preview, then invoice." />
+
+A posted trip invoice is never edited by the add-on. If a load comes off after billing, reverse the invoice with Odoo's own credit note so it points back at what it reverses; a draft invoice is simply cancelled.
+
+## Claims
+
+**Billing, Claims** records shortage, damage, total loss, temperature excursion, late delivery and contamination claims against a load. A claim keeps three figures apart: what the customer claimed, what was agreed, and what was recovered. Responsibility can sit with the driver, a subcontractor, the customer, the shipper, a third party, force majeure or not yet established.
+
+**Accept** puts the agreed figure where it can be settled: as a negative line on a charge sheet that has not been invoiced, or, if the invoice is already out, through **Raise Credit Note** for only the claimed amount. **Recover from Payee** takes the recovery off the responsible driver's or subcontractor's next open settlement run.
+
+<Callout title="Limits worth knowing">Sell lines carry tax only if the rate band carries one, so set taxes on bands for VAT registered customers. Below cost confirmations are recorded with a note but not refused. When a consolidated run invoices before posting, the sheet's chatter says it was invoiced on a draft invoice. There is no customer portal for rate cards or quotes, and no online booking.</Callout>
+
+## Setting it up
+
+1. Create rate zones the way your customers quote lanes.
+2. Write each customer contract as a sell card with its bands, minimum charge and surcharges, and set a validity window. Add buy cards for carriers you subcontract to.
+3. Set taxes on the bands that need them.
+4. Add detention rules for the sites where waiting is chargeable.
+5. Price a week of trips, compare the sheets with what you would have invoiced, and correct the cards rather than the sheets.
+6. At month end, run Consolidated Invoicing with Preview first.
+
+If your business also forwards freight on other carriers, the [freight charges and invoicing guide](/odoo-guides/odoo-freight-charges-invoicing/) covers how a forwarding job file is billed. The pricing screens here can be tried on the [Enterprise demo](https://transport-pro.way4tech.com/).

@@ -1,0 +1,113 @@
+---
+title: "Rental orders in Odoo Community: pickup, return, late fees and security deposits"
+metaTitle: "Rental Pickup, Return, Late Fees, Deposits"
+description: "Hire out equipment on an Odoo 19 Community sales order: rate tables, no double booking, partial pickup and return, late charges and deposit refunds."
+targetQuery: "odoo rental pickup return late fee deposit"
+category: "Industry"
+summary: "How the Rental Management module runs a hire on the sales order in Odoo 19 Community: period pricing, an availability check that refuses to oversell, pickup and return wizards with a movement log, late return charges, deposit invoice and refund, and overdue reminders."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-rental-management"
+seriesOrder: 2
+modules:
+  - name: "Rental Management"
+    technical: "wt_rental_management"
+    note: "USD 99, Odoo 19 Community, needs Sales and Inventory"
+related: []
+linkFrom: ["/products/wt-rental-management/"]
+sources: []
+faqs:
+  - q: "How is a late return charged?"
+    a: "From the same rate table as the hire. The hours between the expected return and the recorded return are priced with the cheapest rate that covers them, times the quantity, plus the product's late penalty percentage if you set one. The charge goes onto the order as its own line, and a second late return on the same line updates that line instead of adding another."
+  - q: "Can a customer collect or return part of an order?"
+    a: "Yes. The pickup and return wizards are filled with whatever is still to go out or come back, and you change the quantities. Each line keeps track of how many are out and how many are back, and the order shows Partly Returned until everything is in."
+  - q: "How does the security deposit work?"
+    a: "Each rentable product carries a deposit per unit, and the order totals it. Invoice Deposit raises an invoice for the deposit on its own, so it never lands in hire revenue. Refund Deposit raises a credit note for the deposit less a deduction, which starts at the order's late charges and can be changed, and can never be more than the deposit taken."
+  - q: "What happens when goods are not returned on time?"
+    a: "A daily scheduled action flags orders whose return date has passed and puts one to-do on the order for the person following it, once rather than every night. Send Reminder emails the customer that the goods are due back. The flag clears when everything is returned."
+  - q: "Is there a live demo of the back office module?"
+    a: "The public rental demo runs the website booking module. Ask us for a walk through of Rental Management; the screenshots on this page are from the module's own store listing."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+At a hire counter the paperwork goes wrong in the same three places every time: a machine promised to two customers for overlapping days, a late return nobody charged because the price for the extra day was not on the contract, and a deposit refunded in full when it should have covered the late fee. None of this needs complicated software. It needs the order to know the dates, the price table to cover any period, and the handover to be recorded when it happens. This chapter covers how the Rental Management module does that on the ordinary Odoo 19 Community sales order.
+
+## Rentable products and their rates
+
+Tick **Can be Rented** on a product and its Rental tab opens up:
+
+- **Rental Rates**: so many hours, days, weeks or months for so much money. A product usually has a day, a week and a month rate.
+- **Security Deposit** per unit.
+- **Units for Rent**: a fixed number, for a hire fleet that is not stock managed, or the quantity on hand, for goods you also buy and sell.
+- **Late Penalty (%)**: an optional percentage added on top of a late return charge.
+
+**Rental, Configuration, Rental Rates** shows every rate across products, with the per hour equivalent so you can see at a glance whether the week rate is really cheaper than seven days.
+
+<Shot src="/odoo-guides/odoo-rental-pickup-return-deposits/rental-rates.webp" alt="Rental Rates list in Odoo with day, week and month rates for a table saw, scissor lift, diesel generator, party tent, pressure washer and PA system, an hourly rate for a camera kit, and a per hour equivalent for each" width={1600} height={1000} caption="Rate rows per product, with the per hour equivalent beside each price." />
+
+Pricing follows one rule. The single rate that covers the requested period for the least money wins; part periods round up to whole blocks; a rate priced at zero is ignored. Ten days with a day rate of 35 and a week rate of 120 is charged as two weeks, 240, because that is cheaper than 350. Rental lines are priced from these rates rather than the pricelist, through Odoo's normal price computation, so tax included rates and the rest of the order work as usual. Rates held in the company currency are converted when the order is in another currency.
+
+Combo products cannot be made rentable, because a bundle has nothing of its own to hand over.
+
+## The rental order
+
+**Rental, Operations, Rental Orders** is a filtered view of sales orders with **Rental Order** ticked. A rental order has a **Pickup** date and an **Expected Return** date. Each line takes those dates, and you can change them on one line when an item goes out early. Moving the return date reprices the line. The order also shows the total security deposit and the rental status: Draft, Reserved, Out, Partly Returned or Returned. The order is only as far along as its least advanced line.
+
+### No double booking
+
+When you confirm, the module counts the units of each product already promised to confirmed rentals that overlap the exact window, not the day. Windows are half open, so a return at 10:00 frees the unit for a pickup at 10:00. If the order would oversell, confirmation is refused and the message names the product, the free quantity and the orders holding the rest. The count is done with full rights, so a salesperson who cannot see another team's order is still stopped from promising the same item.
+
+**Check Availability** on the order reports the same without confirming. **Rental, Operations, Availability** answers "have we got four of these next Tuesday" without an order: pick a product, a window and a quantity, and it shows units owned, already promised, free, whether there are enough and which orders hold them.
+
+## The schedule
+
+**Rental, Operations, Schedule** lists every rental line with its customer, product, quantity ordered, pickup, return, duration, how many were picked up and returned, and the rental status, as a list, calendar or pivot. It is the counter's view of what goes out and comes back today.
+
+<Shot src="/odoo-guides/odoo-rental-pickup-return-deposits/rental-schedule.webp" alt="Rental Schedule list in Odoo with order reference, customer, product such as table saw, scissor lift, banquet tables, folding chairs or diesel generator, quantity ordered, pickup and return dates, duration, picked up and returned quantities and status returned, partly returned, picked up or reserved" width={1600} height={1000} caption="The schedule: what is reserved, out, partly back and returned." />
+
+## Pickup
+
+**Pickup** on a confirmed order opens a wizard already filled with everything still to go out. Set the time it was collected, correct any quantity that differs, and add a note such as a serial number or the name of whoever collected it. **Confirm Pickup** records it. Partial pickups are allowed; the line keeps what is still to go out for the next pickup.
+
+## Return and late charges
+
+**Return** opens a wizard with each line's picked up quantity, how many are already back, when it was due and how many are coming back now. Set the time it came back.
+
+If that time is after the expected return, the wizard shows the late charge before anything is saved, so the counter can tell the customer what the delay costs. The charge is the late hours priced from the product's own rate table with the cheapest covering rate, times the quantity, plus the late penalty percentage. Untick **Charge for Late Return** to waive it. **Confirm Return** records the return and puts the charge on the order as a line of its own. A second late return on the same line updates that fee line rather than adding another.
+
+Lateness is settled from the recorded return, not the clock, so an item that is late but not yet back has no late charge until it returns. The overdue flag covers that gap.
+
+## The movement log
+
+Every pickup and every return writes a movement record: reference, date, direction, order, customer, product, quantity and, for returns, how many hours late. Movements are never edited afterwards, so the history stands up when a customer disputes a late charge. **Rental, Operations, Movements** lists them all.
+
+<Shot src="/odoo-guides/odoo-rental-pickup-return-deposits/rental-movements.webp" alt="Rental Movements list in Odoo with reference, date, pickup or return direction, rental order, customer, product, quantity and late by hours, including returns 24, 30 and 48 hours late" width={1600} height={1000} caption="Every pickup and return as a permanent record, with hours late on returns." />
+
+## Security deposits
+
+The deposit is the product's deposit per unit times the quantity on each rental line, totalled on the order and converted to the order's currency.
+
+1. **Invoice Deposit** raises an invoice for the deposit alone, against a deposit service product, so it never mixes with hire revenue. It can only be raised once and only if there is a deposit.
+2. **Refund Deposit** opens a wizard with the deposit held and a deduction that starts at the order's late charges. Change the deduction if there is damage or anything else to keep. The refund is raised as a credit note for the deposit less the deduction. It cannot be zero and cannot be more than the deposit taken.
+
+The refund is a credit note of its own rather than a reversal of the deposit invoice, because the amount going back is rarely the amount that came in.
+
+## Overdue rentals and reminders
+
+A daily scheduled action looks for rental lines whose return date has passed while goods are still out, flags the order as Overdue and puts one to-do on it for whoever is following it. It does this once per order, not every night, and clears the flag when everything is back. **Send Reminder** on the order emails the customer that the goods are due back, using the shipped return reminder template.
+
+A **Rental Agreement** prints from the order.
+
+<Callout title="Where this module stops">Availability is a pool per product, not a tracked unit with its own serial, meter or inspection record; the note on a pickup is where a serial number goes. Pickup and return are recorded in the module's own wizards and movement log and are separate from Odoo's delivery orders, so if your rentable products are storable goods, decide with your warehouse how standard deliveries are handled. One rate prices a hire; rates are not combined. There is no damage assessment workflow: damage is a deduction you type on the deposit refund.</Callout>
+
+## Setting it up
+
+1. Install Rental Management; it needs Sales and Inventory.
+2. Tick Can be Rented on each product you hire out, add its rate rows and deposit, and choose a fixed pool or quantity on hand.
+3. Set a late penalty percentage on products where late returns hurt, such as items booked back to back.
+4. Create a rental order with pickup and return dates, confirm it, and try a second overlapping order that would oversell.
+5. Record a pickup, a partial return and a late return, then invoice and refund the deposit, and check the figures with whoever does the books.
+6. Check the return reminder email template and the person who should receive overdue to-dos.
+
+For bookings taken on the website, add the [Online Rental Shop](/odoo-guides/odoo-rental-website-booking/); with both installed, the shop reads these rate tables and counts these rentals. The [rental management hub](/odoo-guides/odoo-rental-management/) compares the two modules.

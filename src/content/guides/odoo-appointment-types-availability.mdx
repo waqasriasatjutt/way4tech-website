@@ -1,0 +1,128 @@
+---
+title: "Appointment types, slots and availability in Odoo: buffers, notice, staff, resources and timezones"
+metaTitle: "Appointment Types, Slots and Availability"
+description: "Set up appointment types in Odoo 19 Community: weekly hours, slot interval, buffers, notice, booking window, staff or rooms with capacity, timezones."
+targetQuery: "odoo appointment availability slots buffer"
+category: "Operations"
+summary: "How the booking page decides which slots are free, and how to set duration, buffers, notice, weekly hours, staff or resources and the timezone so it offers only times you can keep."
+published: 2027-01-28
+updated: 2027-01-28
+series: "odoo-appointment-booking"
+seriesOrder: 1
+modules:
+  - name: "Online Appointment Booking"
+    technical: "wt_appointment_booking"
+    note: "USD 79, Odoo 19 Community, needs Website and Calendar"
+demo:
+  url: "https://photography.way4tech.com/"
+  label: "Appointment booking demo (photography studio)"
+related: ["odoo-appointment-booking", "odoo-salon-front-desk-website", "odoo-restaurant-reservations-waitlist"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo decide which appointment slots to show?"
+    a: "It takes the weekly hours on the appointment type, steps through them at the slot interval, and keeps only slots that finish inside the band, are past the minimum notice, are inside the booking window and have at least one staff member or resource free once the buffers are added."
+  - q: "What is the difference between slot interval and duration?"
+    a: "Duration is how long the appointment lasts. Slot interval is how often a new slot can start. A 60 minute consultation with a 30 minute interval offers 10:00, 10:30, 11:00 and so on. Left empty, slots start back to back at the duration."
+  - q: "How do I add a lunch break to appointment availability?"
+    a: "Add two availability lines for the same weekday, for example Monday 09:00 to 13:00 and Monday 14:00 to 18:00. No slot is offered that would run past the end of a band, so nothing is booked across lunch."
+  - q: "Should I book people as staff or as resources?"
+    a: "Use staff when the person is an Odoo user whose other meetings must block their slots. Use resources for rooms, chairs, bays or equipment, or when one thing can take several bookings at once through its capacity. A resource only sees bookings made through the module."
+  - q: "What happens to bookings when the clocks change?"
+    a: "Availability is read in the appointment type's own timezone and stored in UTC. A slot that does not exist because the clocks went forward is skipped, and an hour that happens twice is read as standard time, so a booking does not silently move."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A booking page is only as good as the rules behind it. Offer slots too close together and a photographer arrives at the next shoot with the last client's gear still on the floor. Offer a slot for twenty minutes from now and nobody sees the booking until the customer is at the door. Offer slots eighteen months ahead and you are committed to prices and staff you do not have yet. Every one of those is a field on the appointment type, and getting them right once saves the front desk from fixing bookings by phone.
+
+This chapter goes through how the [Online Appointment Booking](/odoo-guides/odoo-appointment-booking/) module works out free slots on Odoo 19 Community, and how to set each rule. The examples come from the demo's photography studio; swap "studio" for "consulting room" or "service bay" and nothing changes.
+
+## How a free slot is worked out
+
+The website never decides availability itself. It asks the appointment type, and the type works it out in this order:
+
+1. **Candidate start times** come from the weekly availability: for each day, each band (say Monday 09:00 to 17:00) is stepped through at the slot interval. A slot is only offered if it finishes inside its band.
+2. **Time limits** drop anything earlier than now plus the minimum notice, and anything later than the booking window.
+3. **Clashes** drop any slot where no staff member or resource is free. For staff, that means no active Calendar meeting they attend overlaps the slot. For resources, it means fewer overlapping bookings than the resource's capacity. The buffers before and after are added to the slot before the overlap check.
+4. **Assignment** then applies. With "Everyone must be free", a slot is shown only if every staff member or resource on the type is free.
+
+All existing meetings and bookings for the month are read in one query, so a month of short slots does not slow the page down. When the visitor submits, the same check runs again on the server, which is how a slot taken a minute earlier is caught.
+
+## The appointment type, field by field
+
+Open **Appointments, Configuration, Appointment Types** and create or open a type. The form has four groups and four tabs.
+
+<Shot src="/odoo-guides/odoo-appointment-types-availability/appointment-type-form.webp" alt="Corporate Headshots appointment type form in Odoo with timing, booking rules, scheduled with resources, two studios, location and the availability tab" width={1440} height={900} caption="A 30 minute headshot session: slot every 30 minutes, 24 hours notice, a 60 day window, booked against two studios." />
+
+### Timing
+
+- **Duration** in hours and minutes. It has to be more than zero and no longer than a day.
+- **Slot Every** is how often a slot starts. Leave it empty and slots run back to back at the duration. A 90 minute family portrait session with a 30 minute interval gives the customer more choice; with the interval empty, a band starting at 09:00 offers only 09:00, 10:30, 12:00 and so on.
+- **Buffer Before** and **Buffer After** are free time that must sit around the appointment: setup, travel, cleaning a room, changing a backdrop. A booking with a 30 minute buffer after it blocks the next 30 minutes on that person or resource, so the neighbouring slot disappears.
+
+### Booking rules
+
+- **Minimum Notice** in hours, 1 by default. The demo studio uses 24 for headshots so it can confirm the photographer the day before.
+- **Booking Window** in days, 60 by default and at least 1. The demo uses 365 for wedding consultations because couples book a year ahead.
+- **Timezone** is the timezone the weekly availability is written in. It defaults to the timezone of the user who creates the type. Set it to where the work happens, not where your server is.
+- **Is Published** puts the type on the website, and **Website URL** shows its address, for example `/appointment/corporate-headshots-5`. Visitors and portal users can only ever see published types.
+
+### Scheduled with and assignment
+
+- **Scheduled With** is Staff or Resources. A staff type needs at least one staff member; a resource type needs at least one resource. Odoo refuses to save it otherwise.
+- **Assignment** has three choices:
+  - **Visitor chooses** shows a row of names at the top of the booking page, plus Anyone.
+  - **Assign automatically** gives the booking to the first staff member or resource found free. It is first free, not a round robin, so it does not spread bookings evenly across a team.
+  - **Everyone must be free** offers a slot only when all of them are free. Use it for a joint session, but read the limit in the callout below.
+
+### Where
+
+**Location** is printed on the booking page, the confirmation and the reminder. **Video Call Link** is added to the emails and to the Calendar meeting's video call field when your Odoo build has that field. Both are fixed per type, so an online consultation and an in person one should be two types.
+
+## Weekly availability
+
+The **Availability** tab holds one line per band: a weekday, a From time and a To time, in the type's timezone. Two lines on the same day give you a break between them. A day with no line offers nothing. From has to be before To, and both have to sit inside one day.
+
+<Shot src="/odoo-guides/odoo-appointment-types-availability/weekly-availability.webp" alt="Wedding Consultation appointment type in Odoo with a 365 day booking window and the availability tab showing Monday to Thursday 10:00 to 20:00 and Saturday 12:00 to 20:00" width={1440} height={900} caption="Weekly availability for wedding consultations: weekday evenings, a later start on Saturday, and a one year booking window." />
+
+The grid belongs to the appointment type, not to each person. If two photographers share a type, they share its hours. To keep someone's afternoon free, put a meeting in their Odoo calendar (for staff types), or give them their own type with different hours.
+
+## Staff or resources
+
+This is the choice that decides what can block a slot.
+
+**Staff** are internal Odoo users. Every active Calendar meeting where they are an attendee counts as busy, whether it was booked through this page, created by hand, or arrived through whatever calendar sync you use. Archived meetings do not count, which is why a cancelled booking frees its slot straight away. A staff member takes one booking at a time.
+
+**Resources** live under **Configuration, Resources**. Each has a name, a **Capacity**, an optional linked user, the appointment types it serves and a description. Capacity is how many bookings it can hold at the same moment: a consulting room is 1, a class of ten is 10.
+
+<Shot src="/odoo-guides/odoo-appointment-types-availability/resources-capacity.webp" alt="Resources list in Odoo with three studios of capacity 12, 3 and 8, four photographers and a videographer with capacity 1, and a drone kit with capacity 1" width={1440} height={900} caption="The demo's resources: studios with a capacity, photographers and a drone kit at one booking each." />
+
+The demo studio books its photographers as resources with capacity 1. That works, and it lets one page offer "Omar or Kareem" without making them Odoo users. The cost is that a resource is only blocked by bookings from this module, so a photographer's private appointment in Odoo Calendar will not hide their slots.
+
+<Callout title="Two traps worth knowing before go-live">
+A resource's Linked User field does not make that user's calendar count: the code only checks bookings for resources. If a person's other meetings must block their slots, schedule that type with Staff. And with "Everyone must be free", the slot needs all of them free, but the booking and its meeting are given to one of them only. The others are not blocked for that time, so a second booking can still land on them.
+</Callout>
+
+## Timezones
+
+Availability is written in the type's timezone, stored by Odoo in UTC, and shown to the visitor in theirs. The booking page reads the browser's timezone, remembers it in a cookie, and reloads once if its first guess was wrong. A line under the slots says which timezone the times are in. The timezone the customer booked from is kept on the booking as **Booked From**, and the emails use it.
+
+<Shot src="/odoo-guides/odoo-appointment-types-availability/visitor-timezone.webp" alt="Wedding Consultation booking page viewed from London showing Saturday slots from 08:00 to 15:00 and weekday slots from 06:00, four hours earlier than the studio's Dubai hours" width={1440} height={900} caption="The same Dubai availability seen from London: Saturday's 12:00 to 20:00 shows as 08:00 to 15:00 start times." />
+
+Daylight saving is handled too. A slot that would fall in the hour that does not exist when clocks go forward is skipped, and an hour that happens twice when they go back is read as standard time.
+
+## Publishing and the booking index
+
+`/appointment` lists every published type as a card with its duration and location. If you publish only one, the page jumps straight to it. The booking page shows one month at a time; Earlier stops at the current month, so a past month is never offered. Add a menu item for `/appointment`, or link each type's own address from the right service page.
+
+## A checklist for each new type
+
+1. Name it the way a customer would search for it, and write the description they will read above the slots.
+2. Set duration, then decide the slot interval and buffers together.
+3. Set minimum notice to the time you really need to prepare, and a booking window you are willing to commit to.
+4. Set the timezone to where the work happens.
+5. Pick Staff or Resources, then the assignment rule.
+6. Add the weekly bands, with a break where you need one.
+7. Add questions and the follow-up rules, covered in the [next chapter](/odoo-guides/odoo-appointment-confirmation-reminders-cancel/).
+8. Publish it and open its page in a private window to see what a customer sees.

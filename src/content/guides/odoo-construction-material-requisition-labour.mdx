@@ -1,0 +1,120 @@
+---
+title: "Site costs in Odoo: material requisitions, labour logs, equipment, subcontracts and site expenses"
+metaTitle: "Material Requisitions and Site Costs in Odoo"
+description: "Record what a construction site spends in Odoo 19: material requisitions with approval, daily labour by trade, plant, subcontracts and site expenses."
+targetQuery: "odoo construction material requisition and site labour cost"
+category: "Industry"
+summary: "The five ways cost reaches a construction job in Odoo, who records each one, when it starts counting, and how to read the result by job, trade and category."
+published: 2027-02-04
+updated: 2027-02-04
+series: "odoo-construction-management"
+seriesOrder: 2
+modules:
+  - name: "Construction Management"
+    technical: "wt_construction_management"
+    note: "USD 10, Odoo 19 Community, needs Project, Employees and Invoicing"
+demo:
+  url: "https://construction.way4tech.com/"
+  label: "Construction Management demo"
+related: ["odoo-construction-management", "odoo-construction-boq-phases", "odoo-labour-camp-management", "zkteco-adms-odoo"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What is a material requisition in construction?"
+    a: "It is the site's written request for materials: what is needed, how much, for which job and phase, and by when. It is approved in the office before the store or a supplier releases the goods, so materials are not ordered or issued on a phone call and nobody can later ask where 400 bags of cement went."
+  - q: "When does a requisition count as cost on the job?"
+    a: "From the moment it is approved. Approved and issued requisitions both count towards material cost; drafts, submitted and cancelled ones do not. Once a quantity issued is recorded, the line is costed on the issued quantity instead of the requested one."
+  - q: "Can labour logs come from attendance or biometric punches?"
+    a: "Not directly. A labour log is a headcount by trade for a day, typed in by the site. Attendance punches from terminals reach Odoo's Attendances app, which is a separate record per employee; the two are not linked in this module."
+  - q: "Does the module calculate subcontract retention?"
+    a: "No. The subcontract records a retention percentage, the advance paid and the billed and paid amounts you enter. Measured valuations of subcontract work, retention held per certificate and its release are part of the Enterprise add-on."
+  - q: "Which account does the vendor bill from a site expense use?"
+    a: "The draft bill takes the first account of type expense in your chart, whatever the category. Because it is a draft, your accountant should change the account to the right cost code before posting it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+On most sites the money leaks in five places at once. Materials are requested by phone and delivered without anyone signing for them. The labour count on the gang sheet and the count on the wage sheet do not match. A hired crane stays on site a fortnight after it was needed. A subcontractor's third bill is paid without anyone checking what the first two covered. And small cash spends on transport, permits and PPE are never put against a job at all. Each of these is recorded somewhere, just not against the job, which is why the director only finds out at the end. This chapter covers the five records the [Construction Management](/odoo-guides/odoo-construction-management/) module uses to put each one against the job and its phase, on Odoo 19.
+
+## How each cost reaches the job
+
+| Record | Who records it | Counts as cost when | Menu |
+|---|---|---|---|
+| Material requisition | Site engineer | Approved or issued | Materials, Material Requisitions |
+| Labour log | Site engineer | Saved (every log is a day worked) | Resources, Labour Logs |
+| Subcontract | Project manager | Billed amount, once confirmed | Resources, Subcontracts |
+| Site expense | Site engineer, approved by manager | Approved or paid | Site Expenses |
+| Equipment | Project manager | Only through a site expense | Resources, Equipment |
+
+All of them carry a project and a phase, which is what makes the job's cost summary and the phase by phase comparison in the [BoQ chapter](/odoo-guides/odoo-construction-boq-phases/) possible.
+
+## Material requisitions
+
+Materials are ordinary Odoo products. Tick **Construction Material** on a product (or create it from **Materials, Materials**, where the flag is set for you) and give it a cost price, which is offered as the unit cost when the product is picked on a requisition.
+
+A requisition goes through four states:
+
+1. **Draft.** The engineer picks the project, the phase, who requested it and the date it is needed by, then adds lines: material, description, unit, quantity requested and unit cost. A requisition with no lines cannot be submitted.
+2. **Submitted.** It now waits for approval. A daily scheduled job puts a to-do on each submitted requisition, for the person who recorded it, until it is dealt with, and the dashboard's Requisitions to Approve tile counts them.
+3. **Approved.** Only the Project Manager role sees the Approve button. From here the requisition counts as material cost on the job.
+4. **Issued.** **Issue Materials** records what went to site. Lines with no quantity issued are set to the quantity requested; for a part delivery, type the issued quantity on the line before clicking. Each line is then costed on the issued quantity.
+
+A submitted or approved requisition can be cancelled, and a cancelled one can be reset to draft. Once issued, it stays issued. **Print, Material Requisition** gives a one page request for the store or the supplier.
+
+<Shot src="/odoo-guides/odoo-construction-material-requisition-labour/requisition-form.webp" alt="Approved material requisition in Odoo for a residential tower blockwork and plastering phase, with requested by, request and required dates, lines for porcelain tile, tile adhesive and emulsion paint with quantity requested, quantity issued, unit cost and subtotal, and the Issue Materials button" width={1440} height={690} caption="An approved requisition: cost counts on the job now, Issue Materials records the delivery." />
+
+<Callout title="Issuing does not move stock">The base module does not use Odoo Inventory. Issuing a requisition records quantities and cost against the job, but no transfer is created, nothing is reserved and warehouse stock does not go down. If you keep a central store in Inventory, do the transfer to the site location there as well. Purchase orders, likewise, are raised in Purchase as a separate step.</Callout>
+
+## Labour logs
+
+A labour log is one line per trade per day: date, project, phase, labour type, headcount, days worked and the daily wage. The total is headcount times days times the wage. Half days and overtime go in as fractions, so 16 carpenters on 0.5 days or 4 masons on 1.25 days are both normal entries. The list under **Resources, Labour Logs** is editable in place, so a site engineer can enter a whole day's gang sheet in a few minutes.
+
+Eight labour types ship with a skill level and a default daily wage: mason, helper or labourer, carpenter, steel fixer, electrician, plumber, equipment operator and foreman. Change the wages under **Configuration, Labour Types** to your own rates before the first log. The default wage fills in when you pick the trade on the form, and also when logs are imported or created by another module, so a log is never quietly costed at zero.
+
+**Reporting, Labour Analysis** sets labour cost by project against trade, which is where an overrun on one trade shows first.
+
+<Shot src="/odoo-guides/odoo-construction-material-requisition-labour/labour-analysis.webp" alt="Labour Analysis pivot in Odoo with total labour cost per construction project across carpenter, electrician, equipment operator, foreman, helper, mason, plumber and steel fixer columns" width={1440} height={480} caption="Labour Analysis: labour cost per job by trade." />
+
+## Equipment
+
+**Resources, Equipment** is a register of plant and tools: name, code, type (excavator, crane, loader, concrete mixer, roller, generator, truck, scaffolding, power tool, other), ownership (owned, rented, leased), the assigned project, the operator, the rental supplier, the daily hire rate, purchase date and value, and a photo. The kanban groups machines by status: available, idle, in use, under maintenance and returned. Buttons on the form set a machine in use, available, under maintenance or returned.
+
+<Shot src="/odoo-guides/odoo-construction-material-requisition-labour/equipment-board.webp" alt="Equipment kanban in Odoo grouped by available, idle, in use, under maintenance and returned, with cranes, generators, an excavator, a concrete pump, scaffolding, loaders and a roller, each showing ownership and assigned project" width={1440} height={900} caption="The equipment board: what is on which site, and what is sitting idle." />
+
+The register answers "where is it and who has it". It does not cost the machine to the job on its own: the daily rate is stored, but no charge is worked out from it. Hire cost reaches the job when the hire invoice is recorded as a site expense in the Equipment Rental category with the machine picked in the Equipment field. The Idle column is the one to check weekly, because a hired machine standing idle is paid for all the same.
+
+## Subcontracts
+
+A subcontract under **Resources, Subcontracts** records the project and phase, the subcontractor, the work type, the scope of work, start and end dates, the contract value, the advance paid, a retention percentage, the billed and paid amounts, progress and the balance (contract value less paid). It moves from draft to confirmed, in progress and completed; completing it sets progress to 100 per cent.
+
+<Shot src="/odoo-guides/odoo-construction-material-requisition-labour/subcontract-values.webp" alt="Money fields on an Odoo construction subcontract: contract value, advance paid, retention percentage, billed amount, paid amount, balance and progress" width={442} height={260} caption="The money side of a subcontract: let, advanced, billed, paid and the balance." />
+
+For the job's cost, a confirmed, in progress or completed subcontract counts its **billed amount** as actual cost, and its full contract value as **subcontract committed**, shown separately. That way letting a large package does not wipe out the margin on the day it is signed, and the commitment is still in plain view. Drafts and cancelled subcontracts count nothing.
+
+The billed and paid figures are typed on the subcontract. If you want subcontract work measured, valued and certified, with retention worked out per certificate, that is the Enterprise add-on in the [RA bill and job costing chapter](/odoo-guides/odoo-construction-ra-bill-job-costing/).
+
+## Site expenses
+
+Everything else goes in **Site Expenses**: date, project, phase, category, the machine if it relates to one, a description, the amount, the vendor or payee and the receipt or bill reference. Eight categories ship: site transport and haulage, utilities, permits and approvals, safety and PPE, equipment rental, fuel, site office and miscellaneous.
+
+The flow is draft, submitted, approved, paid, with rejected to the side. Approve is a Project Manager button. Mark Paid stamps the payment date. Only approved and paid expenses count as cost on the job.
+
+From a submitted, approved or paid expense with a vendor set, **Create Vendor Bill** raises a draft vendor bill in Invoicing with the expense as one line. The bill is linked back to the expense and a second one cannot be created.
+
+<Callout title="Check the account on the draft bill">The draft bill uses the first expense account in your chart of accounts, whatever the category of the site expense. It is a draft so that your accountant can set the right account (and any analytic distribution) before posting. Agree a cost code per expense category with them before the first bill goes through.</Callout>
+
+## Reading the costs
+
+**Reporting, Cost Analysis** is a pivot, graph and list of site expenses, by project against category out of the box. It includes every expense whatever its status, so filter on approved and paid when you want the figure the job's cost summary uses. Labour Analysis covers labour the same way. The job's own Construction tab and the dashboard put materials, labour, subcontracts and site expenses together.
+
+<Shot src="/odoo-guides/odoo-construction-material-requisition-labour/cost-analysis.webp" alt="Cost Analysis pivot in Odoo with site expense amounts per construction project across equipment rental, fuel, permits and approvals, safety and PPE, site office, site transport and utilities" width={1440} height={480} caption="Cost Analysis: site expenses per job by category." />
+
+## A working week on site
+
+1. Each evening the site engineer enters the day's labour logs from the gang sheet.
+2. Material needs for the coming days go in as requisitions, linked to the phase, and are submitted.
+3. The project manager approves requisitions and expenses from the dashboard tiles.
+4. When materials arrive, the engineer records the issued quantities and issues the requisition.
+5. Hire invoices, transport and small site spends go in as site expenses with the receipt reference; approved ones are turned into draft vendor bills.
+6. Once a week the project manager updates subcontract billed and paid figures and checks the Idle column on the equipment board.
+7. At month end, print the Project Progress Report for each job and compare cost by phase with the phase budgets.

@@ -1,0 +1,94 @@
+---
+title: "Hotel folio billing in Odoo: room charges, extras and the guest invoice"
+metaTitle: "Folio Billing and the Guest Invoice"
+description: "How a hotel guest folio works in Odoo 19: room nights and daily services posted at check-in, extras added during the stay, taxes, and one-click invoicing."
+targetQuery: "odoo hotel folio billing"
+category: "Industry"
+summary: "What goes on the guest folio and when, how room charges stay in line with the stay, how recurring services like breakfast work, and what happens when the folio becomes an Odoo invoice."
+published: 2027-01-21
+updated: 2027-01-21
+series: "odoo-hotel-management"
+seriesOrder: 2
+modules:
+  - name: "Hotel Management PMS"
+    technical: "wt_hotel_management"
+    note: "USD 2,000, Odoo 19 Community, invoices through standard Invoicing"
+demo:
+  url: "https://hotel.way4tech.com/"
+  label: "Hotel demo"
+related: ["odoo-hotel-management", "odoo-restaurant-cashier-day-close", "uae-e-invoicing-odoo"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What is a guest folio?"
+    a: "The running bill for one stay. It collects the room nights and every extra the guest uses, such as breakfast, laundry or the minibar, and at the end it becomes the invoice. In this module a folio opens automatically when the guest checks in."
+  - q: "Are taxes added to room charges automatically?"
+    a: "No. Room charge lines are posted without a tax, whatever the room type. Services carry the taxes set on the service. If your rooms are taxed, add the tax to the room line on the folio before you invoice, and test it with your accountant."
+  - q: "Can I split a folio between the guest and a company?"
+    a: "Not on the folio. One folio belongs to one reservation and one guest, and its invoice goes to that guest. To bill a company, change the customer on the draft invoice, or raise the split as separate invoices in Invoicing."
+  - q: "Is the invoice posted automatically?"
+    a: "No. Create Invoice makes a draft customer invoice and opens it. You check it, post it and register the payment in Invoicing. The folio's Invoiced and Balance Due figures only count posted invoices."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Money lost at a hotel front desk is rarely the room. It is the second breakfast, the airport transfer booked through reception, the extra night agreed at the desk and never added. The fix is a folio that is open from the moment the guest arrives, that the room nights land on without anyone typing them, and that the extras are added to while the guest is still in the building. This chapter of the [hotel series](/odoo-guides/odoo-hotel-management/) explains how the folio works in the Hotel Management PMS module on Odoo 19 Community, and how it turns into a normal Odoo invoice.
+
+## When the folio opens
+
+A folio is created the first time a reservation is checked in, and is linked to it: **Folio(s)** on the reservation opens it, and **Front Office, Folios** lists them all. A folio has a reference (FOL/year/number), the guest, the reservation, check-in and check-out dates, the booking status and a status of its own: **Open**, **Invoiced** or **Closed**.
+
+At check-in, two kinds of line are posted:
+
+- **Room charges.** One line per booked room, described as the room and its type, dated on the room line's check-in day, with the number of nights as the quantity and the nightly rate as the unit price.
+- **Recurring services.** Every service in the company with **Recurring (Daily)** ticked is posted once, with the reservation's nights as the quantity and the service's price and taxes.
+
+<Shot src="/odoo-guides/odoo-hotel-folio-billing/folio-form.webp" alt="Hotel folio form in Odoo, open, for a three night stay, with a room charge line for room 201 at 135 dollars for three nights and a daily breakfast service line, totals, invoiced amount and balance due, and buttons to sync room charges, create invoice and close folio" width={1440} height={830} caption="An open folio: the room nights and the daily breakfast, posted at check-in." />
+
+## Keeping room charges in line with the stay
+
+Stays change. A guest extends by a night or a couple asks for a different room at a different rate. The room line on the folio is tied to its reservation line, so **Sync Room Charges** rewrites the quantity, rate and room from the reservation as it stands now. A scheduled job does the same every day for all checked in reservations, as a safety net for extended stays. Change the dates or the rate on the reservation's room line, and the folio follows.
+
+Recurring services are not synced the same way. Once a recurring service is on the folio it is not posted again, so if the stay is extended, change the quantity on the breakfast line by hand.
+
+<Callout title="One recurring service list for the whole hotel">Recurring services are posted to every folio at check-in, for every guest. There is no way in the module to say this booking includes breakfast and that one does not, and the quantity is nights, not nights times guests. If breakfast is per person or only on some rates, leave Recurring unticked and add it per folio. The demo folio shows six breakfasts for two adults over three nights because the demo data was entered that way.</Callout>
+
+## Adding extras during the stay
+
+Everything else goes on the folio as a line. Pick a **service** and the line takes its name, price and taxes, with the type set to Service. You can also add an **Other** line with a free description and price for anything not on the list. Each line has a date, quantity, unit price and taxes, and the folio shows untaxed, tax and total amounts that update as you go.
+
+Services are kept in **Configuration, Services** with a category (food and beverage, laundry, spa and wellness, transport, minibar, business centre, excursion or other), a unit, a price and sales taxes.
+
+<Shot src="/odoo-guides/odoo-hotel-folio-billing/services-list.webp" alt="Hotel services list in Odoo with daily breakfast marked as a recurring daily charge per person per day, and laundry, minibar, parking, spa treatment and airport transfer as one off charges with unit prices in dollars" width={1440} height={400} caption="The service list: daily breakfast is the only recurring charge on the demo." />
+
+Restaurant, bar and spa sales made in Point of Sale do not reach the folio; there is no charge to room from POS in this module. Reception adds them from the outlet's chit.
+
+## From folio to invoice
+
+**Create Invoice** turns the folio into a customer invoice in one step:
+
+1. It refuses an empty folio and a closed folio.
+2. It creates a draft customer invoice for the guest, with one line per folio line (description, quantity, unit price, taxes), the folio as the origin and a link back to the folio.
+3. It sets the folio to Invoiced and opens the invoice.
+
+From there everything is standard Invoicing: post the invoice, register the payment, send it by email, print it. On the folio, **Invoiced** adds up the posted invoices and **Balance Due** shows what is still unpaid on them, so the front desk can see at a glance whether the guest has settled.
+
+The **Folio / Guest Bill** print in the Print menu gives the guest an itemised bill before the invoice is posted, with each line's date, description, quantity, unit price and total, and the balance due.
+
+<Shot src="/odoo-guides/odoo-hotel-folio-billing/folio-print.webp" alt="Printed guest folio from Odoo with folio and reservation numbers, guest name, check-in and check-out dates, a room charge for room 201 and daily breakfast lines with quantities and prices, and untaxed, tax, total and balance due amounts" width={1280} height={610} caption="The guest folio print: an itemised bill to hand over at departure." />
+
+<Callout title="Two things to know before the first invoice">Every invoice line is booked to the first income account the module finds in your chart of accounts, not to an account per service, so room revenue and food revenue land in the same account. And Create Invoice puts every folio line on the new invoice each time it is pressed: it does not remember which lines were invoiced before. Invoice each folio once, at departure, and use Close Folio when you are done. If you need separate revenue accounts, change the accounts on the draft invoice before posting.</Callout>
+
+## Closing the folio
+
+**Close Folio** marks the folio finished; a closed folio cannot be invoiced again until it is **reopened**.
+
+## A billing routine
+
+1. Set prices and taxes on every service before go-live, and decide whether rooms need a tax added on the folio.
+2. At check-in, open the folio and check the room charge and any breakfast lines.
+3. During the stay, add each extra on the day it happens.
+4. At departure, press Sync Room Charges, print the guest bill, press Create Invoice, post it and take payment.
+5. Close the folio, then check the guest out.
+
+For e-invoicing requirements, such as the UAE rules, the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/) explains what the invoice itself has to carry. Back to the [hotel overview](/odoo-guides/odoo-hotel-management/), or see [reservations, check-in and housekeeping](/odoo-guides/odoo-hotel-reservations-front-desk/). Try the folio on the [hotel demo](https://hotel.way4tech.com/).

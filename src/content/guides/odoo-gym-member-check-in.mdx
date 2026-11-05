@@ -1,0 +1,122 @@
+---
+title: "Gym member check-in in Odoo: the door check, visits and the member file"
+metaTitle: "Gym Check-in and the Member File"
+description: "How the gym front desk checks members in on Odoo 19: refused with the reason if expired, frozen, unpaid or out of credits, plus health file and churn risk."
+targetQuery: "gym member check in odoo"
+category: "Industry"
+summary: "What the Check In button tests and in which order, visits and occupancy, the printed member card, and the health, consent, measurement and churn data kept on each member."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-gym-management"
+seriesOrder: 2
+modules:
+  - name: "Gym Management"
+    technical: "wt_gym_management"
+    note: "USD 249, Odoo 19 Community, needs the Invoicing app"
+demo:
+  url: "https://gym-demo.way4tech.com/"
+  label: "Gym Management demo"
+related: ["odoo-salon-front-desk-website"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What happens when a member who has not paid tries to check in?"
+    a: "If the contract has a confirmed invoice with money still owing and Stop at the Door if Unpaid is ticked, the check-in is refused with a message naming the member and the amount owed. No visit is recorded."
+  - q: "Can members scan a card or QR code at the door?"
+    a: "The printed member card carries a Code128 barcode of the member number, but the module does not connect to scanners, turnstiles or biometric devices. The check runs from the Check In button on the member at the front desk."
+  - q: "Does checking in use a session credit?"
+    a: "Only on a contract whose plan has session credits. Each check-in through the door uses one. Marking a member present on a class register records a visit without using a second credit, because the class booking already charged it."
+  - q: "Who can read a member's medical notes?"
+    a: "Only users with the Club Manager role. Trainers and front desk staff see the health declaration flag and date and the emergency contact, but not the notes field."
+  - q: "How is churn risk worked out?"
+    a: "From the visit history. No visit ever, no visit in the last 30 days or a last visit more than 21 days ago is high risk. A last visit more than 10 days ago or fewer than four visits in 30 days is medium. Anything better is low."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The front desk is where every rule in the membership book either holds or quietly stops existing. A receptionist facing a queue at 6:30 in the morning will not open the accounts to see whether someone paid. If the system just says "access denied", the member argues, the receptionist gives in, and next month the same member is still training on an unpaid contract. What works is a check that looks at the contract, the hold, the balance and the credits in one go and tells the desk exactly why somebody cannot come in. This chapter covers that check, the visit record it leaves, the printed card, and the member file behind it.
+
+## The member record
+
+Open **Fitness Club, Members**. Each member has:
+
+- a **Member No.**, made from the home club code and a sequence (`RS-M00014` for a Riverside member), unique across the database;
+- a **Contact** in Odoo, which is who gets invoiced unless a contract says otherwise, with the email and phone kept on that contact;
+- a **Home Club**, join date, birthday (the age is worked out from it) and gender;
+- the **Current Contract**, its **Status** and **Expiry Date**, taken from the running contract, or the most recent one if nothing is running.
+
+The two stat buttons at the top show the number of **Visits** and the member's **Lifetime** value: the total of every confirmed invoice raised on their contracts.
+
+## Step 1: check a member in
+
+On the member, click **Check In**. The module runs its tests in this order and stops at the first one that fails, showing the reason:
+
+1. **No contract**: "has no contract. Sell one before letting them train."
+2. **On hold**: "is on a hold until" the hold's end date.
+3. **Contract not active** (draft, expired or cancelled): "The contract of ... is" and the state.
+4. **End date passed**: "The contract of ... ran out. Renew it at the desk." This catches a contract that ran out today, before the nightly expiry job has marked it.
+5. **Money owed**: "owes" the amount, "Settle it before training", when a confirmed invoice on the contract is unpaid and the contract has **Stop at the Door if Unpaid** ticked.
+6. **No credits left**: "has used every session on their package", on a plan with session credits.
+
+If every test passes, a visit is recorded against the member's home club and contract, with the method set to Front Desk. On a plan with session credits, the visit uses one credit.
+
+Pressing **Check In** again on the same day, while that visit has no check-out time, closes the visit instead of opening a second one. So the same button works for leaving.
+
+<Shot src="/odoo-guides/odoo-gym-member-check-in/checkin-today.webp" alt="Odoo gym Visits list filtered to today, showing check-in and check-out times, member, branch, minutes on site and method such as Front Desk, Access Card, QR or App and Biometric, with check-out buttons on members still inside" width={1440} height={900} caption="Members, Check In: today's visits, minutes on site and the check-out button for anyone still inside." />
+
+## Step 2: the visits list and who is inside
+
+**Members, Check In** opens the visits list with the **Today** filter on. Each row shows the time in and out, minutes on site and the method. A row without a check-out time has a check-out button. Use the **Still Inside** filter at closing time to see who has not left, and group by member, date or method for patterns.
+
+The method field has four values: Front Desk, Access Card, QR / App and Biometric. The Check In button always records Front Desk. The other values are there for visits recorded or imported from another system; the module itself does not read a card, a QR code or a fingerprint.
+
+On the club (**Configuration, Clubs**) the **Inside Now** figure counts members checked in today who have not checked out, next to the club's **Capacity**. Capacity is shown for reference: the door check does not refuse a member when the club is full.
+
+**Reporting, Attendance** is a pivot of visits by date, club, member or method, for peak hour and visit frequency questions.
+
+<Callout title="What the door check does not test">The check does not look at the health declaration, the member's age, the plan's Sold At or All Clubs settings, guest passes, or club opening hours and capacity. A member with a valid contract at one club can be checked in at another. If your insurer requires a signed health declaration before training, use the No Health Declaration filter on the members list and fix those records before the member's first visit.</Callout>
+
+## Step 3: print the member card
+
+**Print Card** on the member prints a card with the club name, the member's name and number, the plan and the contract's valid-to date, and a Code128 barcode of the member number.
+
+<Shot src="/odoo-guides/odoo-gym-member-check-in/card.webp" alt="Printed gym membership card for Karim Aziz at Riverside Fitness showing member number RS-M00014, the Annual Unlimited plan, valid to 03/12/2027 and a barcode of the member number" width={1240} height={185} caption="The printed card: club, member number, plan, expiry and a barcode of the member number." />
+
+The barcode is the same number staff can type into the member search. The module does not ship a scanning screen, so the card is an identity card for the desk, not a door key.
+
+## Step 4: the health and consent tab
+
+Open the **Health & Consent** tab on the member:
+
+- **Health Declaration Signed** with its **Declaration Date**. Ticking the box without a date is refused, so the date of the pre-exercise questionnaire is always recorded.
+- **Medical Notes**: injuries, conditions, medication, anything a trainer needs to know. Only Club Managers can see this field.
+- **Emergency Contact** and **Emergency Phone**.
+- **Marketing Consent** and **Photo Consent**, kept as explicit yes or no flags so the club can show what each member agreed to.
+
+<Shot src="/odoo-guides/odoo-gym-member-check-in/member-health.webp" alt="Odoo gym member form on the Health and Consent tab showing health declaration signed with its date, the medical notes field, emergency contact name and the consent section" width={1440} height={900} caption="Health and Consent: declaration and date, medical notes for managers, emergency contact and consent." />
+
+The members list has filters for **No Health Declaration** and **Marketing Consent**, which is the list to use before a newsletter goes out.
+
+## Step 5: body measurements
+
+The **Measurements** tab, and **Personal Training, Measurements** for all members, records a dated set of numbers per member: weight, height, body fat percentage, muscle mass, chest, waist, hips, arm and thigh, and resting heart rate, with who took them. **BMI** is worked out from weight and height. Body fat outside 0 to 100 and negative weight or height are refused.
+
+The measurements action has a **Progress** line graph, so a trainer can filter on one member and show the trend over months.
+
+## Step 6: churn risk and the at-risk list
+
+Every member carries a **Churn Risk** of low, medium or high, built from their visits:
+
+- **High**: never visited, no visit in the last 30 days, or a last visit more than 21 days ago.
+- **Medium**: last visit more than 10 days ago, or fewer than four visits in the last 30 days.
+- **Low**: anyone visiting more often than that.
+
+**Members, At Risk** (Club Manager) lists members who are high risk and still on an active contract. These are people paying for a membership they have stopped using, which is the group most likely to cancel at the next renewal and the cheapest to win back with a phone call.
+
+<Shot src="/odoo-guides/odoo-gym-member-check-in/at-risk.webp" alt="Odoo Members at Risk list showing three active members with zero visits in the last 30 days, last visit dates in July and August, expiry dates and a High churn risk" width={1440} height={280} caption="At Risk: active contracts, no recent visits. The call list for the week." />
+
+<Callout title="Churn risk is refreshed by activity, not by the calendar">The risk rating is stored on the member and recalculated when their visits or class bookings change. It is not recalculated each night, so a member who simply stops coming can keep the rating they had at their last visit until something else touches their record. Visits (30 days) on the list is always current, so sort by it, or by Last Visit, when you build the call list.</Callout>
+
+The members kanban shows an **At Risk** tag on every high-risk member, and the members list can be grouped by **Churn Risk**, **Status** or **Joined** for a quick retention view.
+
+Next: [the class timetable, bookings and waitlist](/odoo-guides/odoo-gym-class-booking-waitlist/).

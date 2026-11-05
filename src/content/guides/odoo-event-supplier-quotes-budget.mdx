@@ -1,0 +1,122 @@
+---
+title: "Event supplier quotes and the event budget in Odoo: insurance checks, committed cost, hire stock and margin"
+metaTitle: "Event Supplier Quotes and Budget in Odoo"
+description: "Manage event suppliers in Odoo 19: insurance and licence expiry, quotes from brief to accepted, budget estimated against actual, hire stock and margin."
+targetQuery: "event supplier management and budget in odoo"
+category: "Industry"
+summary: "How an events agency keeps an approved supplier list with paperwork in date, turns accepted quotes into committed cost on the event budget, books hire stock out and back, and reads the margin per event on Odoo 19."
+published: 2027-01-28
+updated: 2027-01-28
+series: "odoo-event-management"
+seriesOrder: 2
+modules:
+  - name: "Event Management"
+    technical: "wt_event_management"
+    note: "USD 249, Odoo 19 Community, needs Accounting (Invoicing)"
+demo:
+  url: "https://event.way4tech.com/"
+  label: "Event Management demo"
+related: ["odoo-event-management", "odoo-restaurant-recipe-food-cost"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can Odoo stop me booking a supplier whose insurance has expired?"
+    a: "With the Event Management module, yes. A supplier category can require public liability insurance, a trade licence or both. A quote from a supplier whose required document is expired or missing cannot be accepted, and a supplier with expired or missing paperwork cannot be added to the approved list."
+  - q: "What is the difference between budgeted, committed and settled on an event budget?"
+    a: "Budgeted is what the plan allowed, built from the package inclusions. A line becomes committed when a supplier quote is accepted or the cost is agreed, and the committed figure is the actual where there is one and the budget where there is not. Settled means the real figure from the supplier invoice is on the line and it is final."
+  - q: "Does the event margin include staff cost?"
+    a: "Yes. Gross margin is the untaxed value of the event less the committed supplier and budget cost and the crew cost from the roster, which is hours times each person's rate. The Margin by Event report groups it by event type and venue."
+  - q: "Does accepting a supplier quote create a purchase order?"
+    a: "No. The accepted quote lands on the event budget as committed cost. The module has no purchase orders or vendor bills; those stay in Odoo's own apps if you use them, and the real figure is typed onto the budget line before it is settled."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A wedding planner's margin is decided by suppliers. The package price was fixed when the client signed; what moves after that is what the caterer, the florist and the band actually charge, and whether the extra marquee panels came back. And the one supplier you cannot book at any price is the one whose insurance lapsed, because the venue will turn them away at the loading bay. This chapter covers the supplier side of the [Event Management](/odoo-guides/odoo-event-management/) module for Odoo 19 Community: the approved list, quotes, the event budget, hire stock and the margin report.
+
+## The approved supplier list
+
+Suppliers live under **Suppliers, Supplier List**. Each one is linked to an Odoo contact and a supplier category, and carries:
+
+- **On the approved list.** Only an approved supplier can have a quote accepted.
+- **Rating**: first choice, good, solid, below par or would not use again. When quotes are drafted for an event, the best rated approved supplier in each category is picked first.
+- **Notice period (days).** How long before the event the supplier has to be booked. A quote accepted inside it is flagged as a late booking on the quote.
+- **Payment terms** in words, as agreed with them.
+- **Insurance**: policy reference, expiry date and the value of cover, because some venues insist on a floor.
+- **Licence**: reference and expiry for food registration, a personal alcohol licence, pyrotechnics and the like.
+- **Private notes**: what you really think of them, kept off the client paperwork.
+
+**Configuration, Supplier Categories** decides which documents each kind of supplier must hold. The module ships eleven categories (catering, bar and drinks, photography and film, floristry, music and entertainment, sound and lighting, marquee and furniture, transport, cake and patisserie, stationery and print, agency staffing), each pointed at a budget heading so an accepted quote lands in the right place.
+
+### Paperwork status
+
+From the expiry dates and the category rules, every supplier shows a paperwork status: in date, expiring soon (inside the warning window from Settings, 30 days by default), expired or missing. **Suppliers, Paperwork Due** lists the ones that need chasing.
+
+The rules that follow from it:
+
+- **Add to Approved List** is refused while required paperwork is expired or missing.
+- **Accept** on a quote is refused for a supplier that is not approved, or whose required paperwork is expired or missing.
+- **Suspend** takes a supplier off the approved list. Quotes already out can still be rejected, but nothing new can be accepted.
+- The scheduled job "Events: supplier insurance and licence check" posts a note on every approved supplier whose paperwork is expiring, expired or missing, and suspends the expired and missing ones. It ships switched off.
+
+## Supplier quotes, from brief to budget
+
+On a quoted event, **Open Supplier Quotes** drafts one quote per heading in the package (venue excluded), each with the best rated approved supplier who is clear to book, and a brief that names the event, the guest number and the venue. You can also add quotes by hand on the event's Suppliers tab or under **Suppliers, Quotes**.
+
+A quote moves through draft, requested, received, accepted or rejected:
+
+1. **Send the Brief** marks the quote as requested and dates it. It records that the brief went out; send the brief itself in whatever way you work with that supplier.
+2. **Price Received** needs their figure on the quote first.
+3. **Accept** takes the quote onto the event budget. Only one quote per category can be accepted on an event; reject the first if you are changing supplier.
+4. **Reject** needs a reason, which is the record the next planner reads.
+
+Each quote shows an **order by** date (the event date less the supplier's notice period), and a quote can carry a valid until date.
+
+<Shot src="/odoo-guides/odoo-event-supplier-quotes-budget/supplier-quotes.webp" alt="Supplier Quotes list in Odoo filtered to quotes waiting on a price, showing the quote reference, event, guest arrival date, category, supplier, date requested, order by date, quoted and accepted amounts and state draft or requested" width={1440} height={900} caption="Quotes waiting on a price, each with the date the supplier has to be booked by." />
+
+<Shot src="/odoo-guides/odoo-event-supplier-quotes-budget/event-suppliers-tab.webp" alt="Suppliers tab on an Odoo event with quotes for catering, bar, photography, floristry, music, sound and lighting and agency staffing, showing which are accepted, requested, draft or rejected and the accepted total" width={1440} height={900} caption="One event's quotes: accepted ones are already on the budget, the rejected one keeps its reason." />
+
+## The event budget
+
+The budget is the event's Budget tab, and across all events under **Money, Budget Lines**. It starts when the event is quoted: the package inclusions, multiplied by the guests charged, become one estimated line per heading, plus a venue hire line from the venue's hire fee.
+
+Each line has a budgeted figure, an actual figure and a state:
+
+- **Estimate**: the plan only.
+- **Committed**: the cost is agreed. An accepted supplier quote lands on the matching heading's line as the actual figure, so the variance column reads as "the caterer came in this much over what we allowed".
+- **Settled**: the real figure from the supplier invoice is on the line and it is final. **Settle** is refused while the actual is empty, because a line settled at the estimate tells you nothing, and a settled line cannot be deleted without reopening it first.
+
+The committed figure used in every total is the actual where there is one, and the budget where there is not.
+
+<Shot src="/odoo-guides/odoo-event-supplier-quotes-budget/event-budget.webp" alt="Budget tab on an Odoo event with lines for sound and lighting, catering, floristry, bar and drinks, agency staffing, stationery and venue hire, each with category, supplier, budgeted, actual, variance and state estimate or committed" width={1440} height={560} caption="Estimated lines from the package, with accepted quotes committed against them and the variance per heading." />
+
+### Crew cost and margin
+
+Below the budget lines, the event shows budgeted cost, actual cost, supplier cost, crew cost, total cost, budget variance, gross margin and margin percentage. Crew cost is the roster: hours times each person's rate, kept off the coordinator's screens. Gross margin is the untaxed event value less committed cost and crew cost.
+
+**Reporting, Margin by Event** pivots revenue, gross margin and guests charged by month, event type and venue, which is where you find out which package or which venue is carrying the business.
+
+<Callout title="The file does not close on an estimate">Close the File is refused while any budget line is not settled. That is deliberate: the margin on a closed event is the reported figure, and reopening a cost line on a closed event is refused for the same reason.</Callout>
+
+## Hire stock: out, back and broken
+
+Furniture, linen, glassware, staging, power and catering equipment you own or hire in sits under **Configuration, Hire Stock**, with the quantity you hold, whether it is cross hired and from which supplier, a hire rate per event and a replacement value.
+
+On the event's Equipment tab you allocate kit for a window, from going out to coming back:
+
+- Availability is checked across the **whole window** against every other allocation that is reserved or out, so twelve tables cannot be promised to two weddings on the same weekend.
+- An item marked as cross hired puts a committed **cross hire** line on the event budget at its hire rate times the quantity.
+- **Load Out** marks the kit as on site. Open Up on the morning does this for everything still reserved.
+- **Book Back In** records the return. Any quantity damaged or not returned goes onto the event budget at its replacement value, as a committed damage and loss line.
+- **Equipment Out** lists what is still away, and the scheduled job "Events: chase equipment still out" chases kit past its return date plus the days set in Settings. It ships switched off.
+
+Close the File is refused while anything is still reserved or out.
+
+<Shot src="/odoo-guides/odoo-event-supplier-quotes-budget/equipment-allocation.webp" alt="Equipment tab on an Odoo event with three hire stock allocations for tables and chairs, each with quantity, goes out and due back times" width={1440} height={900} caption="Kit allocated to an event for the whole window from load out to return." />
+
+## What this chapter does not cover
+
+- **Purchase orders and vendor bills.** The module keeps supplier commitments on the event budget. If your accountant wants purchase orders, raise them in Odoo Purchase; nothing links them back to the budget line, so the actual figure is entered on the line by hand.
+- **Supplier portal.** Suppliers do not log in to see briefs or upload certificates. Documents are recorded by your team on the supplier record.
+
+The next chapter covers the day itself: [run sheet, roster, guest list and RSVP](/odoo-guides/odoo-event-run-sheet-guest-list-rsvp/). The supplier list, quotes and budgets are all on the [Event Management demo](https://event.way4tech.com/).

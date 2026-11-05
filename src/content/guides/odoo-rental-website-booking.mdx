@@ -1,0 +1,135 @@
+---
+title: "Online rental booking on the Odoo website: date picker, live availability and cart holds"
+metaTitle: "Online Rental Booking on the Odoo Website"
+description: "Take hire bookings in the Odoo 19 website shop: dates and price on the product page, server side availability, cart holds, blackouts and My Rentals."
+targetQuery: "odoo website rental booking"
+category: "Industry"
+summary: "How the Online Rental Shop module turns the Odoo 19 Community eCommerce shop into a booking page: rate card and date picker, a server side price and availability, holds that lapse, blackout dates, deposits on their own line and My Rentals in the portal."
+published: 2026-12-31
+updated: 2026-12-31
+series: "odoo-rental-management"
+seriesOrder: 1
+modules:
+  - name: "Online Rental Shop for Website and eCommerce"
+    technical: "wt_rental_website"
+    note: "USD 99, Odoo 19 Community, needs eCommerce; use 19.0.1.0.2 or later"
+demo:
+  url: "https://rental-demo.way4tech.com/"
+  label: "Cargo bike hire demo"
+related: ["odoo-salon-front-desk-website"]
+linkFrom: ["/products/wt-rental-website/"]
+sources: []
+faqs:
+  - q: "Can a visitor book without an account?"
+    a: "Yes, by default. Anonymous visitors can see the rate card, check a price and put a hire in the cart. Tick Sign In To Book in the rental store settings to send visitors to the login page before a rental can go in the cart."
+  - q: "How long does a cart keep the units?"
+    a: "As long as the Cart Hold setting says, 60 minutes unless you change it. After that the hold expires and the units count as free again. A hold that has been checked out becomes Booked and never expires."
+  - q: "Can I close a product for servicing or a holiday?"
+    a: "Yes. A blackout takes units of a product out of the pool for a window, with a reason and no order behind it. A blackout with no quantity takes the whole pool."
+  - q: "Does the customer see their bookings afterwards?"
+    a: "Yes. My Rentals in the customer portal lists their confirmed hires with when to collect and when to bring them back, and each one opens with every pickup and return spelled out. Quotations are not listed there."
+  - q: "Can the shop take card payment for the hire?"
+    a: "The module uses the normal Odoo checkout, so any payment provider set up for your eCommerce shop works. The demo only offers wire transfer."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+For a hire shop, the website is where most bookings should start, and the standard Odoo shop is built for selling: a product, a quantity, Add to cart. A hire needs two more answers before the customer commits, what it costs for these exact dates and whether a unit is actually free. If the website guesses either one, the shop ends up calling a customer to say the bike they booked is out with someone else. This chapter shows how the Online Rental Shop module handles booking in the Odoo 19 Community website shop, using the cargo bike hire demo.
+
+## What the customer sees
+
+A product marked **Rent Online** keeps its normal shop page, but Add to cart is replaced by a booking panel:
+
+- The **rate card** as chips: on the demo Long John bike, 4 hours 25 euros, 1 day 39, 3 days 99, 1 week 179 and 1 month 490.
+- **Pickup** and **Return** date and time fields, and a **Units** field.
+- The shortest hire allowed and, as the visitor types, how long the period is.
+- **Check dates and price** and **Add hire to cart**.
+- The deposit that will be added, the hire notes and the shop's hire terms.
+
+<Shot src="/odoo-guides/odoo-rental-website-booking/booking-panel.webp" alt="Hire this item panel on a cargo bike product page with rate chips for 4 hours, 1 day, 3 days, 1 week and 1 month, pickup and return date fields, units, Add hire to cart and Check dates and price buttons, and a note that a 300 euro refundable deposit per unit is added as its own line" width={1440} height={480} caption="The booking panel replaces Add to cart on a rentable product." />
+
+**Check dates and price** prices the period without putting anything in the cart. It shows pickup and return, the period, the rate used (for example 2 x 1 Week), the price per unit, the hire total, the refundable deposit and how many units are free for that exact window. The [hub page of this guide](/odoo-guides/odoo-rental-management/) shows that breakdown and explains how the winning rate is chosen.
+
+A date entered without a time takes the shop's default pickup or return hour, 09:00 and 17:00 unless you change them, so a picker that only offers days still gives a sensible window. Times are read and shown in the visitor's own timezone when signed in, otherwise the company's.
+
+## Availability that holds up
+
+The number of free units is worked out on the server every time. Nothing in the browser decides it. It counts, for the requested window:
+
+1. the **pool**: a fixed number of units on the product, or the quantity on hand;
+2. units sitting in **other visitors' carts**;
+3. units on **booked orders**;
+4. units on **back office rentals**, if the Rental Management module is installed;
+5. units taken out by a **blackout**.
+
+Windows are half open: a return at 10:00 frees the unit for a pickup at 10:00, so back to back hires do not clash. The visitor's own cart is left out, so changing the dates on their own booking works.
+
+### Holds
+
+The moment a hire goes into a cart, the module writes a **hold** for those units and that window, in the same transaction as the cart line. That is what stops two visitors racing for the last unit: the second check runs after the first hold exists and sees the unit gone. If the visitor changes the quantity with the cart's plus and minus buttons, the hold follows. If they remove the line, the hold is released.
+
+A hold in a cart lapses after the **Cart Hold** time, 60 minutes by default, and the units return to the market on their own. When the order is confirmed every hire on it is checked again before confirmation, so an order that can no longer be honoured never reaches the confirmed state; its holds then become Booked and never expire.
+
+## Checkout and after
+
+Each rental line carries its period in its own description, so the dates appear in the cart, at checkout, in the order confirmation email, on the invoice and in the portal. The cart shows a hire summary. The deposit is added as a separate line against a deposit service product, never mixed into the hire charge, so it can be invoiced or refunded on its own.
+
+From version 19.0.1.0.2, the hire line keeps its rate card price through checkout. Odoo recomputes prices when the address is entered; the module prices hire lines from the rate card and leaves the deposit untouched at that step.
+
+Signed in customers get **My Rentals** in the portal: what they have booked, when to collect it and when it is due back. Draft quotations are not listed, because a quotation is not a booking. A **Rental Booking Sheet** prints from the order for the yard, with room for both signatures.
+
+## The back office
+
+The module adds an **Online Rentals** app.
+
+### Rental Diary
+
+**Bookings, Rental Diary** shows every booked hire on a calendar, with list and pivot views. It is the quickest way to see a busy weekend coming.
+
+<Shot src="/odoo-guides/odoo-rental-website-booking/rental-diary.webp" alt="Rental Diary month calendar in Odoo for November 2026 with hire bookings shown as bars across their pickup to return days, several overlapping on the same weekend" width={1440} height={900} caption="The Rental Diary: every hire across its days. The demo's back office runs in German, so the calendar labels are too." />
+
+### Holds and the release wizard
+
+**Bookings, Holds** lists every hold with its product, customer, order, quantity, window, expiry and state: In a Cart, Booked, Released or Expired. Expired holds stay in the list, so you can see what visitors tried to book. Select several and the release wizard can release them so the units go back on the market, give the carts more minutes, or treat them as booked so they never expire. Each change is noted on the order behind the hold.
+
+### Rate cards and rentable products
+
+**Catalog, Rentable Products** lists products with Rent Online ticked, and **Catalog, Rate Cards** the rate rows. On a product you set the rate table, the deposit per unit, whether the pool is a fixed number of units or the quantity on hand, the shortest and longest hire for that product, and hire notes shown under the date picker. A product can only tighten the shop's own limits, never loosen them. Combo products cannot be rented.
+
+### Blackouts
+
+**Configuration, Blackouts** takes units out of the pool for a window: servicing, a trade show, a holiday when nobody is there to hand bikes over. A blackout names a product, optionally a variant, a quantity (none means the whole pool) and a reason.
+
+<Shot src="/odoo-guides/odoo-rental-website-booking/blackouts.webp" alt="Blackouts list in Odoo with one entry, annual service and battery check, for an e-cargo trike with lockable box from 11 to 14 November holding one unit" width={1440} height={200} caption="A servicing blackout: one trike off the market for four days." />
+
+### Store settings
+
+**Configuration, Rental Store** holds the settings per website, so two websites can behave differently:
+
+| Setting | Default | What it does |
+|---|---|---|
+| Default Pickup / Return Time | 09:00 / 17:00 | Used when a date has no time |
+| Notice Required | 2 hours | How far ahead the earliest pickup is |
+| Shortest / Longest Hire | 24 hours / no limit | The shop's hire length limits |
+| Booking Horizon | 365 days | How far ahead a booking can start |
+| Cart Hold | 60 minutes | How long a cart keeps the units |
+| Security Deposit | Separate line | Or no deposit at all |
+| Rate Source | Website rates first | Which table wins when Rental Management is also installed |
+| Products Without Rates | Sales price per started day | Or not bookable |
+| Sign In To Book | Off | Require an account before booking |
+| Hire Terms | Empty | Shown under every date picker |
+
+The demo shop runs a 4 hour minimum and a 30 minute cart hold. Every model has company record rules, so a multi company database keeps each shop's bookings apart.
+
+<Callout title="What the website module does not do">It takes the booking; it does not record the handover. Pickup, return, late charges, deposit refunds and overdue reminders come from the Rental Management module, covered in the [next chapter](/odoo-guides/odoo-rental-pickup-return-deposits/). There is no per unit serial tracking, and products without a rate table fall back to the sales price per started day unless you switch that off.</Callout>
+
+## Setting it up
+
+1. Install the module; it pulls in eCommerce.
+2. Open **Configuration, Rental Store** and set hours, notice, limits, cart hold, deposit and whether visitors must sign in.
+3. For each product: tick Rent Online, add the rate rows, the deposit, the pool and hire notes, and publish it.
+4. Add blackouts for planned servicing.
+5. Book the last unit from two browsers at once and check the second one is refused.
+6. Run a booking through checkout with your real payment provider and check the hire price and deposit on the confirmed order.
+
+The booking panel, the price breakdown and the portal can be tried on the [cargo bike demo](https://rental-demo.way4tech.com/).

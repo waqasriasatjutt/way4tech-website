@@ -1,0 +1,128 @@
+---
+title: "Gym membership plans, recurring billing and holds in Odoo"
+metaTitle: "Membership Plans, Billing and Holds"
+description: "Set up gym membership plans in Odoo 19: price per period, joining fee, monthly or annual invoices raised nightly, holds with a limit, renewals, arrears."
+targetQuery: "gym membership recurring billing odoo"
+category: "Industry"
+summary: "How a fitness club sets up plans and contracts in Odoo 19 Community so invoices raise themselves, holds stay inside the allowance and unpaid members show up on one list."
+published: 2027-01-07
+updated: 2027-01-07
+series: "odoo-gym-management"
+seriesOrder: 1
+modules:
+  - name: "Gym Management"
+    technical: "wt_gym_management"
+    note: "USD 249, Odoo 19 Community, needs the Invoicing app"
+demo:
+  url: "https://gym-demo.way4tech.com/"
+  label: "Gym Management demo"
+related: ["odoo-salon-loyalty-packages-memberships"]
+linkFrom: ["/modules/subscriptions/"]
+sources: []
+faqs:
+  - q: "Can Odoo Community bill gym memberships every month?"
+    a: "Not on its own: recurring invoicing is the Subscriptions app, which is Enterprise. With Gym Management, a plan billed monthly, quarterly or annually gets its next invoice raised by a nightly job on every running contract, on Community."
+  - q: "Are the membership invoices posted automatically?"
+    a: "No. The Invoice button and the nightly job both create draft customer invoices. Someone in accounts has to confirm them, and only confirmed invoices count towards the contract's outstanding balance and the door check."
+  - q: "How does a membership freeze work?"
+    a: "Each plan has a freeze allowance in days. A hold on a contract records the dates and a reason, the contract shows as Frozen while it runs, and the days taken are added to the contract's end date. A hold that would take the member past the allowance is refused."
+  - q: "Can one person pay for a family or a company's members?"
+    a: "Each contract has a Billed To contact, which defaults to the member but can be any contact, so a parent or an employer can be invoiced. Each contract still raises its own invoice; the module does not combine several members onto one invoice."
+  - q: "Does it enforce a minimum term or notice period?"
+    a: "Not in version 19.0.1.0.0. Both are stored on the plan, but cancelling a contract does not calculate what is still owed. Cancelling with an unpaid balance posts a note on the contract with the amount."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Membership income is the part of a gym's revenue that should run itself, and in most clubs it is the part that needs the most chasing. Monthly members whose invoice was never raised, annual members who froze for "a few weeks" and are still frozen, a joining fee charged twice on a renewal: each is a conversation at the desk and a hole in the month. Gym Management puts the rules on the plan, copies them onto each member's contract, and leaves the routine to scheduled jobs. This chapter covers plans, contracts, invoicing, holds, renewal and cancellation, and the arrears list.
+
+## Step 1: products for plans and the joining fee
+
+Plans do not invoice themselves out of thin air. Each plan names a **product**, and that product is what goes on the invoice, so its income account and customer tax are what the books will show. Before building plans, create in Invoicing (or Sales) a service product per kind of membership, for example "Monthly Membership", and one called "Joining Fee", each with the right tax.
+
+## Step 2: build the membership plans
+
+Go to **Fitness Club, Configuration, Membership Plans**. Each plan holds the commercial rules:
+
+- **Runs For**: a number and a unit (days, weeks, months, years). A contract's end date is the start date plus this length, less one day.
+- **Rolling Contract**: tick it for a plan with no end date that runs until somebody stops it. The contract then has no end date and the nightly expiry job leaves it alone.
+- **Product** and **Price per Period**. Picking a product fills the price from its sales price if the price is empty.
+- **Billing**: Paid Up Front, Monthly, Quarterly or Annual. Up front means one invoice for the whole contract. The other three mean a new invoice every cycle while the contract runs.
+- **Joining Fee** and **Joining Fee Product**: charged once, on the first invoice of a new contract. If no joining fee product is set, the plan's own product is used for that line.
+- **Class Access**: no classes, all classes included, or classes cost credits. **Session Credits** sets how many visits or classes the contract includes; zero means unlimited.
+- **Freeze Allowance (days)**: how many days of holds the member can take across the whole contract, 30 by default. Zero means holds are not allowed.
+- **Minimum Age** and **Maximum Age**: a contract on this plan is refused for a member outside the range, provided the member's birthday is recorded.
+
+<Shot src="/odoo-guides/odoo-gym-membership-billing/plans-list.webp" alt="Odoo Membership Plans list with Annual Unlimited at 720 dollars paid up front, Monthly Rolling at 75 dollars billed monthly, Off-Peak Monthly at 45 dollars and a 10 Class Pack at 160 dollars, with joining fees and active contract counts" width={1440} height={310} caption="Four plans on the demo: up front, monthly, an off-peak credit plan and a class pack." />
+
+The **Active** count on each plan is the number of running contracts on it, and the button on the plan form opens them.
+
+## Step 3: sell a contract
+
+From a member, click **Sell a Contract**. The new contract takes the member's contact as **Billed To** and their home club as **Branch**. Pick the plan and the price and joining fee are copied in from it. Change either on the contract if this member has a negotiated rate; the plan stays as it is.
+
+Things to know about the contract form:
+
+- The contract number is the club code, then a sequence, for example `RS/MB/2026/00005` for the Riverside club.
+- **Billed To** is any contact. For a junior member, put the parent. For a corporate scheme, put the company. Each contract still raises its own invoice.
+- **Date End** is worked out from the start date and the plan, and it moves out by the number of hold days taken. You can overwrite it by hand.
+- **Auto Renew**: when ticked, the contract renews itself when it runs out instead of lapsing.
+- **Stop at the Door if Unpaid** is ticked by default. Untick it for a member you have agreed to let train while a balance is settled.
+
+Click **Activate**. The module refuses if the member already has another contract that is active or on hold: one running contract per member. Once active, the member, plan and start date are locked. To move a member to another plan, cancel the contract and sell a new one.
+
+<Shot src="/odoo-guides/odoo-gym-membership-billing/contract-form.webp" alt="Odoo gym membership contract RS/MB/2026/00005 for Tariq Nasser on Annual Unlimited at 720 dollars with a 40 dollar joining fee, paid up front, start and end dates, amount invoiced 874 dollars, nothing outstanding, Stop at the Door if Unpaid ticked and a 29 day travel hold" width={1440} height={655} caption="A running contract: the plan terms, the balance, and a 29 day hold that pushed the end date out." />
+
+## Step 4: invoicing
+
+The **Invoice** button on a running contract creates a customer invoice for the member's Billed To contact:
+
+- one line with the plan's product, described as the plan name and the period ("Annual Unlimited, 8 Apr to 6 May 2027" style), at the contract price, with the product's customer taxes;
+- on the first invoice of the contract only, a second line for the joining fee;
+- in the club's billing journal if one is set on the club, otherwise the default sales journal.
+
+For plans billed monthly, quarterly or annually, activation sets the **Next Invoice Date** to the start date. Every night the **raise recurring membership invoices** job finds active contracts whose next invoice date has arrived, raises the invoice, and moves the date on by one, three or twelve months. If an invoice cannot be raised, the error is posted in the contract's chatter and the job moves on to the next contract.
+
+Paid up front plans are not picked up by the nightly job. Raise their single invoice with the Invoice button when the contract is sold.
+
+<Callout title="Invoices are created as drafts">Both the Invoice button and the nightly job create draft invoices. They are not confirmed and not sent. The contract's Amount Invoiced and Outstanding figures, the arrears list and the door check only count confirmed (posted) invoices. Build confirming the day's membership invoices into the accounts routine, or a member who has not paid will not show as owing.</Callout>
+
+Payments are recorded the normal Odoo way, on the invoice. As soon as a posted invoice is paid, the contract's Outstanding figure drops and the member can get back in.
+
+## Step 5: holds (freezes)
+
+A member travelling or injured asks to pause. On an active contract, click **Put on Hold**. The button only appears on an active contract, and it refuses if the plan's freeze allowance is zero.
+
+In the dialog, set the **Date From**, **Date To** and a **Reason** (travel, injury, medical, personal, other), add a note, and click **Start the Hold**. The hold days are counted inclusive of both dates. Then:
+
+- the module adds up every running and finished hold on the contract plus this one, and refuses if the total goes over the plan's allowance, saying how many days the plan allows and where this hold would take the member;
+- the contract shows as **Frozen**, and the door refuses the member with the hold's end date;
+- the contract's end date moves out by the hold days, so the member does not lose paid time;
+- the nightly **start and end contract holds** job ends the hold the day after Date To and puts the contract back to Active.
+
+<Shot src="/odoo-guides/odoo-gym-membership-billing/holds-list.webp" alt="Odoo gym Holds list with four finished holds showing the contract, member, from and to dates, days, reason travel, injury or personal, and state Finished, totalling 67 days" width={1440} height={335} caption="Configuration, Holds: every hold across the club, with the reason. Useful when a freeze policy is questioned." />
+
+**Start the Hold** starts the hold straight away, whatever the start date. For a hold booked in advance, create it from **Configuration, Holds** and leave it in draft: the nightly job starts it on its start date. **Resume** on a frozen contract ends the running hold early. The days counted against the allowance are still the full planned length, so shorten the hold's Date To before resuming if the member is back early.
+
+## Step 6: renewal and expiry
+
+Every night the **expire and renew contracts** job looks at active contracts whose end date has passed:
+
+- with **Auto Renew** ticked, it creates the next contract on the same plan, starting the day after the old one ended, with no joining fee, no sessions used and no invoices. The old contract is expired first and the new one activated, so the one-running-contract rule is kept.
+- without it, the contract is marked Expired and the member is refused at the door until a new contract is sold.
+
+The **Renew** button does the same by hand. The **send renewal reminders** job emails members whose contract ends in exactly the configured number of days (14 by default, set under Settings), using the "Membership Expiring" template, and logs the reminder on the contract. A member with no email address on their contact is skipped.
+
+A monthly plan that is not marked Rolling Contract is a one month contract: it expires after a month unless Auto Renew is ticked. For a monthly membership that should keep billing until the member leaves, tick **Rolling Contract** on the plan.
+
+## Step 7: cancellation and arrears
+
+**Cancel** stops a contract and records the cancellation date. If the contract still has an unpaid posted balance, a note with the amount is posted on it, so the debt is not lost. Cancelling does not raise a credit note or a final invoice.
+
+<Callout title="Minimum term and notice period are not calculated">The plan has Minimum Term (months) and Notice Period (days) fields, but in version 19.0.1.0.0 cancelling a contract does not work out remaining months or a notice charge from them. If your contracts carry an early exit fee, raise it as a normal invoice. The same applies to Guest Passes, All Clubs and Sold At on the plan: they are stored, not enforced.</Callout>
+
+**Members, Arrears** (Club Manager) lists every active or frozen contract with an unpaid posted balance, with the outstanding total at the bottom. It is the list to work through on the phone each week, and every member on it is refused at the door unless their contract has Stop at the Door if Unpaid unticked.
+
+For revenue, **Reporting, Membership Revenue** opens the contracts with a pivot view: group by plan, club or status to see amounts invoiced and outstanding.
+
+Next: [door check-in and the member file](/odoo-guides/odoo-gym-member-check-in/), where the contract rules meet the front desk.

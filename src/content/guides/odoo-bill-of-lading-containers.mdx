@@ -1,0 +1,149 @@
+---
+title: "Bills of lading, air waybills, containers and routing in Odoo"
+metaTitle: "Bills of Lading, Containers and Routing"
+description: "Master and house bills of lading and air waybills in Odoo 20, release and surrender, ISO 6346 container checks, VGM, reefers and routing legs."
+targetQuery: "odoo bill of lading container tracking"
+category: "Industry"
+summary: "The documents the cargo moves against and the boxes and legs it moves in: master and house bills, release types, container check digits, verified gross mass, reefers and routing that gives the file its ETA."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 4
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "What is the difference between a master and a house bill of lading?"
+    a: "The master bill is between you and the carrier. The house bill is between you and your customer. A straight file has one of each; a consolidation has one master and a house for every shipper in the box. In this module a house bill cannot be issued without a live master on the file."
+  - q: "Why does Odoo refuse my container number?"
+    a: "The last digit of a container number is a check digit calculated from the first ten characters under ISO 6346. If it does not match, the module refuses the number and tells you what the digit should be. Check the number against the carrier's release rather than just changing the last digit."
+  - q: "Can a container be marked loaded without a VGM?"
+    a: "No. A box needs a seal number and a verified gross mass before it can be marked loaded, and a calculated VGM needs the name of the person responsible. A reefer also needs its temperature set point."
+  - q: "Can I release cargo against original bills without a note?"
+    a: "No. On a bill issued as originals the Release button needs a Release Note first: which original came back, the telex reference, or the bank's authority."
+  - q: "Does the module track vessels or flights live?"
+    a: "No. Vessel, voyage, flight number, departures and arrivals are recorded on the routing legs by your staff. There is no carrier schedule or tracking feed."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The expensive mistakes in forwarding are rarely about price. They are a container number typed wrong and found at the terminal gate, a box loaded without a verified gross mass, a house bill issued with nothing behind it, cargo released against originals nobody can account for. Each one costs far more to fix later than it would have cost to check at the desk. This chapter covers the three records that carry those risks in the freight module: the bills, the containers and the routing legs, and the checks each one runs before it lets you move on.
+
+## Bills of lading and air waybills
+
+### Master and house
+
+The master bill is between you and the carrier. The house bill is between you and your customer. On a straight file there is one of each. On a consolidation there is one master and a house for every shipper in the box.
+
+| Mode | Document | Number on a master |
+|---|---|---|
+| Sea FCL and LCL | Bill of Lading | The carrier's, for example MAEU-05540008 |
+| Air | Air Waybill | The airline's, for example EK-05540002 |
+| Road | CMR Consignment Note | The haulier's |
+
+House bills carry your own numbering, issued on save.
+
+### Raising a bill
+
+1. Open the file's **Bills** tab, or go to **Operations, Bills of Lading** and press **New** (then pick the **Job**).
+2. Set **Kind** to Master or House, and the **Document Kind**: bill of lading, air waybill or CMR note.
+3. On a master, type the carrier's number. On a house, leave it blank.
+4. Check **Shipper**, **Consignee** and **Notify Party**, which come from the file.
+5. Check the **Description of Goods** and **Marks and Numbers**. They print word for word.
+6. Set **Freight Terms** and **Release Type**, then save.
+
+<Shot src="/odoo-guides/odoo-bill-of-lading-containers/master-bill.webp" alt="Master bill of lading form in Odoo with document number, job, kind master, carrier, freight terms collect, release type sea waybill, issue date and place, parties, ports, package count, gross weight and volume" width={1600} height={859} caption="A master bill. Package count, weight and volume come off the file, so they cannot disagree with it." />
+
+Keep the description to what the tariff and any letter of credit will accept. "General cargo" is quick to type and a common reason a bank refuses a presentation.
+
+### Prepaid or collect, and how it was released
+
+**Freight Terms** says who pays the carrier. Freight Prepaid means you pay at origin and bill it on; Freight Collect means the consignee pays at destination. Both print on the document, and the incoterm on the file should agree.
+
+| Release Type | Meaning |
+|---|---|
+| Original Bills | A set of originals was printed and handed over. Cargo moves against one coming back. |
+| Sea Waybill | Not a document of title. The named consignee takes the cargo on identification. |
+| Telex Release | Originals surrendered at origin, release wired to destination. |
+| Express Release | No originals were ever issued. |
+
+On originals, set **Number of Originals**, normally three.
+
+<Shot src="/odoo-guides/odoo-bill-of-lading-containers/house-bill.webp" alt="House bill of lading form in Odoo with its own HBL number, kind house, linked under the master bill, carrier, freight collect, sea waybill release type and zero originals issued" width={1600} height={846} caption="A house bill sitting under its master, issued as a sea waybill, so there is no set of originals to chase." />
+
+### Issue, release, surrender, cancel
+
+- **Issue** moves the bill to Issued with today's date. A house bill refuses to issue if there is no live master on the file, and any bill needs a shipper and consignee.
+- **Release** records the cargo going. On original bills it needs a **Release Note** first: which original came back, the telex reference or the bank's authority. Releasing against originals you cannot account for is the mistake in forwarding most likely to end in court.
+- **Originals Surrendered** is for when the full set comes back. The bill moves to Surrendered and outstanding originals go to zero. It refuses on a waybill.
+- **Cancel** works on a draft or issued bill. A released bill is corrected by issuing a new one, and a master will not cancel while live house bills sit under it.
+
+**Print** produces the bill with parties, vessel and voyage, ports, marks, description, weights, cubic, freight terms and release type. Print the house and read it beside the master: weight, marks and package count should match. Five minutes at the desk catches what a terminal would catch slowly and at a cost.
+
+## Containers
+
+### Adding a box
+
+From the file's **Containers** tab, or **Operations, Containers**:
+
+1. Press **Add a line** and type the **Container Number**: four letters and seven digits.
+2. Pick the **Container Type**. TEU factor, payload and capacity come with it.
+3. Type the **Seal Number** as soon as you have it.
+4. Type the **Cargo Weight**. Tare comes from the type, and the verified gross mass follows.
+5. Type **Stuffed Volume** if you want utilisation worked out.
+
+### The check digit
+
+The last digit of a container number is calculated from the rest under ISO 6346. Type one wrong and the module refuses it at once and tells you what the last digit should have been. A wrong number is otherwise found at a gate, a terminal or a customs entry, and fixed by someone else at your cost.
+
+### VGM and reefers
+
+VGM is the tare plus the cargo, and under SOLAS it has to be declared before the box is loaded. Set **VGM Method** to Method 1: Weighed or Method 2: Calculated, and on a calculated VGM name the person responsible in **VGM Certified By**. A reefer type asks for a **Set Point**; put it on when the booking is made, not when the box is at the plug.
+
+<Shot src="/odoo-guides/odoo-bill-of-lading-containers/reefer-container.webp" alt="Container form in Odoo for a 40 foot reefer high cube with job, TEU 2, temperature set point, seal number, tare, cargo weight, VGM 14,800 kg, VGM method weighed, certified by, stuffed volume and 82 percent utilisation" width={1600} height={613} caption="A reefer with its set point, seal and a weighed VGM of 14,800 kg, at 82 percent of its capacity." />
+
+| State | Button | Needs first |
+|---|---|---|
+| Planned | none | Booked, not yet stuffed |
+| Stuffed | Stuffed and Sealed | A seal number |
+| Loaded | Loaded | A VGM, a named party if calculated, a set point on a reefer |
+| Discharged | Discharged | It was loaded |
+| Empty Returned | Empty Returned | It was discharged |
+
+<Callout title="What stops a box">A box stuffed over the payload for its type is refused, as is a stuffed volume greater than the type holds. Record the empty return date on the day it goes back to the depot: the carrier counts detention up to the return, and a disputed detention charge is hard to argue without the date on record. The module records the date; it does not calculate detention or demurrage.</Callout>
+
+## Routing legs
+
+A file's routing is one line per leg, in order, on the file's **Routing** tab or across all files under **Operations, Sailings and Flights**.
+
+| Leg Type | Covers |
+|---|---|
+| Pre-carriage | Shipper's door to the load port |
+| Main Carriage | The sea or air leg the file is sold on |
+| Transhipment | Where the cargo changes vessel or aircraft |
+| On-carriage | From the discharge port inland, by rail or truck |
+
+1. Press **Add a line** and set **Leg Type** and **Mode**: sea, air, road, rail or barge.
+2. Set **From** and **To**. A leg that starts and ends in the same place is refused.
+3. Pick the **Carrier** and name the vehicle: **Vessel** and **Voyage**, **Flight Number**, or **Truck Reference**.
+4. Set **ETD** and **ETA**. A leg that arrives before it leaves is refused.
+
+<Shot src="/odoo-guides/odoo-bill-of-lading-containers/routing-legs.webp" alt="Routing tab on an Odoo freight job file with a main carriage sea leg by CMA CGM with vessel and voyage, and an on-carriage rail leg from the discharge port to an inland container depot, each with ETD and ETA" width={1600} height={896} caption="Two legs: the ship to the port, then rail to the inland depot. The file's ETA is the rail leg's arrival." />
+
+Put the inland leg on even when the carrier's schedule covers only the sea leg. The file takes its ETA from the last leg, so a file that stops at the port tells the customer the cargo has arrived when it is still days from where they will collect it.
+
+### Departures, arrivals and delay
+
+Press **Departed** on a leg when it goes and **Arrived** when it lands, correcting the date if you log it late. A sea leg that has sailed must have a vessel name, and a flown leg a flight number. The arrival on the last leg becomes the file's actual arrival, and **Delay Days** is actual against estimate, positive when late.
+
+Delay is only worth measuring if the ETA was real. If the carrier moves the schedule, change the leg's ETA before the vessel arrives, or the [arrival delay report](/odoo-guides/odoo-freight-gross-profit-reports/) measures your typing rather than the carrier's service.
+
+With the cargo moving, the money side is in [freight charges, invoices and costing](/odoo-guides/odoo-freight-charges-invoicing/).

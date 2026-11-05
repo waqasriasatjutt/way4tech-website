@@ -1,0 +1,112 @@
+---
+title: "Odoo asset register for facility management: sub-assets, meters and lifetime cost"
+metaTitle: "Asset Register, Meters and Lifetime Cost"
+description: "Build a facilities asset register in Odoo 19: asset classes, sub-assets, criticality, warranty, meter readings and lifetime cost against replacement value."
+targetQuery: "odoo asset register facility management"
+category: "Industry"
+summary: "How to load plant into the Facility Management module so every job lands on a real machine in a real room, with meters, warranty dates and a repair against replace figure."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 1
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Facility Management CAFM demo"
+related: ["odoo-labour-camp-management", "odoo-garage-management"]
+faqs:
+  - q: "Is this the same as fixed assets in Odoo Accounting?"
+    a: "No. The facility asset register is a maintenance record: where the plant is, who looks after it, its meter, its jobs and what it has cost to keep running. Depreciation and the balance sheet value stay in Accounting. The module does not post depreciation."
+  - q: "Can an asset sit inside another asset?"
+    a: "Yes. Set Parent Asset on the child, for example a compressor under its chiller. The parent's lifetime cost then includes what was spent on the child, while lists and reports add up Own Cost so a job on the compressor is not counted twice."
+  - q: "What happens if somebody types a meter reading lower than the last one?"
+    a: "It is refused, with the date and figure it clashes with. The only exception is a reading marked Meter Was Replaced, which is accepted and restarts the use per day figure."
+  - q: "Can I scan a barcode on the asset tag?"
+    a: "No. The module gives each asset a tag number when it is saved, but there is no barcode or QR scanning and no phone app. Technicians open the asset from the web client."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ask a facilities manager why a chiller should be replaced and the honest answer is often "it keeps breaking". That does not get capital approved. "It has cost 60 percent of a new one in three years" usually does, and that sentence only exists if every repair was booked against that chiller, and against the compressor inside it, from the day it was installed. The asset register is where that starts. It is also the part of a CAFM rollout people rush, because it looks like data entry. It is the most useful half day of the whole setup.
+
+This chapter covers the register in the [Facility Management module](/odoo-guides/odoo-cafm-facility-maintenance/) for Odoo 19: asset classes, adding an asset, sub-assets, meters, lifetime cost and the asset's life from commissioning to decommissioning.
+
+## Start with the estate, then the classes
+
+An asset is anything you would repair rather than swap on the spot: a chiller, a lift, a fire panel, a pump set, a distribution board. Each one sits in a room, on a floor, in a building, on a site. Set those up first under **Configuration, Sites** and **Floors** and **Register, Buildings** and **Rooms and Spaces**. You do not need every office. You need the plant rooms, switch rooms, risers and roof decks where the plant actually lives. A room can be marked Restricted Access with an access note, and can name a permit type every job in it needs, such as working at height on a roof deck.
+
+Then review the asset classes under **Configuration, Asset Classes**. A class carries the defaults that every asset of that kind inherits: a default criticality, an expected life in years, the skills needed to work on it, whether it has a meter, and whether it is subject to a statutory examination with an interval in months, the inspecting authority and what the certificate must show.
+
+<Shot src="/odoo-guides/odoo-asset-register-facility-management/asset-class.webp" alt="Asset class form in Odoo for Boilers and Pressure Systems with code BLR, default criticality Critical, expected life 15 years, skills Mechanical and Plumbing and Drainage, statutory inspection ticked with a 12 month interval by the insurer's engineer surveyor" width={1600} height={640} caption="An asset class carries the defaults: criticality, life, skills, meter and statutory interval." />
+
+The module ships a set of classes you can rename or extend, from chillers metered in run hours to passenger lifts metered in cycles. Getting the class right first saves typing on every asset after it, and it is where statutory intervals belong. Check each interval against what your competent person and insurer require before you rely on the due dates.
+
+## Add an asset
+
+Open **Register, Assets** and press **New**.
+
+1. Type the **Name** people use on site, such as "Chiller 1". The asset tag is given when you save.
+2. Under Where It Is, pick the **Site**, **Building**, **Floor** and **Room**. If the room is large, add **Where Exactly**: "North end of the deck, first unit past the mansafe line" saves an engineer twenty minutes on a roof.
+3. Under What It Is, pick the **Asset Class**. Criticality, expected life and skills come across from it; change them only if this unit is different.
+4. Fill in **Manufacturer**, **Model** and **Serial Number**.
+5. Under Dates and Warranty, enter **Install Date**, **Commission Date** and **Warranty Expiry**. Age and Under Warranty are worked out for you.
+6. Under Who Looks After It, set **Supplied By** and **Maintained By**. When a fault is reported, the firm that maintains the asset is offered as the contractor.
+7. On the **Cost** tab, enter **Purchase Value** and **Replacement Value**, then save.
+
+<Shot src="/odoo-guides/odoo-asset-register-facility-management/asset-form.webp" alt="Asset form in Odoo for Chiller 1 with tag RVS-AST00001, buttons Report a Fault, Log a Reading, Print History and Decommission, state In Service, site, building, floor, room, where exactly, asset class, manufacturer, model, serial number, criticality, condition, install and commission dates, warranty expiry, expected life and age" width={1600} height={987} caption="An asset record: location down to the spot on the roof, what it is, and its dates." />
+
+Do not leave Warranty Expiry empty. A fair amount of maintenance money goes on plant the installer is still liable for. With the date in, the help desk can see Under Warranty before anybody orders a part.
+
+### Criticality and condition
+
+They are two different things and both matter. **Criticality** (Critical, High, Medium, Low) says what a failure does to the building. It sets the default priority when a fault is reported on the asset, so a fault on a critical chiller is proposed as more urgent than one on a booster pump. **Condition** (New, Good, Fair, Poor and so on) is what the engineer saw last. It is written back from the job each time one is completed, so the register stays current without anybody walking the estate with a clipboard.
+
+<Shot src="/odoo-guides/odoo-asset-register-facility-management/asset-register.webp" alt="Assets list in Odoo with twelve assets showing asset tag, name, asset class, site, building, criticality, condition, next inspection date, own cost, spend against replacement and state, with a faulty chiller in red and poor condition rows in amber" width={1600} height={745} caption="The register: red rows are faulty, amber rows in poor condition, Own Cost totals at the foot." />
+
+## Sub-assets: where the money really goes
+
+Plant is nested. A compressor sits inside a chiller, a chiller inside a plant package. Set **Parent Asset** on the child and the parent's **Sub Assets** tab lists it. Money spent on the child rolls up into the parent's lifetime cost.
+
+Two figures keep this honest. **Lifetime Cost** on the parent includes everything spent on its children. **Own Cost** is the asset's spend without them. Lists and reports add up Own Cost, so a repair on the compressor appears once in a total, not twice. A chiller that looks cheap on its own but whose compressor has been rebuilt twice is not a cheap chiller, and the parent figure shows that.
+
+## Meters and readings
+
+Plant that runs on hours or cycles is serviced on the meter as well as the calendar. When the asset class has a meter, the asset's **Meter** tab shows the latest reading, when it was read, and the use per day over the last ninety days.
+
+To add a reading, press **Log a Reading** on the asset, check the date, type the reading and pick the source: read by hand, building management system, or logged on a job. Engineers also record a reading on the Completion tab of a job, and it lands here with the source set to logged on a job. Every reading across the estate is listed under **Maintenance, Meter Readings**.
+
+<Shot src="/odoo-guides/odoo-asset-register-facility-management/meter-tab.webp" alt="Meter tab on a chiller asset in Odoo showing meter unit run hours, latest reading 5,952, read on date, use per day 21.69 and a history of readings with date, reading, since last reading, source and read by" width={1600} height={1154} caption="The meter tab: latest reading, use per day and the reading history with its source." />
+
+A reading lower than the last one is refused, with the date and figure it clashes with. That catches the most common typing error before it moves a service due date. If the meter itself was changed, tick **Meter Was Replaced** and the new, lower reading is accepted and use per day starts again.
+
+<Callout title="A BMS reading is still a typed reading">The source "building management system" is a label, not a connection. The module does not read from a BMS, IoT gateway or meter. Somebody types the figure in, or it is logged on a job. If you want readings pulled automatically, that is an integration to build separately.</Callout>
+
+## Lifetime cost and the replace decision
+
+The **Cost** tab adds up what the asset has cost since installation: parts to date, labour to date and callouts to date, including everything spent on its sub-assets. **Spend vs Replacement (%)** compares that with the replacement value you entered. Once that ratio passes a hundred percent you have paid for the asset twice over.
+
+<Shot src="/odoo-guides/odoo-asset-register-facility-management/lifetime-cost.webp" alt="Cost tab on an asset in Odoo showing purchase value 96,000 AED and replacement value 142,000 AED, parts, labour and callouts to date, lifetime cost 3,347 AED, spend against replacement 2.36 percent and own cost 371 AED" width={1600} height={857} caption="Lifetime cost next to replacement value: the figure behind a repair or replace bid." />
+
+The figures are built from the jobs, not typed. Parts issued from stock on a job and labour booked at the technician's rate are what feed them, which is why booking parts and hours on the day matters (see the [work orders chapter](/odoo-guides/odoo-help-desk-work-orders-facility/)). The **Work History** tab lists every job on the asset, and **Print History** produces a PDF of finished jobs on the asset and its sub-assets with a total that matches the lifetime spend. That printout is what you hand to an insurer, a warranty claim or the next facilities contractor at handover.
+
+## The asset's life: commission to decommission
+
+An asset moves through Not Yet Commissioned, In Service, Faulty, Off for Maintenance, Standby and Decommissioned. The buttons at the top of the form move it, and each one has a rule about who may press it.
+
+| Button | When it shows | What it does |
+|---|---|---|
+| Commission | Not yet commissioned or decommissioned. Supervisors and up. | Puts the asset In Service. Schedules paused by a decommission come back; schedules paused by hand stay paused. |
+| Report a Fault | Any live state. Anybody, technicians included. | Marks the asset Faulty and opens a reactive job with the location filled in. |
+| Back in Service | Faulty, off for maintenance or standby. Supervisors and up. | Puts it back In Service. |
+| Decommission | Any state but decommissioned. Facility Manager only. | Asks for confirmation, refuses while the asset has open jobs, pauses its schedules and archives it. |
+
+The state also moves by itself. Starting a planned job on an asset in service sets it to Off for Maintenance, and completing the job brings it back. Completing a job on a faulty asset puts it back In Service and writes the engineer's condition onto it.
+
+## Getting the register in quickly
+
+On a typical tower, most of the register can come from the handover documents: the asset schedule, the O&M manuals and the last service stickers. Load the estate and the classes by hand, because there are few of them and the defaults matter. Load assets in bulk with Odoo's standard import, then open the critical ones and check the parent links, warranty dates and replacement values by eye. A register with a wrong parent is worse than one with no parent, because the lifetime cost then rolls up to the wrong machine.
+
+Once the register is in, the next step is to give each asset its planned maintenance. The [planned maintenance chapter](/odoo-guides/odoo-ppm-planned-maintenance/) covers schedules on a date, a meter or whichever comes first, and statutory inspections with their certificate references. To try the register yourself, open the [CAFM demo](https://facility-demo.way4tech.com/) or see the other [Way4Tech demos](/demos/).

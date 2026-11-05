@@ -1,0 +1,152 @@
+---
+title: "Odoo Shopify connector: connect a Shopify store to Odoo 19 and keep it in step"
+metaTitle: "Odoo Shopify Connector: Setup Guide"
+description: "Connect Shopify to Odoo 19: what syncs each way, connecting the store, webhooks, journals and order rules, a dry run first import and the job queue."
+targetQuery: "odoo shopify integration / connector"
+category: "Integration"
+summary: "How to connect one or more Shopify stores to Odoo 19 Community or Enterprise, decide what syncs which way, run a safe first import and keep the sync healthy day to day."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-shopify-connector"
+seriesOrder: 0
+modules:
+  - name: "Shopify Connector"
+    technical: "wt_shopify_connector"
+    note: "USD 149, Odoo 19 Community and Enterprise, needs Sales, Inventory, Accounting, CRM and Delivery"
+demo:
+  url: "https://shopify-test.way4tech.com/"
+  label: "Shopify Connector demo"
+related: ["n8n-odoo-automation", "odoo-distribution-management"]
+linkFrom: ["/integrations/shopify/", "/products/wt-shopify-connector/", "/modules/ecommerce/"]
+sources:
+  - label: "odoo/odoo on GitHub, 19.0 branch, addons (Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+faqs:
+  - q: "Does Odoo have a built-in Shopify connector?"
+    a: "Odoo 19 Community does not include one: there is no Shopify addon in the Community addons. You need a module from the Odoo Apps Store or a middleware service. This connector is a module that runs inside your Odoo, with no external service in the loop."
+  - q: "Will the first import duplicate the products and customers I already have in Odoo?"
+    a: "No. Products are matched on the SKU (Internal Reference) or barcode of their variants and customers on email, optionally on phone too. A match is linked, not copied, and Odoo's values are kept unless you switch on First import overwrites Odoo values. Run the import as a dry run first to see what it would do."
+  - q: "Can one Odoo run several Shopify stores?"
+    a: "Yes. Each store has its own credentials, warehouse mapping, journals, workflow rules, alerts and schedules, and every record the connector creates carries its store. One Odoo product can be on several stores, each with its own Shopify id, price and publish state."
+  - q: "Do webhooks need a public Odoo?"
+    a: "Yes. Shopify sends webhooks to your Odoo's public HTTPS address. A local or intranet Odoo still works, because scheduled jobs pull orders, products, stock, refunds and payouts on their own, just not within seconds."
+  - q: "What is not included?"
+    a: "Shopify Markets, B2B companies, customer segments, multi language products, editing a Shopify order from Odoo and the Shopify returns API are not included in this version. Gift cards (a Shopify Plus feature) and GraphQL bulk operations for catalogues above fifty thousand products are not supported either."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A shop that sells on Shopify and runs its warehouse and books in Odoo has two versions of the truth. Shopify knows what was ordered and paid. Odoo knows what is on the shelf, what it cost and what the bank received. Without a connection, someone retypes orders, stock levels drift until a product oversells, and at month end nobody can say which Shopify payout paid which invoices. A connector is worth having when it removes all three problems, not only the order import.
+
+This guide covers the Way4Tech Shopify Connector for Odoo 19, version 19.0.5.9.0. This page explains what it does and walks through connecting a store and the first import. Two chapters go deeper:
+
+- [Shopify product and stock sync](/odoo-guides/odoo-shopify-product-stock-sync/): locations, the stock policy that decides what Shopify may sell, kits, products on several stores and prices.
+- [Shopify orders, refunds and payouts](/odoo-guides/odoo-shopify-orders-payouts/): orders and their edits, shipping from the right warehouse, refunds both ways, payouts reconciled to invoices, and the reports.
+
+## What a Shopify and Odoo setup needs
+
+Before choosing a connector, be clear about which system owns what:
+
+1. **Catalogue.** Usually Odoo owns products, SKUs and cost; Shopify owns how they are presented. The connector must match on SKU, not on name.
+2. **Stock.** Odoo owns stock. Shopify should show what Odoo can actually ship, and not units already promised to another order.
+3. **Orders.** Shopify owns the order and what the customer paid, including the taxes and discounts it computed. Odoo needs the same totals, not its own recalculation.
+4. **Fulfilment.** Odoo ships, from the warehouse Shopify assigned. Shopify needs the tracking number once.
+5. **Money.** Shopify Payments pays out a net amount after fees. Accounting needs each payout split back into the orders, refunds and fees behind it.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community has no Shopify connector: none of the [Community addons on the 19.0 branch](https://github.com/odoo/odoo/tree/19.0/addons) is for Shopify. Odoo has its own website and eCommerce apps, which are a different route: you replace Shopify rather than connect to it. If the store stays on Shopify, the choice is between a module that runs inside Odoo and a middleware service that sits between the two. This connector is the first kind: the code ships with the licence, readable, and nothing outside your Odoo and Shopify takes part.
+
+## What the connector syncs, and which way
+
+| Data | Shopify to Odoo | Odoo to Shopify |
+|---|---|---|
+| Products, variants, images, SEO text, publish state | Yes | Yes |
+| Prices from pricelists, compare-at prices | Yes | Yes |
+| Stock per location, through a stock policy; kits | Yes | Yes |
+| Customers | Yes | Yes |
+| Orders with taxes, discounts, shipping, edits made in Shopify | Yes | Cancellations only |
+| Payments and invoices, per payment status rule | Yes | No |
+| Fulfilments and tracking | Yes | Yes |
+| Refunds as credit notes and returns | Yes | Yes, from posted credit notes |
+| Payouts with transactions and fees, reconciled | Yes | No |
+| Abandoned checkouts, collections, discount codes | Yes | No |
+
+It needs Sales, Inventory, Accounting, CRM and Delivery, all Community apps; Manufacturing only if you sell kits. It runs on Odoo 19 Community and Enterprise. The price is USD 149 on the [Odoo Apps Store](https://apps.odoo.com/apps/modules/19.0/wt_shopify_connector/).
+
+## Try it before you connect a real store
+
+There are two ways to see it working without touching your shop. The [live demo](https://shopify-test.way4tech.com/) holds a demo store called Northwind Outdoor Supply, with forty orders, refunds, payouts, abandoned checkouts and a queue with a few failures left in on purpose. It resets every night. Ask us for a login, or see the [demos page](/demos/).
+
+In your own database, install the module, open **Shopify, Stores** and press **Load the Northwind demo store**. The same store is created, answered by an offline Shopify that ships inside the module, so every button works. Delete the store when you are done.
+
+<Shot src="/odoo-guides/odoo-shopify-connector/demo-store.webp" alt="Shopify Stores kanban in Odoo with the Northwind Outdoor Supply demo store, connected, 14 products, 40 orders, 10 customers and a red banner for 3 failed jobs" width={1560} height={975} caption="The Northwind demo store: every button works against an offline Shopify." />
+
+## Step 1: connect the store
+
+Open **Shopify, Connect new store**. The wizard offers two ways in:
+
+- **OAuth through the Shopify Dev Dashboard, recommended.** Create an app in the Shopify Dev Dashboard, fill in the app URL and the redirect URL the wizard shows, grant the scopes it lists, and release the app. Paste the app's Client ID and Client secret and your shop address into Odoo, press **Connect with Shopify**, and approve the install on Shopify's screen.
+- **Admin API access token, the legacy custom app.** In the Shopify admin, create a custom app under Settings, Apps and sales channels, give it the Admin API scopes the wizard lists, install it and copy the token. Shopify shows the token only once.
+
+The scopes cover products, inventory, customers, orders, fulfilments and fulfillment orders, locations, payouts, checkouts, discounts and price rules, plus publications if you want to publish products from Odoo.
+
+<Shot src="/odoo-guides/odoo-shopify-connector/connect-store.webp" alt="Connect Shopify Store wizard in Odoo with OAuth through the Dev Dashboard selected, step by step instructions for creating the app with the redirect URL and scopes, and empty fields for store name, shop URL, client ID and client secret" width={1560} height={975} caption="The connection wizard walks through the app, the credentials and the first test." />
+
+Press **Test Connection**. It shows the shop name, the plan, the currency and the API version Shopify answered with. Choose REST or GraphQL for the store: both run the same jobs, and GraphQL is where Shopify adds new features.
+
+On the store form, set the defaults: the company and currency (the one Shopify charges in), the fallback warehouse, the pricelist and the sales team applied to imported orders. Every import and push has its own button on the form, and the settings sit in tabs underneath.
+
+<Shot src="/odoo-guides/odoo-shopify-connector/stores-form.webp" alt="Shopify store form for Northwind Outdoor Supply with import and push buttons, the connection section with shop URL, API version, REST or GraphQL and masked credentials, and defaults for company, currency, warehouse and sales team" width={1560} height={975} caption="Everything about one store on one form, with the credentials masked." />
+
+## Step 2: register webhooks
+
+Press **Register Webhooks**. Shopify then tells Odoo about new orders, edits, payments, refunds, fulfilments, and product, customer and stock changes as they happen, usually within seconds. Every message is checked against the store's signing secret, and a bad signature is refused. A message Shopify sends twice is counted as a duplicate and not imported twice.
+
+Each topic has its own switch on the Webhooks tab. Turning one off removes it in Shopify. The schedules still catch anything it would have carried: orders every 15 minutes, products every 2 hours, the stock push every hour, refunds every 4 hours, payouts twice a day.
+
+<Shot src="/odoo-guides/odoo-shopify-connector/webhooks.webp" alt="Webhooks tab on the store listing each topic with an enabled switch, the receiving address, state active or error, messages received, duplicates, last received time and the last error for one topic" width={1560} height={975} caption="Each webhook topic with its state, the messages received and duplicates counted." />
+
+<Callout title="Webhooks need a public HTTPS Odoo">Shopify sends webhooks to your Odoo's public address, so it must be reachable from the internet over HTTPS. An Odoo on a local network still keeps everything in step through the schedules, only not in seconds.</Callout>
+
+## Step 3: tell it where the money goes
+
+On the store, under accounting mapping, set the sales journal for invoices, the payout journal (a bank journal that receives Shopify Payments payouts) and the fiscal position. On the **Payment Methods** tab, map each Shopify gateway to the Odoo journal its payments are registered in.
+
+On the **Order Workflow Rules** tab, decide what happens to an order by its payment status: confirm it, create the invoice, post it, and register the payment. A sensible start is that a paid order confirms, invoices, posts and registers the payment, while a pending or authorised order only confirms. Payments are registered for what Shopify captured, never for an amount that was only authorised.
+
+## Step 4: run the first import as a dry run
+
+1. Open **Shopify, Operations, Import from Shopify**, choose Products and tick **Dry run**. Nothing is written. The job lists each Shopify product and whether a real run would link it to an Odoo product with the same SKU or barcode, create it or update it.
+2. Fix anything the dry run flags. A Shopify product whose SKUs sit on two different Odoo products fails with both named, and nothing is written for it.
+3. Run the product import for real.
+4. Import customers. They are matched on email. Switch on **Also match customers on phone** if many have no email. There is no matching on name, on purpose.
+5. Choose which orders come in, by payment and fulfilment status, then import orders since a date of your choice.
+6. Press **Push Inventory to Shopify** once, so Shopify shows what Odoo can sell.
+
+<Shot src="/odoo-guides/odoo-shopify-connector/dry-run.webp" alt="Queue job for a dry run product import with a banner saying nothing was written, 14 products counted, 14 successes, and lines saying would update for each Shopify product" width={1560} height={975} caption="A dry run: what would be linked, created or updated, and nothing written." />
+
+## Keeping it running
+
+Every call to Shopify is a job in **Shopify, Operations, Queue Jobs**. A job that fails keeps the reason Shopify gave and retries on a schedule. When it runs out of retries, the person named under Alerts on the store gets an activity and an email, at most one an hour. Open a failed job to read it line by line, then press **Retry now**, **Requeue** or **Drop**.
+
+The dashboard shows revenue, top products, recent orders and the health of the queue, with a banner when jobs have failed or a webhook has gone silent. A daily digest email per store, at the hour you choose, lists orders and revenue, what failed and what is waiting. The log book keeps every success and error for as many days as you set, 90 by default, and exports any period to CSV.
+
+<Shot src="/odoo-guides/odoo-shopify-connector/dashboard.webp" alt="Shopify dashboard in Odoo with a warning banner for failed jobs and a stale webhook, running jobs, revenue for today, 7 and 30 days, a revenue trend chart, queue health and top products" width={1560} height={975} caption="The dashboard: revenue, top products, recent orders and queue health." />
+
+Five minutes a day on the queue is enough on most stores. The usual causes of trouble are a location not mapped to a warehouse, a tax mapped differently from Shopify's, or webhooks not registered after a change of Odoo address.
+
+## Upgrading a live shop
+
+Take a database backup, replace the module folder, then upgrade **Shopify Connector** in Apps. Version 19.0.5.9.0 switches off **Shopify fulfilments validate Odoo deliveries** on stores that existed before the upgrade, so no delivery starts validating itself the day you upgrade. Turn it on from the store when you want it. New stores have it on.
+
+## Limits
+
+These are the module's own statements about what this version does not do:
+
+- **No Shopify Markets, B2B companies, customer segments or multi language products.**
+- **No editing of a Shopify order from Odoo.** Edits made in the Shopify admin flow into Odoo; the other direction is not built.
+- **No Shopify returns API.** Refunds and restocks are handled through Shopify refunds; the separate Shopify returns API is not used yet.
+- **No gift cards**, which are a Shopify Plus feature, and no GraphQL bulk operations for catalogues above fifty thousand products.
+
+The [Shopify integration page](/integrations/shopify/) and the [Shopify Connector product page](/products/wt-shopify-connector/) list the features, and the [eCommerce module page](/modules/ecommerce/) covers Odoo's own shop for comparison. If your setup has something this guide does not cover, such as a 3PL app shipping from its own Shopify location, [send a short description](/contact/) and I will say whether it fits.

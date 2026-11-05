@@ -1,0 +1,135 @@
+---
+title: "Routes and beat plans in Odoo: territories, visit days, shops and the settings behind them"
+metaTitle: "Routes, Beat Plans and Setup"
+description: "Set up FMCG routes and beat plans in Odoo 19: territories, visit days, stops in order, the route optimiser, credit limits, roles and key settings."
+targetQuery: "odoo route planning beat plan for distributors"
+category: "Industry"
+summary: "The setup order for a distributor on Odoo 19: company settings, roles, territories, routes with visit days and stops, shops with credit and GPS, products with focus lines and cartons, and the rules."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-distribution-management"
+seriesOrder: 1
+modules:
+  - name: "Van Sales and Field Sales Management (base app)"
+    technical: "wt_sale_distributor"
+    note: "USD 500, routes, stops, visits and settings"
+  - name: "Van Sales and Field Sales Enterprise"
+    technical: "wt_sale_distributor_enterprise"
+    note: "USD 4,599 add-on, route optimiser, risk bands, cartons and brands"
+demo:
+  url: "https://distributor-demo.way4tech.com/"
+  label: "FMCG distribution demo"
+related: ["odoo-distribution-management", "odoo-order-booking-app", "odoo-van-sales"]
+linkFrom: []
+faqs:
+  - q: "Can one shop be on two routes?"
+    a: "Yes. The Distribution tab of the customer lists the routes the shop is on. Each route has its own stop for it, with its own expected time."
+  - q: "Does the route optimiser need Google Maps?"
+    a: "No. It uses straight line distance multiplied by a road factor (1.3 suits most cities), an average speed and minutes per shop. If you run your own OSRM server you can point it there for real road times; without it, it still works."
+  - q: "Can a salesperson see other people's routes?"
+    a: "No. An order taker or delivery person sees only their own routes, shops, visits and collections, and the server checks ownership on every request from the phone. Managers see everything."
+  - q: "Where do I set the credit limit for a shop?"
+    a: "On the customer, in the Distribution tab, under Credit. The same tab shows what the shop owes, what is still available and a credit status. Credit sales over the limit are refused when Enforce Credit Limit is on in the settings."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A beat plan is the backbone of an FMCG distributor. Each shop has a day, each day has a person, and nobody decides on the road where to go next. When the beat lives in a notebook or a spreadsheet, two things go wrong. Shops drop off the plan without anyone noticing, and a salesman who is behind on Thursday quietly skips the shops furthest from his house. Putting the beat into Odoo fixes both, because a visit that did not happen shows up as a missing visit, not as silence.
+
+This chapter is the setup, in the order it should be done, as an administrator or the distribution manager. It is part of the [FMCG distribution guide](/odoo-guides/odoo-distribution-management/). Most of it is in every edition; the parts that need Van Sales or Enterprise are marked.
+
+## 1. Install and practise on sample data
+
+Install **Field Sales and Distribution** from Apps; Sales, Inventory and Accounting install with it. For vans, add **Van Sales and Van Stock** (Fleet comes with it). For everything, install **Field Sales Enterprise**, which brings both. A new **Distribution** app appears.
+
+On a fresh database, open Distribution, Configuration, Settings and press **Load sample data**. You get six routes, forty shops, products with photos, targets and a month of history. Use it to train the team on a copy before you enter your own beats.
+
+## 2. Company logo and settings
+
+Set the company logo first. In Enterprise it becomes the icon of the phone app. Then open **Distribution, Configuration, Settings**. Every option has a one line explanation on screen. The ones that change daily behaviour most:
+
+| Setting | What it does | Edition |
+|---|---|---|
+| Sales Mode | Pre-sales, van sales or both. Routes can override it. | Van Sales |
+| Enforce Credit Limit | Refuses credit sales that would take a shop over its limit, counting orders not yet invoiced. | All |
+| Maximum Discount | Highest line discount an order taker may give. 0 means no limit. | All |
+| Confirm Orders Immediately | Field orders are confirmed on submission, so the delivery is created at once. | All |
+| Reason for No-Order Visits | The salesperson must pick a reason when leaving without an order. | All |
+| Require Payment at Delivery, Proof of Delivery | A drop cannot close unpaid, or without the customer's signature. | All |
+| Geofence radius and policy | How far from the shop a check-in may be, and whether to flag it or block it. | Enterprise |
+| Report Time Zone | Decides what "today" means for reports, targets and receipts. | Enterprise |
+| Settle Before Selling | No sales on a new day while an earlier day is unsettled. | Enterprise |
+| Credit for New Shops | Cash only until a manager approves a shop, or credit up to an amount. | Enterprise |
+
+The printed guide lists every setting. Leave the rest at their defaults until the team has run a week.
+
+<Callout title="Known issue on the settings page">On the current build, opening Distribution settings as an administrator can show Odoo's warning that you are deactivating the price list feature. This is a bug and is not fixed yet. If you use price lists, do not save the page while that warning shows, and after any save check that price lists are still on in the Sales settings.</Callout>
+
+## 3. Give each person a role
+
+Open **Settings, Users**, open a user and go to Access Rights. Under Supply Chain, the **Distribution** field takes one of three roles: Manager, Order Taker or Delivery Man. For counter staff, set **Warehouse Counter** to Counter (Enterprise). A van seller is a Delivery Man who drives a van, and one person can hold two roles.
+
+<Shot src="/odoo-guides/odoo-distribution-routes-beat-plans/ad-user-form2.webp" alt="Odoo user form, Access Rights tab, with Distribution set to Order Taker and Warehouse Counter set to No under Supply Chain" width={1600} height={1000} caption="The Distribution role sits under Supply Chain on the user's access rights." />
+
+- **Manager**: setup, every route, approvals, reports and the supervisor screens on the phone.
+- **Order Taker**: own routes, shops and visits. Books orders, collects money, takes back goods.
+- **Delivery Man**: own drops. Delivers, collects and takes returns; with a van, sells from it and settles it.
+- **Counter**: sells at the warehouse counter, collects, takes returns, closes the drawer.
+
+## 4. Territories
+
+**Configuration, Territories** holds region, city and area as a tree. Each card shows its routes, shops, orders per month and sales this month, so you can compare areas at a glance and see an area with shops but no route.
+
+<Shot src="/odoo-guides/odoo-distribution-routes-beat-plans/bo-cf-territories.webp" alt="Territories kanban in Odoo with Central Region, Riverside, Harbor District, Industrial Belt, North Market and Old Town, each showing routes, customers, orders per month and sales" width={1600} height={1000} caption="Territories as a tree: region, city, area, with live counts." />
+
+## 5. Routes, visit days and stops
+
+This is the beat plan itself. Open **Operations, Routes, New** and fill in:
+
+1. Name and code, for example Old Town Bazaar, R-02.
+2. Territory, the order taker, the delivery man and the warehouse.
+3. Start time, and the sales mode if this route works differently from the company default.
+4. The visit days. Old Town Bazaar on the demo is visited Tuesday and Friday.
+5. In **Customer Stops**, add the shops in visiting order, each with an expected time, opening hours and a star for key accounts.
+
+The buttons at the top open the route in the Order Taker and Delivery apps, show it on a map, and print the **Load Sheet** and the **Delivery Manifest** for the van.
+
+<Shot src="/odoo-guides/odoo-distribution-routes-beat-plans/m03-route-form.webp" alt="Route form for Old Town Bazaar with code R-02, territory, order taker Aisha Khan, delivery man Bilal Ahmed, start time 09:00, Tuesday and Friday ticked, and today's visits, orders, sales and outstanding" width={1600} height={1000} caption="A route: who works it, on which days, and today's numbers." />
+
+### The route optimiser (Enterprise)
+
+**Optimise order** on the route proposes a shorter visiting order, with arrival times checked against each shop's opening hours and key accounts first. You can apply it or keep the current order. It uses straight line distance times a road factor, so it needs no map service. On the demo it cut Old Town Bazaar from 14.7 km to 12.5 km.
+
+<Shot src="/odoo-guides/odoo-distribution-routes-beat-plans/x-bo-optimise.webp" alt="Optimise the order of Old Town Bazaar dialog showing 2.2 km shorter, distance and day length now and optimised, and the new stop order with arrival times and opening hours" width={1600} height={1000} caption="The optimiser shows the saving and the arrival time at every shop before you apply it." />
+
+The optimiser settings (road factor, average speed, minutes per shop, key accounts first and an optional OSRM server) are in Settings.
+
+## 6. Shops (customers)
+
+Open a customer and go to the **Distribution** tab. Set the customer code, shop type, territory and routes. Under Credit, set the distribution credit limit; the form then shows what the shop owes, what is left and a credit status such as "Near limit". Save the GPS position and a field note the salesperson will see, for example "Closed on Sunday" or "back door for deliveries".
+
+<Shot src="/odoo-guides/odoo-distribution-routes-beat-plans/x-bo-customer-tab.webp" alt="Customer Heritage Pharmacy, Distribution tab, with customer code, shop type, territory, route, credit limit 300, outstanding 249.01, available credit, credit status Near limit, GPS position and field note" width={1600} height={1000} caption="The Distribution tab: classification, credit, location and the note the rep sees." />
+
+Smart buttons on the shop open its sales, invoices, field orders, visits, the statement and the payment history. In Enterprise, the **Credit Risk** tab shows the shop's score and band, which the [credit control chapter](/odoo-guides/odoo-delivery-cash-collection-credit/) explains.
+
+## 7. Products: focus lines, cartons, brands
+
+Products are normal Odoo products with price, tax, cost and barcode. Two things make them field ready:
+
+- Tick **Focus product** and add a short message, such as "New flavour, promo until month end". It then shows first on every phone.
+- In Enterprise, add a carton unit (for example Carton of 24) with its own barcode, and set the **Brand**. The principal follows from the brand.
+
+<Shot src="/odoo-guides/odoo-distribution-routes-beat-plans/x-bo-product.webp" alt="Odoo product form for Hand Sanitizer 250ml with sales price, cost, taxes, category, reference FMCG-034 and barcode, and the chatter showing brand Pure Care and principal BrightHome Brands" width={1600} height={1000} caption="A normal Odoo product, with brand and principal set for reporting and claims." />
+
+## 8. Vans, reasons and rules
+
+- **Vans** (Van Sales): each van is a Fleet vehicle marked as a distribution van, with a home warehouse, a default route and a driver. The [van sales guide](/odoo-guides/odoo-van-sales/) covers it.
+- **Reasons**: the lists the phone offers when a shop does not order, a drop is not made or goods come back. A reason can ask for a note; a return reason can be "not for resale" (quarantine) or damaged (scrapped).
+- **Credit risk bands, schemes, store checklists, notes and coins** (Enterprise): covered in the chapters on [credit](/odoo-guides/odoo-delivery-cash-collection-credit/), [promotions](/odoo-guides/odoo-trade-promotions-principal-claims/) and [the counter](/odoo-guides/odoo-trade-counter-cash-and-carry/).
+- **Monthly targets**: **Reporting, Sales Targets, New**. Pick a salesperson, a route or (Enterprise) a van, the dates and the amount, and optionally orders, units, shops served and collections. Progress fills in by itself and shows on the person's phone.
+
+## 9. Put the app on the phones
+
+In Base and Van Sales, staff open Distribution, Order Taker or Delivery in the phone browser and add it to the home screen. In Enterprise, each person opens yourdomain/field, signs in and installs it (Safari: Share, Add to Home Screen; Chrome: Install). It opens full screen with your logo. For SUNMI handhelds with a built-in printer, there is an Android app link under More.
+
+Once the beats are in, the next step is the visit itself: the [order booking app](/odoo-guides/odoo-order-booking-app/).

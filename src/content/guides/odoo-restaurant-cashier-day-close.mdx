@@ -1,0 +1,115 @@
+---
+title: "Restaurant payments and closing the day in Odoo 19: JazzCash and EasyPaisa, the Z report, cash count and the audit log"
+metaTitle: "Restaurant Payments, Z Report and Voids"
+description: "Take cash, card, JazzCash and EasyPaisa in Odoo 19 POS with a reference per payment, close the day with a Z report and note count, and audit every void."
+targetQuery: "odoo pos z report cash count jazzcash"
+category: "Industry"
+summary: "The cashier's side of an Odoo 19 restaurant: payments with wallet references, what the receipt carries, clock in and out, closing the register, the Z report and cash count, and the roles, PINs and audit log behind it."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 4
+modules:
+  - name: "Restaurant Wallet Payments"
+    technical: "w4_resto_payments"
+    note: "USD 79, JazzCash, EasyPaisa, SadaPay, NayaPay, bank transfer"
+  - name: "Restaurant Reports"
+    technical: "w4_resto_reports"
+    note: "USD 149, X and Z day reports with cash count"
+  - name: "Restaurant Suite Base"
+    technical: "w4_resto_base"
+    note: "Free: roles, PIN approvals, audit log, shifts"
+  - name: "Restaurant Fiscal Compliance"
+    technical: "w4_resto_tax_compliance"
+    note: "USD 199, FBR, PRA, SRB, KPRA, ZATCA Phase 1, UAE VAT"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: ["fbr-pos-integration-odoo", "zatca-e-invoicing-odoo-community", "uae-e-invoicing-odoo"]
+sources: []
+faqs:
+  - q: "Can Odoo POS take JazzCash and EasyPaisa?"
+    a: "With Restaurant Wallet Payments each wallet is a payment method with its merchant account and a QR for the guest. The cashier types the transaction reference from the guest's phone and Validate is refused until it is there. It records and checks payments; it is not a live payment gateway."
+  - q: "What is the difference between an X report and a Z report?"
+    a: "Both show the branch's sales, tax, payments, voids, discounts, tips and cash for the day. An X report is taken during the day without closing anything. The Z report is created when the register closes, and once marked done only an owner can reopen it."
+  - q: "How is the expected cash in the drawer worked out?"
+    a: "Opening float plus cash payments after change, plus cash put in, minus cash taken out. The cashier types the count by note or as one figure, and the difference is counted minus expected. Cash in and out during the day always needs a manager PIN."
+  - q: "How do I see who voided a dish?"
+    a: "Reporting, Audit Log lists every sensitive action with the user, employee, branch and registered device, and Reporting, PIN Approvals shows each request with who approved or refused it and for what amount."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Restaurants rarely lose money in one big theft. They lose it in small, deniable amounts at the till: a void after the food went out, a friend's discount, a wallet payment that was a screenshot of an old transfer, a drawer that is a few hundred short every Saturday. Each is easy to explain away on the night and impossible to find a month later. The fix is not more suspicion, it is a name and a reason on every one of them, recorded at the moment it happens.
+
+This chapter covers the cashier's side: taking cash, cards and mobile wallets, what the receipt carries, closing the register, the Z report and cash count, and the roles, PINs and audit log that sit behind every one of those steps.
+
+## Taking payment
+
+1. **Open the table.** The order shows its lines, the customer if one is set, and the loyalty points the guest will earn. Only a cashier, manager or owner can go further: the Waiter role has no Payment button, and the server refuses a payment from a waiter login.
+2. **The payment screen.** It shows the total, the amount per guest, and the payment methods of this register, for example Cash, JazzCash, EasyPaisa, Bank Transfer, Card and Customer Account. Tip and Invoice are here too.
+3. **Cash with change.** Tap Cash, tap the notes received (+10, +20, +50) or type the amount, and the change is shown. Validate.
+4. **Mobile wallet.** Tap JazzCash. A window shows the merchant account and a large QR for the guest to pay from their app. Type the transaction reference from the guest's screen. Validate is refused until the reference is there.
+
+<Shot src="/odoo-guides/odoo-restaurant-cashier-day-close/payment-screen.webp" alt="Odoo POS payment screen with Cash, JazzCash, EasyPaisa, Bank Transfer and Card methods, the customer, Invoice and Tip buttons, a keypad with +10, +20 and +50, and a total of 35.20 at 8.80 per guest for 4 guests" width={1600} height={1112} caption="The payment screen: the branch's methods, amount per guest, Tip and Invoice." />
+
+A wallet reference that was already used on the same wallet is flagged with the earlier order. The usual cause is a guest showing an old screenshot, so the flag is the check that matters most in practice.
+
+<Shot src="/odoo-guides/odoo-restaurant-cashier-day-close/jazzcash-payment.webp" alt="JazzCash payment dialog in the Odoo POS with a merchant QR code, the merchant account number and name, the amount 18.30, a required transaction reference of at least 8 characters and an optional payer phone" width={1600} height={1000} caption="A wallet payment: merchant QR for the guest, and a transaction reference the cashier must type." />
+
+Set the wallets up in **Restaurant, Configuration, Wallet Methods**: one method each for JazzCash, EasyPaisa, SadaPay, NayaPay or a bank transfer, with the merchant account the guest pays to and whether a reference is required. Later, **Reporting, Wallet Payments** lists every wallet payment by method; the manager ticks the ones found in the merchant portal and presses Mark verified.
+
+<Callout title="Two known issues on the payment side">On the current Odoo 19 build the payment screen and the printed receipt show the change as a negative number (for example "-20.00" when 20.00 is due back). The amount is right; only the sign is wrong, and it comes from Odoo itself, not from the suite. Separately, on orders created on the server rather than rung up at the till (the demo's sample orders are made this way), the "Need an invoice?" block on the receipt prints without a valid code. If a guest needs an invoice for such an order, make it from the backend.</Callout>
+
+## What the receipt carries
+
+The receipt prints the logo, ticket number, time, cashier, table and number of guests; the guest and their tax number (NTN) when set; each dish with its unit price and note; the payment and change, with the wallet reference under a wallet payment; loyalty points earned; and a **Rate your meal** QR that opens a one-page rating form on the guest's phone.
+
+With Fiscal Compliance installed, the receipt also carries the fiscal block: the FBR invoice number and QR, or "Fiscal invoice pending" with a reference while the authority is offline. The till never waits for the tax authority. If it is slow or down, the order is queued and retried after 1, 5 and 15 minutes and then every hour, and **Reporting, Fiscal Queue** shows what is still waiting. What FBR and the provinces require from that receipt is covered in the [FBR POS integration guide](/odoo-guides/fbr-pos-integration-odoo/); this chapter does not repeat it. Saudi receipts print as a ZATCA Phase 1 simplified tax invoice and UAE receipts as a tax invoice with the TRN; neither has an API connection.
+
+## Clock in and out
+
+Staff clock in at the till: menu, **Clock in / out**, tap your name, type your PIN. A shift left open is closed on its own after 16 hours, and a manager can correct the times, which marks the shift "Edited by hand". **Reporting, Shifts** shows hours per person per day. With Odoo's Attendance app installed, every punch also goes there.
+
+## Closing the register
+
+Menu, **Close Register**. For each payment method the screen shows what the system expects, what was counted and the difference. Count the cash in the drawer and type it; wallets and cards are checked against their own reports.
+
+<Shot src="/odoo-guides/odoo-restaurant-cashier-day-close/closing-register.webp" alt="Closing Register dialog in the Odoo POS for 33 orders with expected, counted and difference for Cash, Card, Customer Account, JazzCash, EasyPaisa and Bank Transfer, and Close Register, Cash In/Out and Daily Sale buttons" width={1600} height={1112} caption="Closing the register. The cash difference shows in red because nothing has been counted yet." />
+
+The cash count works like this:
+
+- **Expected in drawer** = opening float + cash payments after change + cash put in − cash taken out.
+- **Counted** is typed by denomination (5000 × 3, 1000 × 12 and so on) or as one figure. The notes and coins come from **Configuration, Cash Denominations**, which ships with PKR from 5000 down to 1.
+- **Difference** = counted − expected.
+
+Cash in and cash out during the day always need a manager PIN, so every movement of the drawer has a name on it.
+
+## The Z report
+
+Closing the register creates the branch's **Z report** on its own, under **Reporting, Day Reports**. It holds sales, tax, refunds, net sales, payments by method, orders and covers, discounts, voids and tips, sales by service and by category, and the cash side: float, cash sales, cash in and out, expected, counted note by note, and the difference. **Mark as Done** freezes it, and only an owner can reopen it. An **X report** is the same report taken during the day without closing. Day reports print as a PDF or on the receipt printer and export to Excel.
+
+<Shot src="/odoo-guides/odoo-restaurant-cashier-day-close/z-report.webp" alt="Odoo day report Z/2026/0014 for the DHA Phase 6 branch with orders, covers, average ticket, sales, untaxed, tax, refunds, net sales, payments, discounts, voids, tips, and the cash block with opening float, cash sales, expected in drawer, counted and difference" width={1600} height={1000} caption="A Z report: sales, voids and discounts, and the cash count with its difference." />
+
+## Roles, PINs and the audit log
+
+Three rules sit behind everything above. **Branches are walls:** a manager, cashier or waiter sees only their own branches, on every screen and report. **A PIN on every risky action:** voids of sent dishes, price changes, discounts over the limit, refunds, reopening a paid order, cash in and out, and transfers, all checked on the server. **Every action logged:** who, when, on which registered device, the value before and after, and who approved.
+
+| Action at the till | Waiter | Cashier | Manager |
+|---|---|---|---|
+| Take payment | No | Yes | Yes |
+| Remove a sent dish | PIN | PIN | PIN |
+| Discount above the limit, price change | PIN | PIN | PIN |
+| Move or merge a table | PIN | PIN | Yes |
+| Cash in or out | No | PIN | PIN |
+| Mark a dish 86 | PIN | PIN | Yes |
+
+These are the defaults. Each register can change them, as the [setup chapter](/odoo-guides/odoo-restaurant-pos-setup/) explains.
+
+**Reporting, Audit Log** lists every sensitive action with user, employee, branch and device. **Reporting, PIN Approvals** shows each request, approved or refused, by whom and for what amount. Filter the audit log on void once a week and look at the names; that habit alone changes behaviour at the till.
+
+<Shot src="/odoo-guides/odoo-restaurant-cashier-day-close/audit-log.webp" alt="Restaurant Audit Log in Odoo with actions such as void fired line, approval by Ayesha Khan, delivery steps, fiscal submissions, waitlist and reservation events, each with user, employee, branch and device" width={1600} height={1000} caption="The audit log: every sensitive action with user, employee, branch and device." />
+
+<Shot src="/odoo-guides/odoo-restaurant-cashier-day-close/pin-approval.webp" alt="PIN approval record APR/000001 in Odoo for voiding a line already sent to the kitchen, approved by Ayesha Khan, requested by Bilal Ahmed, at Gulberg on Restaurant Gulberg, amount 9.00, reason guest changed his mind" width={1600} height={500} caption="One PIN approval: the action, who asked, who approved, the amount and the reason." />
+
+The next chapter moves outside the dining room: [delivery, riders, online and phone orders](/odoo-guides/odoo-restaurant-delivery-online-orders/).

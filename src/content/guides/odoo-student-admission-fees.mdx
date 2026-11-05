@@ -1,0 +1,120 @@
+---
+title: "Student admission and fee management in Odoo: from application to fee slip"
+metaTitle: "Student Admission and Fees in Odoo"
+description: "Take a student from application to enrollment in Odoo 19, set a fee structure per grade, issue fee slips, track what is due and record scholarships."
+targetQuery: "odoo student admission and fee management"
+category: "Industry"
+summary: "How the school office handles applications, student records, yearly enrollments, fee structures, fee slips and scholarships with School Management on Odoo 19."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-school-management"
+seriesOrder: 1
+modules:
+  - name: "School Management"
+    technical: "wt_school_management"
+    note: "USD 10, Odoo 19 Community"
+demo:
+  url: "https://school.devcynx.com/"
+  label: "School Management demo"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "Do we type a student's details twice, once on the application and once on the student?"
+    a: "No. Enroll on a confirmed application creates the student from what was typed on it, including parents, contacts and address, and opens a new enrollment with the student and grade already filled in."
+  - q: "Does marking a fee slip Paid post a payment in Accounting?"
+    a: "No. Paid is a status on the slip, and the enrollment's paid and due amounts are worked out from those statuses. A slip has an Invoice field for linking it to an Odoo invoice when the school wants the money in the books, but nothing is posted automatically."
+  - q: "Does the late fee setting add a charge by itself?"
+    a: "No. A fee structure can hold a late fee flag and amount, but no scheduled job adds it to a slip. If a family pays late, add the late fee as a line on the slip."
+  - q: "How is a scholarship taken off the fee?"
+    a: "A scholarship is recorded on the enrollment with its amount, approver and status, but it does not change a slip on its own. Lower the fee line or add a negative line on the slip so it shows what the family actually pays."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Admission week is when a school office makes most of the mistakes it spends the rest of the year correcting. A parent's phone number is written on the form but never reaches the register. A child is put in Grade 4 on the fee ledger and Grade 5 on the class list. The fee for the bus is charged to a family that does not use it. Each of those is small, and each turns into a phone call in October. The way to avoid them is to type the facts once, at the application, and let every later record take them from there. This chapter covers that path in School Management on Odoo 19: application, student, enrollment, fee structure, fee slip and scholarship.
+
+## How the records fit together
+
+Three records do the work, and it helps to keep them apart in your head:
+
+- **The application** is the request to join. It holds what the family told you and whether the office has accepted it.
+- **The student** is the person. Name, date of birth, parents, address, medical notes and photo stay here for as long as the child is at the school.
+- **The enrollment** is one student in one session: grade, section, academic year, subjects and fees. Next year the same student gets a new enrollment, so this year's marks and fees stay where they were.
+
+Fees hang off the enrollment, not the student, which is why the fee summary resets cleanly each year.
+
+## Step 1: take the application
+
+1. Open **Applications** and press **New**.
+2. Enter the applicant's name, gender, date of birth, the parents with their contacts and occupations, and the grade applied for.
+3. Attach birth certificates, previous school reports or anything else the office needs in the chatter at the bottom of the form.
+4. Press **Confirm** when the office accepts the application. A wrong one can be cancelled or reset to New.
+
+The application checks two simple things as you type: the email has to look like an email, and the date of birth cannot be in the future.
+
+## Step 2: enroll
+
+On a confirmed application, press **Enroll**. If the applicant is not a student yet, the app creates the student from the application: name, photo, date of birth, gender, blood group, email, phone, address, both parents with contacts and occupations, and the parent email. It then opens a new enrollment with the student and the grade already filled in. Add the session, academic year, section and fee structure, and save.
+
+<Callout title="Check for an existing enrollment yourself">Enroll links to the student already on the application if there is one, but it does not check whether that student already has an enrollment for the session. Before you save, look at the student's Enrollments tab so a child is not enrolled twice in the same year. Student emails must be unique, so two student records with the same email are refused.</Callout>
+
+## Step 3: complete the student record
+
+**Students** is the school's directory. The form holds the photo, personal details, nationality, blood group, the address, the family with parents' contacts and occupations, medical notes such as food or medicine allergies and known illnesses, and a barcode for ID cards and attendance devices. The Transport tab switches the student onto a bus route. Related User links an Odoo login if the student or a parent signs in. The Enrollments and Attendance tabs show every year at the school and the day by day register.
+
+<Shot src="/odoo-guides/odoo-student-admission-fees/student-record.webp" alt="Student form in Odoo for a demo student with date of birth, gender, nationality, email and mobile, and tabs for address, family, medical, transport, enrollments and attendance" width={1366} height={800} caption="The student record: personal details, contact, and the family, medical and transport tabs." />
+
+## Step 4: set up the enrollment
+
+An enrollment carries the grade, section, academic year, fee structure and payment term. Its tabs hold:
+
+- **Subjects** taken this year: the compulsory subjects of the grade plus any optional ones the student chose. Each line carries the subject's grade scale and credit value, and every mark and term report hangs off these lines, so check them before term starts.
+- **Fee Summary** and **Fee Slips**, covered below.
+- **Scholarships**, **Service Hours** and **Discipline** records for the year.
+
+The status runs Draft, In Progress and Completed, with Promoted, Terminated and Cancelled to the side. **Confirm** puts the enrollment In Progress. At year end, **Promote** closes it as promoted; the next year's enrollment is then created from the student record.
+
+<Shot src="/odoo-guides/odoo-student-admission-fees/enrollment-form.webp" alt="Enrollment SE-00001 in Odoo, In Progress, with student, session 2026/2027, Grade 5 section A, fee structure Grade 5 fees 2026/27, total, paid and due amounts and fee status, and a Subjects tab with Mathematics and English" width={1366} height={800} caption="An enrollment: one student in one session, with the fee structure and the fee status." />
+
+The enrollment list is what the office lives in during admission week. Group it by grade and section to see each class, and by fee status to see who still owes.
+
+<Shot src="/odoo-guides/odoo-student-admission-fees/enrollments-list.webp" alt="Enrollments list in Odoo with enrollment numbers SE-00001 to SE-00008, session, academic year, Grade 5, section A, fee status To Pay and status In Progress" width={1366} height={800} caption="Enrollments for one class, each with its fee status." />
+
+## Step 5: the fee structure
+
+A school's fee schedule is usually a table: each grade pays tuition, books, sports and perhaps transport. In **Fees, Fee Structures**, make one structure per grade, or per grade and year if fees change each year. Give it a name, the grade and the currency, then add each component as a line with a fee product and an amount. A line can be marked one time or recurring. Use a separate fee product for each component (tuition, books, transport) so the reports and any invoices show them apart.
+
+<Shot src="/odoo-guides/odoo-student-admission-fees/fee-structure.webp" alt="Fee structure Grade 5 fees 2026/27 in Odoo with components tuition fee, books and materials, and sports and clubs, each with an amount and frequency One Time, and an Enable Late Fee checkbox" width={1366} height={800} caption="A fee structure for one grade, built from fee products." />
+
+The enrollment picks a fee structure, and that is where the amounts on its slips come from.
+
+## Step 6: issue fee slips and record payment
+
+1. Open **Fees, Fee Slips** and press **New**.
+2. Pick the enrollment. The student, grade, section and year fill in from it.
+3. Set the period with From and To dates, for example the first term or one month.
+4. Add the fee lines: a fee product and an amount for each, the same components as the fee structure. The slip gets its number when you save.
+5. Press **Confirm**. The slip is now To Pay.
+6. When the money arrives, press **Paid**. A slip past its period can be set Overdue, and a wrong one cancelled.
+
+The enrollment shows Total Amount, Paid Amount and Due Amount, and a fee status of To Pay, Partially Paid or Fully Paid. These are worked out from the slips: the total is every slip added up, the paid amount is the slips marked Paid, and the due amount is the difference. Fee Slips grouped by status is the list to chase each week.
+
+<Callout title="Paid is a status, not a payment">Pressing Paid does not create a payment or a journal entry in Accounting. If the school keeps its books in Odoo, raise the invoice in Accounting and link it on the slip's Invoice field. The late fee flag and amount on a fee structure are stored for reference only; nothing adds them to a slip automatically.</Callout>
+
+## Step 7: scholarships and discounts
+
+**Fees, Scholarships** records an award for a student's enrollment with its amount, the staff member who approved it, a paid date and a status, and it can be linked to an invoice. It shows on the enrollment's Scholarships tab, so anybody looking at the family's fees can see it.
+
+A scholarship does not change the slips by itself. Reflect it on the slip, either by lowering the tuition line or by adding a negative line named after the scholarship, so the slip shows what the family actually pays and the due amount on the enrollment comes out right.
+
+## Admission week checklist
+
+1. Fee structures for every grade exist before the first application is confirmed.
+2. Every application is confirmed, then enrolled, with session, year, section and fee structure set.
+3. Subjects are checked on each enrollment, including optional ones.
+4. Enrollments are confirmed so they show In Progress.
+5. Fee slips for the first period are issued and confirmed.
+6. Scholarships are recorded and reflected on the slips.
+
+Once students are enrolled, the [exams, grades and report cards chapter](/odoo-guides/odoo-school-report-cards/) picks up with marks and term results. The [School Management overview](/odoo-guides/odoo-school-management/) covers the year setup, attendance, timetable and transport.

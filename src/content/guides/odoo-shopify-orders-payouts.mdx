@@ -1,0 +1,126 @@
+---
+title: "Shopify orders, refunds and payouts in Odoo: from the order to the bank"
+metaTitle: "Shopify Orders, Refunds and Payouts in Odoo"
+description: "Import Shopify orders into Odoo 19 with their taxes and edits, ship from the right warehouse, refund both ways and reconcile Shopify payouts to invoices."
+targetQuery: "odoo shopify order import / payout reconciliation"
+category: "Integration"
+summary: "What happens to a Shopify order in Odoo: import with Shopify's own totals, edits, fulfilment and tracking, refunds in both directions, and payouts split into the charges, refunds and fees behind them."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-shopify-connector"
+seriesOrder: 2
+modules:
+  - name: "Shopify Connector"
+    technical: "wt_shopify_connector"
+    note: "USD 149, Odoo 19 Community and Enterprise"
+demo:
+  url: "https://shopify-test.way4tech.com/"
+  label: "Shopify Connector demo"
+related: ["n8n-odoo-automation"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does Odoo recalculate the taxes on a Shopify order?"
+    a: "Not when Use Shopify taxes is on. The tax lines Shopify computed are matched to Odoo taxes by rate, and created under a Shopify Tax group when missing. Either way the order total is checked against what Shopify charged, and an order that differs by more than rounding is flagged."
+  - q: "What happens when an order is edited in Shopify after it was imported?"
+    a: "The Odoo order follows: an added line becomes a new line and the delivery grows, a removed or reduced line goes down, and a price change follows. A line already delivered or invoiced is not changed, and the chatter says why. Money Shopify gives back for it arrives as a credit note through the refund import."
+  - q: "Can I refund a Shopify customer from Odoo?"
+    a: "Yes. A posted credit note on a Shopify order can refund the customer in Shopify, automatically when Push credit notes to Shopify is on, or with the Refund in Shopify button. Shopify is asked first how much it still holds. A credit note above that, or in another currency, is refused with the figures and nothing is refunded."
+  - q: "How do I reconcile Shopify Payments payouts in Odoo?"
+    a: "Each payout arrives as a draft bank statement line with every transaction behind it. Reconcile matches each charge to the invoice payment in the Shopify Payments journal and each refund to its credit note, and Book Shopify Fees creates one draft fee entry per payout. The statement line is still matched in Odoo's bank reconciliation as usual."
+  - q: "Are Shopify POS orders imported?"
+    a: "Yes, unless you switch Import POS orders off. They are marked, can be filtered, and ship from the warehouse mapped to the till's location. Because a POS sale is paid and handed over at the till, its delivery is validated on import when Shopify fulfilments validate Odoo deliveries is on."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The order is where the money starts, and the payout is where it ends. In between, a Shopify order gets edited, split across two locations, shipped, partly refunded, and finally paid out as a net amount with fees taken off. If Odoo only imports the order and stops there, the accountant still has to work out by hand which invoices one Shopify payout paid. This chapter of the [Odoo Shopify connector guide](/odoo-guides/odoo-shopify-connector/) follows an order the whole way through.
+
+It assumes the store is connected and its locations are mapped to warehouses, as described in the [hub page](/odoo-guides/odoo-shopify-connector/) and the [product and stock sync chapter](/odoo-guides/odoo-shopify-product-stock-sync/).
+
+## Step 1: choose which orders come in
+
+On the store's **Sync Behaviour** tab, decide which orders are imported: by payment status (paid only, paid or partially paid, or authorised as well) and by fulfilment status. A new order outside these filters is skipped with a line on the import job, and comes in on its next update once it qualifies. Orders already in Odoo keep updating.
+
+The same section has the order options this chapter refers to: **Apply order edits from Shopify**, **Shopify fulfilments validate Odoo deliveries**, **Split deliveries by Shopify location**, and the POS order settings.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/order-filters.webp" alt="Store Sync Behaviour tab with the order options: apply order edits from Shopify, Shopify fulfilments validate Odoo deliveries, split deliveries by Shopify location, POS order import settings, and filters for which orders come in by payment and fulfilment status" width={1560} height={975} caption="Which orders come in, and how edits, fulfilments and POS orders are handled." />
+
+## Step 2: what an imported order looks like
+
+A Shopify order arrives as an Odoo sales order with its lines, the shipping line, Shopify's taxes, the exact discounts, the currency, the delivery and invoice addresses, and the risk Shopify scored. The total is checked against what Shopify charged and flagged when it differs. Then the workflow rule for its payment status runs: for a paid order, typically confirm, invoice, post and register the payment in the gateway's journal.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/order-from-shopify.webp" alt="Sales order S00063 imported from Shopify with two products and a Shopify Shipping line, State Tax 8 percent from Shopify, untaxed 43.70, Shopify tax 3.50 and total 47.20, and the chatter showing the invoice paid" width={1560} height={975} caption="An order as Shopify charged it, invoiced and paid in the gateway journal." />
+
+Taxes are worth a decision before go-live. With **Use Shopify taxes** on, the tax lines Shopify computed are matched to Odoo taxes by rate and created under a Shopify Tax group when missing. With it off, your fiscal position and product taxes decide. Either way a difference of a cent is absorbed on a labelled line so the invoice carries the Shopify figure. When a shop sells in several currencies, the order also carries what the customer paid in their own currency.
+
+## Step 3: edits made in Shopify
+
+Merchants edit orders after they are placed: add a line, remove one, change a quantity, discount a line. With **Apply order edits from Shopify** on, the Odoo order follows:
+
+- A line added in Shopify becomes a new order line, and a confirmed order's delivery grows with it.
+- A line removed or reduced goes down, and the delivery follows, as long as nothing of it has been delivered.
+- A price change follows while the line is not yet invoiced.
+
+A line already delivered or invoiced is not changed, and the chatter says so. That is deliberate. Paid orders are usually invoiced on import, so taking an item off a paid order in Shopify leaves the Odoo line as it is: the money Shopify gives back arrives as a credit note through the refund import. Lowering the line as well would credit the customer twice for one refund.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/order-edit.webp" alt="Sales order S00062 with an extra Camp Kettle line added, the total going from 70.70 to 95.20, and a chatter note saying the order was edited in Shopify and the added line was applied" width={1560} height={975} caption="An order edited in Shopify: the new line, the new total, and the note saying what was applied." />
+
+### POS and already shipped orders
+
+Orders from Shopify POS are marked, can be filtered, and ship from the warehouse mapped to the till's location. Orders that are already fulfilled when they arrive, such as old history or a shipment made by a 3PL, come in with their delivery validated and the tracking copied, with nothing pushed back to Shopify.
+
+## Step 4: ship from the right warehouse
+
+Shopify assigns each order to a location. The connector reads that assignment and ships from the warehouse mapped to that location. When an order spans two locations, a note in the chatter names both and says which one ships. With **Split deliveries by Shopify location** on, the order instead gets one delivery per warehouse. Only one-step deliveries are split; a warehouse that picks, packs and ships in several steps keeps its route whole.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/order-routing.webp" alt="Shopify tab of sales order S00049 showing the store, Shopify order number, paid and fulfilled status, and the fulfillment order lines with their assigned location, and a chatter note that Shopify assigned the order to two locations and it ships from Northwind Warehouse" width={1560} height={975} caption="An order Shopify assigned to two locations, with the note and the warehouse chosen." />
+
+When you validate the delivery in Odoo, Shopify gets the fulfilment with the tracking reference, for exactly the quantities shipped. A partial delivery makes a partial fulfilment. A tracking number changed later follows. If you ship from a different warehouse than the one Shopify assigned, the fulfillment order is moved in Shopify first.
+
+With **Shopify fulfilments validate Odoo deliveries** on, the other direction works too: a fulfilment made in Shopify, by hand, by a 3PL or at the till, validates the matching Odoo delivery with its tracking.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/delivery-tracking.webp" alt="Validated delivery WH/OUT/00036 with a tracking reference, weight, the source sales order, and the chatter showing Shopify Fulfillment Synced changed to yes" width={1560} height={975} caption="A validated delivery: the fulfilment and the tracking are now in Shopify." />
+
+## Step 5: refunds in both directions
+
+**From Shopify to Odoo.** A refund made in Shopify becomes a draft credit note in Odoo for exactly the refunded amount, and a return for the units that were restocked. Nothing is posted or validated for you: the accountant posts the credit note and the warehouse validates the return when the goods arrive.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/refunds-form.webp" alt="Shopify refund record with the store, Shopify refund and order ids, total refunded 139.32, partial refund with restock, the linked sale order, draft credit note and return picking, and a note saying wrong size, one unit returned" width={1560} height={975} caption="A Shopify refund with its draft credit note and its return." />
+
+**From Odoo to Shopify.** A credit note posted in Odoo on a Shopify order can refund the customer in Shopify: automatically when **Push credit notes to Shopify** is on, or with the **Refund in Shopify** button on the credit note. Shopify is asked first how much it still holds against the order's payments. A credit note above that, or in another currency, is refused with the figures, and nothing is refunded. One credit note makes one refund, never two. Units whose return is done in Odoo are restocked in Shopify.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/refund-to-shopify.webp" alt="Posted customer credit note RINV/2026/00005 for one Trailhead tent, with a chatter note saying it was refunded in Shopify with the refund id and amount and nothing restocked" width={1560} height={975} caption="A credit note refunded in Shopify: the refund id and what was restocked are in the chatter." />
+
+## Step 6: payouts and fees
+
+Shopify Payments pays out in batches, net of fees. Each payout arrives in Odoo as a draft bank statement line on the payout journal, with every transaction behind it: charges, refunds, adjustments, reserves and disputes, each with the amount, the fee Shopify kept and the net.
+
+1. On the store, under accounting mapping, switch on **Book Shopify Fees** and choose the fee account. Each paid payout gets one draft journal entry: the fee account debited, the payout journal's suspense account credited.
+2. Switch on **Reconcile Payouts Automatically**, or press **Reconcile** on a payout. Each charge is matched to the invoice payment in the Shopify Payments journal, and each refund to its credit note. Adjustments and disputes are marked for review, because no invoice explains them.
+3. Read the state: **Fully Matched**, **Partially Matched** with a note saying what is open, or **Not Reconciled**.
+
+<Shot src="/odoo-guides/odoo-shopify-orders-payouts/payout-form.webp" alt="Shopify payout 68001 for 291.23 dollars, paid, with its bank statement line and draft fee entry, gross 300.54, fees 9.31, difference zero, fully matched, and two charge transactions each matched to its sale order and invoice" width={1560} height={975} caption="A payout: each transaction matched to its invoice, the fees booked, the difference zero." />
+
+<Callout title="When a payout does not add up">If the transactions do not sum to the payout amount, something Shopify listed is missing. The payout says so, stays partially matched, and gets no fee entry until the figures agree. Press Refresh from Shopify later, or ask Shopify support about that payout. None of this posts or reconciles anything in accounting by itself: the statement line is still matched in Odoo's bank reconciliation the usual way. The module's job is to prove which invoices and credit notes make up the payout.</Callout>
+
+## Reports
+
+Under **Shopify, Reporting**:
+
+- **Net profit by store.** Untaxed sales, product cost at today's cost price, Shopify fees and what is left. Refunds are not taken off here; they are on their own report, so read the two side by side.
+- **Payout report.** Amount, fee and net by store, month and transaction type.
+- **Tax report.** Tax collected on Shopify orders by tax, store and month, read from posted invoices and credit notes. Invoices not yet posted are not in it.
+- **Sales analysis** and **refunds by month**.
+
+## When something looks wrong
+
+| What you see | Why, and what to do |
+|---|---|
+| An order is missing | The store's import filters skipped it, or the job that fetched it failed. Open the latest order import job: a skipped order has a line saying why, a failed one has Shopify's reason. |
+| An order total is flagged | Odoo and Shopify disagree by more than rounding, usually a tax mapped differently. Compare the taxes, fix the mapping and import the order again. |
+| An edit in Shopify did not change the order | The line was already delivered or invoiced. Read the chatter note; the refund arrives as a credit note. |
+| A credit note was not refunded in Shopify | It was above what Shopify still holds, in another currency, or the store toggle is off. The credit note's chatter says which. |
+| A payout has no fee entry | Book Shopify Fees is off, no fee account is set, or the payout does not add up. The note on the payout says which. |
+
+To follow a refund or a payout on real screens, open the [Shopify Connector demo](https://shopify-test.way4tech.com/), where the Northwind store has refunds and payouts already imported. If your payment setup is unusual, such as several gateways besides Shopify Payments, [send a short description](/contact/) and I will say how the journals should be mapped.

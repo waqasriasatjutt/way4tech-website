@@ -1,0 +1,145 @@
+---
+title: "Run payroll in Odoo Community: structures, monthly batches, journal posting and the bank file"
+metaTitle: "Run Payroll in Odoo Community"
+description: "Payroll on Odoo 19 Community: salary rules, accounts, trusted bank accounts, the monthly batch, payslip checks, journal posting, bank file and final pay."
+targetQuery: "payroll in odoo community"
+category: "Payroll and HR"
+summary: "How a payroll officer sets up and runs the month in Odoo 19 Community with HRMS Payroll: how a payslip is computed, rules and accounts, trusted bank accounts, the batch from generate to paid, loans and advances, and a leaver's last payslip."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-hrms"
+seriesOrder: 5
+modules:
+  - name: "HRMS Payroll"
+    technical: "wt_hrms_payroll"
+    note: "USD 45, the payroll engine, needs HRMS Core"
+  - name: "HR Payroll Accounting"
+    technical: "wt_hrms_payroll_accounting"
+    note: "USD 35, needs HRMS Payroll and Invoicing"
+  - name: "Payroll Bank File"
+    technical: "wt_hrms_payroll_bank_files"
+    note: "USD 40, HBL, MCB, UBL, Meezan and a generic CSV"
+  - name: "Employee Loan Management"
+    technical: "wt_hrms_loans"
+    note: "USD 30, instalments deducted on the payslip"
+  - name: "Salary Advance Request"
+    technical: "wt_hrms_advances"
+    note: "USD 20, recovery schedule deducted on the payslip"
+related: ["odoo-payroll-pakistan", "eobi-pessi-contributions-odoo", "uae-wps-sif-file-odoo"]
+linkFrom: ["/products/wt-hrms-payroll-accounting/"]
+faqs:
+  - q: "Can Odoo Community run payroll?"
+    a: "Not on its own: payroll in standard Odoo is an Enterprise app. With the HRMS Payroll module, Community gets salary structures, editable rules, payslips and batches, and with the accounting and bank file modules the run posts to the ledger and produces a salary transfer file."
+  - q: "Why does a payslip show the full salary for someone on unpaid leave?"
+    a: "As shipped, the Basic rule pays the full monthly wage whatever the days. Change its formula to round(wage * worked_days / 30.0, 2) during setup, then type the worked days on the payslips that need it."
+  - q: "How do I correct a payslip that is already posted?"
+    a: "Cancel it. The system posts a reversing entry instead of deleting what was booked. Then make a new payslip for the difference. Never edit a posted payslip."
+  - q: "Why is the bank file refused with an untrusted account?"
+    a: "Odoo pays only into bank accounts that someone with accounting rights has checked and switched to trusted. New accounts, including those from the import, start untrusted. A finance user compares the number with the employee's bank letter and switches Send Money on."
+  - q: "Are expense claims paid through payroll?"
+    a: "No. Approved expense sheets are reimbursed by a payment from the bank or cash journal. Loans, advances, overtime and leave encashment are the items that go through the payslip."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Payroll is the one HR job where a small mistake is never small. A wrong percentage on one allowance is wrong for everyone on that structure, every month, until someone notices. A salary posted to the wrong account is a month-end reconciliation that does not close. A bank file with the wrong decimal format comes back as a rejected line number, the day before payday. The aim of this chapter is a payslip that matches your old system to the unit, posts to the accounts Finance wants, and produces a file the bank accepts. Do the setup with the finance manager in the room.
+
+Odoo Community has no payroll of its own; the [hub page](/odoo-guides/odoo-hrms/) explains what standard Odoo does cover. Everything here is the HRMS Payroll module and its add-ons on Odoo 19 Community. For country specific figures, see [Pakistan payroll in Odoo](/odoo-guides/odoo-payroll-pakistan/) for income tax slabs, [EOBI, PESSI and SESSI](/odoo-guides/eobi-pessi-contributions-odoo/) for contributions, and the [UAE WPS SIF guide](/odoo-guides/uae-wps-sif-file-odoo/) for the UAE salary file.
+
+## How a payslip is worked out
+
+A **salary structure** is an ordered list of **payroll rules**. When a payslip is computed, the rules run top to bottom: basic, allowances, gross, deductions and employer contributions, net. Each rule is a fixed amount, a percentage of another rule, an amount set per employee, a tax table or a short formula. After the rules, the suite adds what other modules say is due this month: the loan instalment, the advance recovery, leave encashment.
+
+Everything starts from the employee's **Wage** on the Payroll tab: the monthly basic salary, not the package.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/employee-payroll-tab.webp" alt="Payroll tab of an employee in Odoo with contract start date, wage Rs. 45,000 as the monthly basic, employee type and working hours Monday to Saturday" width={1440} height={900} caption="The Payroll tab: contract dates, Wage (the basic) and working hours." />
+
+### Structures and rules
+
+Structures are under **WT HRMS, Configuration, Payroll Config, Salary Structures**. Monthly Salary is a plain basic-only structure, a starting point for any country. Pakistan Standard comes with the Pakistan pack. The workbook makes a Standard Salary structure from its Pay rules sheet; if you left that sheet empty it holds only Basic, so archive it before somebody picks it.
+
+To change a rule, open **Payroll Config, Payroll Rules**, open the rule and change the percentage or amount. To take a rule out of a structure, open the structure and click the small x on its tag. A rule's Accounting block can name its own debit and credit accounts.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/payroll-rule-percentage.webp" alt="House Rent Allowance payroll rule in Odoo, computation type percentage of another rule, 45 percent of BASIC, category Allowance, sequence 10, with an accounting block for debit and credit accounts" width={1440} height={900} caption="A percentage rule: house rent at 45% of BASIC. The accounting block can override the accounts for this rule only." />
+
+Allowances that differ by person, such as a fuel allowance only for sales staff, use a rule with computation **Amount set per employee**. Add it to the structure, then put each person's amount on their employee record, **Salary Components** tab. The workbook's Salaries sheet fills the same tab.
+
+<Callout title="Part months are not prorated as shipped">The Basic rule pays the full monthly wage whatever the days. If you deduct unpaid leave or pay joiners and leavers for part of a month, change the Basic rule's formula to `round(wage * worked_days / 30.0, 2)` during setup. The payroll officer then types Worked Days on the payslips that need it.</Callout>
+
+Approved overtime hours land on the payslip by themselves, but a rule has to turn them into money. The [attendance chapter](/odoo-guides/odoo-attendance-shifts-overtime/) shows the one OT rule to add.
+
+## Accounting
+
+**The salary journal.** In Invoicing, **Configuration, Journals**, create a journal Salaries, type Miscellaneous, short code SAL. In **Settings, Invoicing**, choose it as **Default Salary Journal**.
+
+**Which account each line posts to.** **Payroll Config, Payroll Accounts** gives a debit and a credit account per payslip category. A rule that names its own accounts wins over this list. Gross and Net are summary lines and are skipped.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/payroll-accounts.webp" alt="Payroll Accounts list in Odoo mapping Allowance and Basic to Salary and Wages against Salaries Payable, Deduction from Salaries Payable to Withholding Tax Payable, Employer Contribution to Social Security against Provision for Employee Benefit, and Gross and Net skipped" width={1440} height={900} caption="A common mapping: pay against Salaries Payable, deductions moved to what is owed to the tax office and funds, employer contributions as an expense." />
+
+Give income tax and each fund its own credit account on the rule itself, so the ledger shows separately what is owed to each body. Loan and advance lines fall under Deductions unless you name accounts for them.
+
+## Trusted bank accounts
+
+Odoo pays only into bank accounts that someone with accounting rights has marked as trusted, and the bank file refuses anybody whose account is not. New accounts, including those from the workbook, start untrusted. This is a fraud control: whoever types an account number should not be the person who approves paying into it.
+
+1. A finance user opens the employee, **Personal** tab, and clicks into the bank account, or opens the list of bank accounts.
+2. They compare the number with the bank letter or cheque the employee gave.
+3. They switch **Send Money** on. It shows Trusted. Save.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/trusted-bank-account.webp" alt="Employee bank account form in Odoo with a demo IBAN, account holder, bank UBL and Send Money switched on showing Trusted" width={1440} height={900} caption="A salary account Finance has checked and switched to Trusted." />
+
+Bank formats live under **Pay, Payroll, Bank Files, Bank Formats**: HBL, MCB, UBL, Meezan Bank and a Generic CSV. Compare the format with the sample file your bank gave you (columns, separator, decimal places, header row). The amount format is the commonest reason a bank rejects a file, so check that first.
+
+## Run the month
+
+Before you start: all leave for the month decided, overtime approved, new joiners have a wage and a trusted bank account, leavers have a last working day, attendance corrected, and any raise entered on the Payroll tab with the date it starts.
+
+1. **Pay, Payroll, Batches, New.** Name it after the month, set the dates and the structure, save.
+2. **Generate Payslips.** One draft payslip per employee with a wage. People with no wage are skipped and named in the log.
+3. **Compute All.** Every payslip is worked out: the rules, approved overtime hours, the loan instalment and advance recovery due.
+4. Check gross and net per person. Open any payslip that looks wrong.
+5. **Confirm All.** Confirmed payslips can no longer change.
+6. **Post All to Journal.** One balanced journal entry per payslip goes into the Salaries journal.
+7. Generate the bank file (below) and upload it to the bank portal.
+8. When the bank confirms the transfer, **Mark All Paid**.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/payslip-batch-computed.webp" alt="October payslip batch in Odoo after Compute All with 20 payslips listing employee, gross, net and state Computed" width={905} height={900} caption="After Compute All: 20 payslips with gross and net, ready to check." />
+
+### Check a payslip
+
+Look at the lines, not the total. **Worked Days** and **Leave Days** start at 30 and 0; type the days for anyone with unpaid leave, a late start or a last month (they change pay only if your Basic rule uses them). **Overtime Hours** come from approved overtime requests in the period. Loan instalments and advance recoveries due this month are added as deductions after the rules: the **Net** field at the top is what is paid, while the Net Salary line in the list is the figure before those recoveries.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/payslip-lines.webp" alt="Payslip lines in Odoo: basic, house rent, medical, conveyance, overtime, EOBI employee and employer, provident fund, income tax, social security, net salary and a salary advance recovery of minus 10,000 added after the rules" width={1440} height={900} caption="The lines of one payslip, with the salary advance recovery added after the net line." />
+
+If something is wrong, fix the cause (the wage, a request, a rule) and click **Compute** on that payslip again. Use **Reset** on a confirmed payslip only before it is posted.
+
+<Callout title="After posting, never edit">A posted payslip is in the ledger. To correct it, cancel it: the system posts a reversing entry rather than deleting what was booked. Then make a new payslip for the difference.</Callout>
+
+### The bank file
+
+1. **Pay, Payroll, Bank Files, Generate Bank File.**
+2. Choose the batch and your bank's format, then **Generate**.
+3. If anyone has no bank account, or an account Finance has not trusted, no file is made and those people are listed. Fix them, or tick **Send Without Everybody** to pay the rest now.
+4. **Download**, upload the file to the bank portal, then **Mark Posted to Bank**.
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/bank-file-run.webp" alt="Bank disbursement run in Odoo for the October batch in HBL format with 20 lines, 0 skipped, total amount equal to batch total, no shortfall, and a CSV file ready to download" width={1440} height={900} caption="The run: 20 lines, nobody skipped, total equal to the batch. Every run is kept under Disbursement History." />
+
+## Loans, advances, overtime and encashment
+
+| Item | What happens | Your part |
+|---|---|---|
+| Loan | After approval, Generate Installments builds the schedule. Each month the instalment due is deducted on the payslip and marked repaid. | Pay the loan out through Finance; check the outstanding balance monthly. |
+| Salary advance | After approval and Mark Paid, the recovery schedule is deducted month by month. | Mark it paid when the cash goes out. |
+| Overtime | Approved hours in the period land on the payslip and are paid by the OT rule. | Make sure the rule exists. |
+| Leave encashment | An approved encashment is added as an allowance on the next payslip. | Nothing. |
+| Expense sheet | Reimbursed by a payment from the bank or cash journal, not through payroll. | Finance records the payment. |
+
+<Shot src="/odoo-guides/run-payroll-odoo-community/employee-loan-schedule.webp" alt="Approved employee loan in Odoo of Rs. 150,000 over 12 instalments of Rs. 12,500, with the first instalment marked repaid and linked to the October payslip" width={1440} height={900} caption="A loan of 150,000 over 12 months. The first instalment was deducted from the October payslip and shows as repaid." />
+
+## A leaver's final pay
+
+Create a single payslip under **Pay, Payroll, Payslips, New**, with dates from the 1st to the last working day. Type the Worked Days (for example 4 for a leaver whose last day is the 4th), then compute. If unused leave is to be paid out, raise a leave encashment request before computing. Check the outstanding loan balance and agree with Finance how it is settled. The [offboarding chapter](/odoo-guides/odoo-employee-onboarding-offboarding/) covers the rest of the exit.
+
+## The monthly rhythm
+
+Last day of the month: approve the remaining overtime, encashments and advances, run the batch, check and confirm. Day 1: post to the journal, generate the bank file, send it. Days 2 to 5: mark the batch paid when the bank confirms. Once a year, when the statutory rates change, add a new dated rate set rather than editing last year's, so earlier months still recompute correctly. Once it is routine the run takes about an hour a month.

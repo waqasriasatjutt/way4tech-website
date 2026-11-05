@@ -1,0 +1,136 @@
+---
+title: "Restaurant recipes and food cost in Odoo 19: ingredient deduction, wastage, stock counts, usage variance and menu engineering"
+metaTitle: "Recipes, Food Cost and Menu Engineering"
+description: "Food cost in Odoo 19: recipes that deduct ingredients on every sale, wastage, stock counts, unexplained variance, par levels and menu engineering."
+targetQuery: "odoo restaurant recipe food cost"
+category: "Industry"
+summary: "The cost side of an Odoo 19 restaurant: recipes with food cost per dish, ingredients taken out on every paid order, wastage sheets, shelf counts, unexplained variance, par levels and reorder lists, then the owner dashboard and the menu engineering matrix."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 6
+modules:
+  - name: "Restaurant Inventory"
+    technical: "w4_resto_inventory"
+    note: "USD 149, recipes, wastage, counts, par levels, needs Odoo Inventory"
+  - name: "Restaurant Reports"
+    technical: "w4_resto_reports"
+    note: "USD 149, owner dashboard, menu engineering, day reports"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: []
+sources: []
+faqs:
+  - q: "How is food cost percent worked out?"
+    a: "Ingredient cost of one portion divided by the selling price before tax. In the demo the Funghi recipe costs 1.87 against a price of 7.00, so its food cost is 26.6 percent. The recipe form shows it per dish."
+  - q: "What is unexplained variance?"
+    a: "What the stock count found missing, less what sales used according to the recipes, less what was recorded as wasted. Recorded wastage is explained and shown in its own column; only the rest needs investigating, and it is usually theft, over-portioning or unrecorded waste."
+  - q: "Can a recipe use another recipe, like a dough or a sauce?"
+    a: "Yes. An ingredient with its own recipe is exploded one level, so selling a pizza uses the flour, not the dough. A recipe line can also belong to one modifier, so Extra cheese uses its own cheese only when it is chosen."
+  - q: "What is a menu engineering matrix?"
+    a: "Each dish is marked popular if it sells at least the average quantity per dish and profitable if it earns at least the average margin per portion from its recipe cost. That gives four groups: stars, plow horses, puzzles and dogs."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A restaurant can be full every night and still lose money in the kitchen. Food cost creeps up a few points when portions grow, when a supplier raises a price nobody passes on, when the cream goes off on Sunday and nobody writes it down, or when stock walks out of the back door. None of that shows on the sales report. It shows only when you compare what the kitchen should have used with what is actually gone from the shelf.
+
+Odoo Inventory tracks products in and out of a warehouse, but a sold dish does not take its ingredients out by itself, and there is no food cost per dish. Restaurant Inventory adds that loop on top of Odoo Inventory, and Restaurant Reports puts the result on one screen for the owner. The loop is: a recipe per dish, ingredients deducted on every sale, wastage recorded, shelves counted, the variance shown, and a reorder list each morning.
+
+## Recipes
+
+**Restaurant, Configuration, Recipes.** A recipe makes a number of portions (the yield) from ingredient lines, in any unit: grams of a product stocked by the kilogram, millilitres of a sauce stocked by the litre. Each line can carry a prep waste percentage, so 60 g of mushrooms with 15 percent prep waste is costed with the trimming included. The form shows the batch cost, cost per portion, the selling price and the **food cost %** against it.
+
+Two details make recipes match the real kitchen:
+
+- **Lines per modifier.** A line can belong to one modifier value, so "Extra cheese" uses its own cheese only when the guest picks it.
+- **Sub-recipes.** A sauce or a dough can have its own recipe. An ingredient with a recipe is exploded one level, so selling the pizza uses the flour, not the dough as a separate stock item.
+
+The form also warns when an ingredient is stocked in a unit too coarse for the quantity, because every order would round it. Stock that ingredient in grams or millilitres instead.
+
+<Shot src="/odoo-guides/odoo-restaurant-recipe-food-cost/recipe-food-cost.webp" alt="Recipe for Funghi in Odoo with yield 1 unit, batch cost 1.87, cost per unit 1.865, sales price 7.00 and food cost 26.6 percent, ingredient lines for pizza dough, tomato sauce, mozzarella and mushrooms with 15 percent prep waste, and a warning that mushrooms are stocked in a unit too coarse for the quantity" width={1600} height={868} caption="A recipe: ingredients in grams and millilitres, prep waste, and food cost 26.6 percent against the price." />
+
+**Food cost %** is the ingredient cost of one portion divided by the selling price before tax. In the demo the Funghi costs 1.87 in ingredients and sells for 7.00, so its food cost is 26.6 percent. Check every dish once after the recipes are in; the outliers are usually a typo in a quantity or a price that was never updated.
+
+When a dish has a recipe, untick Track Inventory on the dish itself. The recipe does the stock movement.
+
+## Wastage
+
+**Operations, Wastage** holds one sheet per branch and day. The kitchen adds lines with product, quantity and reason (expired, spoiled, preparation error, dropped) and a note when it helps, such as "tub knocked off the pass". A manager confirms the sheet, and its cost is fixed at that moment.
+
+<Shot src="/odoo-guides/odoo-restaurant-recipe-food-cost/wastage-sheet.webp" alt="Wastage sheet WST/00001 in Odoo for the Gulberg branch with mozzarella spoiled, milk expired, lettuce spoiled and tomato sauce dropped, each with quantity, unit, on hand, reason, cost and a note, total cost 8.55" width={1600} height={705} caption="A wastage sheet: product, quantity, reason and cost, confirmed by a manager." />
+
+Wastage is the habit that makes the variance report honest. A kitchen that records waste shows a small unexplained variance; a kitchen that does not shows a large one, and the owner cannot tell waste from theft.
+
+## Stock counts
+
+**Operations, Stock Counts.** **Fill from stock** lists every ingredient with what the system thinks is on the shelf. Type what is actually there; the difference and its value show as you type. A line stays grey and untouched until it has a counted figure, so a partial count does not zero the items you skipped. Confirming re-reads the on-hand quantity first, so orders paid during the count are not lost, and then corrects the stock.
+
+<Shot src="/odoo-guides/odoo-restaurant-recipe-food-cost/stock-count.webp" alt="Stock count CNT/00001 in Odoo for DHA Phase 6 with ingredient lines showing on hand, counted, a counted toggle, difference and difference value, flour, milk and mozzarella short, and a variance value of minus 3.50" width={1600} height={1000} caption="A count: only the lines with a counted figure change; the variance value shows as you type." />
+
+## Usage variance: what went missing
+
+**Reporting, Usage Variance** shows, per ingredient, branch and day: what recipes say sales used (theoretical), what actually left the shelf, what was wasted, and the **unexplained variance** with its value.
+
+**Unexplained variance** = what the count found missing, minus what sales used, minus what was recorded as wasted.
+
+This is the number that finds theft and over-portioning. Look at it by ingredient first: if cheese is always over and flour never is, the problem is more likely portioning on one station than a thief.
+
+<Shot src="/odoo-guides/odoo-restaurant-recipe-food-cost/usage-variance.webp" alt="Usage Variance pivot in Odoo for this month by branch, Gulberg and DHA Phase 6, with theoretical, actual, wastage, unexplained variance and unexplained value per ingredient such as bread slice, chicken, flour, lettuce, milk, mozzarella and tomato sauce" width={1600} height={713} caption="Usage variance by branch and ingredient: theoretical, actual, wasted, and what is left unexplained." />
+
+<Callout title="Recipes have to be right first">Variance is only as good as the recipes behind it. If a recipe says 120 g of mozzarella and the cooks use 150 g as a house rule, the report shows a steady loss that is really a recipe to correct. Weigh a few portions of the top dishes before trusting the numbers.</Callout>
+
+## Par levels and the reorder list
+
+**Configuration, Par Levels** sets a minimum and a par for each ingredient and branch. Every morning each branch manager gets one to-do listing what is under its minimum. **Suggested Purchases** shows what to order, how much to bring it back to par and at what cost, and exports to CSV. With Odoo Purchase installed, the list becomes requests for quotation, one per supplier.
+
+## The owner dashboard
+
+**Reporting, Dashboard** shows one branch or all of them, for today, yesterday, this week, this month, the last 7 or 30 days or a custom range:
+
+| Number | Means |
+|---|---|
+| Sales | Paid orders including tax, refunds excluded. Net is sales minus refunds, and is what the payments add up to |
+| Covers, per cover | Guests served, and sales divided by guests |
+| Average ticket | Sales per paid order |
+| Table turnover | Dine-in orders divided by tables and days: how many times a table is used per day |
+| Voids and refunds | Refunded lines plus sent dishes removed with a manager PIN |
+| Sales by hour | A weekday by hour heatmap, for deciding when to put more staff on |
+| Food cost, deliveries, calls | From recipes, the delivery board and the call center when those modules are installed |
+
+<Shot src="/odoo-guides/odoo-restaurant-recipe-food-cost/owner-dashboard.webp" alt="Restaurant owner dashboard in Odoo for all branches over the last 7 days with sales, orders, covers, average ticket, table turnover, voids and refunds, discounts and tips, charts for sales by day, sales by branch, dine-in takeaway and delivery, payment methods, operations with food cost 37.8 percent, deliveries and calls, and a sales by hour heatmap" width={1600} height={1000} caption="The owner dashboard: every branch or one, with food cost from the recipes beside sales." />
+
+The dashboard and every day report export to Excel.
+
+## Menu engineering
+
+Below the dashboard is the **menu engineering matrix**. Each dish gets two marks from its sales and recipe cost: **popular** if it sells at least the average quantity per dish, and **profitable** if it earns at least the average margin per portion. That gives four groups:
+
+- **Stars:** popular and profitable. Keep them and put them first on the menu.
+- **Plow horses:** popular with a low margin. Raise the price a little or cut the portion cost.
+- **Puzzles:** profitable but rarely ordered. Move them up the menu and let waiters suggest them.
+- **Dogs:** neither. Rework them or take them off.
+
+<Shot src="/odoo-guides/odoo-restaurant-recipe-food-cost/menu-engineering.webp" alt="Menu engineering scatter chart in Odoo with dishes placed by quantity sold and unit margin, coloured as star, plow horse, puzzle and dog, a table of products with sold, revenue, unit margin, margin and class, a waiters table with orders, sales, average ticket and voids, and top categories" width={1600} height={986} caption="The matrix: every dish placed by how much it sells and how much it earns, with the waiters beside it." />
+
+The matrix works out margin from recipe cost, so finish the recipes before reading it.
+
+## Which report answers which question
+
+| Question | Report |
+|---|---|
+| How did we do today, this week? | Reporting, Dashboard |
+| Did the drawer add up last night? | Reporting, Day Reports |
+| Which dishes should go? | Dashboard, menu engineering |
+| Which branch sells most, and what? | Sales Analysis, Orders by Branch, Revenue by Branch |
+| How much does each waiter sell and earn in tips? | Tips by Waiter |
+| How fast is the kitchen? | Kitchen Times |
+| Who voided what, and who approved? | Audit Log, PIN Approvals |
+| What went missing from the kitchen? | Usage Variance, Wastage Analysis |
+| What do we need to order? | Suggested Purchases |
+| Are deliveries on time, is rider cash short? | Deliveries list, Cash Settlements |
+| What do guests say? | Guest Feedback |
+| Were all receipts reported to the tax authority? | Fiscal Queue |
+
+The last chapter covers the guests themselves: [reservations, the waitlist and loyalty](/odoo-guides/odoo-restaurant-reservations-waitlist/).

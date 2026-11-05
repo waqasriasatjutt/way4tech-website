@@ -1,0 +1,210 @@
+---
+title: "Odoo restaurant management: tables, kitchen, delivery and branches on one Odoo 19 database"
+metaTitle: "Odoo Restaurant Management on Odoo 19"
+description: "What a restaurant needs from Odoo 19, what the standard POS covers, and how the Way4Tech Restaurant Suite adds kitchen screens, delivery and branches."
+targetQuery: "odoo restaurant management"
+category: "Industry"
+summary: "A restaurant run on Odoo 19 Community: waiter tablets, kitchen screens, delivery riders, phone and online orders, recipes and one dashboard for every branch, with the modules and prices that bring each part."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-restaurant-management.pdf"
+  pages: 62
+modules:
+  - name: "Way4Tech Restaurant Suite"
+    technical: "w4_resto_suite"
+    note: "USD 999, installs every module below and adds the setup wizard"
+  - name: "Restaurant Suite Base"
+    technical: "w4_resto_base"
+    note: "Free, always installed: branches, roles, PIN approvals, audit log"
+  - name: "POS Print Anywhere"
+    technical: "w4_pos_print"
+    note: "USD 59, network and Windows printing without an IoT box"
+  - name: "Restaurant Print Bridge"
+    technical: "w4_resto_print_bridge"
+    note: "No separate price, needs POS Print Anywhere"
+  - name: "Restaurant Mobile POS"
+    technical: "w4_resto_pos_mobile"
+    note: "USD 79"
+  - name: "Restaurant Order Taker"
+    technical: "w4_resto_order_taker"
+    note: "USD 129"
+  - name: "Restaurant Table Operations"
+    technical: "w4_resto_table_ops"
+    note: "USD 99"
+  - name: "Restaurant Kitchen Display"
+    technical: "w4_resto_kds"
+    note: "USD 149"
+  - name: "Restaurant Menu Engineering"
+    technical: "w4_resto_menu"
+    note: "USD 99"
+  - name: "Restaurant Branch Transfer"
+    technical: "w4_resto_branch_transfer"
+    note: "USD 129"
+  - name: "Restaurant Delivery"
+    technical: "w4_resto_delivery"
+    note: "USD 199"
+  - name: "Restaurant Call Center"
+    technical: "w4_resto_call_center"
+    note: "USD 199"
+  - name: "Restaurant Online Orders"
+    technical: "w4_resto_online_orders"
+    note: "USD 149"
+  - name: "Restaurant Reservations"
+    technical: "w4_resto_reservations"
+    note: "USD 99"
+  - name: "Restaurant Inventory"
+    technical: "w4_resto_inventory"
+    note: "USD 149"
+  - name: "Restaurant Loyalty"
+    technical: "w4_resto_loyalty"
+    note: "USD 99"
+  - name: "Restaurant Fiscal Compliance"
+    technical: "w4_resto_tax_compliance"
+    note: "USD 199"
+  - name: "Restaurant Wallet Payments"
+    technical: "w4_resto_payments"
+    note: "USD 79"
+  - name: "Restaurant Reports"
+    technical: "w4_resto_reports"
+    note: "USD 149"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: ["fbr-pos-integration-odoo", "zatca-e-invoicing-odoo-community", "uae-e-invoicing-odoo"]
+linkFrom: ["/industries/restaurant-fnb/", "/solutions/restaurant-fnb/", "/modules/pos/"]
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch, pos_restaurant addon (Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons/pos_restaurant"
+faqs:
+  - q: "Can Odoo run a restaurant without extra modules?"
+    a: "A single outlet can. Odoo 19 Point of Sale has floor plans, tables, courses, bill splitting, tips and kitchen printing. What it does not have on Community is a kitchen screen, branches with their own managers, a waiter role that cannot take money, manager PINs on voids, delivery riders, a call center or recipe costing."
+  - q: "Does the Restaurant Suite need Odoo Enterprise?"
+    a: "No. Every module is built on Odoo 19 Community, including the kitchen display, which in standard Odoo is an Enterprise app. It also installs on Enterprise."
+  - q: "Do I have to buy all nineteen modules?"
+    a: "No. Each module installs on its own on top of the free Restaurant Suite Base. A cafe can start with the waiter tablet, the kitchen screen and reports, and add delivery or the call center later without changing what already works."
+  - q: "Does it include an online ordering website for my customers?"
+    a: "No. The Online Orders module is the restaurant side: it receives orders from your website, app or a delivery partner and runs them through the till and kitchen. The page where customers browse and pay is your own website or app, or a separate project."
+  - q: "Does it work with FBR, PRA, ZATCA or UAE VAT receipts?"
+    a: "The Fiscal Compliance module reports paid orders to FBR, PRA, SRB and KPRA in Pakistan and prints ZATCA Phase 1 and UAE VAT receipts. The restaurant still registers with the authority itself. The FBR POS guide on this site explains the rules in detail."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A restaurant has more moving parts per square metre than almost any other business. Tables turn over, the kitchen works in rounds, a rider is somewhere on the road with your cash, the phone rings for a branch across town, an online order lands during the Friday rush, and every evening someone has to make the drawer add up. Most restaurants run that on paper chits, a till, a delivery app on a separate tablet and a spreadsheet for stock. Each part works on its own. None of them agree with each other at closing.
+
+This guide is about running all of it on one Odoo 19 database, for one outlet or a chain of branches. It covers what a restaurant actually needs, what the standard Odoo Point of Sale already does, and where the Way4Tech Restaurant Suite fills the gaps. The chapters after this one go through each part of the day step by step, from setting up the first branch to reading the owner dashboard. The screenshots come from a two-branch demo restaurant, Lahore Grill House, with its Gulberg and DHA Phase 6 outlets.
+
+## What a restaurant needs from its system
+
+Leave the brochure language aside and a restaurant needs a short list of controls:
+
+1. **An order that reaches the right station.** The waiter sends the table, the grill sees only grill items, the bar sees only drinks, with seat numbers and every option the guest asked for.
+2. **A waiter who cannot take money.** The person who opens a table and the person who closes the drawer should not be the same login, and the system should enforce it, not the manager's memory.
+3. **A name on every void.** Removing a dish after the kitchen has it, typing a price by hand, giving a large discount or refunding a paid order all cost money. Each one needs a reason and a manager.
+4. **Cash that can be counted.** Cash, cards and mobile wallets recorded so they can be checked against the bank and the wallet portal, and a closing count note by note.
+5. **Delivery with the cash coming back.** The right branch for the address, a rider assigned, the food out on time, and the cash the rider hands over matched to what was collected.
+6. **Stock that follows the menu.** Every sold dish takes its ingredients out of the store, so the count at the end of the week shows what went missing.
+7. **One view across branches.** Sales, covers, average ticket, best and worst dishes and staff, per branch or for the whole business.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Point of Sale with the restaurant option turned on is a solid base. The [restaurant features documentation](https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html) lists floors and tables, order management, notifying the kitchen or bar, printing and splitting bills, tips, courses, transferring and merging tables, and a booking button. The [pos_restaurant addon](https://github.com/odoo/odoo/tree/19.0/addons/pos_restaurant) that brings these is part of Community. If you run one cafe with a paper kitchen printer, that may be enough.
+
+The gaps show up as soon as the restaurant grows or the owner wants control:
+
+- **No kitchen screen on Community.** Odoo's preparation display is an Enterprise app. On Community the kitchen gets paper or nothing.
+- **Printing needs an IoT box or an Epson ePOS printer.** Plain network thermal printers and USB printers are not reached directly.
+- **No branches.** Odoo has companies and points of sale, but no branch with its own managers, opening hours, delivery zones and reports.
+- **No manager PIN on risky actions,** and no waiter role that is refused at the payment screen.
+- **No delivery riders, call center or online order inbox.**
+- **No recipes, food cost or usage variance.** Stock is tracked per product, not per ingredient used by a dish.
+- **No owner dashboard across branches** beyond the standard sales reporting.
+
+You could build some of this with Studio and custom fields. The controls that matter most, a server that refuses a payment from a waiter or a void without a PIN, need code.
+
+<Shot src="/odoo-guides/odoo-restaurant-management/floor-plan-table-states.webp" alt="Odoo 19 restaurant floor plan on a tablet with tables coloured by state: ordered, food ready, bill requested, a reserved table chip for 11:45 Omar party of 6, guest counts and minutes per table" width={1600} height={1112} caption="The floor plan with the suite: every table shows its state, guests, minutes in that state and the next booking." />
+
+## The Restaurant Suite: one app, nineteen modules
+
+The suite is one Restaurant app in Odoo. Underneath, each job is its own module, so a restaurant installs only what it runs. The menus, roles and branches are shared, so adding a module later leaves everything else as it was. All of them are built for Odoo 19 and need nothing from Odoo Enterprise.
+
+| Module | What it adds | Price |
+|---|---|---|
+| Restaurant Suite Base | Branches, staff roles, manager PIN approvals, audit log, devices, live table status, clock in and out | Free |
+| POS Print Anywhere | Network ESC/POS and Star printers direct from Odoo, any Windows printer through a print server, job log, reprint, printer health | USD 59 |
+| Restaurant Print Bridge | Kitchen tickets per station, void tickets, table moved notices, delivery slips | No separate price |
+| Restaurant Mobile POS | The till laid out for phones and tablets, favourites, install as an app | USD 79 |
+| Restaurant Order Taker | Waiter mode: table board, seats, courses, hold and fire, locked sent lines, food ready alerts | USD 129 |
+| Restaurant Table Operations | Move, merge and split tables, four ways to split a bill, change waiter, service charge, tips by waiter | USD 99 |
+| Restaurant Kitchen Display | Kitchen screens per station, expo, bump and recall, rush, timers, kitchen times report | USD 149 |
+| Restaurant Menu Engineering | Modifier groups with limits, sizes, half and half, timed menus, 86 list, allergens | USD 99 |
+| Restaurant Branch Transfer | Send an order or stock to another branch, choose which branch keeps the revenue | USD 129 |
+| Restaurant Delivery | Delivery zones, riders, the delivery board, rider phone screen, rider cash settlement | USD 199 |
+| Restaurant Call Center | Agent console, caller lookup, branch routing, reorders, complaints, supervisor board | USD 199 |
+| Restaurant Online Orders | Channels for website, app and aggregators, online inbox, menu publishing | USD 149 |
+| Restaurant Reservations | Booking calendar, table suggestions, deposits, reminders, walk-in waitlist | USD 99 |
+| Restaurant Inventory | Recipes, ingredient use on every sale, wastage, stock counts, usage variance, par levels | USD 149 |
+| Restaurant Loyalty | Tiers on top of Odoo loyalty, tier prices, birthday coupons, QR feedback | USD 99 |
+| Restaurant Fiscal Compliance | FBR, PRA, SRB, KPRA, ZATCA Phase 1 and UAE VAT receipts with a retry queue | USD 199 |
+| Restaurant Wallet Payments | JazzCash, EasyPaisa, SadaPay, NayaPay and bank transfer with a reference per payment | USD 79 |
+| Restaurant Reports | Owner dashboard, menu engineering matrix, X and Z day reports with cash count | USD 149 |
+| Way4Tech Restaurant Suite | Installs everything above, orders the Restaurant menu, eight step setup wizard | USD 999 |
+
+Every module is listed on the Odoo Apps Store, from the [Restaurant Suite Base](https://apps.odoo.com/apps/modules/19.0/w4_resto_base/) to the [full suite](https://apps.odoo.com/apps/modules/19.0/w4_resto_suite/).
+
+<Callout title="What the full suite costs on the store">The prices above are each module's own price. The Odoo Apps Store charges for every module a module pulls in, so the suite listing adds its USD 999 to the price of all sixteen paid modules it installs. When this guide was written the store showed USD 3,062.97 for the full suite. Buying only the modules you need is usually far cheaper.</Callout>
+
+## Which modules fit which restaurant
+
+| Restaurant | Usually installs |
+|---|---|
+| Cafe or small dine-in, one branch | Base, Mobile POS, Order Taker, Table Operations, Kitchen Display or printing, Menu, Reports |
+| Busy dine-in with a bar | The above, plus Reservations, Loyalty, Inventory, Wallet Payments |
+| Takeaway and delivery kitchen | Base, Mobile POS, Kitchen Display, printing, Menu, Delivery, Online Orders, Reports |
+| Chain of branches with one phone number | The full suite |
+| Pakistan, Saudi Arabia or the UAE | Add Fiscal Compliance for receipts the tax authority accepts |
+
+<Shot src="/odoo-guides/odoo-restaurant-management/suite-dashboard-menu.webp" alt="The Restaurant app in Odoo 19 with the Operations menu open listing Table Status, Table Board, Orders, Online Orders, Branch Transfers, Stock Transfers, Wastage, Stock Counts, 86 List, Loyalty Members, Printer Health and Print Jobs over the owner dashboard" width={1600} height={1000} caption="One Restaurant app: Operations, Kitchen, Delivery, Call Center, Reservations, Reporting and Configuration, each filled by the module installed." />
+
+## What it runs on
+
+- **Odoo 19,** Community or Enterprise, on Odoo.sh, a cloud server or a small PC inside the restaurant.
+- **Tills and tablets:** any browser. Android tablets, iPads, phones, Windows touch terminals. The till installs as an app on the home screen.
+- **Kitchen:** a tablet or wall screen per station, printers, or both.
+- **Riders:** any smartphone.
+- **Printers:** network thermal printers (Epson, Xprinter, Bixolon, Star and clones) straight from Odoo, or any printer Windows can see through the Way4Tech print server on a PC in the restaurant. No IoT box.
+
+When the internet drops, the till keeps taking orders and payments and syncs when the line is back. Kitchen tickets wait on the till and are sent once, never twice. PIN approvals, the delivery board, the waitlist and the online inbox need the Odoo server, and refuse with a notice rather than half finishing. A restaurant with a poor line can run Odoo on a PC on its own network, so only online orders, messages, tax submission and the call center wait for the internet.
+
+<Shot src="/odoo-guides/odoo-restaurant-management/tablet-register.webp" alt="Odoo POS register on a tablet in landscape with Tables, Register, Orders, Waitlist, Online and Deliveries buttons, an order with seat badges and Course 2 on hold, and drink tiles with allergen chips" width={1600} height={1112} caption="The register on a tablet: seats, courses, a held course and the Waitlist, Online and Deliveries counts across the top." />
+
+## The chapters in this guide
+
+Each chapter answers one job a restaurant does and can be read on its own:
+
+1. [Setting up a restaurant in Odoo 19](/odoo-guides/odoo-restaurant-pos-setup/): the setup wizard, branches, registers, staff roles and PINs, floors, sections and the menu.
+2. [The waiter app, courses and split bills](/odoo-guides/odoo-pos-waiter-app-split-bill/): taking orders seat by seat, holding courses, voids with a manager PIN, moving tables, splitting the bill and the service charge.
+3. [Kitchen display and kitchen printing](/odoo-guides/odoo-kitchen-display-system/): stations, routing, bump and recall, expo, printers without an IoT box and the kitchen times report.
+4. [Payments, closing the day and the audit trail](/odoo-guides/odoo-restaurant-cashier-day-close/): cash, cards and mobile wallets, the Z report and cash count, roles, PINs and the audit log.
+5. [Delivery, riders, online and phone orders](/odoo-guides/odoo-restaurant-delivery-online-orders/): zones, dispatch, the rider phone, rider cash, online channels, the call center and branch transfers.
+6. [Recipes, food cost and owner reports](/odoo-guides/odoo-restaurant-recipe-food-cost/): recipes, wastage, counts, usage variance, the dashboard and menu engineering.
+7. [Reservations, waitlist and loyalty](/odoo-guides/odoo-restaurant-reservations-waitlist/): bookings, the walk-in queue, tiers, birthday offers and guest feedback.
+
+Tax receipts have their own guide: [FBR POS integration in Odoo](/odoo-guides/fbr-pos-integration-odoo/) covers what FBR and the provinces require and how the Fiscal Compliance module reports each order. Saudi and UAE readers can see the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/) and the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/) for the invoice side.
+
+## Limitations
+
+These are the suite's own statements about what it does not do:
+
+- **No customer ordering website or app.** Online Orders receives orders from your channels; the page where customers browse and pay is yours, or a separate project that reads the menu and prices from this module.
+- **Aggregators need their own accounts.** There is a Foodpanda style connector, but each marketplace still needs its partner account and store mapping.
+- **No QR ordering at the table.** Odoo's own Self Ordering module does that and can be installed alongside; it is not part of the suite.
+- **No payment gateway.** JazzCash, EasyPaisa and the other wallets are recorded with their transaction reference and checked against the merchant portal; a live gateway integration is separate work.
+- **Tax registration is yours.** The Fiscal Compliance module is ready for FBR and the provinces, but the restaurant registers with the authority and moves the configuration out of sandbox.
+
+If you want to see it working, the [Restaurant Suite demo](https://restro.way4tech.com/) is on the [demo directory](/demos/). For a restaurant with a setup this guide does not cover, such as a central kitchen supplying several branches, [send a short description](/contact/) and I will say whether it fits.

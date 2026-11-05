@@ -1,0 +1,100 @@
+---
+title: "Jewellery stock count by weight in Odoo, with the stone certificate register and the owner's reports"
+metaTitle: "Stock by Weight, Certificates, Reports"
+description: "Count a jewellery tray in Odoo 19 in pieces and grams, price the gap at today's rate, keep a stone certificate register and read margin and metal reports."
+targetQuery: "jewellery stock count by weight odoo"
+category: "Industry"
+summary: "Count sheets that weigh the tray against the book and price the difference at today's rate, a register of lab certificates and who holds them, and the four reports an owner reads."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-jewellery-management"
+seriesOrder: 4
+modules:
+  - name: "Jewelry Management"
+    technical: "wt_jewelry_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://jewelry-demo.way4tech.com/"
+  label: "Jewellery demo (Al Nour Jewellers)"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "Why count jewellery stock by weight and not just by piece?"
+    a: "Because a piece count hides metal loss. Forty rings on the tray matches forty in the book even when the tray is several grams light from polishing, a swapped piece or a lighter copy. Only weighing the tray against the book weight shows it."
+  - q: "How is the count variance valued?"
+    a: "The weight difference on each line is priced at the metal rate for the day the sheet is priced on, because a missing gram is worth what gold is worth now, not what it cost when it was bought."
+  - q: "Does the count sheet read weights from a scale?"
+    a: "No. Counted pieces and counted weight are typed in from the tray. Linking a balance so it writes straight into Odoo would be a separate integration on top of the module."
+  - q: "Which labs can a stone certificate be from?"
+    a: "GIA, IGI, HRD Antwerp, GSI, a local assay or gem lab, or another lab you name. The certificate number is the key on the register, because it is what a buyer quotes back years later."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A jewellery shop can pass every piece count and still be losing metal. Display pieces are polished, worn and handled; a ring is swapped for a lighter one; a sale is not posted. The tray still holds forty rings, so nothing looks wrong until a stock take by weight. The same goes for paperwork: a diamond's resale value rests on its lab report, and a report handed to a customer and never recorded is the one that goes missing. This chapter covers the count sheet, the certificate register, and the reports that tell an owner where the margin comes from and whether the metal adds up.
+
+## Count the tray by weight
+
+Open **Jewellery, Stock, Count Sheets** and press **New**.
+
+1. Pick the **counter**. Its stock location is what the sheet counts against; the module refuses a counter with no location set.
+2. Set the **date** and the **priced on** date, which decides the rate the gap is valued at.
+3. Press **Start**. The sheet reads every jewellery item for the company and fills in the **book pieces** and the **book weight** for that location. Book weight is the pieces on the shelf times the gross weight of the piece.
+4. Hand somebody the tray. For each line they enter the **counted pieces** and the **counted weight** from the scales.
+5. For any line where the weight difference is outside the weight tolerance in the settings, enter a **reason**: polishing loss, a piece out on memo that was missed, a sale not yet posted.
+6. **Close** the sheet. It refuses while any line outside tolerance has no reason.
+
+The sheet shows, line by line and in total, the difference in pieces, the difference in grams, and the value of the gap at the rate for the priced on date.
+
+<Shot src="/odoo-guides/jewellery-stock-count-by-weight-odoo/closed-count-sheet.webp" alt="Closed stock count sheet GS/CNT/2026/0001 in Odoo with total book and counted quantity of 70, book weight 1,151.660 g, counted weight 1,151.180 g, variance 0.480 g valued at 29.99 and lines per piece with purity, book and counted pieces and weights and the value of each gap" width={1500} height={1221} caption="Seventy pieces counted, seventy in the book, and still 0.480 g short. Two lines carry a polishing loss reason." />
+
+The closed sheet is the record that the tray was weighed against the book on that day. The printed count sheet shows the same book against counted figures with the gap priced, for signing.
+
+<Callout title="Weights are typed in">There is no scale, barcode or RFID link. Counted weights are entered by hand from the tray, and the counted pieces are entered the same way. Plan the count so one person weighs and another types, and set the weight tolerance to what your scales can resolve.</Callout>
+
+## The stone certificate register
+
+Open **Jewellery, Stock, Stone Certificates**. Each lab report that comes into the shop is recorded with:
+
+- the **certificate number**, the key everything else hangs on;
+- the **lab**: GIA, IGI, HRD Antwerp, GSI, a local assay or gem lab, or another you name;
+- the **stone**, its **weight in carats**, **colour** and **clarity**, and the issue date;
+- the **piece it is set in**, or none for a loose stone;
+- a **declared value**.
+
+A certificate moves through **In the Safe**, **With the Customer** and **Back in the Safe**, or **Void**. Handing it over needs the name of whoever is taking it. It cannot be voided while it is out with somebody, and voiding needs a reason, because a gap on the register is the first thing an auditor asks about.
+
+<Shot src="/odoo-guides/jewellery-stock-count-by-weight-odoo/certificate-register.webp" alt="Stone certificate register in Odoo listing GIA, IGI and HRD Antwerp reports with certificate number, issue date, stone, carat weight, colour, clarity, the piece each is set in, declared value and state in the safe" width={1500} height={360} caption="The register: lab, grading, the piece each stone is set in, and where the paper is now." />
+
+Certificates also show on the jewellery item they belong to, so the counter sees the paper alongside the piece. The [setup chapter](/odoo-guides/gold-rate-making-charges-odoo/) covers adding stones and the rule that a large stone needs its certificate.
+
+## The four reports
+
+Open **Jewellery, Reporting**. Each report is a standard Odoo pivot with a list view, so you can regroup, filter by date and export.
+
+### Margin Split
+
+Every counter sale with its metal, making, wastage and stone amounts kept apart, and the net metal weight sold. Group by month and counter to see where the money comes from. Cost and margin columns are visible only to the Jewellery Manager group. The usual pattern is that the metal is passed through close to cost and the margin sits in the making charge and the stones.
+
+### Metal, Making and Stones
+
+The same split at sale line level. Group and total by metal, by purity, by counter or by salesperson to see which purities carry the weight and which people earn the making revenue.
+
+### Stock by Weight
+
+The jewellery items grouped by metal and then by purity, with their **net metal weight** totalled. It gives the weight split of the range across 22K, 18K, sterling and the rest. For grams actually on the shelf, each jewellery item carries a **Weight On Hand** figure (pieces in stock times gross weight), which is the figure a count sheet is checked against.
+
+<Shot src="/odoo-guides/jewellery-stock-count-by-weight-odoo/stock-by-weight.webp" alt="Stock by Weight pivot in Odoo with net metal grams grouped by metal and purity: gold 916 22K and gold 750 18K under gold, and silver 925 sterling under silver" width={1500} height={496} caption="Stock by Weight: net metal in grams by metal and purity." />
+
+### Metal Reconciliation
+
+What went to the bench against what came back, across every repair and custom order: metal in, metal out, filings returned and the variance, grouped by bench. A pattern of loss on one bench shows up here long before it becomes a number worth worrying about. Open jobs count their metal in before the finished piece is weighed back, so read the variance on handed back jobs, or filter by state.
+
+<Shot src="/odoo-guides/jewellery-stock-count-by-weight-odoo/metal-reconciliation.webp" alt="Metal Reconciliation pivot in Odoo with metal in, metal out, filings returned and variance in grams in total and by bench" width={1500} height={382} caption="Metal Reconciliation by bench. Jobs still at the bench have metal in but no metal out yet, which is why the totals include open work." />
+
+## Putting it together
+
+A shop that runs a count sheet each month, reads Metal Reconciliation by bench each week, and keeps the certificate register current has a record for the three questions an owner, an insurer or an auditor will ask: what is in the shop by weight, where did the bench metal go, and where is the paper for each large stone.
+
+That completes the series. The [hub page](/odoo-guides/odoo-jewellery-management/) has the overview, the module price and the full PDF, and the [jewellery demo](https://jewelry-demo.way4tech.com/) has a closed count sheet, a certificate register and all four reports with five weeks of trade on them.

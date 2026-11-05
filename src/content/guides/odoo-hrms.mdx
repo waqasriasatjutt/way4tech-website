@@ -1,0 +1,155 @@
+---
+title: "Odoo HRMS for Community: HR, leave, attendance and payroll in one app"
+metaTitle: "Odoo HRMS for Community: Overview"
+description: "What HR needs from Odoo 19 Community, what the standard apps leave out, and how the 26 module WT HRMS Suite covers leave, attendance and payroll."
+targetQuery: "odoo hrms community"
+category: "Payroll and HR"
+summary: "A full HR and payroll system on Odoo 19 Community: who it suits, what standard Odoo covers, the modules and prices, and a chapter by chapter path from an empty database to the first paid month."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-hrms"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-hrms.pdf"
+  pages: 73
+modules:
+  - name: "WT HRMS Suite"
+    technical: "wt_hrms_suite"
+    note: "USD 149, installs all 26 modules, Odoo 19 Community"
+  - name: "HRMS Core"
+    technical: "wt_hrms_core"
+    note: "Free, My Space, HR dashboard and the approval engine"
+  - name: "Company Onboarding"
+    technical: "wt_hrms_onboarding"
+    note: "USD 29, one Excel workbook loads the whole company"
+  - name: "HR Leave Management"
+    technical: "wt_hrms_leave"
+    note: "USD 30, leave policies on top of Odoo Time Off"
+  - name: "HRMS Payroll"
+    technical: "wt_hrms_payroll"
+    note: "USD 45, salary structures, rules, payslips and batches"
+  - name: "HR Payroll Accounting"
+    technical: "wt_hrms_payroll_accounting"
+    note: "USD 35, posts payslips to a salary journal"
+related: ["odoo-payroll-pakistan", "zkteco-adms-odoo", "eobi-pessi-contributions-odoo", "uae-wps-sif-file-odoo"]
+linkFrom: ["/modules/hr/", "/products/wt-hrms-core/", "/services/odoo-payroll-setup/"]
+sources:
+  - label: "odoo/odoo on GitHub, 19.0 branch, addons folder (Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+  - label: "Odoo 19 documentation, Time Off"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/time_off.html"
+  - label: "Odoo 19 documentation, Attendances"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/attendances.html"
+faqs:
+  - q: "Does Odoo Community have payroll?"
+    a: "No. The Community source for Odoo 19 ships Employees, Time Off, Attendances, Recruitment and Expenses, but there is no payroll addon in it. Payroll in standard Odoo is an Enterprise app. The WT HRMS Payroll module adds salary structures, payslips, batches, accounting and bank files to Community."
+  - q: "Does the suite replace Odoo's Employees and Time Off apps?"
+    a: "No, it sits on top of them. Employee records are the standard Odoo ones and leave is still Odoo Time Off. The suite adds policies, approvals, payroll and the rest, and puts everything under one app called WT HRMS."
+  - q: "Can I buy only the modules I need?"
+    a: "Yes. Every module is listed on its own on the Odoo Apps Store. HRMS Core is free and most others cost USD 15 to 45. Bought one by one the 25 paid modules add up to USD 658, so if you need more than a handful the USD 149 suite is cheaper."
+  - q: "Is it only for Pakistan?"
+    a: "No. The Pakistan Payroll module adds FBR income tax slabs, EOBI, social security and provident fund, but the payroll engine, leave, attendance and the rest are country neutral. A plain basic-only salary structure ships as a starting point for other countries."
+  - q: "How long does an implementation take?"
+    a: "A company of 20 to 100 people fits a three week plan: one week to decide and collect data, one week to load and configure, one week to test, train and go live. For several hundred people allow an extra week for cleaning data."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+An HR department in a company of fifty people spends most of its week on small, repeated jobs. A leave form goes to the wrong manager. Somebody asks how many casual days they have left. A salary advance is agreed in the corridor and forgotten at month end. The payroll spreadsheet is copied from last month and one allowance is wrong for three people. None of this is hard, but every one of those jobs needs the same few facts: who reports to whom, what the policy says, and what was approved. When those facts live in one system, the jobs mostly do themselves.
+
+This guide is about running that system on Odoo 19 Community with the WT HRMS Suite. It starts here with what the product is for and what standard Odoo already gives you, then each chapter takes one area from setup to daily use. Every screen in the guide comes from a fictional company, Crescent Textiles (Pvt) Ltd, a textile mill in Lahore with 20 staff in seven departments, paid in PKR.
+
+## Who this is for
+
+The suite suits a company that wants HR and payroll inside the same Odoo it already uses for sales, stock or accounting, and does not want to pay for Odoo Enterprise just to get payroll. It works well for:
+
+- **Factories and workshops** where attendance drives pay, people work six days a week, and many staff have no email address.
+- **Offices and service companies** where managers approve leave, overtime and expenses and HR wants one list of everything waiting.
+- **Companies that pay through a bank file**, where finance needs every salary to post to the ledger and every transfer to go to a checked account.
+
+It is written for four readers: the HR manager who sets it up, the line managers who approve, the employees who ask, and the payroll officer who runs the month.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community already includes the core HR apps. Its source tree on GitHub ([odoo/odoo, 19.0 addons](https://github.com/odoo/odoo/tree/19.0/addons)) has Employees (`hr`), Time Off (`hr_holidays`), Attendances (`hr_attendance`), Recruitment (`hr_recruitment`) and Expenses (`hr_expense`). With them you can keep employee records, run leave requests with an approval per leave type as the [Time Off documentation](https://www.odoo.com/documentation/19.0/applications/hr/time_off.html) describes, and record check-ins from a kiosk or the systray as shown in the [Attendances documentation](https://www.odoo.com/documentation/19.0/applications/hr/attendances.html).
+
+What Community does not have is payroll. There is no payroll addon in that source tree; payroll in standard Odoo is an Enterprise app. Around it, a working HR department also misses:
+
+- **Leave rules.** Days per year, carry forward limits, months of service before a type can be taken, probation rules, the longest single request, a medical certificate after a number of days, and selling unused leave back for money.
+- **One approval engine** for everything that is not leave: overtime, loans, advances, expenses, work from home, resignations, training, shift swaps, with steps such as direct manager, then HR, then a named director.
+- **Money that flows by itself.** Approved overtime hours, a loan instalment, an advance recovery or a leave encashment should appear on the next payslip without anybody typing the figure again.
+- **The people records HR keeps.** Letters from templates, documents with expiry warnings, assets issued and returned, warnings and appreciations, onboarding and offboarding checklists.
+- **A loading route.** Odoo's standard import works one list at a time; a new company needs departments, people, managers, logins, bank accounts, salaries, leave policies and holidays loaded in the right order.
+
+## The modules and what each covers
+
+The suite is 26 modules that install together as [WT HRMS Suite](https://apps.odoo.com/apps/modules/19.0/wt_hrms_suite/). Everything appears under one app called WT HRMS with a menu grouped the way HR people work: My Space, Dashboard, People, Time, Pay, Growth, Requests, Help and Configuration. The suite is USD 149 once per Odoo version. Each module is also listed on its own; prices below are from each module's manifest.
+
+| Area | Module | Price (USD) |
+|---|---|---|
+| My Space, HR dashboard, approval engine, extra employee details, set-up wizard | `wt_hrms_core` | Free |
+| One Excel workbook that loads the whole company | `wt_hrms_onboarding` | 29 |
+| Leave policies, carry forward, encashment, comp-off | `wt_hrms_leave` | 30 |
+| Late and early flags, worked and overtime hours, monthly summary | `wt_hrms_attendance` | 25 |
+| Shift types, roster, swap requests | `wt_hrms_shifts` | 25 |
+| Overtime requests with weekday, weekend and holiday rates | `wt_hrms_overtime` | 20 |
+| Work from home requests | `wt_hrms_wfh` | 15 |
+| Salary structures, rules, payslips, batches | `wt_hrms_payroll` | 45 |
+| Pakistan tax slabs, EOBI, social security, provident fund | `wt_hrms_payroll_pk` | 30 |
+| Payslips posted to a Salaries journal | `wt_hrms_payroll_accounting` | 35 |
+| Salary transfer files for HBL, MCB, UBL, Meezan and a generic CSV | `wt_hrms_payroll_bank_files` | 40 |
+| Employee payslip portal with year to date totals | `wt_hrms_payroll_portal` | 25 |
+| Loans with an instalment schedule | `wt_hrms_loans` | 30 |
+| Salary advances with a recovery schedule | `wt_hrms_advances` | 20 |
+| Expense claims on sheets, reimbursed by payment | `wt_hrms_expense` | 25 |
+| Letters from editable templates | `wt_hrms_letters` | 25 |
+| Documents with expiry warnings | `wt_hrms_documents` | 20 |
+| Onboarding and offboarding checklists, resignations | `wt_hrms_lifecycle` | 25 |
+| Assets issued and returned | `wt_hrms_assets` | 20 |
+| Rewards and disciplinary records | `wt_hrms_rewards` | 15 |
+| Appraisals with weighted KRAs and goals | `wt_hrms_appraisal` | 30 |
+| Skills, training programmes and requests | `wt_hrms_training` | 25 |
+| Vacancies, candidates, interviews, offers | `wt_hrms_recruitment` | 39 |
+| Business trip requests | `wt_hrms_travel` | 20 |
+| Internal service desk with response deadlines | `wt_hrms_service_requests` | 20 |
+| Team sizes, management levels, people with no manager | `wt_hrms_workforce_structure` | 25 |
+
+Bought one by one, the 25 paid modules add up to USD 658. Biometric attendance from ZKTeco machines is a separate add-on that is not part of the suite; the [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) covers it.
+
+## How the pieces fit
+
+Almost every request works the same way, which is what makes the system quick to learn. An employee raises it from **My Space**, their home page. It walks an approval chain, for example the line manager and then HR. Each approver sees it in their own **To Approve** list and decides with one click. Once approved, anything with money in it is picked up by the next payroll run. Time off is the one exception: it uses Odoo's own Time Off approval, set per leave type, but it still lands in the same To Approve list.
+
+<Shot src="/odoo-guides/odoo-hrms/manager-my-space.webp" alt="WT HRMS My Space for a shift supervisor in Odoo, with attendance, leave balances, three requests waiting for his decision with Approve and Reject buttons, and the new request buttons" width={1440} height={900} caption="A line manager's My Space: his own balances and the three decisions waiting for him." />
+
+HR gets a dashboard on top: headcount, people under contract, who is on leave today, contracts and probations ending, birthdays, pending approvals and documents about to expire, filtered by department and period.
+
+<Shot src="/odoo-guides/odoo-hrms/hr-dashboard.webp" alt="HRMS dashboard in Odoo with tiles for total headcount, under contract, on leave today, contracts expiring, probation ending, birthdays, new hires, pending approvals and documents expiring, plus a department distribution chart" width={1440} height={900} caption="The HR dashboard. Right after a go-live import every person counts as a new hire; that settles as real joiners come in." />
+
+## Who sees what
+
+Decide access before you import, because the import creates the logins. There are four kinds of user. An **employee** is an ordinary internal user. A **line manager** has the same rights; approvals come from being set as the Manager on the team's employee records, not from a role. An **HR officer** gets Employees, Time Off and Attendances at Officer level. An **HR manager** gets Administrator on those three and Recruiter on Recruitment. The payroll officer also needs Invoicing: Accountant or higher to post salaries and trust bank accounts.
+
+<Shot src="/odoo-guides/odoo-hrms/user-access-rights.webp" alt="Odoo user form for the HR manager, Access Rights tab, with Employees and Time Off set to Administrator under Human Resources" width={1440} height={900} caption="The HR manager's rights. The workbook import sets the Employees level; Time Off, Attendances and Recruitment are set by hand." />
+
+<Callout title="There is no separate payroll role">In this version, running payroll needs Employees: Administrator, and anyone with Employees: Officer can read every payslip. If HR officers should not see salaries, keep them on the plain Employee role and give Employees rights only to the HR manager and the payroll officer.</Callout>
+
+Every internal user counts as a user for your Odoo subscription or hosting plan. Machine operators and drivers can work without a login (HR raises requests for them), with a login on a phone, or only through a punch on an attendance device.
+
+## The chapters
+
+The guide follows the order the work has to happen in. Each chapter is a page of its own:
+
+1. [HR implementation plan and company setup](/odoo-guides/odoo-hr-implementation-plan/): the order of the work, a three week plan, who decides what, the company foundation, and the test script and go-live checklist.
+2. [Importing employees into Odoo](/odoo-guides/import-employees-into-odoo/): the one-workbook route, the standard import templates, opening leave balances and what each import error means.
+3. [Leave management and approvals](/odoo-guides/odoo-leave-management/): leave types, policies, allocating the year, carry forward, and the approval chains every other request uses.
+4. [Attendance, shifts and overtime](/odoo-guides/odoo-attendance-shifts-overtime/): how people check in, correcting punches, the monthly summary, shift rosters and paid overtime.
+5. [Running payroll in Odoo Community](/odoo-guides/run-payroll-odoo-community/): salary structures, rules, accounts, trusted bank accounts, the monthly batch, the bank file, loans and a leaver's final pay.
+6. [Employee self service](/odoo-guides/odoo-employee-self-service/): My Space for staff and managers, requests, expenses and the payslip portal.
+7. [Onboarding and offboarding](/odoo-guides/odoo-employee-onboarding-offboarding/): a new joiner from record to confirmation, letters, documents, assets, appraisals, resignations and reporting lines.
+
+The app has its own help too. **Help, Guide** is a short tour inside WT HRMS, and each section has a button that opens the real screen.
+
+<Shot src="/odoo-guides/odoo-hrms/built-in-guide.webp" alt="WT HRMS Guide page in Odoo with sections for setting up the company, requests and approvals, people, leave attendance and shifts, payroll, and tips" width={1440} height={900} caption="Help, Guide: the short tour inside the app." />
+
+For country payroll, two guides go deeper than this one: [Pakistan payroll in Odoo](/odoo-guides/odoo-payroll-pakistan/) for income tax slabs, and [EOBI, PESSI and SESSI contributions](/odoo-guides/eobi-pessi-contributions-odoo/). If you pay staff in the UAE, the [WPS SIF file guide](/odoo-guides/uae-wps-sif-file-odoo/) covers the salary file. For help with the setup itself, see [Odoo payroll setup](/services/odoo-payroll-setup/), or [send a short description](/contact/) of your company and I will say whether the suite fits.

@@ -41,17 +41,33 @@ const guides = defineCollection({
     description: z.string().min(80).max(155),
     /* The search the page is written to answer. Editorial, not rendered. */
     targetQuery: z.string(),
-    category: z.enum(['Payroll and HR', 'Tax and compliance', 'Industry', 'Integration', 'Upgrades']),
+    category: z.enum(['Payroll and HR', 'Tax and compliance', 'Industry', 'Operations', 'Integration', 'Upgrades']),
     region: z.string().optional(),
     /* One or two sentences for the hub card. */
     summary: z.string(),
+    /* A date ahead of today keeps the guide off the site until that day's
+       build (see src/lib/guides.ts). */
     published: z.coerce.date(),
     updated: z.coerce.date(),
+    /* A product guide split into chapters: every chapter names the hub's slug
+       here, the hub included, and seriesOrder sets the reading order (hub 0).
+       Only the hub is carded on /odoo-guides/. */
+    series: z.string().optional(),
+    seriesOrder: z.number().optional(),
+    /* The full printable guide. Lives under /downloads/guides/, which
+       public/_headers keeps out of search so it cannot compete with the
+       chapters. */
+    pdf: z.object({
+      url: z.string().regex(/^\/downloads\/guides\/[a-z0-9-]+\.pdf$/),
+      pages: z.number(),
+    }).optional(),
     /* Store modules the guide describes. technical is the module's directory
        name; the listing URL is built from it. */
     modules: z.array(z.object({
       name: z.string(),
       technical: z.string().regex(/^[a-z0-9_]+$/),
+      /* Store series the listing link opens. */
+      version: z.enum(['19.0', '20.0']).default('19.0'),
       note: z.string().optional(),
     })).default([]),
     /* A live demo that answered 200 when the guide was written. */

@@ -1,0 +1,116 @@
+---
+title: "Delivery, cash collection and credit control for distributors in Odoo"
+metaTitle: "Delivery, Collections and Credit Control"
+description: "Proof of delivery, part drops and skips, cash paid against the oldest bill, credit limits, risk bands A to D and debt ageing for distributors on Odoo 19."
+targetQuery: "odoo proof of delivery and cash collection app"
+category: "Industry"
+summary: "How drivers deliver pre-sold FMCG orders with a signature, part deliver or skip with a reason, collect cash against the oldest bill, and how credit limits, risk bands, promises and debt ageing keep bad debt off the books."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-distribution-management"
+seriesOrder: 4
+modules:
+  - name: "Van Sales and Field Sales Management (base app)"
+    technical: "wt_sale_distributor"
+    note: "USD 500, Delivery app, proof of delivery, collections, credit limit"
+  - name: "Van Sales and Field Sales Enterprise"
+    technical: "wt_sale_distributor_enterprise"
+    note: "USD 4,599 add-on, risk bands, promises to pay, cheques, debt ageing"
+demo:
+  url: "https://distributor-demo.way4tech.com/"
+  label: "FMCG distribution demo"
+related: ["odoo-distribution-management", "odoo-order-booking-app", "odoo-van-sales"]
+linkFrom: []
+faqs:
+  - q: "Does Mark delivered validate the Odoo delivery?"
+    a: "Yes. It validates the transfer, so the stock leaves in Odoo, and the signature, the name of who received it and any photo are kept on the delivery. A part delivery creates a back order that appears as a new drop on the route."
+  - q: "Which invoice does a payment go against?"
+    a: "The oldest open invoice first. Part payments are fine. Odoo creates the invoice where needed, registers the payment and reconciles it, and every payment records who collected it and when."
+  - q: "How is the credit risk band decided?"
+    a: "Every night, or at once with Score now, each shop gets a score from 0 to 100 from the last 12 months: average days paid late, overdue share, bounced cheques, broken promises and its trend. On the demo A is 80 and above, B 60, C 40 and D below. Each band has a policy: allow credit, collect first, cash only or block."
+  - q: "Can a manager let a blocked shop buy?"
+    a: "The salesman can send an Ask manager request with the amount and a reason. The manager sees what the shop owes, its limit and the sale, and approves or refuses with a note the salesman sees. Nobody can approve their own request."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In pre-sales FMCG distribution, the money is made by the order booker and lost by everyone after him. A drop is left at the wrong shop with no signature, so the shop later says it never arrived. A driver collects cash and pays it against the newest bill, so a 90 day invoice sits open forever. A salesman keeps booking orders for a shop that has not paid since last quarter. Each of those is small; together they are the difference between a distributor that grows and one that funds its customers.
+
+This chapter covers the second half of the order: the delivery, the collection, and the credit rules that decide whether a shop gets goods on account at all. It is part of the [FMCG distribution guide](/odoo-guides/odoo-distribution-management/). In Base, drivers use Distribution, Delivery in the phone browser; in Enterprise, the same steps are in the field app.
+
+## The delivery run
+
+### Drops by route
+
+The delivery home shows drops pending, delivered, collected and money still to collect, then each route with its open drops. Open drops of any date are listed, not only today's, so a drop skipped yesterday is not forgotten. On a route, each drop shows the order, the products and whether it is paid, with **Deliver**, **Partial**, **Skip** and **Old bills**. **Deliver all** validates every ready drop at once when signatures are not required.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/d04-route-drops.webp" alt="Delivery app route Harbor Front with 4 pending drops, What to load and Deliver all buttons, and a drop for Dockside Convenience with order S00031, product Tissue Box, Paid tag and Deliver, Partial, Skip and Old bills buttons" width={800} height={1720} caption="One route's drops, with every action a driver needs at the shop." />
+
+Before leaving the warehouse, **What to load** shows the goods for the whole route against stock on hand. The Load Sheet PDF and the Manifest PDF print for the van.
+
+### Proof of delivery
+
+At the shop, the driver opens the drop, adjusts quantities if needed, lets the shopkeeper sign on the screen, types who received it and can add a photo. **Mark delivered** validates the Odoo transfer and keeps the signature on the delivery. With **Proof of Delivery** on in Settings, a drop cannot be validated without the signature. If the order is unpaid, the app then asks for the payment.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/d05-deliver-sheet.webp" alt="Confirm delivery sheet for Dockside Convenience with one item, Adjust quantities link, a signature box for proof of delivery, Received by field and Mark delivered button" width={800} height={1720} caption="Signature and receiver's name, then Mark delivered validates the transfer." />
+
+### Part deliveries and skips
+
+- **Partial.** Lower the quantities of the lines not delivered. Odoo makes a back order, which shows up as a new drop on the route for a later run.
+- **Skip.** Shop closed, customer not available, refused goods, no cash, could not reach, or other with a note. The reason is logged on the transfer for the warehouse, and the drop stays open to try again.
+
+## Collecting money
+
+**Collect** at a drop, or **Collect money** from the shop card, shows the open invoices oldest first. The driver or salesman types the amount received (or taps Full amount) and chooses Cash or Bank, or in Enterprise a cheque. The money always pays the oldest bill first, and part payments are fine. Odoo creates the invoice if there is none yet, registers the payment and reconciles it. Each payment records who collected it and when, which is what the office needs when cash comes back short.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/x-ot-collect.webp" alt="Collect outstanding sheet for Rahim Brothers Store with order 160, paid 0, due 160, an overdue invoice dated 2026-08-27, the note that money pays the oldest bill first, amount received 160, Bank or Cash and Paid by cheque option" width={800} height={1720} caption="Collections always settle the oldest bill first." />
+
+**Older dues** (Old bills in Enterprise) lets the driver collect the shop's earlier invoices at the same stop. With **Require Payment at Delivery** on, a drop cannot close unpaid.
+
+### The day total
+
+Before going back, **Day total** (Summary in Base) shows drops delivered and skipped, cash to deposit, bank, delivered value and what is still unpaid on delivered orders, per route. It is the number the driver hands over against.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/x-del-daytotal.webp" alt="Day total screen with 9 delivered of 13 drops, 0 skipped, cash to deposit, bank, delivered value 977.62, still unpaid 9.09 and a table per route of drops, done, skipped, cash and bank" width={800} height={1720} caption="Day total: what was delivered, what came in, and what is still unpaid." />
+
+## Credit control
+
+### Credit limits (every edition)
+
+Each shop's credit limit is on its Distribution tab. With **Enforce Credit Limit** on, any credit sale that would take the shop over its limit is refused, whether it comes from the order taker, a van or the counter. The check counts what the shop already owes plus orders not invoiced yet, so a salesman cannot get round it by booking three small orders in one day.
+
+### Credit risk bands (Enterprise)
+
+A limit alone does not tell you who pays late. In Enterprise, every night (or at once with **Score now**) each shop gets a score from 0 to 100 built from the last 12 months: average days it paid late, the share of its balance that is overdue, bounced cheques, broken promises to pay, and whether it is paying better or worse lately. The score puts the shop in a band, and each band has a policy and the exact message the salesman sees.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/m06-risk-bands.webp" alt="Credit Risk Bands list with band A minimum 80 allow credit, B 60 collect first, C 40 cash only and D 0 block, each with the message shown on the phone and the number of customers" width={1600} height={1000} caption="Four bands, each with a policy and the message the phone shows." />
+
+| Band | Score on the demo | Policy | What the phone does |
+|---|---|---|---|
+| A | 80 and above | Allow credit | Normal order |
+| B | 60 and above | Collect first | Collect what is overdue before a new order |
+| C | 40 and above | Cash only | The sale must be paid in full |
+| D | below 40 | Block | No sale until the account is settled, no suggested order |
+
+You set the minimum score, the policy and the message of each band. On the phone, a blocked shop shows its open amount by age, with **Collect**, **Promise** and **Ask manager** in place of the order.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/o12-blocked.webp" alt="Shop card for Bazaar Wholesale Traders owing 1,554.43 with no credit limit, open amounts 651.90 at 31 to 60 days and 900 over 90 days, band D blocked with score 30 and the message no sale until the account is settled, and Promise and Collect buttons" width={800} height={1720} caption="Band D: the salesman can collect or ask, but not sell." />
+
+### Promises, exceptions and new shops (Enterprise)
+
+- **Promise to pay.** Record how much the shop will pay and by when (tomorrow, in 3 days, next week). A promise not kept by its date lowers the shop's score.
+- **Ask manager.** A sale over the credit limit or a big return goes to the manager with the amount and a reason. The answer comes back to the phone, and the request can be made without signal.
+- **New shops.** A shop added on the road buys cash only until a manager approves it, or on credit up to an amount you set.
+- **Cheques.** Cheques are tracked as received, deposited, cleared or bounced, with post-dated cheques flagged and a PDC report by due date.
+
+### Following the debt
+
+The office side has three views. **Collect today** (on the phone and in the cockpit) lists who owes on today's routes, most urgent first. The **Collection Planner** lists overdue shops with band, score, average days late and promises. **Debt Ageing** splits what is open into not due, 1 to 30, 31 to 60, 61 to 90 and over 90 days, by customer, route and salesperson, and prints as a PDF for a route, salesperson or region.
+
+<Shot src="/odoo-guides/odoo-delivery-cash-collection-credit/r03-ageing.webp" alt="Debt Ageing pivot in Odoo with columns not due, 31 to 60, 61 to 90 and over 90 days and open amounts per customer, total 8,772.87" width={1600} height={1000} caption="Debt Ageing: who owes, and for how long." />
+
+The **Customer Statement** (Van Sales and up) shows opening balance, invoices, credit notes, payments with who collected them, returns and the closing balance, as an A4 PDF or on receipt paper, from the phone or the customer form.
+
+<Callout title="Limits to know">The credit limit check is in every edition, but bands, promises, cheques, Collect today and Debt Ageing are Enterprise only. Positions and check-ins are recorded only while someone is on duty. Lots and expiry dates are not tracked on deliveries.</Callout>
+
+When the driver also sells from stock on board, the stock side is in the [van sales guide](/odoo-guides/odoo-van-sales/). When shops come to you instead, see [the trade counter and returns](/odoo-guides/odoo-trade-counter-cash-and-carry/).

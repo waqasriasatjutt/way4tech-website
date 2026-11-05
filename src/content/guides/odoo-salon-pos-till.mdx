@@ -1,0 +1,132 @@
+---
+title: "Odoo salon POS: today's bookings, walk-ins, stylist tips and rebooking at the till"
+metaTitle: "Salon POS: Bookings, Tips and the Receipt"
+description: "Run a salon till on Odoo 19 Point of Sale: the day's bookings on a board, walk-ins, tips credited to the stylist, receipts that name them, quick rebooking."
+targetQuery: "odoo pos for salon"
+category: "Industry"
+summary: "How the POS Salon till works through a front desk day: Salon Mode, the board and day view, booking and walk-ins, payment with tips, the receipt, rebooking, refunds and who can do what."
+published: 2026-12-03
+updated: 2026-12-03
+series: "odoo-salon-spa-management"
+seriesOrder: 1
+modules:
+  - name: "POS Salon"
+    technical: "wt_pos_saloon"
+    note: "USD 949, Odoo 19 Community, needs Point of Sale and WT Salon Management"
+  - name: "WT Salon Management"
+    technical: "wt_salon_management"
+    note: "USD 10, the base module the till reads its bookings from"
+demo:
+  url: "https://salonpos.devcynx.com/"
+  label: "POS Salon demo"
+related: ["fbr-pos-integration-odoo"]
+linkFrom: ["/products/wt-pos-saloon/"]
+sources: []
+faqs:
+  - q: "Can a stylist take a walk-in on the salon till?"
+    a: "Only with the Receptionist or Manager role in WT Salon Management. The Stylist role can see and update appointments but has no right to create one, so the Book and Walk-In buttons will not work for a stylist alone at the till."
+  - q: "Can one tip be split between two stylists?"
+    a: "No. A visit carries one tip, and it goes to the stylist of that visit. When a visit had several services with different stylists, each service line on the receipt names its own stylist, but the tip is still one amount."
+  - q: "What happens to the appointment if I refund the sale?"
+    a: "As soon as the refund reaches the server, the appointment goes back to Confirmed so it can be rung up again or rebooked. Its payment status follows the money: Unpaid after a full refund, Partly paid after a partial one. The invoice is not edited."
+  - q: "Does the till still sell retail products with no booking?"
+    a: "Yes. The salon screen opens from one button and closes back to the normal product screen. A sale with no appointment attached works and prints exactly like any other Odoo Point of Sale order."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The front desk is where a salon either gets paid properly or loses track. A client finishes a colour, walks to the counter, and the receptionist has to find the booking, ring up the right service at the right price, add a tip for the right stylist, and ideally book the next visit before the client leaves. If the till does not know about the diary, all of that is typed in again by hand, and the commission report at month end is built on whatever was typed. This chapter covers the POS Salon till: the Odoo Point of Sale screen with the salon's bookings brought onto it.
+
+## What the till adds, and what it does not
+
+POS Salon is a bridge, not a second booking system. Appointments, services, stylists and rooms all live in WT Salon Management, the base module described in the [main guide](/odoo-guides/odoo-salon-spa-management/). The till reads them, puts them on a Point of Sale order, and writes the result back. It adds one button, **Salon**, to the till's top bar. Everything else, the product screen, payment methods, sessions and receipts, is the Odoo Point of Sale your staff may already know.
+
+You need Odoo 19 Community with Point of Sale and WT Salon Management installed, and at least one stylist and one service set up. A stylist is an ordinary Odoo employee. If you ran the base module's setup wizard with Point of Sale already installed, it creates a till in Salon Mode for you when you press Finish.
+
+## Step 1: turn on Salon Mode for the till
+
+Each till is its own Point of Sale configuration, and Salon Mode is switched on per till. Open **Point of Sale, Configuration, Point of Sale**, open the till and tick **Salon Mode**. That shows the Salon button and lets the till load the salon's service catalogue. A retail counter in the same database keeps Salon Mode off and never shows the button.
+
+Once Salon Mode is on, **Stylist Tips** appears next to it. This is Point of Sale's own tip setting, so tick it and pick the tip product. Tips stay off until you turn them on.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/till-salon-mode.webp" alt="Odoo Point of Sale settings for a till called Salon Front Desk with the Salon Mode and Stylist Tips checkboxes ticked and a Tips product selected" width={1600} height={1000} caption="Salon Mode and Stylist Tips are two checkboxes on the till's own settings." />
+
+Times on the till follow the salon's time zone from the base module's settings, not the server clock. A booking typed for 10:00 is 10:00 in the salon.
+
+## Step 2: open the till and read the board
+
+Open the session the usual way, with **New Session** or **Continue Selling**, then press **Salon**. The board opens full screen over the product screen and shows today's appointments as cards: the room or chair, the stylist as a coloured avatar with initials, the service, the price and whether the visit is paid. A card in progress shows how long it has been running since Start was pressed, and one that has run past its time carries an Overdue badge.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/salon-board.webp" alt="Salon board inside Odoo Point of Sale with filters for pending, paid and unpaid, a summary of 11 appointments and revenue, and appointment cards in New, Confirmed and In Progress columns with stylist, service, commission and Check In, Start and Order buttons" width={1600} height={1000} caption="The Salon board: every booking for the day, with its stage, stylist and payment status." />
+
+Filters along the top narrow the list to pending, active, done, paid, unpaid or cancelled. The search finds a booking by reference, client, service or stylist, and the board can be grouped by stage, stylist, service, time of day, source or payment. The **Rooms** tab shows each chair, room and station as available, reserved or in service, and lets you book straight into one.
+
+### The day view
+
+Press **V** and the board becomes a diary: one column per stylist, time rows from opening to closing, each booking in its stylist's colour and a red line at the current time. Click an empty slot in a column and the Book popup opens with that stylist and time already filled in. This is the screen most receptionists leave open on a busy Saturday.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/day-view.webp" alt="Day view on the Odoo salon till with one column per stylist from 09:00 to 18:00 and coloured booking blocks showing start time and client name" width={1600} height={1000} caption="The day view: a column per stylist, so a free gap is visible at a glance." />
+
+The board also has keyboard shortcuts (press **?** for the list): N for a new booking, W for a walk-in, / to search, O to load the selected card onto the order and D to mark it done. They never fire while you are typing in a field or a popup is open.
+
+When a client arrives for a confirmed booking, press **Check In** on the card. The card then shows an Arrived chip so the stylist knows someone is waiting. Arrived is a flag, not a stage, so it does not change reports or commission. Start is still its own step.
+
+## Step 3: book ahead or take a walk-in
+
+**Book** opens a popup. Pick one or more services and the total price and duration add up as you go. Pick a stylist or leave it on Any; each stylist chip shows how many bookings they already have today, which makes it easy to spread the work. Pick a room if the service needs one: a red dot marks a room in service, an orange dot one that is reserved. Find the client by name or phone, or add a new one with just a name, then press **Book Appointment**.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/book-popup.webp" alt="Book Appointment popup on the Odoo salon till with service tiles showing duration and price, date and free time buttons, room chips, stylist chips with today's booking count, and a customer search" width={1600} height={1000} caption="Booking from the till: services, a free time, a room, a stylist and the client." />
+
+When a service is sold in fixed time slots, the time box changes to the free times for that day, stylist and room, worked out by the base module. The base module's double booking guard still applies, so a slot the till offers is a slot that can be booked.
+
+**Walk-In** is the short version: pick one service and a room if you want one, press Select, and the appointment is created as already arrived, with source Walk-in, and its service goes straight onto the current order.
+
+## Step 4: put the visit on the order and take payment
+
+A finished appointment that has not been paid shows an **Order** button on its card, in the list and in the detail panel. Press it and every service line lands on the order with its price and the client attached. If an order for that appointment is already open, the till switches to it instead of creating a duplicate.
+
+From there it is a normal Point of Sale payment. If Stylist Tips is on, the payment screen has a **Tip** button with three presets, 10, 15 and 20 per cent of the bill with the amount shown on each, a custom amount box and a No tip link. The tip is recorded against the stylist of the visit.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/tip-presets.webp" alt="Add Tip popup on the Odoo Point of Sale payment screen with 10, 15 and 20 percent presets showing the amount, a custom amount field and a No tip link" width={1600} height={1000} caption="Tip presets at payment; the tip is credited to the stylist who did the work." />
+
+Paying also does the accounting and commission work. The till order is the accounting document: the visit's invoice is the order's own invoice, paid by the till's payments, and the base module's commission rules run for the stylist the moment the sale is paid. The result appears in the base module's Commission Earnings. POS Salon defines no commission rules of its own.
+
+## Step 5: the receipt and the next visit
+
+A sale linked to an appointment prints a salon block above the footer: the appointment reference, time, service, stylist, room, and the tip for that stylist by name. When the client already has a later booking, a Next appointment line shows it, and a QR code sends them to your online booking page if the base module's booking page is switched on. A sale with no appointment prints the normal Odoo receipt.
+
+The screen after payment also carries a **Same again?** box with three buttons: in 2, 4 or 6 weeks. One tap books the same service with the same stylist at the same time of day. If that time is taken, the box says so and offers the nearest free time.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/salon-receipt.webp" alt="Odoo Point of Sale payment successful screen with a Same again box offering rebooking in 2, 4 or 6 weeks, and a receipt showing the salon appointment reference, service, stylist, next appointment, tip for the stylist and a QR code to book again" width={1600} height={1000} caption="The receipt names the stylist and the next visit; Same again books the follow up in one tap." />
+
+## Refunds, old orders and closing the day
+
+Refund a salon sale the normal Point of Sale way, through the till. When the refund reaches the server, the appointment goes back to Confirmed. The visit's payment status follows the money, and the invoice is left as it is.
+
+The **Orders** list on the till shows a small badge on salon orders naming the service and stylist, so a long list from a busy day is readable without opening each one. In the back office, **Point of Sale, Orders, Orders** has Salon Service and Stylist columns, and each order form shows the linked appointment. Opening any appointment's detail panel on the board also loads the client's history: visits, total spent, preferred stylist and their last ten appointments.
+
+Close the session as you always do. Salon orders are normal Point of Sale orders underneath, so they appear in the session totals like any other sale. POS Salon has no reports of its own; revenue by stylist, room usage, commission and sales targets come from the base module's Salon, Reports menu, which only the Manager role sees.
+
+## Who can use the board
+
+The till adds no access groups. It uses the three roles from WT Salon Management:
+
+| Role | On the Salon board |
+|---|---|
+| Point of Sale user with no salon role | Cannot open the board at all |
+| Stylist | Can see and update appointments, but cannot book or take a walk-in |
+| Receptionist or Manager | Everything, including booking and walk-ins |
+
+## With the loyalty add-on installed
+
+If [WT Enterprise Salon](/odoo-guides/odoo-salon-loyalty-packages-memberships/) is installed on the same database, each card also shows the client's tier and points, live packages, member discount, any deposit and the commission the visit will earn. The star button opens a perks panel where a receptionist or manager can redeem points, use a package session, apply the member discount, redeem a gift card or take a deposit. The server works every amount out again when the order is validated and refuses the order if a line does not match, so the till cannot invent a credit.
+
+<Shot src="/odoo-guides/odoo-salon-pos-till/loyalty-perks-panel.webp" alt="Salon perks panel on the Odoo till for a Platinum client showing points balance, an active colour package with sessions left, a membership discount, a gift card balance and a deposit field with a Take deposit button" width={1600} height={1000} caption="With the loyalty add-on: points, packages, membership, gift cards and the deposit in one panel." />
+
+<Callout title="What POS Salon does not do">It has no booking page for customers (every till booking is made by staff), no SMS or email reminders, and no payroll: commission is calculated, not paid out. It does not check a stylist's working hours, so it will not refuse a booking outside them. The day view and stylist chips show every employee of the company, so archive staff who do not take bookings. A bill paid partly with points, a package session or a gift card is refunded whole; refund it, then ring up again what the client keeps.</Callout>
+
+## Upgrading from an older version
+
+If you ran POS Salon 19.0.1.x, read this before the upgrade. Older versions recorded a till visit twice: the till order posted at session close, and the module also raised a separate invoice with a payment in your first bank or cash journal. From 19.0.2.0.0 the till order is the only accounting document. The upgrade does not change posted entries; it counts the old doubles and shows the number in the system parameter `wt_pos_saloon.settled_twice_before_2_0`. Your accountant should reverse each with a credit note and cancel its payment rather than delete them.
+
+The [POS Salon demo](https://salonpos.devcynx.com/) runs this till on a sample salon. For a spa with treatment rooms, couples and intake forms on the same till, the [spa POS chapter](/odoo-guides/odoo-spa-pos-rooms-couples/) is next.

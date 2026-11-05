@@ -1,12 +1,15 @@
 ---
 import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
-import { getCollection } from 'astro:content';
+import { getLiveGuides } from '~/lib/guides';
 
-const CATEGORY_ORDER = ['Payroll and HR', 'Tax and compliance', 'Industry', 'Integration', 'Upgrades'] as const;
+const CATEGORY_ORDER = ['Payroll and HR', 'Tax and compliance', 'Industry', 'Operations', 'Integration', 'Upgrades'] as const;
 
-const guides = (await getCollection('guides'))
-  .filter(g => !g.data.draft)
+const live = await getLiveGuides();
+const chapterCount = (series: string) => live.filter(g => g.data.series === series).length;
+/* A series is carded once, by its hub; the chapters are linked from there. */
+const guides = live
+  .filter(g => !g.data.series || g.data.series === g.slug)
   .sort((a, b) => a.data.title.localeCompare(b.data.title));
 
 const groups = CATEGORY_ORDER
@@ -63,6 +66,7 @@ const schema = {
               {g.data.region && <span class="text-xs font-semibold uppercase tracking-wider text-brand-600">{g.data.region}</span>}
               <h3 class="mt-2 text-lg font-semibold text-ink-900 group-hover:text-brand-700">{g.data.title}</h3>
               <p class="mt-2 flex-1 text-sm text-ink-600">{g.data.summary}</p>
+              {g.data.series && chapterCount(g.data.series) > 1 && <span class="mt-3 text-xs text-ink-500">{chapterCount(g.data.series)} chapters{g.data.pdf ? ' · PDF download' : ''}</span>}
               <span class="mt-4 text-sm font-semibold text-brand-600 group-hover:text-brand-700">Read the guide &rarr;</span>
             </a>
           ))}

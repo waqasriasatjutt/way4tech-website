@@ -1,0 +1,109 @@
+---
+title: "Task approvals and automation in Odoo Project: sign-off rules, ready-made recipes and notifications"
+metaTitle: "Approvals, Automations and Notifications"
+description: "Task approvals and automation in Odoo 19 Community Project: guard a stage, multi-level sign-off, escalation, one-click recipes and per-person alerts."
+targetQuery: "odoo project task approval workflow automation"
+category: "Operations"
+summary: "Guard a project stage with a sign-off, switch on ready-made automation recipes or write your own, and let each person choose how and when they are told."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-project-management"
+seriesOrder: 2
+modules:
+  - name: "Project Pro"
+    technical: "wt_project_pro"
+    note: "USD 900, Odoo 19 Community"
+  - name: "PWA Mobile App with Push Notifications"
+    technical: "wt_pwa_push"
+    note: "USD 500, optional, for phone push only"
+related: ["n8n-odoo-automation"]
+faqs:
+  - q: "Can Odoo Community block a task from moving until it is approved?"
+    a: "Not in the standard Project app. With Project Pro you create an approval rule that names the guarded stages, and an item cannot enter one of those stages until every level of approvers has said yes. A refusal can keep the item where it is or send it back to an earlier stage."
+  - q: "What happens if an approver is on leave?"
+    a: "The approver sets a delegation under Approvals, Delegations, naming who signs instead and for which dates. A rule can also escalate a request nobody answered after a set number of hours to a named person."
+  - q: "Do I need to write code or domains to build an automation?"
+    a: "No. The trigger is picked from a list, the condition narrows it down, and each action is a typed choice such as notify someone, set a column or move to a status. Nothing a user types is run as code. A dry run shows what the rule would do before it is live."
+  - q: "Can an automation loop forever?"
+    a: "No. A chain of rules stops at five levels deep and two hundred actions, and a rule fires at most once per item in one chain. If an action fails, it is rolled back on its own, written to the Automation Log, and the edit that set it off is kept."
+  - q: "Can people stop notifications at night?"
+    a: "Yes. Each person sets quiet hours, for example 20:00 to 08:00, and nothing arrives in that window except items marked Urgent, if they leave that option on. There is also a mute until a date for holidays, and a daily or weekly digest instead of one message per event."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most project delays are not caused by hard work. They are caused by small silences: nobody told the designer she was on the job, nobody noticed the item went to Stuck on Tuesday, the cost overrun went into production because the person who should have signed it off never saw it. A board shows the state of work, but only to someone who opens it. This chapter covers the three parts of Project Pro that act without anyone opening anything: automations, approvals and notifications.
+
+It assumes you have a board, which the [boards chapter](/odoo-guides/odoo-project-boards-timeline-workload/) sets up. Creating rules needs the Administrator level of Project; approving and choosing your own notifications does not.
+
+## Automations: start with the recipes
+
+Open Work, Automations. Each card is one rule with a plain description, the projects it applies to, how many actions it has, how many times it has fired, and its buttons. **Switch on** makes it live, **Pause** stops it without deleting it, and **Preview** shows what it would do on today's items before you commit.
+
+<Shot src="/odoo-guides/odoo-project-approvals-automation/automations.webp" alt="Automations screen in Project Pro with rule cards such as Overdue items nudge the assignees, Tell people when they are put on a card, Done items tell the board manager and Stuck items raise a flag, each marked Draft or Running with Switch on or Pause and Preview buttons" width={1400} height={875} caption="Ready-made recipes. Preview first, then switch on." />
+
+The recipes that ship with the app:
+
+- **Tell people when they are put on a card.** The assignee gets a message with the item name.
+- **Done items tell the board manager.** The project manager hears about every completion, so nobody has to ask round the room.
+- **Stuck items raise a flag.** When an item goes to Stuck, the manager and everyone on the item are told, and the item is flagged.
+- **Overdue items nudge the assignees.** One day after the deadline, whoever is on the item is told, once per deadline rather than every hour.
+- **Urgent items get a deadline.** An item marked urgent with no date gets one two days out.
+- **Unassigned new items go to the board manager.** Catches the item that gets typed in and then sits there because nobody owns it.
+
+A project created through New project board already has the first three running for that project only, which is why the screenshot shows copies of them per board. Switch the others on where they help. The overdue nudge is the one most teams turn on next.
+
+## Writing your own rule
+
+Press **New** on the Automations screen. A rule has three parts.
+
+1. **What fires it.** Item is created, board status changes, project stage changes, assignee changes, item moves to another board, a number crosses a threshold, a date arrives or passes, or an approval is decided.
+2. **A condition** that narrows it down, such as only on one project or only when priority is Urgent.
+3. **What it does.** Notify someone, set a column, assign people, move to a board or status, create a subtask, request an approval, or set a date from another date.
+
+Before switching it on, use **Dry run**. It goes through the same code path as the real run but changes nothing, so what you see is what the rule will do. After it is live, Configuration, Automation Log records every firing with the rule, the item, the time and the user whose edit set it off.
+
+<Callout title="Limits built into the engine">A chain of rules triggering each other stops at five levels deep and at two hundred actions, and a rule fires at most once per item in one chain. A failing action is rolled back on its own and written to the log; the user's edit that triggered it is not lost. Rules cannot run code a user types, so anything outside the listed triggers and actions is not possible from this screen. For work that has to reach another system, see the guide on [n8n and Odoo automation](/odoo-guides/n8n-odoo-automation/).</Callout>
+
+## Approvals: guard a stage
+
+Some work must not move on until someone signs it off: a design before production, a change order before the site team acts, any cost above a limit. An approval rule makes that a rule of the system instead of a habit.
+
+<Shot src="/odoo-guides/odoo-project-approvals-automation/approval-rules.webp" alt="Approval Rules list in Project Pro with two rules, Sign-off before Live triggered when a task enters a stage with two levels, and Spend over 5,000 triggered when a number passes a threshold with one level, both blocking the task" width={1400} height={875} caption="Two rules: one guards a stage, one watches a number." />
+
+To set one up, open Configuration, Approval Rules and press **New**.
+
+1. Give it a name and choose the **Projects** it applies to, or leave it for all.
+2. Pick the **Guarded Stages**: the stages an item may not enter without approval.
+3. Optionally watch a value. A **Watched Number** above a limit, such as a cost over 5,000, or a **Watched Checkbox** such as "Client change".
+4. Add **Levels**. Each level names its approvers, either people or a group. Level 2 is only asked once level 1 has approved.
+5. Choose what happens meanwhile. **Block the Task** keeps the item where it is until the decision. **Send Back To** returns it to an earlier stage if it is refused.
+6. Set **Escalate After (hours)** and **Escalate To** so a request nobody answers goes to someone who will. Zero hours switches escalation off.
+
+### Deciding a request
+
+Approvers are notified the moment a request is raised. They open Approvals, My Approvals, read the request and press **Approve** or **Reject** with a note. Each card shows the item, the rule, the level and whether it is their turn.
+
+<Shot src="/odoo-guides/odoo-project-approvals-automation/approvals.webp" alt="My Approvals screen in Project Pro showing two waiting requests for the rule Spend over 5,000 at the Finance level, each marked Your turn with Approve and Open task buttons" width={1400} height={875} caption="My Approvals: what is waiting for your signature." />
+
+Managers see every request under Approvals, All Approvals. Before going on leave, an approver sets a delegation under Approvals, Delegations: who **Signs Instead** while they are **Away**, and the dates. When an item will not move to a stage, open it: the pending request and its approvers are shown on the item, which answers "why is this stuck" without a support call.
+
+## Notifications: each person decides
+
+An assignment, a mention or an approval request is only useful if it reaches the person. Project Pro sends to four channels: the Odoo inbox, email, phone push and a digest. Each person chooses, per event, which ones they want, under Notifications, My Settings.
+
+<Shot src="/odoo-guides/odoo-project-approvals-automation/notification-settings.webp" alt="Notification settings in Project Pro with a matrix of events such as Assigned to me, I was mentioned, Status changed, Approval requested, Due soon and Overdue against switches for Inbox, Push, Email and Digest, plus Mute For A Day and Mute For A Week buttons" width={1400} height={875} caption="The event matrix: one row per event, one switch per channel." />
+
+- **What reaches me.** The events are assigned to me, I was mentioned, status changed, approval requested, approval decided, due soon, overdue, comment on my item, item moved to my board, and other project activity. Tick inbox, push, email or digest for each.
+- **Digest.** One summary a day or a week at the time you choose, in place of a message per event.
+- **Quiet hours.** For example 20:00 to 08:00. Nothing arrives in that window except Urgent items, if "Urgent breaks quiet hours" stays on.
+- **Mute.** Mute for a day, for a week, or until a date for holidays.
+- **Your own actions.** Off by default, so you are not told about changes you made yourself.
+
+Managers set the starting defaults for everyone under Configuration, Notification Settings, and people adjust their own from there. Notifications, My Notifications lists everything that was sent to you, with a link to the item. Configuration, Notification Queue shows what is still waiting to go out.
+
+<Callout title="When nobody gets an email or a push">Email notifications need an outgoing mail server in Odoo; without one they queue and never leave. Push needs the site on https and the separate PWA push add-on, and the person must have installed the app on their phone and allowed notifications. If the push add-on is not installed, events set to push only go to the inbox instead of disappearing. When someone says they were never told, check their matrix and quiet hours first, then the queue.</Callout>
+
+## Putting it together
+
+A setup that works for most teams on day one: keep the three recommended recipes on every board, add the overdue nudge, create one approval rule for the stage that costs money if it goes wrong (production, go-live, site handover), and set company notification defaults to inbox and push for assignments, mentions and approvals, with email only for approvals and overdue items. Look at the Automation Log at the end of the first week. Rules that fired too often get a tighter condition; rules that never fired either guard something rare or are pointed at the wrong status name.

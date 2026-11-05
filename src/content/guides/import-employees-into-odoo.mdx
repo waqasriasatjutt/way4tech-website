@@ -1,0 +1,141 @@
+---
+title: "Import employees into Odoo: one workbook for the whole company, or the standard templates"
+metaTitle: "Import Employees into Odoo"
+description: "Load employees, managers, logins, bank accounts, salaries and leave balances into Odoo 19 from one checked Excel workbook, with import errors explained."
+targetQuery: "import employees into odoo"
+category: "Payroll and HR"
+summary: "Two ways to load your people into Odoo 19: the Company Onboarding workbook that checks every cell before writing anything, and the standard import templates for later additions and opening leave balances."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-hrms"
+seriesOrder: 2
+modules:
+  - name: "Company Onboarding"
+    technical: "wt_hrms_onboarding"
+    note: "USD 29, needs HRMS Core, HRMS Payroll and HR Leave Management"
+related: ["odoo-payroll-pakistan", "zkteco-adms-odoo"]
+linkFrom: []
+sources:
+  - label: "Odoo 19 documentation, export and import data"
+    url: "https://www.odoo.com/documentation/19.0/applications/general/export_import_data.html"
+faqs:
+  - q: "Can I import employees with their managers in one file?"
+    a: "Yes. With the onboarding workbook each person's row names their manager's work email, and the workbook builds the reporting lines in the same import. With the standard Odoo import the manager column takes the manager's full name, so import the managers first or in the same file."
+  - q: "What happens if I import the workbook twice?"
+    a: "People are updated, not duplicated. The workbook recognises each person by their work email, which is why every person needs a unique one, factory staff included."
+  - q: "Why does the import say no matching record found?"
+    a: "The text in the file does not match anything in Odoo exactly. Check spelling, spaces and capitals. Departments must be written as their full path, for example Management / Production, and leave types and employee names must match the system letter for letter."
+  - q: "How do I load leave balances from the old system?"
+    a: "Fill the leave opening balances template with one row per person and leave type, import it from Time, Leaves, Allocations, then select the imported lines and approve them. Decide first whether the balance replaces the year's policy allocation or adds to it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Loading people is the slowest part of any HR go-live, and the part that causes the most damage when it goes wrong. A misspelt manager means a team whose requests reach nobody. A salary on the wrong row is a wrong payslip. Three hundred badly imported records take a day to remove. Odoo's standard import is good, but it loads one list at a time and leaves the order to you. This chapter covers two routes: the **Company Onboarding workbook**, which loads the whole company in one checked pass, and the **standard import templates** for later additions and opening leave balances.
+
+Do the [company foundation](/odoo-guides/odoo-hr-implementation-plan/) first, and decide [who gets which rights](/odoo-guides/odoo-hrms/), because the import creates the logins.
+
+## Route A: the onboarding workbook
+
+The workbook is one Excel file with a sheet for each part of the setup. You fill it in plain words. The system checks every cell and lists each problem by sheet, row and column before it writes anything, then imports everything in one go.
+
+| Sheet | What goes in it |
+|---|---|
+| Company | A short form: name, country, currency, address, working days, start and end time, lunch break, whether to create logins and whether to email invitations. |
+| Departments | One row per department, with its parent and the work email of its head. |
+| Employees | One row per person: number, name, work email, mobile, department, job title, manager's work email, joining date, date of birth, gender, ID number, personal email, address, city, bank, account or IBAN, badge ID, login role, optional password. |
+| Salaries | Work email and monthly basic salary. Extra columns are personal allowances for rules marked "Amount per employee". |
+| Pay rules | Your own allowances and deductions. Leave it empty if you use a ready structure such as Pakistan Standard. |
+| Tax bands | Leave it empty if a country pack carries the tax slabs. |
+| Leave policies | One row per leave type: days per year, carry forward, encashment, minimum service months, allowed during probation, longest single request. |
+| Public holidays | Date and name. |
+
+<Shot src="/odoo-guides/import-employees-into-odoo/workbook-company-sheet.webp" alt="Company sheet of the Company Onboarding Excel workbook with settings such as company name, country, currency, address, working days, start and end time, lunch break and whether to create logins, with guidance beside each row" width={1600} height={440} caption="The Company sheet is a short form: one answer per row, with guidance beside it." />
+
+<Shot src="/odoo-guides/import-employees-into-odoo/workbook-employees-sheet.webp" alt="Employees sheet of the onboarding workbook with required columns in red such as full name, work email and joining date, an example row, and sample employees of the demo company" width={1600} height={390} caption="The Employees sheet. Red headers are required; row 2 explains each column with an example; data starts on row 3." />
+
+### Fill it in
+
+1. Open **WT HRMS, Configuration, Company Onboarding** and click **New**.
+2. Click **1. Download Template**. **Download Sample Company** gives you a filled example to compare against. The template already lists the departments that exist in the system.
+3. Fill the sheets. Use the drop downs where there are any and write dates as YYYY-MM-DD.
+4. Do not change the headers, the order of the sheets or row 2.
+
+A few habits save most of the rework. Write ID numbers with dashes, exactly as on the card. Give every person a unique work email, even factory staff, because the email is the key that links the sheets and that lets you import the file again later as an update. Fill the manager column for everyone except the top person: it builds the approval routes. Write bank accounts exactly as the bank's file expects them, normally the IBAN.
+
+### Check, fix, import
+
+1. Click **Upload your file** and choose the workbook.
+2. Click **2. Check the File**. Nothing is written yet. Each problem is listed with its sheet, row and column.
+3. Fix the problems in Excel, upload the corrected file over the old one and check again.
+4. When the green bar says the file checks out, read the counts under **What the File Contains**, then click **3. Import** and confirm.
+5. If logins were created without invitations, **Download Logins** gives the list of users and passwords. Keep it safe and hand each person only their own.
+
+<Shot src="/odoo-guides/import-employees-into-odoo/workbook-check-problems.webp" alt="Company Onboarding record in Odoo after Check the File, listing three problems with sheet, row, column and message, such as a manager email not on the Employees sheet and a missing joining date" width={1440} height={900} caption="Two mistakes, three lines: a misspelt manager email on row 9 and a missing joining date on row 12. The third follows from the second, because a person who failed the Employees sheet cannot have a salary." />
+
+<Shot src="/odoo-guides/import-employees-into-odoo/workbook-checks-out.webp" alt="Company Onboarding record in Odoo with a green bar saying the file checks out and counts of 7 departments, 18 employees, 18 salaries, 3 leave policies, 12 public holidays and 18 logins to create" width={1440} height={900} caption="The corrected file checks out. Read the counts before you click Import." />
+
+### Straight after the import
+
+- Open a few employees and compare them with your source list.
+- On each employee, **Work Information** tab, check the **Time Off** approver is the manager's user. Set it if it is empty.
+- Give the HR people their Time Off and Attendances rights; the workbook sets only the Employees level.
+- Check the public holiday times (see the [implementation chapter](/odoo-guides/odoo-hr-implementation-plan/)).
+- Ask Finance to trust the salary bank accounts. New accounts start untrusted and the bank file refuses them.
+
+<Callout title="The workbook leaves the Time Off approver empty">In this version the workbook builds the Manager field but does not fill the Time Off approver on each employee, so a leave type that asks the employee's approver has nobody to ask. Set it by hand after the import, or use the standard employee import, which fills it. The ID number goes into Identification No on the Personal tab, which is the field payslips and letters print.</Callout>
+
+## Route B: the standard import templates
+
+Every list in Odoo has an import, described in Odoo's own [import and export documentation](https://www.odoo.com/documentation/19.0/applications/general/export_import_data.html). Four import templates come with the HRMS guide files (ask for them if you do not have them), laid out so the import screen recognises every column by itself. Use them for later additions, or if you prefer to load the company piece by piece. Always import in this order: departments, job positions, employees, then leave balances.
+
+| Template | Import it from | Notes |
+|---|---|---|
+| Departments | People, Departments | Parent department written as its full path. |
+| Job positions | Employees, Configuration, Job Positions | Department as its full path. |
+| Employees | People, Employees | Name, work email, department path, job, manager's full name, contract start date, wage, ID in Identification No, badge, birthday, gender, emergency contact. |
+| Leave opening balances | Time, Leaves, Allocations | Employee, leave type, number of days, description, start and end date. |
+
+Each template has a Data sheet with two shaded sample rows to replace and a Column guide sheet that explains every column, plus a CSV copy.
+
+### How to import a template
+
+1. Open the list, for example **People, Employees**.
+2. Click the gear icon next to the screen title and choose **Import records**.
+3. Click **Upload Data File** and choose the template. If it has several sheets, pick **Data**.
+4. Check every column has an Odoo field beside it. A column with no field is ignored; pick the field or remove the column.
+5. Click **Test**. Nothing is saved. You get "Everything seems valid" or a list of errors with the row.
+6. Fix the file, click **Load Data File** to reload it, test again, then **Import**. The screen then shows only the records just created, so you can check them at once.
+
+<Shot src="/odoo-guides/import-employees-into-odoo/employee-import-tested.webp" alt="Odoo import screen for employees after Test, saying everything seems valid, with each file column such as Employee Name, Work Email, Department, Manager, Contract Start Date, Wage and Identification No matched to an Odoo field" width={1440} height={900} caption="The employees template after Test: every column found its field." />
+
+For a big file, import the first two rows, open both records and check them before importing the rest. Removing 300 wrongly imported people takes far longer than a two row test.
+
+## Opening leave balances
+
+On go-live day each person has some leave left from the old system. Load it after you have allocated the year's entitlement from the leave policies (see the [leave chapter](/odoo-guides/odoo-leave-management/)), and decide with the owner whether the balance replaces or adds to it. For a mid-year go-live the usual answers are either to allocate the full year from the policy and import the days already taken as approved time off, or to import the remaining days as the opening balance and skip the policy run for this year.
+
+1. Fill the leave opening balances template: one row per person and leave type.
+2. Open **Time, Leaves, Allocations**, gear icon, **Import records**, upload, Test, Import.
+3. The imported allocations wait in To Approve. Remove the filters, select the new lines and click **Approve**.
+
+<Shot src="/odoo-guides/import-employees-into-odoo/allocation-import-errors.webp" alt="Odoo allocation import test showing blocking errors: no matching record for employee name Shahid Iqbaal and no matching record for time off type Annual Leaves" width={1440} height={900} caption="Test catches the mistakes: a misspelt employee and a leave type that does not exist. Names must match exactly." />
+
+<Shot src="/odoo-guides/import-employees-into-odoo/leave-allocations.webp" alt="Odoo Time Off allocations list with imported annual leave opening balances waiting To Approve and sick leave allocations approved for every employee" width={1440} height={900} caption="Allocations after the policy run and the opening balance import. The imported lines still need approving." />
+
+## Import errors explained
+
+| Message | What it means |
+|---|---|
+| No matching record found for name 'X' in field 'Y' | The text does not match anything in the system. Check spelling, spaces and capitals; write departments as their full path. |
+| Found multiple matches for value 'X' | Two records share that name, often a department created twice. Archive the duplicate or use the full path. |
+| Missing required value for the field | A required column is empty on some row, or not mapped to a field. |
+| A column shows no field next to it | The header was not recognised. Pick the field, or rename the header to the label in the template. |
+| Dates rejected or shifted | Excel has turned the date into its own format. Use YYYY-MM-DD, or set the date format in the import options. |
+| Workbook: "X is not on the Employees sheet" | A manager or salary row names a work email that does not exist, or that person's row failed. Fix the person's row first. |
+| Workbook: "Joining date is required" | Red columns must be filled on every row. |
+| Workbook warning about currency or country | The company already has transactions, so its currency cannot change. The rest still imports. |
+
+When an import goes badly wrong, do not correct hundreds of records by hand. Archive or delete what was just imported (the import screen shows only those records straight after an import), fix the file and import again. The workbook can simply be imported again, since it updates by work email.
+
+Once people are in, the next step is the rules they work under: [leave policies and approval chains](/odoo-guides/odoo-leave-management/).

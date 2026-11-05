@@ -1,0 +1,141 @@
+---
+title: "Odoo direct print: send invoices, delivery slips and labels to a printer without the preview"
+metaTitle: "Odoo Direct Print Without the Preview"
+description: "Print Odoo 19 invoices, delivery slips and Zebra labels straight to a printer: a local print agent, printing rules per desk and user, and a print queue."
+targetQuery: "odoo direct print without preview"
+category: "Operations"
+summary: "How to set up silent printing in Odoo 19 Community with your own print agent, rules per report, user and workstation, automatic printing on validation, and labels straight to a Zebra."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-label-printing"
+seriesOrder: 1
+modules:
+  - name: "Direct Print"
+    technical: "w4_direct_print"
+    note: "USD 79, Odoo 19 Community, no subscription"
+  - name: "Direct Print for Inventory"
+    technical: "wt_direct_print_stock"
+    note: "Free, prints on transfer validation"
+  - name: "Direct Print for Invoicing"
+    technical: "wt_direct_print_account"
+    note: "Free, prints on invoice confirmation"
+  - name: "Print Suite"
+    technical: "wt_print_suite"
+    note: "Free, joins Direct Print with the Label Designer (USD 59)"
+related: ["odoo-distribution-management", "odoo-van-sales"]
+linkFrom: ["/modules/iot/"]
+sources:
+  - label: "Odoo 19 documentation, IoT: connect a printer"
+    url: "https://www.odoo.com/documentation/19.0/applications/general/iot/devices/printer.html"
+faqs:
+  - q: "Can Odoo print without showing the PDF preview?"
+    a: "Standard Odoo opens the PDF in the browser and you print from there. Odoo's own route to direct printing is the IoT app with an IoT device. Direct Print does it with a small agent on a computer in your building instead: when a printing rule matches, the report goes to the printer and a note says where."
+  - q: "Do I need PrintNode or another cloud print service?"
+    a: "No. The print agent ships with the module and talks only to your Odoo, over HTTPS. A network label or receipt printer that the Odoo server can reach can even be printed to straight from the server on port 9100, with nothing installed."
+  - q: "Does it work with Odoo Online?"
+    a: "No. Odoo Online does not accept custom modules. It works on Odoo.sh and on any server of your own, including one in the cloud, because the agent calls Odoo and Odoo never calls the agent."
+  - q: "What happens if the computer with the agent is switched off?"
+    a: "Jobs wait in the print queue and print when the agent is back. The printer shows Agent offline in the meantime. A job the agent took but never confirmed goes back to the queue after 10 minutes."
+  - q: "Will a failed print undo a delivery validation?"
+    a: "No. When a rule prints on validation or confirmation and the print fails, the document gets a note in its chatter and the validation stands. The failed job stays in the queue with the reason, and you can send it again."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every print in standard Odoo is three steps: press Print, wait for the PDF to open in the browser, then pick the printer and print again. At a front desk that prints forty invoices a day, or a packing station that prints a delivery slip for every parcel, those extra clicks add up, and the wrong printer or the wrong scale gets picked often enough to waste paper and labels. Direct print removes the middle step: you press Print, and the document comes out of the printer that belongs to that desk.
+
+This is the second chapter of the [Odoo label printing guide](/odoo-guides/odoo-label-printing/). It covers the Direct Print module on its own, and what changes when it is installed together with the Label Designer.
+
+## What standard Odoo does
+
+Odoo prints reports as PDF files opened in the browser. For printing without that step, Odoo's own answer is its IoT system: an IoT device connected to the printers, set up as described in the [Odoo documentation on connecting a printer](https://www.odoo.com/documentation/19.0/applications/general/iot/devices/printer.html). If you already run IoT, that may be enough. Direct Print is for businesses that want silent printing without that hardware, on Odoo 19 Community, and with rules about which desk prints what.
+
+## How Direct Print works
+
+There are two ways a job reaches a printer:
+
+- **Through a print agent.** A small program on a Windows, Linux or macOS computer in your building fetches jobs from Odoo and prints them on the printers that computer can see, or on a network printer by IP address. The agent calls Odoo over HTTPS; Odoo never calls the agent. Nothing changes on your firewall, and Odoo can run in the cloud.
+- **Straight from the Odoo server.** A network label or receipt printer that the server itself can reach gets its ZPL or ESC/POS directly on port 9100. Nothing is installed. The server only connects to the ports you allow in Settings.
+
+There is no cloud print service in between and no monthly fee. The module costs USD 79 once. The two free companions, Direct Print for Inventory and Direct Print for Invoicing, add automatic printing when a transfer is validated or an invoice is confirmed.
+
+## Step 1: install the print agent
+
+Do this once per computer that prints. It takes about ten minutes.
+
+1. In **Printing, Configuration, Settings**, press **Download the agent** and unzip it on a computer that sees your printers, for example into `C:\Program Files\WT Print Agent`.
+2. Install Python 3.10 or newer from python.org. In the agent folder, run `python -m pip install -r requirements.txt`.
+3. In **Printing, Configuration, Print Agents**, create the agent and press **Pair**. Odoo shows a one-time code and the command to run with it. The code works once and for 30 minutes. In exchange the agent receives its own token; Odoo keeps only a fingerprint of it.
+4. On Windows, run `powershell -ExecutionPolicy Bypass -File install-windows.ps1` so the agent starts with Windows. On Linux, use the systemd unit in the zip.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/agent.webp" alt="Print agent form for Warehouse PC, paired and online, with the computer name, Windows 11, agent version 1.0.0 and the printers on that computer: an HP LaserJet, Microsoft Print to PDF and a ZDesigner ZD421 203 dpi ZPL" width={1600} height={1000} caption="The agent, when it was last seen, and the printers its computer reports." />
+
+**Revoke** on the agent form stops it at once. If a laptop is lost or a computer is replaced, revoke the old agent and pair the new one.
+
+## Step 2: add your printers
+
+In **Printing, Configuration, Printers**, add each printer and say two things about it.
+
+**What it prints.** Documents (PDF) for office and laser printers, ZPL for Zebra and compatible label printers, ESC/POS for receipt printers, or Raw, which sends the bytes as they are.
+
+**How Odoo reaches it.** Through a print agent, either as a printer installed on the agent's computer (picked from the list the agent reports) or as a network printer by IP address and port. Or straight from the Odoo server, for a network printer the server can reach.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/printers.webp" alt="Printers list in Odoo with an office LaserJet and a Zebra ZD421 through the agent, a Zebra GK420d reached from the server showing Last job failed, and an Epson receipt printer by IP address" width={1600} height={1000} caption="An office laser, two Zebras and a receipt printer, each with its state." />
+
+Then press **Print a test page** on every printer. For a PDF printer it prints a page with a 100 mm line, so you can measure that the scale is right. A ZPL printer gets a test label and an ESC/POS printer a test slip.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/printer-form.webp" alt="Printer form for Zebra ZD421 Receiving set to ZPL, connected through the Warehouse PC agent as a printer installed on the agent computer, with a Print a test page button and states Ready, Agent offline, Last job failed and Not used yet" width={1600} height={1000} caption="One printer: what it prints, how Odoo reaches it, and the test page button." />
+
+## Step 3: write the printing rules
+
+A rule names a printer and the number of copies. It can be narrowed to one report, one user and one workstation. A workstation is a place people print from: the front desk, the receiving desk, a packing station.
+
+When someone prints a report and a rule matches, the job goes to that printer and a note on screen says where it went. When no rule matches, the PDF downloads exactly as before. So you can start with one rule for invoices and add the rest later.
+
+When several rules match, the most specific one wins. A workstation counts 4, a user 2 and a report 1; ties go to the rule with the lower sequence. In practice that means invoices printed at the front desk go to the front desk printer, while everything one person prints can follow them to their own printer elsewhere.
+
+Each person chooses their workstation, and whether to print without the preview at all, under their avatar, **Preferences, Printing**.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/rules.webp" alt="Printing Rules list with rules for invoices, delivery slips, picking operations and product labels per workstation and per user, plus automatic rules when an invoice is confirmed and when a transfer is validated, with copies and specificity" width={1600} height={1000} caption="Rules per report, per workstation and per user, and the automatic ones." />
+
+With the free companions installed, a rule can also have a trigger: **when a transfer is validated**, filtered by operation type, or **when an invoice is confirmed**, filtered by journal. The delivery slip then prints the moment the delivery is validated, and the invoice when it is posted. If such a print fails, the document gets a note in its chatter, and the validation is never undone.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/sent.webp" alt="Posted customer invoice in Odoo with a green notification saying the print job was sent to the Front Office LaserJet" width={1600} height={1000} caption="Printing an invoice with a rule: no preview, and a note says which printer it went to." />
+
+## Step 4: watch the print queue
+
+**Printing, Print Queue** lists every job with its document, printer, sender and status. This is where you look when someone says the printer did nothing.
+
+- A job that fails is tried again after 30 seconds, 2 minutes and 10 minutes. After that it is marked failed, with the reason on the line, such as the printer not being reachable at its address.
+- Select failed jobs and press **Send again** once the printer is back.
+- A job the agent took but never confirmed goes back to the queue after 10 minutes.
+- Printed jobs are deleted after 30 days.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/queue.webp" alt="Print Queue with printed, queued, cancelled and failed jobs for labels, invoices and delivery slips, two failed jobs showing that the printer at its network address could not be reached" width={1600} height={1000} caption="Printed, queued, cancelled and failed jobs, each failure with its reason." />
+
+## Labels straight to the printer
+
+With both Direct Print and the Label Designer installed, the free Print Suite module installs itself and joins them. Three things change:
+
+1. The label dialog gets a printer field and a **Send to printer** button. A ZPL printer receives exactly the ZPL of the design; a document printer receives the PDF.
+2. Each label template can have a **Default printer**, so roll labels go to the Zebra at receiving and the A4 price tag sheet goes to the office laser without anyone choosing.
+3. A rule for validated transfers can print labels instead of a report. A receipt of 12 units then prints 12 labels at the receiving desk the moment it is validated.
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/send-labels.webp" alt="Labels dialog on a receipt with the Lot / Serial template, the Zebra ZD421 Receiving printer selected, 63 labels in total and a Send to printer button" width={1600} height={1000} caption="The receipt's 63 labels, ready to go to the Zebra." />
+
+<Shot src="/odoo-guides/odoo-direct-print-without-preview/label-rule.webp" alt="Printing rule form that prints the Variant 50 x 25 mm label, one label per unit, when a transfer of type Receipts is validated at the Receiving Desk on the Zebra ZD421" width={1600} height={1000} caption="One label per unit on the receiving Zebra, for receipts only." />
+
+How to design those labels, and how one label per unit is counted, is in the [label printing chapter](/odoo-guides/odoo-label-printing/).
+
+<Callout title="Test on your own printers first">Direct Print was tested end to end with the agent on Windows 11 printing to "Microsoft Print to PDF" and to a simulated network printer. It has not been run on every printer model. Print a test page on each of your printers, and one real document or label per rule, before going live. The agent is a Python program, so Python 3.10 or newer must be installed on the computer that prints. Printers shared from another Windows computer are only seen when the agent runs as the signed-in user, which is the default.</Callout>
+
+## A sensible order for go-live
+
+1. Pair one agent on the computer that already has the printers installed.
+2. Add the printers and print a test page on each. Measure the 100 mm line.
+3. Write one rule: invoices at the front desk. Let people use it for a day.
+4. Add the delivery slip rule for the packing station, then the automatic rules for validated deliveries and confirmed invoices.
+5. If you have the Label Designer, set a default printer per template and add the labels on receipt rule last, once the receiving team trusts the counts.
+6. Check the print queue daily for the first week. A failed job with the same reason twice usually means a printer address or port that changed.
+
+If your setup has something unusual, such as printers in a second building on another network, [send a short description](/contact/) and I will say how the agent should be placed.

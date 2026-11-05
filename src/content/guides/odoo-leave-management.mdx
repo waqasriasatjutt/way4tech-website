@@ -1,0 +1,129 @@
+---
+title: "Odoo leave management: leave policies, yearly allocation, carry forward and approval chains"
+metaTitle: "Leave Management and Approval Chains"
+description: "Set up leave in Odoo 19: who approves each leave type, policies with carry forward and service rules, one-click yearly allocation, and approval chains."
+targetQuery: "odoo leave management policy"
+category: "Payroll and HR"
+summary: "How to turn a company leave policy into Odoo 19 rules: approval per leave type, days per year, carry forward, probation and service rules, encashment, the yearly allocation run, and the approval chains every other request follows."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-hrms"
+seriesOrder: 3
+modules:
+  - name: "HR Leave Management"
+    technical: "wt_hrms_leave"
+    note: "USD 30, needs HRMS Core, HRMS Payroll and Odoo Time Off"
+  - name: "HRMS Core"
+    technical: "wt_hrms_core"
+    note: "Free, holds the approval chain engine"
+related: ["odoo-payroll-pakistan", "zkteco-adms-odoo"]
+linkFrom: ["/modules/leaves/", "/products/wt-hrms-leave/"]
+sources:
+  - label: "Odoo 19 documentation, Time Off"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/time_off.html"
+faqs:
+  - q: "How do I make the line manager approve leave in Odoo?"
+    a: "Set Time Off Validation on the leave type to By Employee's Approver, or to By Employee's Approver and Time Off Officer for a manager step followed by HR. Then make sure each employee's Time Off approver, on the Work Information tab, is their manager's user."
+  - q: "Does Odoo carry forward unused leave?"
+    a: "With the HR Leave Management module you set a Max Carry Forward Days per policy, and the Carry Forward Year End run moves unused days into the new year up to that limit. The rest lapse. It also runs on its own each January."
+  - q: "Can employees sell unused leave back?"
+    a: "Yes, if the policy allows encashment. The employee raises a leave encashment request from My Space; once approved, the amount is added as an allowance on the next payslip. Leave the encashment rate at 0 to pay the person's daily wage."
+  - q: "What happens to a request type with no approval chain?"
+    a: "It waits for any HR manager. That is safe, but it puts every request on HR's desk, so set a chain for every request type before go-live."
+  - q: "Can a loan above a certain amount go to the director?"
+    a: "Yes. A chain step can carry a condition, a short formula that skips the step when it does not apply, so only loans above a set amount reach a named director. Ask Way4Tech to write the condition."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+People judge a new HR system by how fast their first leave request gets an answer, and whether the answer is right. A request that goes to the wrong person, or a balance that shows ten days when the handbook says fourteen, undoes a lot of goodwill in the first week. Most companies already have the rules written down in a handbook: days per year, what carries over, who can take what during probation, when a medical certificate is needed. This chapter turns those rules into Odoo 19 settings, then sets up the approval chains every other request in the suite follows.
+
+Standard Odoo [Time Off](https://www.odoo.com/documentation/19.0/applications/hr/time_off.html) handles leave types, allocations and requests with an approval setting per type. The HR Leave Management module adds the policy layer on top: the rules per type, a one-click yearly allocation, carry forward, service and probation checks, longest request, required documents, compensatory off and encashment paid through payroll.
+
+## Leave types and who approves them
+
+A leave type is a kind of time off: Annual, Casual, Sick, Maternity. The workbook creates the ones on its Leave policies sheet. You find them in the **Time Off** app, **Configuration, Time Off Types**, next to Odoo's own starters (Paid Time Off, Sick Time Off, Unpaid). Archive any you will not use, so nobody picks the wrong one.
+
+<Shot src="/odoo-guides/odoo-leave-management/time-off-types.webp" alt="Odoo Time Off Types list with Odoo starters such as Paid Time Off and Unpaid next to Annual Leave, Casual Leave and Sick Leave, all approved By Time Off Officer" width={1440} height={900} caption="Leave types after a workbook import. Every one starts as HR-only approval." />
+
+On each type, **Time Off Validation** is the most important leave decision you will make:
+
+| Choice | Meaning | Use it for |
+|---|---|---|
+| By Employee's Approver | The line manager approves, and that is the end of it. | Sick leave, short casual leave |
+| By Employee's Approver and Time Off Officer | The manager approves, then HR gives the second approval. | Annual leave |
+| By Time Off Officer | HR alone approves; the manager is not asked. | Maternity, Hajj, unpaid |
+| None needed | Approved the moment it is asked. | Rarely |
+
+<Callout title="Workbook leave types start as HR only">Leave types created by the workbook are set to By Time Off Officer, so line managers are never asked. Change Annual and Casual leave to the two-step option before go-live if managers should approve their own people's leave. The employee's approver is the Time Off field on their Work Information tab, which the workbook in this version leaves empty: set it too.</Callout>
+
+## Leave policies
+
+A leave policy holds the rules of one leave type. Open **WT HRMS, Configuration, Leave Policies**.
+
+| Field | What it does | Example |
+|---|---|---|
+| Annual Days | Days each eligible person gets per year when you allocate. | Annual 14 |
+| Max Carry Forward Days | Unused days that may roll into next year. The rest lapse. | 7 |
+| Allow Encashment, Encashment Rate | Lets people sell unused days back, paid on the next payslip. A rate of 0 uses the person's daily wage. | Annual only |
+| Min Service (months) | Months of service before the type can be allocated or taken. | Annual 12 |
+| Probation Eligible | Whether people on probation may take it. | Casual yes, Annual no |
+| Max Consecutive Days | Longest single request. 0 means no limit. | Annual 14, Casual 3 |
+| Requires Attachment, after days | A document is required for requests longer than this many days. | Sick, after 2 |
+
+<Shot src="/odoo-guides/odoo-leave-management/annual-leave-policy.webp" alt="Annual Leave policy form in Odoo with 14 annual days, 7 maximum carry forward days, encashment allowed, 12 months minimum service, not probation eligible and 14 maximum consecutive days" width={1440} height={900} caption="The Annual Leave policy: 14 days, 7 may carry forward, encashable, after 12 months, not during probation, 14 days at most in one go." />
+
+## Allocate the year
+
+Open a policy and click **Allocate Annual Days**. Every eligible employee gets an approved allocation for this calendar year. People who do not meet the service rule are skipped, and the chatter says who and why. Repeat for each policy, then look at **Time, Leaves, Allocations**.
+
+<Shot src="/odoo-guides/odoo-leave-management/allocation-run.webp" alt="Annual Leave policy in Odoo after Allocate Annual Days, with the chatter saying 18 employees allocated 14 days and listing three people not eligible for lack of service months" width={1440} height={900} caption="After the run, Last Allocation Run shows when it happened. Running it again does not give anyone the days twice." />
+
+At the year end, **Carry Forward Year End** moves unused days into the new year up to the limit. Both runs also happen on their own each January through scheduled jobs, so you only press the buttons on go-live day or to correct something. People who join mid-year from an old system need opening balances on top; the [import chapter](/odoo-guides/import-employees-into-odoo/) covers that.
+
+<Callout title="Service rules read the contract start date">The months of service are counted from the contract start date on the employee. Someone with no contract start date recorded is skipped by any policy with a minimum service, as the Administrator is above. Fill the joining date on every record before you allocate.</Callout>
+
+## What the employee sees
+
+From My Space the employee clicks **Time off**, picks the type and the dates, writes a reason, attaches a document if the type asks for one, and saves. The working days are counted from their schedule; days off and public holidays are not counted. The request goes straight to the approver and shows under My requests as Waiting.
+
+<Shot src="/odoo-guides/odoo-leave-management/leave-request.webp" alt="Odoo time off request for three days of annual leave with the stage bar showing To Approve, Second Approval and Approved" width={1440} height={900} caption="Three days of annual leave waiting. The stage bar shows the two-step route: To Approve, Second Approval, Approved." />
+
+If the policy refuses the request, the message says why: not enough months of service for that type, or longer than the policy allows in one go. Comp-off (a day off in return for working a holiday or weekend) and leave encashment are raised the same way from their own buttons.
+
+## Approval chains for every other request
+
+Every request other than time off follows an approval chain: one chain per request type, made of steps in order. Open **WT HRMS, Configuration, Approval Chains**. The suite ships chains for loans, expense claims, expense sheets, overtime, resignations, salary advances and shift swaps.
+
+<Shot src="/odoo-guides/odoo-leave-management/approval-chains.webp" alt="Approval Chains list in Odoo with Employee Loan, Expense Claim, Expense Sheet, Overtime, Resignation, Salary Advance and Shift Swap approvals and the model each applies to" width={1440} height={900} caption="The chains that come with the suite." />
+
+Each step names who approves:
+
+| Approver type | Who it means |
+|---|---|
+| Direct Manager | The Manager on the requester's employee record. |
+| Manager's Manager | One level higher. |
+| HR Manager | Any user with Employees: Administrator. |
+| Security Group | Anybody in a group you choose, for example Invoicing: Accountant for a finance step on loans. |
+| Specific User | One named person, for example the managing director. |
+
+A step can have **escalation hours**: if nobody acts in that time, the request moves on to the next step (0 turns it off). A step can also carry a **condition**, a short formula that skips the step when it does not apply, so that only loans above a set amount go to the director. Conditions are code; ask Way4Tech to write them for you.
+
+<Shot src="/odoo-guides/odoo-leave-management/overtime-approval-chain.webp" alt="Overtime Approval chain in Odoo with two steps, Direct Manager then HR Review by HR Manager, each with 48 escalation hours" width={1440} height={900} caption="The overtime chain: the supervisor first, then HR, each with 48 hours before escalation." />
+
+### The quick way: presets
+
+**Help, Set up in ten minutes**, step 3, lists every request type with a choice of Direct manager, Direct manager then HR, or HR only. Types that already have a chain show with a tick and are left alone. A sensible default for a factory is manager then HR for most requests and HR only for money: loans, advances and expenses.
+
+<Shot src="/odoo-guides/odoo-leave-management/who-approves-presets.webp" alt="Who approves what step of the ten minute setup in Odoo, listing request types such as appraisal, compensatory off, leave encashment, service request and training with a preset of Direct manager then HR, and existing chains ticked" width={1440} height={900} caption="Who approves what. Types with a chain already are ticked and kept." />
+
+Decide the chains with the owner before go-live. A request with no chain waits for any HR manager, which is safe but puts everything on one desk.
+
+## Common leave problems
+
+- **A manager does not see the team's leave.** Either the leave type is approved by Time Off Officer only, or the employee's Time Off approver is empty or someone else.
+- **A request sits waiting and nobody approves it.** Its chain starts with Direct Manager and the employee has no manager. **Employees, Workforce Structure, Employees With No Manager** lists them all.
+- **My Space shows "No allocation yet".** The year has not been allocated for that person. Run Allocate Annual Days, or check they meet the service rule.
+- **A manager clicks Approve twice on two-step leave.** After the first approval the line can stay in their list until HR decides. A second click just says it cannot be approved, which is harmless.
+
+Leave is deducted against the working schedule, so the next thing to get right is how attendance is recorded: see [attendance, shifts and overtime](/odoo-guides/odoo-attendance-shifts-overtime/).

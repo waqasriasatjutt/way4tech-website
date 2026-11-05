@@ -1,0 +1,150 @@
+---
+title: "Odoo FMCG distribution software: routes, order booking, vans, cash and credit in one app"
+metaTitle: "Odoo FMCG Distribution Management"
+description: "FMCG distribution on Odoo 19: beat routes, order booker and van sales apps, delivery with proof, credit bands, trade counter, promotions and claims."
+targetQuery: "odoo fmcg distribution software"
+category: "Industry"
+summary: "What an FMCG distributor needs from Odoo, what standard Odoo leaves to the office, and how the Field Sales and Distribution app runs order bookers, van sellers, drivers, a trade counter and the manager on Odoo 19."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-distribution-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-distribution-management.pdf"
+  pages: 65
+modules:
+  - name: "Van Sales and Field Sales Management (base app)"
+    technical: "wt_sale_distributor"
+    note: "USD 500, Odoo 19 Community, needs Sales, Inventory and Accounting"
+  - name: "Van Sales and Van Stock"
+    technical: "wt_sale_distributor_van"
+    note: "USD 400 add-on, needs the base app and Odoo Fleet"
+  - name: "Van Sales and Field Sales Enterprise"
+    technical: "wt_sale_distributor_enterprise"
+    note: "USD 4,599 add-on, needs the base app and Van Sales; offline field app"
+demo:
+  url: "https://distributor-demo.way4tech.com/"
+  label: "FMCG distribution demo"
+related: ["odoo-van-sales", "odoo-garage-management", "n8n-odoo-automation"]
+linkFrom: ["/solutions/distribution-fmcg/", "/products/wt-sale-distributor/", "/modules/sales/", "/modules/inventory/", "/modules/accounting/"]
+faqs:
+  - q: "Is this an FMCG distribution app or a general sales app?"
+    a: "It is built around how an FMCG distributor works: fixed routes (beats) with visit days, order bookers and van sellers who visit 30 to 60 shops a day, cash collected on the road, credit for small retailers, promotions funded by brands and claims back to the principal. A company that sells to a few large accounts from an office does not need most of it."
+  - q: "Does it need Odoo Enterprise?"
+    a: "No. All three editions run on Odoo 19 Community and also on Enterprise. Enterprise in the product name is the top edition of this app, not an Odoo subscription."
+  - q: "What does the full Enterprise edition cost?"
+    a: "The base app is USD 500, the Van Sales add-on USD 400 and the Enterprise add-on USD 4,599. The Enterprise add-on depends on the other two, so the whole stack is USD 5,499 once per Odoo version."
+  - q: "Can it handle pharma or dairy distribution?"
+    a: "Not well today. Lots and expiry dates are not tracked, and there are no returnable crates, deposits, standing orders or cold chain controls. Expired returns can be sent to a quarantine location so they are not resold, but that is a reason on a return, not batch tracking."
+  - q: "Do my products, prices and customers stay normal Odoo records?"
+    a: "Yes. Products, price lists and contacts are the standard Odoo ones. Field orders are sales orders, deliveries are transfers, collections are payments and returns post credit notes, so stock and accounting stay standard."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+An FMCG distributor sells cheap goods that move fast: drinks, snacks, tea, soap, tissues. The margin per carton is thin, so the business is won or lost on discipline. Every shop on a beat has to be visited on its day. Every order has to be booked at the shop, not remembered and typed in at night. Cash collected by a salesman on a motorbike has to reach the office, and the van that left with 300 cartons has to come back with the right number. A retailer who already owes for 60 days should not get more goods on credit just because the salesman likes him.
+
+Standard Odoo can record all of this, but it was built for an office. This series explains how the **Field Sales and Distribution** app for Odoo 19 moves that work onto the phones of the people who do it, and what each edition covers. I wrote and tested the modules; the screenshots come from the live demo of a fictional distributor, Riverside Distribution Co., with six routes, about forty shops and 36 products from six brands of three principals.
+
+## Who the app is for
+
+The app is for distributors that buy from brands and sell to many small outlets on fixed routes. In FMCG that usually means:
+
+- **Order bookers** (called order takers in the app), who visit shops on their beat, book the order on a phone and leave. The goods come the next day.
+- **Van salesmen**, who drive a stocked van, sell and hand over the goods in the same visit, take cash and print a receipt.
+- **Delivery drivers**, who drop pre-sold orders, get a signature and collect what is due.
+- **A trade counter**, where shopkeepers come to the warehouse, buy cash and carry, and leave.
+- **The distribution manager**, who sets the routes, targets and credit rules, approves exceptions and reads the numbers.
+- **Retailers on beats**: mini marts, pharmacies, bakeries, hotels and wholesalers, many paying cash or on short credit.
+
+A company can run pre-sales, van sales and a counter at the same time. The sales mode is set for the company and can be changed per route.
+
+## What an FMCG distribution day needs from software
+
+The whole product follows one loop, and every screen sits somewhere in it:
+
+1. **Plan.** Routes with visit days, shops in visiting order, a target per person, and a load for each van.
+2. **Visit.** Check in at the shop with GPS, see what it owes and what it usually orders, book the order or record why not.
+3. **Deliver or hand over.** A pre-sold drop leaves the warehouse with proof of delivery, or a van sale hands over the goods on the spot.
+4. **Collect.** Cash, bank or cheque against the oldest open bill first, with a promise to pay when the shop cannot pay today.
+5. **Close the day.** Count the van and the cash, explain any gap, and let the manager see it that evening.
+6. **Measure.** Strike rate, sales against target, debt ageing, cost to serve, and what the brands owe back for promotions.
+
+<Shot src="/odoo-guides/odoo-distribution-management/m01-dashboard.webp" alt="Distribution Dashboard in Odoo showing sales today, visits, deliveries pending, collections, strike rate and scheme cost, with target cards per van and salesperson" width={1600} height={1000} caption="The manager's dashboard: today, this month and every target against where it should be by today." />
+
+## What standard Odoo covers and what it does not
+
+Odoo 19 Community already has the records a distributor needs. Sales orders, price lists, customers with credit limits, stock locations and transfers, invoices and payments are all there, and Fleet can hold the vans. Nothing in this app replaces them; it writes to them.
+
+What standard Odoo does not give you is the person at the shop door. To book an order the salesman has to open a sales order form built for a desk. Nothing knows that Old Town Bazaar is visited on Tuesday and Friday, or which shop comes next. Nothing makes him give a reason when a shop does not order, so "no order" visits are invisible. A delivery driver has no screen to collect a signature, part deliver, skip a drop with a reason and take cash in one stop. There is no load sheet per route, no stock per van, no evening settlement, no credit rule that stops a sale at the counter of a shop that does not pay, and no way to claim a promotion back from the brand that funded it.
+
+That gap is the product. The [van sales guide](/odoo-guides/odoo-van-sales/) in this series goes into the stock side of it in detail.
+
+## The three editions and their prices
+
+The editions build on each other like floors of one building. Everything a lower edition does stays when you move up, and upgrading keeps every route, order and payment.
+
+| What you get | Base | Van Sales | Enterprise |
+|---|---|---|---|
+| Territories, routes, stops, visit days, visits with GPS check-in | Yes | Yes | Yes |
+| Order taking with the usual order, focus products, discounts, credit check | Yes | Yes | Yes |
+| Delivery with signature, photo, part delivery and skip with a reason | Yes | Yes | Yes |
+| Collections in cash or bank, older bills, returns from the field | Yes | Yes | Yes |
+| Sales targets, manager dashboard, sales by route, visit analysis | Yes | Yes | Yes |
+| Vans on Odoo Fleet with their own stock, sell from van in one step | No | Yes | Yes |
+| 58 and 80 mm receipts, customer statement | No | Yes | Yes |
+| One offline field app for every role, Android app, SUNMI printer | No | No | Yes |
+| Settlement with cash and stock count, warehouse counter | No | No | Yes |
+| Suggested order, credit risk bands, promises to pay, cheques | No | No | Yes |
+| Live map, route replay, geofence, field exceptions | No | No | Yes |
+| Promotions, budgets, claims to principals, perfect store checks | No | No | Yes |
+| KPIs, cost to serve, route profit, incentives and contests | No | No | Yes |
+
+Prices, once per Odoo version, from the module manifests:
+
+- [Base app](https://apps.odoo.com/apps/modules/19.0/wt_sale_distributor/) (`wt_sale_distributor`): USD 500. Installs Sales, Inventory and Accounting with it.
+- [Van Sales add-on](https://apps.odoo.com/apps/modules/19.0/wt_sale_distributor_van/) (`wt_sale_distributor_van`): USD 400. Needs the base app and Odoo Fleet.
+- [Enterprise add-on](https://apps.odoo.com/apps/modules/19.0/wt_sale_distributor_enterprise/) (`wt_sale_distributor_enterprise`): USD 4,599. Needs the base app and Van Sales, so the full stack is USD 5,499.
+
+All three run on Odoo 19 Community. The word Enterprise in the top edition is the name of this app's edition, not an Odoo subscription.
+
+### Two kinds of field screens
+
+In Base and Van Sales, the order booker and the driver work in two apps that open inside the Odoo web client: Distribution, Order Taker and Distribution, Delivery. They are made for a phone browser and need a connection.
+
+<Shot src="/odoo-guides/odoo-distribution-management/base-ot-home.webp" alt="Order Taker app in the Odoo web client on a phone, showing visits, orders and sales today and the list of routes with their territory and code" width={800} height={1720} caption="Base edition: the Order Taker app inside Odoo, with today's routes." />
+
+In Enterprise, every role uses one app at /field. It has big tiles and plain words, installs on the home screen with your logo, and keeps working without signal. Field staff land in it straight after login, and a manager gets a cockpit instead of the tiles.
+
+<Shot src="/odoo-guides/odoo-distribution-management/o01-home.webp" alt="Enterprise field app home screen for an order taker with Start my day status and tiles for Sell, Shops, Collect money, Collect today, Take back goods, My sales today, Ask manager and Finish day" width={800} height={1720} caption="Enterprise edition: one field app, here as the order taker." />
+
+### Which edition fits
+
+- **Base**: pre-sales only. Order bookers book, the warehouse delivers. A small team with good signal.
+- **Van Sales**: vans carry stock and sell on the spot, with receipts and statements. Routes with good signal.
+- **Enterprise**: a larger team, weak signal on some routes, a trade counter, credit risk to manage, brands to claim from, and managers who want to run the day from a phone.
+
+## The chapters in this guide
+
+Each chapter answers one job, step by step, with the edition it needs:
+
+1. [Routes, beat plans and setup](/odoo-guides/odoo-distribution-routes-beat-plans/): territories, routes and stops, the route optimiser, customers, products, roles and the settings that change how the phones behave.
+2. [The order booking app](/odoo-guides/odoo-order-booking-app/): a salesman's visit from check-in to confirmed order, the suggested order, no-order reasons, new shops and offline work.
+3. [Van sales](/odoo-guides/odoo-van-sales/): the van as a stock location, loads, sell from van, returns into the van and the end of day.
+4. [Delivery, cash collection and credit control](/odoo-guides/odoo-delivery-cash-collection-credit/): proof of delivery, part deliveries and skips, collections oldest bill first, credit limits, risk bands and debt ageing.
+5. [The trade counter and returns](/odoo-guides/odoo-trade-counter-cash-and-carry/): cash and carry sales at the warehouse, refunds, where returned goods go and the cash count by notes and coins.
+6. [Promotions, principals and claims](/odoo-guides/odoo-trade-promotions-principal-claims/): schemes, promotion budgets, return on promotion, claims to principals, the principal scorecard and perfect store checks.
+7. [Tracking, approvals and reports](/odoo-guides/odoo-field-sales-tracking-reports/): the manager's phone cockpit, the live map, field exceptions, KPIs, cost to serve and route profit.
+
+The full printed guide, with every screen of every role, is in the download box on this page.
+
+## How to start
+
+1. Install the base app from Apps. A new Distribution app appears.
+2. On a fresh database, open Distribution, Configuration, Settings and press **Load sample data**. It creates six routes, forty shops, products with photos, targets and a month of history, so every screen has something on it.
+3. Walk through the [setup chapter](/odoo-guides/odoo-distribution-routes-beat-plans/) in order: company and settings, roles, territories, routes, shops, products, then vans and rules.
+4. Give one order booker a phone for a week before the rest of the team.
+
+<Callout title="What this app does not cover">Lots and expiry dates are not tracked, so it is not a fit for pharma distribution. Returnable crates and deposits, standing orders and cold chain for dairy, beverages, water, gas and ice cream are planned add-ons, not available today. Truck and weight planning for building materials is not part of it. Buying from suppliers stays in standard Odoo Purchase, and each company has one counter warehouse. On the live demo, the job that tops up "today" with fresh orders is switched off because it fails when Van Sales is installed, so some today tiles can read zero.</Callout>
+
+The [live demo](https://distributor-demo.way4tech.com/) runs the full Enterprise edition, and the [demo directory](/demos/) lists it with the other Way4Tech demos. If you want to talk through whether your beats fit pre-sales, van sales or both, [get in touch](/contact/).

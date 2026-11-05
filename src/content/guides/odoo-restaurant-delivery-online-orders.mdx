@@ -1,0 +1,126 @@
+---
+title: "Restaurant delivery in Odoo 19: zones, riders and rider cash, online orders, the call center and branch transfers"
+metaTitle: "Restaurant Delivery, Riders and Online Orders"
+description: "Restaurant delivery on Odoo 19: zones that pick the branch and fee, dispatch from the till, a rider phone screen, rider cash and online orders."
+targetQuery: "odoo restaurant delivery riders online orders"
+category: "Industry"
+summary: "Orders that do not start at a table: delivery zones and routing, the dispatch board in the till, the rider's phone, settling rider cash, online channels and the inbox, phone orders through the call center, and sending orders between branches."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 5
+modules:
+  - name: "Restaurant Delivery"
+    technical: "w4_resto_delivery"
+    note: "USD 199, zones, riders, board, rider app, cash settlement"
+  - name: "Restaurant Online Orders"
+    technical: "w4_resto_online_orders"
+    note: "USD 149, website, app and aggregator channels"
+  - name: "Restaurant Call Center"
+    technical: "w4_resto_call_center"
+    note: "USD 199, agent console, routing, complaints"
+  - name: "Restaurant Branch Transfer"
+    technical: "w4_resto_branch_transfer"
+    note: "USD 129, order and stock transfers between branches"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: ["odoo-van-sales"]
+sources: []
+faqs:
+  - q: "How does Odoo decide which branch delivers an order?"
+    a: "The customer's address is turned into coordinates and the branch whose delivery zone contains the point wins. If several zones match, open branches come first, then zone priority, then the branch with fewer deliveries in flight, then the nearest. An overloaded branch passes the order to the next one."
+  - q: "How is the rider's cash checked?"
+    a: "Order total, cash due at the door, cash the rider says they collected and cash counted at the branch are kept apart. Settle cash opens a count of every unsettled cash delivery; a shortfall needs a note, and confirming pays each cash on delivery order into the till once."
+  - q: "Does it connect to Foodpanda?"
+    a: "There is a Foodpanda style connector that receives orders in that format. Each marketplace still needs its own partner account and store mapping before orders flow."
+  - q: "Do I get a customer ordering website with the Online Orders module?"
+    a: "No. The module receives orders from your website, app or delivery partner through a webhook and publishes the menu to them. The page where customers browse and pay is your own, or a separate project that reads the menu and prices from this module."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+For many restaurants a big share of the orders never sees a table. They come in by phone, through the website, through a delivery partner, and go out on the back of a bike with cash to collect at the door. That side of the business is where the worst surprises live: an order cooked at the wrong branch, a rider who is "five minutes away" for forty minutes, and an envelope of cash at midnight that nobody can match to orders.
+
+This chapter covers the orders that do not start at a table: delivery zones and riders, rider cash, online channels, phone orders through the call center, and sending orders between branches. All of them end up as ordinary orders on the branch till and kitchen screen, so the [kitchen](/odoo-guides/odoo-kitchen-display-system/) and the [cashier](/odoo-guides/odoo-restaurant-cashier-day-close/) work the same way for them.
+
+## Delivery zones and riders
+
+**Restaurant, Configuration, Delivery Zones.** A zone is either a circle around the branch, with a radius in kilometres, or a polygon drawn from map points. Each zone carries its delivery fee, minimum order, promised time and delivery hours. Where zones overlap, a priority decides. The demo has Gulberg 4 km (a circle), a Gulberg outer ring at 7 km, and DHA Phase 5 and 6 as a polygon.
+
+<Shot src="/odoo-guides/odoo-restaurant-delivery-online-orders/delivery-zones.webp" alt="Delivery Zones in Odoo: Gulberg 4 km around a point with fee 150 and 40 minutes, Gulberg outer ring 7 km with fee 250 and 55 minutes, and DHA Phase 5 and 6 as a polygon of 5 points with fee 200 and 45 minutes" width={1600} height={316} caption="Zones as circles and polygons, each with its fee, promised time and branch." />
+
+**Restaurant, Delivery, Riders.** One rider per employee, with phone, vehicle and branch, and a login with the Rider role. The riders list shows each rider's load, deliveries today, cash on hand and last known position.
+
+### Which branch delivers
+
+The customer's address is turned into coordinates: OpenStreetMap by default, Google optionally, or typed by hand. The branch whose zone contains the point wins. If several do, open branches come first, then zone priority, then the branch with fewer deliveries in flight, then the nearest. A branch with more deliveries out than the overload threshold in Settings passes the order on. A polygon is checked point by point, so "DHA Phase 5 and 6" covers exactly that area and does not spill into the next one the way a circle would. The call center and online orders use the same routing.
+
+## Dispatch from the till
+
+The cashier does not leave the till. **Deliveries** in the top bar opens six columns: New, Preparing, Ready, On the road, Delivered today and Failed. A strip at the top shows each rider's load and cash. Each card has the customer, a tap-to-call phone number, the area, the address with a landmark, the items, the total, the cash to collect, the ETA and a late flag. When a delivery turns Ready while the cashier is on another screen, the till rings. Managers or a dispatcher at a desk get the same board in **Restaurant, Delivery, Board**.
+
+| Button | What it does |
+|---|---|
+| Assign | Pick a rider from the list with their load, or Auto: the least loaded rider with room, the nearest on a tie |
+| Out | The rider has the food; the ETA counts down to the time promised to the customer |
+| Delivered | Opens the cash window: order total, cash due, and a short or over hint |
+| Failed | With a reason: no answer, wrong address, refused. Try again sends it out once more |
+| More | Open the order in the till, Rush, Transfer to another branch, Unassign rider, Cancel delivery |
+
+A delivery turns Ready by itself when the kitchen bumps the last station of its ticket.
+
+## The rider's phone
+
+**Restaurant, Delivery, My Deliveries** on the rider's phone is one column with big buttons, made for a glove and a moving bike: **Picked up**, **Delivered** with the cash count, **Failed** with a reason, and **Back at the branch**. **Call** opens the dialer, **Map** opens directions in the maps app. An **On shift** switch refuses going off shift with food still in hand, and **Send my position** records where the rider is for the board.
+
+<Shot src="/odoo-guides/odoo-restaurant-delivery-online-orders/rider-phone.webp" alt="My Deliveries screen on a rider's phone in Odoo: rider on shift, 2 of 3 carrying, 2 delivered today and cash on hand, a Send my position button, an on the road delivery with address, landmark, notes and items, a late flag, Call, Map, Delivered and Failed buttons, and the next delivery to pick up marked RUSH" width={1400} height={1292} caption="The rider's phone: what is on the road, what to pick up next, and cash on hand." />
+
+## Settling the rider's cash
+
+Four numbers are kept apart: the **order total**, the **cash due** at the door (the total less anything paid before), the cash the rider **says** they collected, and the cash **counted** at the branch. When the rider comes back, **Riders, Settle cash** opens a count with every unsettled cash delivery. The cashier types what was counted, and a shortfall needs a note. Confirming pays each cash on delivery order into the till's cash method, once. An order paid online or by card carries no cash, and typing cash against it is refused.
+
+<Shot src="/odoo-guides/odoo-restaurant-delivery-online-orders/rider-cash-settlement.webp" alt="Rider cash settlement RST/000001 in Odoo for rider Imran Ali at Gulberg with delivery count, cash due, rider reported, cash counted, difference against due and counted versus reported, and the delivery line with order total, cash due, cash collected and difference" width={1600} height={921} caption="A settlement: due, reported and counted, per delivery and in total." />
+
+## Online orders
+
+The restaurant's website, its app and partners such as Foodpanda send orders into one inbox. Each order goes to the kitchen like any other, and the channel is told at every step.
+
+<Callout title="What Online Orders is, and is not">It is the restaurant side. It receives orders from any channel and runs them through the kitchen, the till and the riders. The page where customers browse the menu and check out is your website or app. If you have one, its developer connects it to the channel's link. If not, the ordering page is a separate project that reads the menu and prices from this module. Each aggregator also needs its own partner account.</Callout>
+
+**Restaurant, Configuration, Online Channels** holds one channel per source:
+
+| Field | What it means |
+|---|---|
+| Connector | The format orders arrive in: Generic for your own website or app, or Foodpanda style |
+| Default branch, store mapping | Which branch gets the order; a channel serving several branches maps its store ids to branches |
+| Route by distance | Send the order to the branch whose delivery zone covers the address |
+| Webhook URL | The link the website posts orders to; the token in it is the password, and Regenerate makes a new one if it leaks |
+| Menu URL | The website reads the live menu, prices and sold-out dishes from this link |
+| Auto accept, preparation minutes | Accept without a person, up to an amount and only in opening hours, and the time promised |
+| Outbound URL, key, fetch URL | Only for a partner that wants status updates sent back, or must be polled for orders |
+| Publish the menu | Sent every 15 minutes and on Push menu now; a dish marked 86 shows as unavailable |
+
+<Shot src="/odoo-guides/odoo-restaurant-delivery-online-orders/online-channel.webp" alt="Online channel form in Odoo for a Website channel with a generic JSON webhook connector, default branch Gulberg, auto accept up to 3,000 during opening hours, 25 preparation minutes, webhook and menu URLs with a masked inbound token and Regenerate, outbound settings, publish the menu, and pricing options" width={1600} height={1000} caption="A channel: connector, branch, webhook and menu links, auto accept and pricing rules." />
+
+**Running it.** **Restaurant, Operations, Online Orders** is a live inbox for one branch in five columns: New, Accepted, Preparing, Ready and Done today. A bell rings on every new order, and each card shows the channel, delivery or takeaway, paid or cash on delivery, the customer, items, total and a countdown to the promised time. The **Online** button in the till's top bar carries the count waiting; Accept sends the order to the till and kitchen, Reject asks for a reason. Waiters see the page read only.
+
+Each incoming line is matched to a dish by its code, then by exact name. Anything else becomes an "unmapped item" line that keeps the channel's name, so nothing is lost. The same order sent twice is recognised and not created twice. Accepting creates a draft order in the branch's open till, priced and taxed the way the till would. With no till open, it waits as accepted and drops in the moment one opens. Paying it at the till completes it online, and cancelling it at the till cancels it online. To try it, open a channel and press **Test inbound**: a sample order arrives and the till rings.
+
+## Phone orders through the call center
+
+A chain often has one phone number. In the **Agent Console** the agent types the phone number or a name and matches appear as they type. The customer card shows saved addresses, the last five orders with **Reorder**, and open complaints. Picking the address chooses the branch whose zone covers it, with its distance, opening hours and whether its till is open; the agent can override it with a logged reason. The order is taken from that branch's own menu at its prices, with sold-out dishes greyed. **Send** (F4) drops a draft order into the branch till, which rings, and a status strip follows it to the kitchen, payment and the road. **End call** (F8) records the outcome. Linked to the phone system through the telephony webhook, the console pops the caller on its own.
+
+<Shot src="/odoo-guides/odoo-restaurant-delivery-online-orders/call-center-console.webp" alt="Call Center agent console in Odoo with the caller panel, a delivery or takeaway order panel with a routing warning to geocode the address or pick the branch, and a confirm panel with promised time, note for the branch, send to branch, log a complaint, end the call and the agent's orders today" width={1600} height={970} caption="The agent console: caller, the order with its routed branch, and the confirmation." />
+
+The supervisor board shows calls, orders, conversion and handling time per agent and branch, plus open complaints. Complaints carry a category, severity and a due time worked out from the SLA hours in Settings.
+
+## Sending orders and stock between branches
+
+In the till, **Actions, Transfer to branch** sends an order to another branch with a reason (out of delivery zone, kitchen overloaded, branch closing, customer request) and a note, with a manager PIN if the register asks for one. The receiving managers get a notice and accept or reject it under **Operations, Incoming Transfers**, unless the branch accepts on the spot. The new order is copied line by line and checked to add up to the same total before it is created.
+
+<Shot src="/odoo-guides/odoo-restaurant-delivery-online-orders/transfer-to-branch.webp" alt="Transfer to another branch dialog in the Odoo POS explaining the order will be cancelled here and created again at the chosen branch, DHA Phase 6 Lahore marked accepts on the spot and closed now, reasons out of delivery zone, kitchen overloaded, branch closing, customer request and other, and a note" width={1600} height={1112} caption="Transfer to branch: pick the branch, a reason, and a note for the kitchen there." />
+
+**Operations, Stock Transfers** moves stock from one branch store to another: Send checks there is enough and reserves it, and the receiving branch presses Receive. In Settings the owner decides which branch keeps the revenue of a transferred order, the one that cooked it or the one that took it. The rule is stored on each transfer, so changing it later does not rewrite past months, and **Reporting, Revenue by Branch** shows the result.
+
+If you also run vans that sell stock on the road rather than cooked food, the [van sales guide](/odoo-guides/odoo-van-sales/) covers driver cash and returns for a distributor. The next chapter turns to the kitchen's cost side: [recipes, food cost and owner reports](/odoo-guides/odoo-restaurant-recipe-food-cost/).

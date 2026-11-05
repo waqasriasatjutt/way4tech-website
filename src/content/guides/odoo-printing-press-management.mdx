@@ -1,0 +1,133 @@
+---
+title: "Odoo printing press management: estimating, job tickets and job costing for a commercial printer"
+metaTitle: "Odoo Printing Press Management"
+description: "Run a litho or digital print shop on Odoo 19 Community: imposition in the estimate, job tickets, proof approval, spoilage and estimated against actual."
+targetQuery: "odoo printing press management / print shop erp"
+category: "Industry"
+summary: "What a commercial printer needs from Odoo, why the standard apps do not cover it, and how one module carries a job from estimate to proof, press, despatch and invoice."
+published: 2026-12-03
+updated: 2026-12-03
+series: "odoo-printing-press-management"
+seriesOrder: 0
+modules:
+  - name: "Printing Press and Print Shop Management"
+    technical: "wt_printing_press"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://printing-demo.way4tech.com/"
+  label: "Printing press demo"
+related: ["odoo-construction-ra-bill-job-costing", "odoo-garage-management"]
+linkFrom: ["/solutions/printing-press/", "/industries/printing-press/", "/products/wt-printing-press/"]
+sources: []
+faqs:
+  - q: "Does Odoo have a printing press module out of the box?"
+    a: "No. Standard Odoo has Sales, Manufacturing, Inventory and Accounting, but nothing that works out how many pieces fit on a press sheet, how many plates a job needs, or what make-ready waste to allow. Those are what a print estimate is made of, and they need a module."
+  - q: "Does the printing module need Odoo Enterprise?"
+    a: "No. It is built for Odoo 19 Community and needs only the standard Inventory and Accounting apps, which install with it. It uses no Enterprise feature."
+  - q: "Can it price litho and digital work?"
+    a: "Yes. Each press is set up as sheet fed litho or digital. Litho is costed with plates, ink per thousand sheets and make-ready time. A digital press has no plates and is costed with a click charge per printed side."
+  - q: "Can customers approve proofs online?"
+    a: "Not through a portal. The proof record holds the version, the method, who it went to, who approved it and when, and the proof email and chasers go out from Odoo. Customer portal access to proofs is separate work, quoted on its own."
+  - q: "Does it buy paper or take it out of stock for each job?"
+    a: "No. A paper stock can be linked to an Odoo product so the sheets in stock show on the stock list, but the module does not raise purchase orders against jobs or move paper out of stock from the ticket. Purchasing and stock stay standard Odoo."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A print shop does not sell a product. It sells a specification that changes every time: a size, a page count, a quantity, a stock, colours on each side, a finish. So the estimate is the product, and a shop that prices from one person's spreadsheet is only as good as that person's memory of last year's paper price. The other half of the problem comes after the job runs. Paper, plates, press hours and the trade finisher's bill land in the ledger by month, never against the job, so nobody can say which quotes made money. This guide covers how a commercial printer can run both halves in Odoo 19 Community with one module, and points to the two chapters that walk through each half step by step.
+
+## What a commercial printer actually needs
+
+Leave the brochure language aside and a litho or digital shop needs a short list of things from its system:
+
+1. **An estimate that does the imposition.** How many finished pieces fit on the press sheet, with the gripper taken off and bleed added, how many sheets that means, how many plates, how much waste to allow for make-ready and running. If the estimator still works that out on paper and types in the answer, the system is only a price list.
+2. **Cost parts kept apart.** Paper, plates, ink or clicks, make-ready, run time and finishing each costed on their own, so the shop can see which one is eating a job.
+3. **Checks that catch the expensive mistakes.** A sheet that will not feed through the press, a four colour job on a two unit press, a saddle stitched book whose page count is not a multiple of four, grain running the wrong way on a fold.
+4. **A job ticket that carries the specification onto the floor,** through prepress, proofing, press, finishing and despatch.
+5. **A proof record that settles arguments.** Version, method, the named person who approved it and the time they did. Nothing goes on the press without one.
+6. **Spoilage booked with a reason,** and costed as paper plus ink plus the press time it took, because that is what it really costs.
+7. **Estimated against actual,** per job and per press, so the rates on the estimate get better over time.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community gives you Sales for quotations, Manufacturing for work centres and work orders, Inventory for paper and Accounting for the invoice. A shop can model some of print in those apps: a press as a work centre with an hourly cost, a paper as a product, a job as a sales order with a manufacturing order behind it.
+
+What none of them do is the print arithmetic. There is no imposition, no plate count per form and colour, no make-ready allowance per plate change, no click charge per side, no grain check and no quantity tolerance on delivery. A sales order line is a product times a quantity, and a print price is not built that way. There is also no proof approval step that blocks production, and no spoilage record with a reason and a stage. You can bolt custom fields on with Studio, but the refusals (no press without a proof, no despatch outside tolerance) need code. That is the gap the module fills.
+
+## The module and what it covers
+
+[Printing Press and Print Shop Management](https://apps.odoo.com/apps/modules/19.0/wt_printing_press/) (technical name `wt_printing_press`) is one module, USD 249, for Odoo 19 Community. It depends on Inventory and Accounting, which install with it, and adds a **Printing** app with four menus: Estimating, Shop Floor, Reporting and Configuration.
+
+| Area | Standard Odoo 19 Community | With the printing module |
+|---|---|---|
+| Quotation | Product times quantity | Built from imposition, paper, plates, ink or clicks, make-ready, run time, finishing and overhead |
+| Press as a resource | Work centre with an hourly cost | Press with units, sheet range, gripper, running speed, make-ready time and waste, plate cost, ink rate or click charge |
+| Paper | Product with a price | Stock with size, grammage, caliper, grain and finish, bought per sheet, ream or tonne |
+| Sheet and plate count | Not available | Up per sheet, forms, plates, passes, net and gross sheets |
+| Proof approval | Not available | Numbered proof versions, named approver, timestamp, press blocked until approved |
+| Spoilage | Scrap in Inventory, no reason by stage | Sheets spoiled by reason and stage, costed with ink and press time |
+| Reprints | Not available | Raised as their own job against the original, only after the cause is booked |
+| Delivery tolerance | Not available | Over or under run band, invoice at delivered quantity, despatch refused outside it |
+| Estimated against actual | Not available | Per job, per press and per month |
+
+The demo runs a commercial printer in the UK with three presses: a five colour sheet fed litho press, a two colour litho press and a digital toner press. The screenshots in this guide come from it.
+
+<Shot src="/odoo-guides/odoo-printing-press-management/presses.webp" alt="Presses list in the Odoo Printing app with a five colour and a two colour sheet fed litho press and a digital toner press, showing printing units, perfecting, running speed, make-ready minutes and sheets, press hour rate and utilisation" width={1440} height={900} caption="The press list: units, speed, make-ready and the hourly rate the estimate prices from." />
+
+## How a job moves through the shop
+
+The flow follows the way work moves in a print shop, and every step is a button that refuses to run when something is missing.
+
+**Set-up.** Presses, paper stock and finishing operations are set up once under Configuration. These are the numbers every price depends on, so they want the shop's real figures, not the figures on the manufacturer's brochure.
+
+**Estimate.** The estimator enters the finished size, pages, quantity, colours front and back, stock and press. The estimate imposes the job, costs each part and turns the cost into a sell price from a target margin. Send emails the quote and keeps a copy on the record. Customer Approved records the yes, and Open Job Ticket creates the job with the specification already on it. The [estimating chapter](/odoo-guides/odoo-print-estimating-imposition/) covers this in detail.
+
+**Job ticket.** The ticket walks through Prepress, Proofing, On Press, Finishing, Ready to Despatch, Delivered and Invoiced. A proof has to be approved before the job can go on the press. The operator books the sheet count and any spoilage off the press, finishing is booked off with the time it really took, and despatch is measured against the agreed tolerance before the invoice goes out at the delivered quantity. The [job tickets chapter](/odoo-guides/odoo-print-job-tickets-proof-approval/) covers this.
+
+The press board shows every live job as a card in its stage column, with the copies, sheets and press, and flags for late jobs, jobs with no approved proof and reprints. The board is for seeing, not for moving: dragging a card to another column is refused, because a job dragged into Delivered would skip the count and the tolerance check. Jobs move with the buttons on the ticket.
+
+<Shot src="/odoo-guides/odoo-printing-press-management/press-board.webp" alt="Press Board kanban in Odoo with job ticket cards in Prepress, Proofing, On Press and Finishing columns, each showing copies, sheets, press and Late, No proof or Reprint tags" width={1440} height={900} caption="The press board: one column per stage, with late, no proof and reprint flags on the cards." />
+
+## What it tells you afterwards
+
+Every finished job sets what it actually cost against what it was estimated at: paper used, press time and finishing, each from the records booked on the floor. The Reporting menu rolls that up.
+
+- **Estimated against actual** by press and by month, with the variance.
+- **Waste by reason,** grouped by reason, stage and press, so a fault that keeps coming back shows as a number.
+- **Reprints,** what they cost and what caused them.
+- **Estimating win rate:** estimates won, lost and expired, with the reason they were lost. An estimate cannot be marked lost without a reason.
+- **Press utilisation** on each press record: hours booked in the last thirty days against the hours available.
+
+In the demo month, the five colour press ran about 314 pounds over estimate on just under 3,000 pounds of estimated cost, most of it make-ready. That is the kind of figure that tells an estimator which rate to move.
+
+<Shot src="/odoo-guides/odoo-printing-press-management/estimated-against-actual.webp" alt="Estimated Against Actual pivot report in Odoo showing estimated cost, actual cost and cost variance per press for August 2026" width={1440} height={900} caption="Estimated against actual cost by press for one month." />
+
+## Shop-wide settings
+
+Under **Printing, Configuration, Settings** you set the defaults every new estimate starts from: running spoilage as a percentage of net sheets, target margin (on the sell price, not a mark-up on cost), overhead recovery as a percentage of direct cost, bleed and gutter in millimetres, and how many days an estimate stays valid. A second block covers the press: whether a job can go on press without an approved proof, how many days a proof sits with the customer before it is chased, and when the shift starts.
+
+Each site can carry its own margin, and each estimate can override any default. One company can run several sites, each with its own presses and margin.
+
+<Shot src="/odoo-guides/odoo-printing-press-management/settings.webp" alt="Printing settings page in Odoo with running spoilage, target margin, overhead recovery, bleed and gutter, estimate validity, no press without approved proof, proof chase days and shift start" width={1440} height={900} caption="The defaults every estimate starts from, and the proof rule for the press." />
+
+<Callout title="Three scheduled jobs ship switched off">Closing off expired estimates, chasing proofs that sit with the customer, and invoicing despatched jobs all run as scheduled actions, and all three are installed inactive. Turn them on under Settings, Technical, Scheduled Actions (developer mode) once your outgoing mail server works and you are happy with the defaults.</Callout>
+
+## Who can see what
+
+The module adds three groups. A **Press Operator** works the tickets on the floor, books sheets, spoilage and finishing, and sees no costs, rates or margins. An **Estimator** prices work and sees every job on the floor. A **Print Manager** sees everything, including sites, presses, finishing rates, invoicing, reprints and reporting. Give the pressroom the operator group before go-live, not after somebody has opened the margin column.
+
+## Chapters in this guide
+
+1. [Print estimating and imposition in Odoo](/odoo-guides/odoo-print-estimating-imposition/): presses, paper and finishing set-up, the specification, the cost build-up, the margin and sending the quote.
+2. [Job tickets, proofs and production in Odoo](/odoo-guides/odoo-print-job-tickets-proof-approval/): the ticket stages, proof approval, the press, spoilage and reprints, finishing time, tolerance on despatch and the invoice.
+
+## Limits
+
+These are things the module does not do, so nobody finds out after buying it:
+
+- **No web to print front end** and no customer portal for proofs. Both are separate work.
+- **No purchasing against jobs.** Paper and trade finishing are not bought from the ticket, and paper is not issued out of stock by the job. Buy and receive in standard Purchase and Inventory.
+- **No press or RIP connection.** Sheet counts come from the operator reading the press counter, not from the press.
+- **No scheduling engine.** The board shows where each job is, and booking a job on press puts it at the start of the next shift, but there is no capacity planner moving jobs between presses for you.
+
+The fastest way to judge it is to open the [demo](https://printing-demo.way4tech.com/), or the [demo directory](/demos/), and run a job from a blank estimate to an invoice. It takes about fifteen minutes.

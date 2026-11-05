@@ -1,0 +1,119 @@
+---
+title: "Permit to work in Odoo: hot work, confined space, electrical isolation and working at height"
+metaTitle: "Permit to Work in Odoo"
+description: "Run permit to work in Odoo 19: work blocked until a second person issues the permit, checks per permit type, a time window, hand back and automatic expiry."
+targetQuery: "odoo permit to work"
+category: "Industry"
+summary: "How the Facility Management module turns a permit from a form into a control: the job cannot start without it, the requester cannot issue it, and it has to be handed back."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 4
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Facility Management CAFM demo"
+related: ["odoo-construction-ra-bill-job-costing", "odoo-labour-camp-management"]
+faqs:
+  - q: "Does Odoo have a permit to work feature?"
+    a: "Not in the standard apps. Odoo 19 Maintenance has no permit records and nothing that stops a maintenance request from starting. The Facility Management module adds permits linked to the job, with Start Work refused until the right permit is issued."
+  - q: "Can the person who raised a permit also issue it?"
+    a: "No. Issue is refused when the person issuing is the person who requested it, whatever their role. Only a Maintenance Supervisor or Facility Manager can issue."
+  - q: "What happens when a permit runs out mid job?"
+    a: "Every 30 minutes the system checks open permits. One whose window has passed moves to Expired and a note goes on the job. It still has to be handed back, or reset to draft and issued again for a fresh window."
+  - q: "Can a job be closed while its permit is still live?"
+    a: "No. A job cannot be completed or cancelled while its permit is issued. The permit has to be handed back with a note first."
+  - q: "Is there a digital signature or an isolation lock register?"
+    a: "No signature pad. Who requested, issued and handed back is stamped from their Odoo login. Electrical isolation records the isolation point and a Locked and Tagged tick; there is no separate lock register."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A permit to work is the control that keeps people alive during the most dangerous jobs on an estate: cutting and welding near combustibles, entering a tank, working on a switchboard, working on a roof edge. On paper, the failure is always the same. The permit exists, but the job started before it was signed, or the person doing the work signed it themselves, or it was never closed and the isolation stayed on. A system that only stores the permit as a document does not fix any of that. It has to stop the work.
+
+That is how the Facility Management module for Odoo 19 treats it. This chapter walks through an electrical isolation permit on the demo estate: a breaker on a sub board keeps tripping, and the electrician has to isolate a section of the main distribution board in the basement switch room to replace it.
+
+## When a permit is needed
+
+A job needs a permit when its **Permit Type** is Hot Work, Confined Space, Electrical Isolation or Working at Height, or when it is raised in a room marked **Permit Needed in This Room**. That second route matters: set it once on a roof deck or a tank room and every job raised there needs the permit, even when the person logging the fault forgets.
+
+With **Permit Before Work Starts** on in Settings (it is on for new installs, and should stay on), Start Work is refused until a permit of the right type is issued and the job falls inside its window. The refusal says exactly why: wrong permit type, window not open yet, permit ran out, or none issued.
+
+<Shot src="/odoo-guides/odoo-permit-to-work/job-blocked.webp" alt="Work order in Odoo in the Assigned state with a red banner saying this is permit work and nothing starts until an Electrical Isolation permit has been issued and is inside its window, a blue restricted room banner, and buttons Start Work and Raise a Permit" width={1600} height={729} caption="Assigned but blocked: the red banner names the permit the job needs." />
+
+If the setting is turned off, the banner turns amber and says a permit is needed but the setting lets work start. At that point the permit is a record, not a control. Leave the setting on.
+
+## Step 1. Raise the permit
+
+On the job, press **Raise a Permit**. A new permit opens with the job, permit type, site, building, room, asset and technician filled in, and an eight hour window starting now.
+
+1. Adjust **Valid From** and **Valid To** to the real working window.
+2. Under Who Is Covered, check the technician or contractor and list everybody in **People Working**. A permit is issued to named people, so the assistant goes on it too.
+3. Under Paperwork, type the **Risk Assessment** and **Method Statement** references.
+4. Under **Precautions Taken**, write what has actually been done to make the job safe.
+5. Fill in the section for the permit type, then save.
+
+| Permit type | What it demands |
+|---|---|
+| Hot Work | The fire watch period, in minutes after the last spark. |
+| Confined Space | The oxygen reading, the gas test time and the standby person at the entry. |
+| Electrical Isolation | The isolation point, and Locked and Tagged ticked once the padlock is on. |
+| Working at Height | The anchor point or edge protection. |
+
+<Shot src="/odoo-guides/odoo-permit-to-work/permit-filled.webp" alt="Draft electrical isolation permit in Odoo linked to the work order, with valid from and to an eight hour window, site, building, main switch room and main distribution board, technician and two named people working, risk assessment and method statement references and requested by" width={1600} height={1373} caption="The permit filled in, with both people working named on it." />
+
+## Step 2. Send for issue
+
+Press **Send for Issue**. The permit moves to Requested. If the precautions, the risk assessment or the people working are missing, one message lists everything still to fill in, rather than refusing one field at a time.
+
+## Step 3. Issue, by somebody else
+
+A Maintenance Supervisor or Facility Manager who did not request the permit opens it, from **Help Desk, Permits to Work** or from the Permits button on the job, goes to the plant and checks the precautions on the ground. Then they press **Issue**, and the system asks them to confirm that they have.
+
+<Shot src="/odoo-guides/odoo-permit-to-work/issue-confirm.webp" alt="Confirmation dialog in Odoo asking: issuing a permit says the work has been made safe, have you checked the precautions on the ground, with Ok and Cancel buttons" width={1400} height={520} caption="The question every issuer has to answer before the permit goes live." />
+
+On Ok, the permit is Issued, with **Issued By** and **Date Issued** stamped and **Hours Left** counting down, and a note goes on the job. Issue is refused when:
+
+- the person issuing is the person who requested it;
+- a check for the permit type is missing (fire watch, gas test, standby person, isolation point and lock, anchor point);
+- nobody is assigned to the job;
+- the contractor on it is unapproved, suspended or uninsured;
+- the window has already passed.
+
+The first rule is the one that matters most. A permit you sign for yourself is checking your own homework. The second pair of eyes is the whole control, so the module refuses it whatever the requester's role, a Facility Manager included.
+
+## Step 4. Start the work
+
+Back on the job, **Start Work** now goes through and the red banner disappears while the permit is live.
+
+## Step 5. Hand back
+
+The job is not finished until the area is handed back. A job cannot be completed or cancelled while its permit is still issued.
+
+1. Open the permit.
+2. In the Handback section, write the **Handback Note**: what state the area was left in, and that the isolation and guards are back as they were.
+3. Press **Hand Back**. The permit is Closed, Closed By and Date Closed are stamped, Locked and Tagged is cleared, and the handback note is posted on the job.
+4. Go back to the job and complete it as usual.
+
+<Shot src="/odoo-guides/odoo-permit-to-work/handed-back.webp" alt="Closed electrical isolation permit in Odoo with the chatter showing it was created, requested, issued by a different user, then handed back with a note that the breaker was replaced and tested, lock and tag removed, section re-energised and the switch room left locked" width={1600} height={622} caption="Closed with a handback note. The chatter shows who requested, who issued and who handed back." />
+
+A permit still in draft or requested when its job completes is cancelled, never shown as closed, so the register only shows a closed permit for work that was done under it.
+
+## Expiry
+
+Every 30 minutes the system checks open permits. One whose window has passed moves to **Expired**, and a note goes on the job telling everyone to re-issue it before anybody goes back. An expired permit still has to be handed back, or reset with **Reset to Draft** and issued again for a fresh window. This check is active from install; it does not wait for an administrator to switch it on.
+
+## The register and the paper copy
+
+**Help Desk, Permits to Work** opens on the permits open now. Remove the Open filter to see the full register: type, job, window, who issued each one and how it ended. **Print** on a permit produces the paper copy for the permit board at the plant room door, which is still how most sites show that work is live.
+
+<Callout title="What the permit module does not do">There is no signature pad, no photo of the isolation and no QR scan at the door. Who did what comes from the Odoo login of the person pressing the button, so shared logins defeat the control. Isolation is one point and a lock tick, not a lock and key register. Your own safety procedures still decide what the precautions must be: the module checks that they were written down and that a second person issued the permit, not that the precautions were adequate.</Callout>
+
+## Making it stick on site
+
+Two habits make permits work in practice. Give every supervisor their own login, because the second person rule only means something when the system knows who is pressing Issue. And check the register every morning for anything expired and not handed back: an expired electrical isolation that was never handed back means nobody has recorded that the board was made live again.
+
+Permits sit on top of the job, so read the [work orders chapter](/odoo-guides/odoo-help-desk-work-orders-facility/) for the job side, and the [contractors chapter](/odoo-guides/odoo-maintenance-contractor-management/) for why an uninsured contractor is refused at issue. The full permit flow can be tried on the [CAFM demo](https://facility-demo.way4tech.com/).

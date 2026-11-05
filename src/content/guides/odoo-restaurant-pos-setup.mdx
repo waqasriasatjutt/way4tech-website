@@ -1,0 +1,161 @@
+---
+title: "Setting up a restaurant in Odoo 19 POS: branches, registers, staff PINs, floors and the menu"
+metaTitle: "Set Up a Restaurant in Odoo 19 POS"
+description: "Set up a restaurant on Odoo 19 in the right order: setup wizard, branches, registers and PIN rules, staff roles, floors, modifiers and timed menus."
+targetQuery: "odoo restaurant pos setup"
+category: "Industry"
+summary: "The order to set up a new restaurant on Odoo 19 with the Restaurant Suite: the eight step wizard, then branches, registers, staff, floors and the menu by hand, with a go-live checklist."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 1
+modules:
+  - name: "Way4Tech Restaurant Suite"
+    technical: "w4_resto_suite"
+    note: "USD 999, brings the setup wizard"
+  - name: "Restaurant Suite Base"
+    technical: "w4_resto_base"
+    note: "Free: branches, roles, PINs, registers"
+  - name: "Restaurant Menu Engineering"
+    technical: "w4_resto_menu"
+    note: "USD 99, modifier groups, sizes, timed menus, allergens"
+  - name: "Restaurant Table Operations"
+    technical: "w4_resto_table_ops"
+    note: "USD 99, floor sections"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: ["fbr-pos-integration-odoo"]
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+faqs:
+  - q: "In what order should I set up a restaurant in Odoo?"
+    a: "Branches first, then one register per branch, then staff with their roles and PINs, then floors and tables, then the menu, then kitchen stations and printers, then payments and tax. Each step needs the one before it: a register needs a branch, a kitchen screen needs product categories."
+  - q: "Is it safe to run the setup wizard on a restaurant that is already live?"
+    a: "The wizard creates nothing twice, but it can load the sample menu and add printers if those steps are applied. On a live restaurant, skip the Menu and Printers steps or set those up by hand."
+  - q: "Does every waiter need an Odoo user?"
+    a: "Each person gets a staff record with a role, a branch and a 4 to 6 digit POS PIN, and one button on the staff form creates the login. The role sets the access rights, so a branch manager never needs to open Odoo's user settings."
+  - q: "Can the menu change by time of day?"
+    a: "Yes. A menu is a set of categories with a weekly schedule and an optional price list. The till switches menus on its own every minute, so a breakfast menu disappears at 11:00 and a happy hour price list applies only inside its hours."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most restaurant systems that go wrong in the first month were set up in the wrong order. A till is created before the branch it belongs to, so its sales report under nothing. Waiters share one login, so the void report is useless. The menu is typed before the kitchen stations, so half the dishes go to no screen on the first night. The setup is not hard, but each step depends on the one before it. This chapter goes through it in the order I follow when a restaurant goes live on Odoo 19 with the [Restaurant Suite](/odoo-guides/odoo-restaurant-management/).
+
+The order is: branches, registers, staff, floors, menu, kitchen, money, then the extras such as delivery, online orders, stock and loyalty. Kitchen stations and printers have their own chapter, [kitchen display and printing](/odoo-guides/odoo-kitchen-display-system/). Payments and tax are in [payments and closing the day](/odoo-guides/odoo-restaurant-cashier-day-close/).
+
+## Start with the setup wizard
+
+**Restaurant, Configuration, Setup Wizard** is the fastest start for a new restaurant. It asks eight questions (branches, points of sale, printers, floor plan, menu, staff, kitchen, done) and builds the basic records that the rest of this chapter describes. Every step can be skipped, and running it again creates nothing twice. **Run every step now** checks all the steps first and then applies them with the values on screen.
+
+1. **Branches.** One line per outlet: name, a short code such as GUL or DHA, city, phone, and the latitude and longitude if you know them. The code prints on receipts, kitchen tickets and reports, so keep it short. Coordinates can wait, but delivery zones and the call center need them later.
+2. **Points of sale.** One register per branch, each with its own cash drawer and cash journal, plus Takeaway and Delivery presets. Two registers never share a cash method, so each drawer is counted on its own.
+3. **Printers.** The address of the print server and the Windows names of the kitchen and receipt printers. Leave it empty if the kitchen uses screens only.
+4. **Floor plan.** A floor per branch with the number of tables and seats per table. You can add tables later; the wizard never removes one.
+5. **Menu.** Start empty, or load a sample menu and sample modifier groups to practise before the real menu is typed.
+6. **Staff.** Name, login, role, POS PIN and branch for each person. Empty passwords and PINs are generated and shown once on the last screen.
+7. **Kitchen** creates one kitchen station per branch, and **Done** shows what the restaurant now has, with the generated passwords and PINs to hand out.
+
+<Shot src="/odoo-guides/odoo-restaurant-pos-setup/setup-wizard-branches.webp" alt="Restaurant Setup wizard in Odoo 19 on the Branches step with two branches, Gulberg GUL and DHA Phase 6 DHA in Lahore, with phone, latitude and longitude, and the steps Points of Sale, Printers, Floor Plan, Menu, Staff, Kitchen and Done" width={1600} height={792} caption="Step one of the wizard: one line per branch with a short code and, if known, its coordinates." />
+
+<Callout title="Running the wizard on a live restaurant">The wizard is safe to run again, but applying the Menu step loads the sample menu and applying the Printers step adds printers. On a restaurant that already trades, skip those two steps and change them by hand.</Callout>
+
+## Branches
+
+**Restaurant, Configuration, Branches.** A branch is one outlet. Every order, table, printer, rider, report and stock count belongs to a branch, and a branch manager sees only their own. That wall is the reason to set branches up properly even for a two-outlet business.
+
+| Field | What it does |
+|---|---|
+| Code | Short name on tickets, receipts and reports. Must be unique. |
+| Address, latitude, longitude | Used by delivery zones, routing to the nearest branch and the call center. |
+| Time zone | Menus, reports and opening hours of the branch use it. |
+| Opening hours | Per weekday. A window past midnight, such as 11:00 to 01:00, is allowed. Online orders and the call center check it. |
+| Managers | Who approves for this branch and receives its alerts: low stock, bad ratings, transfers. |
+| Warehouse | The branch's own stock, created if missing, so counts and stock stay per branch. |
+| Reservations tab | Booking length, slots, no-show grace, reminders, deposits and closed days. |
+| Incoming transfers | Accept orders from other branches on the spot, or ask a manager first. |
+
+<Shot src="/odoo-guides/odoo-restaurant-pos-setup/branch-form.webp" alt="Odoo branch form for Gulberg GUL with address, phone, example email, coordinates, Asia Karachi time zone, warehouse, kitchen consumption location, manager Ayesha Khan and opening hours from 11:00 to 01:00 every day" width={1600} height={1000} caption="A branch: address, coordinates, time zone, managers, warehouse and opening hours that run past midnight." />
+
+## Registers and the PIN rules
+
+Open **Restaurant, Configuration, Points of Sale**, pick a register and scroll to the **Restaurant Suite** block. Every option that works per till sits here, grouped by module. The most important line is **Branch**: without it the Online, Deliveries and Waitlist buttons do not show on that till.
+
+The PIN rules decide which actions need a manager to type their PIN. The demo turns most of them on:
+
+- **Discount limit (%).** Any discount above it, and any 100 percent discount, needs a reason and a manager PIN. The demo uses 0, so every discount is approved.
+- **PIN to void a fired line** and **PIN to cancel a sent order.** Food the kitchen already has cannot disappear without a manager.
+- **Manager PIN to change a price.** A price typed by hand needs a reason and a manager.
+- **PIN to refund** and **PIN to reopen a paid order.** Money going back out needs a manager.
+- **PIN to transfer or merge tables** and **PIN to transfer to another branch.** Both on in the demo. A manager moving a table is not asked for a PIN.
+- **PIN to change the waiter.** Off in the demo, because shift changes happen every day.
+- **86 list: managers only.** Only a manager can mark a dish sold out from the till.
+
+Below the PIN rules are the waiter settings (back to the floor after sending, group lines by seat, sound on food ready), the bill settings (service charge rate, from how many guests, tips, equal split parts), the phone and tablet layout, which timed menus the till shows, the receipt and report printers, and the fiscal configuration.
+
+<Shot src="/odoo-guides/odoo-restaurant-pos-setup/register-restaurant-options.webp" alt="Odoo Point of Sale settings for Restaurant Gulberg showing the Restaurant Suite block: branch, brand colour, discount limit, manager PIN required for voiding a fired line, refund, reopening a paid order, transfer to another branch and cancelling a sent order, order taker and table operation options and a 10 percent service charge" width={1600} height={1000} caption="The Restaurant Suite block of a register: branch, discount limit and the manager PIN rules." />
+
+## Staff, roles and PINs
+
+**Restaurant, Configuration, Staff** is the one screen for people. The role chosen here sets the access rights, and one button creates the Odoo login, so a branch manager never has to touch Odoo's Users settings.
+
+| Role | Can do | Cannot do |
+|---|---|---|
+| Waiter | Open tables, take orders, send to the kitchen, print the bill, run the waitlist | Take payment, move cash, close the till |
+| Cashier | Everything a waiter does, plus payments, the deliveries page and online orders | Approve voids, change settings |
+| Branch manager | Everything a cashier does, plus PIN approvals, configuration, reports and staff of the branch | See other branches |
+| Owner | Every branch, every report and setting; only an owner makes someone an owner | |
+| Kitchen | Kitchen screens, tickets, wastage sheets, stock counts | Take orders or money |
+| Rider | My Deliveries on the phone | Anything else |
+| Call center agent or supervisor | The console, calls and complaints; supervisors also see the supervisor board | Take payment |
+
+The **POS PIN** is 4 to 6 digits and belongs to one person. It logs them in at the till, clocks them in and out, and, for people ticked **Can approve with PIN**, approves voids, refunds, discounts and transfers. The PIN is checked on the server and never sent to the till, so it cannot be read from a tablet.
+
+<Shot src="/odoo-guides/odoo-restaurant-pos-setup/setup-wizard-staff.webp" alt="Staff step of the Odoo restaurant setup wizard with three lines, Branch Manager, Cashier and Waiter, each with login, password, role, POS PIN, replace PIN and branch columns" width={1600} height={792} caption="Staff in the wizard: a role per person; empty passwords and PINs are generated and shown once." />
+
+## Floors, tables and sections
+
+**Restaurant, Configuration, Floors and Tables** holds the floors of each register, and the tables themselves are drawn on the plan in the till with Edit plan, the same as standard Odoo. The suite adds **sections**: a group of tables for one waiter or one area, such as Main Hall, Terrace or Family Hall. Sections colour the plan, let a waiter filter to their own tables with the chips under the plan, and send food-ready alerts only to the waiters of that section. Set them up in **Configuration, Floor Sections** with the floor, branch, colour and waiters.
+
+## The menu
+
+The menu is built from ordinary Odoo products and POS categories, so nothing is locked inside a module. Menu Engineering adds the restaurant rules on top. Work through it in this order.
+
+**Dishes.** In **Restaurant, Configuration, Products** set the name, price, POS category (Food, Drinks, Desserts), tax and picture. On the Point of Sale tab add a **kitchen name**, the short text the cook reads, such as "PZ FUNGHI", plus allergens and a dietary tag. A dish with a recipe should not track its own stock: untick Track Inventory and let the recipe do it, as the [food cost chapter](/odoo-guides/odoo-restaurant-recipe-food-cost/) explains.
+
+**Modifier groups.** In **Configuration, Modifier Groups** a group is a set of choices with a minimum and maximum: Sauce, choose exactly one; Extras, up to three, each with its own price; Spice level. **Apply** adds a group to chosen dishes or a whole category at once. The till keeps Add switched off until the choice is inside the limits, so the kitchen never gets a pizza without its sauce.
+
+<Shot src="/odoo-guides/odoo-restaurant-pos-setup/modifier-groups.webp" alt="Modifier Groups list in Odoo with Sauce as radio choose one, Topping as pills choose one and Extras as multi checkbox up to three, with kitchen labels, values and the number of products each applies to" width={1600} height={270} caption="Modifier groups with a minimum, a maximum and a kitchen label, applied to products in one click." />
+
+**Sizes.** On a product, **Add sizes** creates Small, Regular and Large with their own price difference. Do it before the dish is first sold.
+
+**Menus and times.** In **Configuration, Menus** a menu is a set of categories, an optional price list and a weekly schedule. The demo runs Breakfast from 07:00 to 11:00, Happy Hour from 17:00 to 19:00 with its own DHA price list, and Late Night from 23:00 to 02:00, on top of All Day. The till checks the time every minute and switches without a reload, so at nine in the morning a waiter sees only Breakfast and Drinks.
+
+<Shot src="/odoo-guides/odoo-restaurant-pos-setup/timed-menus.webp" alt="Menus kanban in Odoo with Breakfast, Happy Hour, Late Night and All Day, each showing its weekly hours, categories and the branches it applies to, and a Happy Hour DHA price list" width={1600} height={300} caption="Timed menus: each with its hours, categories, branches and, for happy hour, its own price list." />
+
+**Allergens.** In **Configuration, Allergens** give each allergen a name, short code and colour. The chips, such as D for dairy, G for gluten and N for nuts, show on every tile and in the dish card, so a waiter can answer a guest without walking to the kitchen.
+
+A few more tools sit on the product: **half and half** (the guest picks two halves, the dearer half sets the price and the kitchen reads "1/2 Tikka, 1/2 Fajita"), **deal windows** (a deal shows on the till only inside its hours and days), Odoo's own **combos**, and **POS Favourites** for the star chip that opens the till.
+
+## Company settings
+
+**Restaurant, Configuration, Settings** holds what applies to the whole company, one block per module: the default branch and print server address, the default PCT code for fiscal receipts, how guest messages are sent, the Z report at closing, birthday coupons and the feedback QR, geocoding for delivery, call center routing, and which branch reports the revenue of a transferred order.
+
+<Callout title="Settings need an administrator login">The Owner role can see Restaurant, Configuration, Settings in its menu, but opening it currently ends in an access error. Change company settings with an Odoo administrator login until this is fixed. Everything else in this chapter works with the Owner or Branch manager role.</Callout>
+
+## Go-live checklist
+
+- Every branch has its code, address, time zone and opening hours.
+- Every register has its branch and the PIN rules the owner wants.
+- Every person has a role, a branch and a POS PIN, and managers can approve.
+- Floors match the real room and sections have their waiters.
+- The full menu is in, with kitchen names, modifiers and allergens.
+- A test order from each register reaches every kitchen screen or printer.
+- A test receipt prints, the drawer opens and the bill shows the service charge.
+- Wallet methods carry the real merchant numbers, and cash denominations match the local currency.
+- The fiscal provider is out of sandbox where the law requires it. The [FBR POS guide](/odoo-guides/fbr-pos-integration-odoo/) covers what that involves in Pakistan.
+- A test session is opened, paid and closed, its Z report checked, then the test orders are cancelled.
+
+The next chapter, [the waiter app, courses and split bills](/odoo-guides/odoo-pos-waiter-app-split-bill/), shows what the waiter does with all of this on the first night.

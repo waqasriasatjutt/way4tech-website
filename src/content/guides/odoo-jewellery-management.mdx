@@ -1,0 +1,130 @@
+---
+title: "Odoo jewellery management: the gold rate, the counter, the bench and stock by weight"
+metaTitle: "Odoo Jewellery and Gold Management"
+description: "Run a jewellery shop on Odoo 19 Community: daily gold rate by purity, making and wastage, HUID checks, old gold buy-back, repairs, memos, stock in grams."
+targetQuery: "odoo jewellery management"
+category: "Industry"
+summary: "What a jeweller needs from Odoo, why standard Sales and Inventory price a ring wrongly, and how one module runs the rate, the counter, old gold, the bench, memos and stock by weight."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-jewellery-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-jewellery-management.pdf"
+  pages: 38
+modules:
+  - name: "Jewelry Management"
+    technical: "wt_jewelry_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://jewelry-demo.way4tech.com/"
+  label: "Jewellery demo (Al Nour Jewellers)"
+related: ["uae-e-invoicing-odoo", "zatca-e-invoicing-odoo-community"]
+linkFrom: ["/industries/jewellery-retail/", "/solutions/jewellery-retail/", "/products/wt-jewelry-management/"]
+sources: []
+faqs:
+  - q: "Can standard Odoo price jewellery from the daily gold rate?"
+    a: "Not out of the box. Sales and Inventory price a product from a fixed sales price or a pricelist. Nothing in standard Odoo knows a piece's net metal weight, its purity, a making charge per gram or the rate for the day, so a ring would carry last month's price until somebody edits it."
+  - q: "Does the jewellery module need Odoo Enterprise?"
+    a: "No. Jewelry Management runs on Odoo 19 Community with the Inventory and Accounting apps, which it installs for you. It also runs on Enterprise."
+  - q: "Is there a live gold price feed?"
+    a: "No. The rate is typed in each morning, from the bullion market, a trade association fix or a supplier quote, and the source is recorded on the row. A scheduled job can copy yesterday's rate forward so the counter never opens blank, and the copy is marked as carried."
+  - q: "Does it work for silver and platinum?"
+    a: "Yes. Gold, silver and platinum come set up, each with its own purities, rate and buy-back margin. You can add more metals and purity standards from the Configuration menu."
+  - q: "Is it a till or Point of Sale screen?"
+    a: "No. A counter sale is a backend ticket with Confirm and Invoice buttons, invoiced through Odoo Accounting. It does not connect to Odoo POS, a cash drawer, a card terminal or a receipt printer. The estimate prints as an A5 PDF."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A jewellery shop has almost nothing with a fixed price. The same 22 karat bangle is worth one figure on Monday and another on Thursday, because the gold in it moved, not because anyone touched it. So the counter does arithmetic all day: the weight of metal, times the rate for that purity on the day, plus a making charge, plus wastage, plus whatever stones are set in it. When that arithmetic lives on a calculator and a whiteboard, two customers get two prices for the same design, buy-backs are credited on trust, and the tray weighs less than the book without anyone noticing. This guide explains what a jeweller needs from Odoo, what standard Odoo does not cover, and how the Jewelry Management module runs the shop on Odoo 19, chapter by chapter.
+
+## What a jewellery shop actually needs
+
+Strip it down and a jeweller needs six things from the system:
+
+1. **One rate a day that prices everything.** The shop enters the fine rate for the metal, and 22K, 18K and every other purity are priced from it by fineness.
+2. **A piece priced in four parts.** Metal, making, wastage and stones, kept apart on the ticket, the invoice and the reports, because they earn very differently.
+3. **Old gold credited on the test, not the stamp.** What the customer claims and what the touchstone or XRF says are two different numbers, and the gap needs a name against it.
+4. **Metal that adds up at the bench.** The customer's metal goes in, a finished piece and some filings come out, and the difference has to be explained before the job is handed back.
+5. **Goods out without being sold.** Approvals, salesman memos and exhibitions, each signed for at the value on the day the goods left.
+6. **Stock counted in grams.** A tray of forty rings can still hold forty rings and be three grams light. Only a count by weight shows it.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community gives you Sales, Inventory and Accounting. A product has a sales price, can be tracked in stock, and is invoiced with taxes. That is enough for a shop that sells boxed goods at a list price.
+
+For a jeweller it misses most of the list above:
+
+- No daily metal rate, no purity or fineness, and no way to price a product off a rate rather than a fixed price.
+- No gross, stone and net metal weight on the product, and no making charge or wastage.
+- No hallmark or HUID number on a piece, and nothing that stops a heavy piece selling without one.
+- No old gold buy-back with a purity test and a buy-back margin.
+- No repair job card that weighs the customer's metal in and out.
+- No memo issue, no stone certificate register, and no stock count in grams priced at today's rate.
+
+You could add fields with Studio on Enterprise, but the rules (refuse to sell without an HUID, refuse to hand back a job with unexplained loss, refuse to let a big memo out without a manager) need code. That is what the module adds.
+
+## How a piece is priced
+
+Everything else in the module follows from this one calculation, so it is worth seeing once.
+
+Every piece has three weights. The **gross weight** is what it weighs on the scales, stones and all. The **stone weight** is everything set into it that is not metal. The **net metal weight** is gross less stones, and that is the weight the gold rate is charged on, because nobody pays the gold rate for an emerald.
+
+Purity is stated two ways. Karat is parts of gold out of 24, so 22K is 22 parts in 24. Fineness is the same thing as a fraction, so 22K is 0.916, which is why the trade also calls it 916. The shop enters one rate, normally against the fine standard (999), and the module works out every other purity of that metal by its fineness. If the shop quotes 22K at a different number than the ratio gives, it can enter a rate against that purity directly and that rate wins.
+
+<Shot src="/odoo-guides/odoo-jewellery-management/purity-standards.webp" alt="Purity Standards list in the Odoo jewellery module showing gold 999, 916, 875, 750, 585 and 375, silver 999 and 925 and platinum 950 with karat, fineness, bullion and assay office flags and today's rate per gram" width={1500} height={535} caption="One fine rate entered, every purity priced from it. The column on the right is what each comes to today." />
+
+On top of the metal sit three more charges:
+
+| Part | How it is worked out |
+|---|---|
+| Metal | Net weight times the rate for that purity on the rate day |
+| Making | Per gram for handwork, a percentage of the metal value for machine chain and imported pieces, or a fixed amount for a piece bought in finished |
+| Wastage | A percentage of the weight, priced at the same rate, for metal lost at the bench |
+| Stones | Taken from the stones listed on the piece |
+
+The module keeps those four apart all the way through. The metal is passed on close to cost; the making charge and the stones are where a shop earns its margin, and the reports show it.
+
+<Shot src="/odoo-guides/odoo-jewellery-management/printed-bill.webp" alt="Printed jewellery bill from Odoo showing a 22K bridal necklace set with net weight, rate per gram, metal, making, wastage and stone amounts, VAT, old gold credited and the amount to pay" width={1280} height={420} caption="The printed bill keeps the four parts apart, then takes the old gold credit off what is left to pay." />
+
+## The module, the price and what it covers
+
+[Jewelry Management](https://apps.odoo.com/apps/modules/19.0/wt_jewelry_management/) (technical name `wt_jewelry_management`) is USD 299, built for Odoo 19 Community. It installs Inventory and Accounting with it and adds one menu, Jewellery, with five areas:
+
+| Menu | What lives there |
+|---|---|
+| Counter | Sales tickets, Old Gold Exchange, Rate Board |
+| Workshop | Repairs and Custom Orders, My Bench |
+| Stock | Jewellery Items, Approval and Memo, Count Sheets, Stone Certificates |
+| Reporting | Margin Split; Metal, Making and Stones; Stock by Weight; Metal Reconciliation |
+| Configuration | Settings, Counters, Metal Rates, Metals, Purity Standards, Stone Types |
+
+Three groups decide who sees what. **Counter Sales** sells, takes in old gold and repairs, issues memos and counts the tray. **Goldsmith** sees only the jobs on their own bench, with no rights on tickets, rates or the books. **Jewellery Manager** sees everything, including the settings, the rate table, the reports, and the approvals on large memos.
+
+<Shot src="/odoo-guides/odoo-jewellery-management/margin-split.webp" alt="Margin Split pivot report in Odoo showing amount metal, amount making, amount stone and net metal grams by month for the Al Nour Jewellers Gold Souk counter" width={1500} height={382} caption="Margin Split: metal, making and stones by month, with the grams sold alongside." />
+
+## The chapters
+
+Each chapter is one job in the shop, step by step, with screenshots from the live demo:
+
+1. [Gold rate, purity and making charges](/odoo-guides/gold-rate-making-charges-odoo/): the eight shop settings, metals and buy-back margins, purity standards, counters, the daily rate table and setting up a jewellery item with its weights, making charge, HUID and stones.
+2. [Counter sales, VAT and old gold](/odoo-guides/odoo-jewellery-counter-sales-old-gold/): raising a ticket, how each line prices itself, the hallmark check on confirm, VAT on the making charge only, and taking old gold in on the tested purity.
+3. [Repair job cards and approval memos](/odoo-guides/jewellery-repair-job-card-odoo/): repairs and custom orders with the metal reconciled in and out, the goldsmith's bench, and goods out on approval or memo.
+4. [Stock by weight, certificates and reports](/odoo-guides/jewellery-stock-count-by-weight-odoo/): counting the tray in pieces and grams, the stone certificate register, and the four reports an owner reads.
+
+The full 38 page guide is also a PDF download on this page, with every screen.
+
+## How to get started
+
+1. Install Jewelry Management from Apps. Inventory and Accounting come with it.
+2. Open **Jewellery, Configuration, Settings** and decide the VAT basis, the hallmark weight, the weight tolerance and the memo limit before anything else.
+3. Check the metals and purities, set a buy-back margin per metal, and create your counters.
+4. Enter today's fine rate, then load a handful of items with real weights and check that the price on screen matches what the counter would quote on paper.
+5. Run one ticket, one buy-back, one repair and one memo end to end on a test database before going live.
+
+<Callout title="What this module does not do">There is no Point of Sale screen, cash drawer, card terminal or receipt printer link: sales are backend tickets invoiced through Accounting. There is no live bullion feed; the rate is typed in. HUID numbers are recorded, kept unique and demanded, but not checked against BIS, the Dubai Central Laboratory or any other register. Job cards do not create manufacturing orders. There is no customer portal or web shop. Weights are typed, with no scale, barcode or RFID link.</Callout>
+
+If you sell in the UAE or Saudi Arabia, your invoices also have to meet the e-invoicing rules there: the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/) and the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/) cover what Odoo needs. The [jewellery retail industry page](/industries/jewellery-retail/) covers how a rollout is planned, and the [product page](/products/wt-jewelry-management/) lists everything in the module.
+
+You can walk through the whole shop on the [jewellery demo](https://jewelry-demo.way4tech.com/), which runs Al Nour Jewellers with five weeks of rates, stock, tickets, buy-backs, repairs and memos. Other live demos are on the [demos page](/demos/). If your shop has a setup this guide does not cover, such as several branches sharing one vault, [send a short description](/contact/) and I will say whether it fits.

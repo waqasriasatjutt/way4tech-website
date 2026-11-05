@@ -1,0 +1,126 @@
+---
+title: "Facilities help desk in Odoo: work orders from the first call to close, with response and resolution clocks"
+metaTitle: "Help Desk Work Orders and SLA Clocks"
+description: "Run a facilities help desk on Odoo 19: log a fault, assign by skill, log response, hold with a reason, issue parts, book labour and close against the SLA."
+targetQuery: "odoo facility help desk work orders sla"
+category: "Industry"
+summary: "One reactive job followed from the phone call to the signed job sheet: assignment checks, the two SLA clocks, hold and resume, parts and labour, and what blocks completion."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 3
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Facility Management CAFM demo"
+related: ["n8n-odoo-automation", "odoo-garage-management"]
+faqs:
+  - q: "When does the response clock stop?"
+    a: "When somebody presses Log Response on the job, which should be when an engineer is at the plant. If nobody logged a response, pressing Start Work counts as the response."
+  - q: "Does time on hold count against the resolution target?"
+    a: "It depends on the company setting Stop the Clock on Hold. With it on, the time a job spends on hold is added to the resolution due time and the clock is frozen while the job waits. With it off, the clock keeps running."
+  - q: "How often are SLA breaches checked?"
+    a: "Every 15 minutes. A job that passes its response or resolution time is flagged, shows an SLA Breached ribbon, and the Escalate To person on the service level is told."
+  - q: "Can a job be completed with parts still sitting on the Parts tab?"
+    a: "No. Complete is refused while parts on the job have not been issued from the store, while Work Done is empty, while a permit is still issued, or on an inspection without its certificate reference and condition."
+  - q: "Can tenants log their own faults?"
+    a: "No. There is no tenant portal. Faults are logged by your help desk or technicians inside Odoo."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A facilities contract is mostly judged on the reactive work. The planned visits happen quietly; the warm office at half past ten at night, the lift with somebody in it, the fire panel showing a fault are what the customer remembers and what the monthly review argues about. The help desk is where those calls become jobs, and every number on that review starts with how the job was logged: against which asset, at what priority, and when somebody actually turned up.
+
+This chapter follows one reactive job through the Facility Management module for Odoo 19. The demo example is a late evening call: the second floor open plan in Tower 1 is warm and the air handling unit on the roof is squealing.
+
+## The help desk board
+
+Open **Help Desk, Work Orders**. It opens on the open jobs. The card view shows them in columns by status, each card with the priority, the asset and location, the fault, who has it, and red tags for SLA breaches and permit work.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/work-order-board.webp" alt="Work Orders kanban in Odoo with columns Assigned, Reported, In Progress and On Hold, each card showing the job number, priority from P1 Emergency to P4 Scheduled, the asset and full location, the reported fault, the technician and tags for SLA breached, reactive and permit work" width={1600} height={1000} caption="Open jobs by status, with breach and permit tags on each card." />
+
+The filters you will use most are Not Assigned, Response Missed, Resolution Missed and P1 and P2. Technicians use **Help Desk, My Jobs**, which shows only their own.
+
+| Status | Meaning |
+|---|---|
+| Reported | Logged, nobody going yet. The clocks are running. |
+| Assigned | A technician or contractor has it. |
+| In Progress | Somebody is on the job. |
+| On Hold | Stopped for a recorded reason. |
+| Completed | Work finished and written up. |
+| Closed | Paperwork done, off the board. |
+| Cancelled | Raised in error or a duplicate. |
+
+## Log the fault
+
+Press **New**. Origin is set to Reactive.
+
+1. Under Where, pick the **Site** and **Building**, then the **Asset** if the caller can name it. Picking the asset fills in the floor, the room, the skills needed and a priority based on the asset's criticality.
+2. Check the **Priority**: P1 Emergency, P2 Urgent, P3 Routine or P4 Scheduled. The air handler is high criticality, so the system proposed P2.
+3. If the work is hot work, confined space, electrical isolation or at height, set the **Permit Type**. The job then needs a permit before it starts (see the [permit to work chapter](/odoo-guides/odoo-permit-to-work/)).
+4. Type the **Reported Fault** in the caller's own words and fill in who reported it, with a name and extension.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/new-fault.webp" alt="New work order in Odoo with banners for a restricted room access note and a warning that the person on the job is missing the Mechanical and HVAC skills, and fields for site, building, floor, room, asset AHU 03, origin reactive, permit type and priority P2 Urgent" width={1600} height={1182} caption="A new fault. The banners already show the room's access rule and a skills warning." />
+
+Save before you hang up, so the clock starts at the time of the call. And do not rewrite the caller into engineering language. "The air from the grilles feels warm and there is a squeal from the roof" tells the engineer to bring a belt set. "AHU fault" tells them nothing.
+
+The banners at the top of a job say what matters before anybody reads the fields: a red banner for permit work, a blue one with the restricted room's access note, amber when nobody is assigned or the person assigned is missing a skill, and amber when more hours are booked than the job has been running.
+
+## The service level sets the clocks
+
+The priority picks the service level, and the service level gives two due times: response and resolution. Service levels live under **Configuration, Service Levels**, one per priority, with more specific ones for a single site or a single contractor if their contract says otherwise. The most specific one wins.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/service-level.webp" alt="Service level form in Odoo for the estate standard P3 Routine level with escalate to contact, response 8 hours, resolution 40 hours, cover hours only from 08:00 to 18:00, every day, in the company time zone" width={1600} height={649} caption="A P3 service level that only counts 08:00 to 18:00." />
+
+Each level is either around the clock or cover hours only. On cover hours, the clock only runs inside the cover hours and days (every day, Monday to Friday, Sunday to Thursday, Monday to Saturday or Saturday to Thursday), in the level's time zone, and rolls over nights and weekends. A fault reported at 17:30 on a Thursday against a Sunday to Thursday, eight to six contract is not late on Friday morning; its clock picks up again at 08:00 on Sunday. Get the cover right and your SLA figures agree with the customer's own count.
+
+## Choose who goes, and assign
+
+Under Assigned To, choose **In House** or **Contractor**. Picking an asset proposes the firm that maintains it; switch to in house if your own team is going. Pick the technician or contractor. **Skills Matched** shows whether they hold every skill the job needs. Save, and the job gets its number.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/assigned-clocks.webp" alt="Assigned To and The Clocks sections of a work order in Odoo: in house technician, skills needed Mechanical and HVAC and Refrigeration, skills matched ticked, SLA Estate standard P2 Urgent, date reported, response due four hours later and resolution due 24 hours later" width={1600} height={661} caption="Skills matched, and the P2 clocks: four hours to respond, 24 to resolve." />
+
+Then press **Assign**. The system checks before it lets the job go: somebody is named, they hold every skill on the job with a valid card where one is needed, and a contractor is approved, not suspended, insured beyond the grace period and covers this site. If a check fails, the message says which one. The [contractors chapter](/odoo-guides/odoo-maintenance-contractor-management/) covers those checks in detail.
+
+## Log response, start, hold
+
+When somebody has actually attended, press **Log Response**. That stops the response clock. When work begins, press **Start Work**; if nobody logged a response, starting work counts as one. On permit work, Start Work is refused until a valid permit is issued.
+
+Log the response when an engineer is standing at the plant, not when the job was read on a phone. Response time is the number customers measure you on, and with the Enterprise add-on the monthly service credits are worked out from these times.
+
+If the job stops, press **Put on Hold**, choose why (waiting for a part, no access, waiting for a permit, the contractor or an approval, or other) and write a note: which part, from whom, due when.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/on-hold.webp" alt="Put on Hold dialog in Odoo for a work order with reasons waiting for a part, no access, waiting for a permit, waiting for the contractor, waiting for approval or other, and a note saying the drive belt set is out of stock and due tomorrow morning" width={1600} height={683} caption="Every hold has a reason and a note the help desk can chase." />
+
+With **Stop the Clock on Hold** on in Settings, the time on hold is added to the resolution due time and the clock is frozen while the job waits. Whether that is right depends on your contract wording, and the trade is split on it. Press **Resume** when the part arrives.
+
+## Parts and labour
+
+Parts and hours are where a job's cost comes from, and they feed the asset's lifetime cost. Book them on the day.
+
+On the **Parts** tab, add the part, quantity and the stock location it was taken from, then press **Issue Parts**. The parts leave the store with a real stock move. On the **Labour** tab, add a line per person with the date, in house or contractor, the hours and a short description. Tick out of hours where it applies and the premium (1.5 by default) is added.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/labour.webp" alt="Labour tab of a work order in Odoo with one in house line of 2.5 hours at 110 AED an hour, subtotal 275 AED, with columns for date, kind, technician, contractor, hours, rate, out of hours and description" width={1600} height={458} caption="Labour costed at the technician's own rate." />
+
+If more hours are booked than the job has been running, an amber banner says so. It is there to catch 25 typed for 2.5.
+
+## Complete and close off
+
+On the **Completion** tab, write **Work Done** properly: what you found, what you did, what you left. Set the root cause (fair wear, end of life, misuse, design fault, poor installation, environmental, no fault found, not established) and **Condition Now**. Enter the meter reading if the asset has one and the customer's name in **Signed Off By**. Tick Follow Up Needed if something else needs doing.
+
+<Shot src="/odoo-guides/odoo-help-desk-work-orders-facility/completion.webp" alt="Completion tab of a work order in Odoo with a full description of work done on the supply fan belts and bag filters, meter at completion, signed off by the building manager and the date started" width={1600} height={458} caption="Work done written so the next engineer can use it." />
+
+Press **Complete**. It is refused, with a message naming the problem, when Work Done is empty, when parts on the job were never issued, when a permit is still issued or expired and not handed back, or on a statutory inspection without its certificate reference and condition. For a reactive job on a critical or faulty asset with no downtime entered, the system fills in the time from report to fix and notes it in the chatter so you can correct it.
+
+When the paperwork is done, press **Close Off**. Jobs left in Completed close automatically after the number of days in Settings, once that scheduled job is switched on. **Print Job Sheet** works at any stage: before the visit it is the engineer's instruction, after it the customer's record with a sign-off block. Costs stay off it unless Show Costs on the Job Sheet is on.
+
+<Callout title="What runs on its own, and what does not">The SLA check every 15 minutes is active once the module is installed. The scheduled jobs that close completed jobs and check contractor insurance ship switched off; turn them on when your settings are right. Nothing sends breach alerts to a chat channel or a customer report out of the box; for that, see the <a href="/odoo-guides/n8n-odoo-automation/">n8n guide</a>.</Callout>
+
+## Hand back and cancel
+
+**Hand Back** sends an assigned or held job back to the help desk as Reported, takes the person off it and keeps the clocks running. **Cancel** is for duplicates and errors, and is refused while a permit on the job is issued; **Reset to Reported** brings a cancelled job back. On a contractor job, a Facility Manager presses **Bill the Contractor** after completion to raise the vendor bill from the job.
+
+Follow the same job on the [CAFM demo](https://facility-demo.way4tech.com/), and read the [SLA reporting and service credits chapter](/odoo-guides/odoo-sla-service-credits/) for what the clocks turn into at month end.

@@ -1,0 +1,109 @@
+---
+title: "Planned preventive maintenance (PPM) in Odoo: schedules on a date or a meter, and statutory inspections"
+metaTitle: "Planned Maintenance (PPM) and Statutory Checks"
+description: "Set up PPM schedules in Odoo 19 that raise jobs on a calendar interval, a run hour meter or whichever comes first, with statutory inspection certificates."
+targetQuery: "odoo ppm planned preventive maintenance"
+category: "Industry"
+summary: "How to build planned maintenance schedules that raise their own jobs ahead of time, and how statutory inspections are proved with a certificate reference on the asset."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 2
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Facility Management CAFM demo"
+related: ["odoo-labour-camp-management", "odoo-garage-management"]
+faqs:
+  - q: "Does standard Odoo Maintenance do preventive maintenance on run hours?"
+    a: "No. Odoo 19 Maintenance repeats a preventive request on a calendar interval only. The Facility Management module adds schedules on a meter reading and on whichever comes first, the calendar or the meter."
+  - q: "Why are no planned jobs appearing?"
+    a: "The nightly job that raises them, Facility: raise planned maintenance, ships switched off so you can check your schedules first. Until an administrator turns it on under Settings, Technical, Scheduled Actions, use Raise the Job Now on each schedule."
+  - q: "Can one schedule raise two jobs at once?"
+    a: "No. A schedule only ever has one open job. The next one is worked out when that job is completed, from the date and meter reading it was done at."
+  - q: "Can a statutory inspection be closed without the certificate?"
+    a: "No. An inspection job refuses to complete without the examiner's certificate reference and the condition found, and the message names what is missing."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The share of work that is planned, against everything raised, is the quickest test of whether an estate is under control. Below about 60 percent a maintenance team is firefighting, and the repair bill shows it within a couple of quarters. Every planned schedule you set up moves that number the right way, and it does so without anybody remembering to book the visit. This chapter shows how planned preventive maintenance (PPM) works in the Facility Management module for Odoo 19, and how statutory inspections are tracked to a certificate.
+
+It assumes the asset register is in place. If not, start with the [asset register chapter](/odoo-guides/odoo-asset-register-facility-management/).
+
+## Three kinds of trigger
+
+A schedule is one task on one asset. It can fall due in three ways:
+
+| Trigger | Use it for |
+|---|---|
+| On a Calendar Interval | Every so many days, weeks, months or years: filter changes, fire alarm tests, tank cleans. |
+| On the Meter | Every so many run hours or cycles: generators, compressors, lifts. |
+| Whichever Comes First | Both run, and the job is raised as soon as either is reached. |
+
+Whichever comes first is the wording many manufacturers' warranties use: service every three months or every 2,000 run hours, whichever is sooner. If the unit is worked hard in summer, the meter wins. If it stands idle in winter, the calendar does. Either way the visit happens on the terms the warranty claim will be judged against.
+
+For a meter schedule the module also works out a **Meter Due Date**, a forecast of the day the meter will reach its figure, using the asset's recent use per day. So a service due at 7,800 run hours still has a date you can plan labour and access against.
+
+## Create a schedule
+
+Go to **Maintenance, Schedules** and press **New**.
+
+1. Give it a **Name** people will recognise on a job list, such as "Chiller 1 quarterly service".
+2. Pick the **Asset**. The site and class fill in from it. Set a **Permit Type** if the visit needs one, and the **Priority**, usually P4 Scheduled for planned work.
+3. Under When It Falls Due, pick the **Trigger**, then **Every** with its unit, and for meters the **Every (meter units)** figure.
+4. Set **Last Done Date**, and **Last Done Meter** for metered plant, from the last service sticker. The next due date counts from there. Left empty, a new schedule counts from the later of the commission date and today, so it never falls due years in the past.
+5. Under Who Does It, choose in house or contractor, the usual technician or firm, the skills needed and the planned hours.
+6. On **What the Visit Covers**, write the task list. It prints on the job sheet the engineer takes to site.
+7. Save. The schedule is Live.
+
+<Shot src="/odoo-guides/odoo-ppm-planned-maintenance/ppm-schedule.webp" alt="Maintenance schedule form in Odoo for Chiller 1 quarterly service, reference PPM/0001, state Live, with Raise the Job Now and Pause buttons, asset, class, site, permit type, priority P4 Scheduled, trigger whichever comes first every 3 months or 2,000 run hours, last done date and meter, next due date, next due meter and meter due date" width={1600} height={1156} caption="A whichever comes first schedule: three months or 2,000 run hours, with a forecast meter due date." />
+
+The task list is worth the effort. "Leak check the circuit, log suction and discharge pressures, clean the condenser coils, check the oil level" gets the same visit done whoever goes. "Quarterly service" gets whatever the engineer remembers.
+
+## How jobs are raised
+
+Each night the system raises a job for every live schedule that falls due within the lead time in Settings, 14 days by default. Two weeks is enough to order parts, book access to a tenant's floor and raise a permit. The job is created as a planned job with the task list on it, the schedule's due date in **Due on the Schedule**, and the resolution clock set to the end of that day. A planned job is measured against the schedule's date, not against the P4 clock.
+
+A schedule only ever has one open job. It will not raise a second visit while the first is still open, so an overdue job does not breed duplicates. When the job is completed, the schedule's last done date and last done meter move on to what was recorded on the job, and the next due date is worked out again.
+
+Three buttons control a schedule by hand:
+
+- **Raise the Job Now** raises the next job straight away, without waiting for the nightly run.
+- **Pause** stops raising jobs, for example while a plant room is being refurbished.
+- **Put Back On** makes a paused schedule live again.
+
+<Callout title="The nightly run ships switched off">The scheduled action "Facility: raise planned maintenance" is installed inactive, so the first night does not raise a month of jobs off schedules you have not checked. Run a week on Raise the Job Now, look at what it produces, then ask your administrator to switch it on under Settings, Technical, Scheduled Actions.</Callout>
+
+## Meter readings drive the meter schedules
+
+A meter schedule is only as good as the readings behind it. Readings come from three places: typed in on the asset with **Log a Reading**, recorded by the engineer on the Completion tab of a job, or typed from the building management system screen. All of them appear under **Maintenance, Meter Readings**, with the source and who read it.
+
+<Shot src="/odoo-guides/odoo-ppm-planned-maintenance/meter-readings.webp" alt="Meter Readings list in Odoo with date, asset such as chillers, booster pump set, standby generator and passenger lift, reading, meter unit in run hours or cycles, amount since last reading, source and read by" width={1600} height={689} caption="Every meter reading on the estate, with its source and who took it." />
+
+Set a routine, for example a weekly round on generators and chillers, and keep it. A meter that is read once a quarter makes a whichever comes first schedule behave like a calendar one.
+
+## Statutory inspections
+
+Some work has to be proved, not only done: lift thorough examinations, boiler and pressure system examinations, fire alarm and emergency lighting tests, water hygiene. In the module that proof is a certificate reference written onto the asset.
+
+1. Mark the asset class as statutory, with its interval and inspecting authority (see the asset register chapter).
+2. Give each asset a schedule with **Statutory Inspection** ticked.
+3. Open **Maintenance, Statutory Inspections**. It lists every statutory asset by class with its next inspection date. Group by next inspection to see what falls due this month and book access.
+
+<Shot src="/odoo-guides/odoo-ppm-planned-maintenance/statutory-by-class.webp" alt="Statutory Inspections list in Odoo grouped by asset class: boilers and pressure systems, passenger lifts, fire detection and alarm, emergency lighting, electrical distribution, standby generation and UPS, domestic water systems, with own cost per class" width={1600} height={460} caption="Statutory assets grouped by class. Open a group for the assets and their next dates." />
+
+When the inspection job is raised, assign and work it like any other job. On the Completion tab, type the examiner's **Certificate Reference** and set **Condition Now**, then press **Complete**. The asset's last inspection date and certificate reference are stamped, and its next inspection date moves on by the interval.
+
+The job will not complete without those two fields, and the message names what is missing. That is deliberate. When the inspector or the insurer asks for proof, the certificate number is on the asset, on the job and on the asset history printout, and nobody has to search a shared drive for a scanned PDF.
+
+<Callout title="The module does not set your legal intervals">The intervals on the shipped classes are a starting point. What the law and your insurer require depends on your country, the equipment and any written scheme of examination. Confirm each interval with your competent person before you rely on the due dates.</Callout>
+
+## A sensible rollout order
+
+Put statutory schedules in first, because a missed examination is a legal exposure and not just a cost. Then critical plant on whichever comes first, then the routine calendar work. Watch the planned against reactive figure on the estate board and in **Reporting, Planned Against Reactive** month by month; the [SLA and reporting chapter](/odoo-guides/odoo-sla-service-credits/) covers both. When a planned job does turn up a fault, the engineer can tick Follow Up Needed on completion and the help desk raises the repair, which is the subject of the [work orders chapter](/odoo-guides/odoo-help-desk-work-orders-facility/).
+
+You can open the schedules and inspections on the [CAFM demo](https://facility-demo.way4tech.com/), or [ask us](/contact/) to look at your current PPM list before you load it.

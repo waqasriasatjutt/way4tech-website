@@ -1,0 +1,115 @@
+---
+title: "Maintenance contractors and technicians in Odoo: skills, certificates, insurance and user roles"
+metaTitle: "Technicians, Contractors and Roles"
+description: "Control maintenance contractors in Odoo 19: approval, trades and sites covered, insurance grace period, suspension, SLA performance and vendor bills."
+targetQuery: "odoo maintenance contractor management insurance"
+category: "Industry"
+summary: "How the Facility Management module stops the wrong person reaching the job: skills and cards on technicians, approval and insurance on contractors, and four user roles that keep rates away from engineers."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 5
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Facility Management CAFM demo"
+related: ["zkteco-adms-odoo", "odoo-labour-camp-management"]
+faqs:
+  - q: "Can an uninsured contractor be given a job?"
+    a: "No. Assign is refused once the contractor's public liability cover is inside the grace period set in Settings, seven days by default. With the nightly insurance check switched on, a firm whose cover has expired is suspended with the reason recorded."
+  - q: "What if a technician's refrigerant card has run out?"
+    a: "They cannot be assigned a job needing that skill. Skills can be marked Requires Certificate, and a technician whose certificate expiry has passed is refused at assignment, not flagged afterwards."
+  - q: "Can engineers see the charge-out rates?"
+    a: "Not on the Technician role. Technicians work their own jobs, book hours and parts and read the asset register, but see no rates and no contractor paperwork."
+  - q: "How is a contractor's vendor bill created?"
+    a: "A Facility Manager presses Bill the Contractor on a completed or closed contractor job. The bill is built from the contractor's labour, parts and callout on the job, with the job number as reference, the firm's payment terms and the purchase tax."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+An uninsured firm on a roof is the estate's problem, not the firm's. So is an engineer breaking into a refrigerant circuit with a card that ran out last spring, or a technician who quotes the hourly charge-out rate to a tenant because it was on his screen. None of these are software problems until the software is the thing that let them happen. In the Facility Management module for Odoo 19, the checks sit on the Assign button, so the help desk does not have to remember them at ten at night.
+
+This chapter covers skills, technicians, contractors and the four user roles.
+
+## Skills and certificates
+
+**Configuration, Skills** lists the trades: Electrical, High Voltage, HVAC and Refrigeration, Fire Systems, Lifts and Hoists, Water Hygiene and so on. Tick **Requires Certificate** where the trade needs a card. The note on each skill tells the help desk why.
+
+<Shot src="/odoo-guides/odoo-maintenance-contractor-management/skills.webp" alt="Skills list in Odoo with code, name, kind, a requires certificate tick and a note, for electrical, CCTV, high voltage, mechanical, HVAC and refrigeration, plumbing, water hygiene, fire systems, lifts and hoists, controls and BMS, fabric and joinery, grounds" width={1600} height={722} caption="Skills, with the ones that need a card ticked and the reason written down." />
+
+Skills appear in three places. The asset class says which skills its plant needs. A job takes the skills from its asset, or from the schedule that raised it. Technicians and contractors hold skills. Assign compares the two.
+
+## Technicians
+
+Go to **Team, Technicians** and press **New**.
+
+1. Fill in the name, the **Odoo User**, phone, **Based At** and **Shift**.
+2. Set the **Hourly Rate**. This is what an hour costs you, not what the customer is charged. Without it, the company's Default Labour Rate is used, and without that, in house work looks free.
+3. Add the **Skills**, and the **Card Number** and **Certificate Expiry** if any skill needs a card.
+
+Link the Odoo user. A technician only sees **Help Desk, My Jobs** and the My Work board when their technician record is linked to their login. The technician list shows who is available or on a job, their open jobs and hours booked this week.
+
+Keep two fields current. When **Certificate Expiry** passes, the technician cannot be assigned work needing that skill; the refusal happens at assignment, not as a warning after the fact. And the **Hourly Rate** costs every hour they book, which feeds job cost, the asset's lifetime cost and, with the Enterprise add-on, the margin on contracts.
+
+## Contractors
+
+Open **Team, Contractors** and press **New**.
+
+1. Pick the **Supplier Record**: the company contact vendor bills go to. Leave it empty and one is created in the firm's name.
+2. Fill in the account manager, phone, email and the **Out of Hours Number**.
+3. Under What They Cover, add the **Trades Covered** and the **Sites Covered**. A firm cannot be assigned a job on a site it does not cover.
+4. Under Insurance, enter the **Insurance Expiry**, policy number and cover amount.
+5. Under Rates, enter their **Day Rate** and **Callout Charge**: what they charge you.
+6. Save, then press **Approve** once your pre-qualification is done.
+
+A new firm starts as Pending Approval and cannot be given work until somebody approves it. The states are Pending Approval, Approved and Suspended.
+
+### Insurance and the grace period
+
+A contractor cannot be assigned work once their insurance expiry is inside the grace period in Settings, seven days by default. A renewal certificate usually takes about a week to arrive, so the help desk gets a warning window instead of a surprise. With the nightly job **Facility: check contractor insurance** switched on, every approved firm whose cover has expired is suspended, with the reason "insurance expired" and the date. The same run notes on the contractor's record when cover runs out within fourteen days (or the grace period, if longer), and emails the firm's contact asking for the renewal certificate, before and after it lapses. That job ships switched off; turn it on once the insurance dates on file are right, or the first run suspends every firm you have not updated yet. To bring a firm back, put the renewed expiry date on the record and press **Approve**.
+
+### Suspension
+
+Press **Suspend** on a contractor and write the reason, for example "Safety breach on Tower 2 roof, 12 Oct, pending investigation". The reason shows as a banner on the contractor and is quoted in every refusal when somebody tries to assign them or issue them a permit. To lift it, press **Approve**, or **Back to Pending** if they need to re-qualify.
+
+## What Assign checks
+
+When the help desk presses **Assign** on a job, the system checks that:
+
+- a technician or contractor is named;
+- they hold every skill on the job, with a valid card where the skill needs one;
+- a contractor is approved, not suspended, insured beyond the grace period, and covers the job's site.
+
+If a check fails, the message names it in plain words, and the right move is to pick somebody else rather than work around it. If it passes, the job moves to Assigned, the technician shows as on a job, and for a restricted room the access arrangements are posted on the job so the engineer sees the keys, the codes and the security number.
+
+<Shot src="/odoo-guides/odoo-maintenance-contractor-management/assigned-access.webp" alt="Assigned work order in Odoo with a restricted room banner and the chatter showing the state change to Assigned, the restricted access note with keys and security lodge instructions posted on assignment, and assigned to the technician" width={1600} height={622} caption="On assignment the room's access rules are posted on the job." />
+
+The same contractor checks run again when a permit is issued, so a firm suspended between assignment and the start of work still cannot get a permit.
+
+## Contractor performance and bills
+
+The contractor's Performance section shows **Response Met (%)** and **Resolution Met (%)** over every job the firm has completed, with the job count. They are kept apart on purpose. A firm that always turns up fast but rarely finishes shows up, and so does one that is slow to come but fixes it first time. Bring these figures to the quarterly review instead of the firm's own report.
+
+When a contractor job is completed, a Facility Manager presses **Bill the Contractor** on the job. The vendor bill is raised from what was booked: the contractor's labour, parts and callout, with the job number as the bill reference, the firm's payment terms and the purchase tax. The Vendor Bill button on the job opens it. Check it against the invoice the firm sends.
+
+## The four roles
+
+Each user gets one Facility Management role. A role includes everything below it.
+
+| Role | Can do |
+|---|---|
+| Technician | Works the jobs on their own name, books hours and parts, reads the asset register. Sees no rates and no contractor paperwork. |
+| Maintenance Supervisor | Runs the help desk: raises and assigns every job, issues permits, closes jobs. Sees the team, buildings and live contracts. |
+| Contracts and Billing | Enterprise add-on. Contracts, rate cards, chargeable work, write-offs, service credits and budgets, with cost and margin on every job. |
+| Facility Manager | Everything: estate, register, contractor approval, rates, reporting and configuration. Includes Contracts and Billing. |
+
+Set the role in the main **Settings, Users and Companies, Users**, on the user's Access Rights tab under Facility Management. For anybody who raises or checks invoices, also set Accounting to Invoicing: the facility roles never grant accounting rights on their own.
+
+<Shot src="/odoo-guides/odoo-maintenance-contractor-management/user-role.webp" alt="Access Rights tab of an Odoo user with the Facility Management field set to Facility Manager and Accounting set to Invoicing" width={1600} height={556} caption="A Facility Manager with Invoicing rights in Accounting." />
+
+<Callout title="Limits worth knowing">There is no contractor portal: firms do not log in to accept jobs or upload certificates, so insurance dates are typed in by your team when the certificate arrives. The insurance chaser email only goes out once the nightly insurance check is switched on and your outgoing mail server works. Technician hours are booked on the job; nothing is pulled from a time clock or payroll.</Callout>
+
+Keep engineers on the Technician role and let the reports show the money to the people who need it. The next chapter, [maintenance contracts and chargeable work](/odoo-guides/odoo-maintenance-contracts-billing/), is where the Contracts and Billing role does its work. You can look at the team screens on the [CAFM demo](https://facility-demo.way4tech.com/).

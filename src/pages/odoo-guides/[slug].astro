@@ -1,10 +1,10 @@
 ---
 import Base from '~/layouts/Base.astro';
 import { SITE } from '~/data/site';
-import { getCollection } from 'astro:content';
+import { getLiveGuides, seriesOf } from '~/lib/guides';
 
 export async function getStaticPaths() {
-  const all = (await getCollection('guides')).filter(g => !g.data.draft);
+  const all = await getLiveGuides();
   return all.map(g => ({ params: { slug: g.slug }, props: { guide: g, all } }));
 }
 
@@ -16,10 +16,12 @@ const path = `/odoo-guides/${guide.slug}/`;
 const url = new URL(path, SITE.url).toString();
 const AUTHOR_PATH = '/author/waqas-riasat/';
 const AUTHOR_URL = new URL(AUTHOR_PATH, SITE.url).toString();
-const listing = (technical: string) => `https://apps.odoo.com/apps/modules/19.0/${technical}/`;
+const listing = (technical: string, version = '19.0') => `https://apps.odoo.com/apps/modules/${version}/${technical}/`;
 
 const toc = headings.filter(h => h.depth === 2);
 const bySlug = new Map(all.map(g => [g.slug, g]));
+const chapters = d.series ? seriesOf(d.series, all) : [];
+const hub = chapters.find(g => g.slug === d.series);
 const related = d.related.map(s => bySlug.get(s)).filter((g): g is NonNullable<typeof g> => Boolean(g));
 
 const fmt = (dt: Date) => dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -55,7 +57,10 @@ const breadcrumbSchema = {
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE.url}/` },
     { '@type': 'ListItem', position: 2, name: 'Odoo guides', item: new URL('/odoo-guides/', SITE.url).toString() },
-    { '@type': 'ListItem', position: 3, name: d.title, item: url },
+    ...(hub && hub.slug !== guide.slug
+      ? [{ '@type': 'ListItem', position: 3, name: hub.data.title, item: new URL(`/odoo-guides/${hub.slug}/`, SITE.url).toString() }]
+      : []),
+    { '@type': 'ListItem', position: hub && hub.slug !== guide.slug ? 4 : 3, name: d.title, item: url },
   ],
 };
 ---
@@ -70,7 +75,7 @@ const breadcrumbSchema = {
 >
   <section class="bg-odoo-gradient text-white">
     <div class="container-site py-14">
-      <nav class="text-sm text-brand-200" aria-label="Breadcrumb"><a href="/" class="hover:text-white">Home</a> / <a href="/odoo-guides/" class="hover:text-white">Odoo guides</a></nav>
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb"><a href="/" class="hover:text-white">Home</a> / <a href="/odoo-guides/" class="hover:text-white">Odoo guides</a>{hub && hub.slug !== guide.slug && <> / <a href={`/odoo-guides/${hub.slug}/`} class="hover:text-white">{hub.data.metaTitle}</a></>}</nav>
       <div class="mt-6 max-w-3xl">
         <div class="flex flex-wrap gap-2">
           <span class="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-medium text-brand-100">{d.category}</span>
@@ -101,6 +106,28 @@ const breadcrumbSchema = {
                     prose-img:rounded-xl">
           <Content />
         </div>
+
+        {chapters.length > 1 && (() => {
+          const i = chapters.findIndex(g => g.slug === guide.slug);
+          const prev = chapters[i - 1];
+          const next = chapters[i + 1];
+          return (
+            <nav class="mt-12 grid gap-4 sm:grid-cols-2" aria-label="Chapters">
+              {prev ? (
+                <a href={`/odoo-guides/${prev.slug}/`} class="card group">
+                  <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">&larr; Previous</span>
+                  <span class="mt-1 block font-semibold text-ink-900 group-hover:text-brand-700">{prev.data.title}</span>
+                </a>
+              ) : <span />}
+              {next && (
+                <a href={`/odoo-guides/${next.slug}/`} class="card group sm:text-right">
+                  <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">Next &rarr;</span>
+                  <span class="mt-1 block font-semibold text-ink-900 group-hover:text-brand-700">{next.data.title}</span>
+                </a>
+              )}
+            </nav>
+          );
+        })()}
 
         <section class="mt-14" aria-labelledby="faq">
           <h2 id="faq" class="text-2xl font-bold tracking-tight text-ink-900">Frequently asked questions</h2>
@@ -142,6 +169,32 @@ const breadcrumbSchema = {
 
       <aside class="lg:col-span-4">
         <div class="space-y-6 lg:sticky lg:top-24">
+          {chapters.length > 1 && (
+            <nav class="rounded-2xl border border-ink-200 p-5" aria-label="In this guide">
+              <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">In this guide</p>
+              <ol class="mt-3 space-y-2 text-sm">
+                {chapters.map(c => (
+                  <li>
+                    {c.slug === guide.slug
+                      ? <span class="font-semibold text-ink-900" aria-current="page">{c.data.metaTitle}</span>
+                      : <a href={`/odoo-guides/${c.slug}/`} class="text-ink-700 hover:text-brand-700">{c.data.metaTitle}</a>}
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          )}
+
+          {(d.pdf || hub?.data.pdf) && (() => {
+            const pdf = (d.pdf || hub?.data.pdf)!;
+            return (
+              <div class="rounded-2xl border border-ink-200 p-5">
+                <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Printable guide</p>
+                <a href={pdf.url} class="mt-2 block font-semibold text-brand-700 hover:text-brand-800" download>Download the full PDF</a>
+                <p class="mt-1 text-xs text-ink-500">{pdf.pages} pages, every screen in this guide.</p>
+              </div>
+            );
+          })()}
+
           {toc.length > 2 && (
             <nav class="rounded-2xl border border-ink-200 p-5" aria-label="On this page">
               <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">On this page</p>
@@ -157,7 +210,7 @@ const breadcrumbSchema = {
               <ul class="mt-3 space-y-3 text-sm">
                 {d.modules.map(m => (
                   <li>
-                    <a href={listing(m.technical)} rel="noopener" target="_blank" class="font-semibold text-brand-700 hover:text-brand-800">{m.name}</a>
+                    <a href={listing(m.technical, m.version)} rel="noopener" target="_blank" class="font-semibold text-brand-700 hover:text-brand-800">{m.name}</a>
                     <span class="block text-xs text-ink-500"><code>{m.technical}</code>{m.note ? ` · ${m.note}` : ''}</span>
                   </li>
                 ))}

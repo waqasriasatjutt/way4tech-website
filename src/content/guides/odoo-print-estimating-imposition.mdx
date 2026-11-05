@@ -1,0 +1,139 @@
+---
+title: "Print estimating in Odoo: imposition, paper, plates, make-ready and the sell price"
+metaTitle: "Print Estimating and Imposition in Odoo"
+description: "Price print jobs in Odoo 19: presses, paper by ream or tonne, imposition and sheet counts, plates, make-ready, finishing, overhead and a target margin."
+targetQuery: "print estimating in odoo / imposition and sheet calculation"
+category: "Industry"
+summary: "How the printing module turns a specification into a price: the press, paper and finishing set-up, the imposition, the cost build-up and the quote sent to the customer."
+published: 2026-12-03
+updated: 2026-12-03
+series: "odoo-printing-press-management"
+seriesOrder: 1
+modules:
+  - name: "Printing Press and Print Shop Management"
+    technical: "wt_printing_press"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://printing-demo.way4tech.com/"
+  label: "Printing press demo"
+related: ["odoo-construction-ra-bill-job-costing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo work out how many pieces fit on a press sheet?"
+    a: "The estimate takes the finished size, adds the bleed and gutter around each piece, takes the gripper margin of the chosen press off the sheet, and tries the pieces both ways round. It keeps the layout that fits the most, for example 8 up, 4 across by 2 down on a 640 by 450 mm sheet."
+  - q: "Can I enter paper at a ream or tonne price?"
+    a: "Yes. Each paper stock is bought per sheet, per ream or per tonne. A ream price is divided by the sheets in the ream (500 by default, often 250 for board), and a tonne price is converted through the sheet weight worked out from size and grammage. The estimate always multiplies by the cost per sheet."
+  - q: "Is the target margin a mark-up on cost?"
+    a: "No. It is a margin on the sell price. A 35 per cent margin on a cost of 1,165.55 gives a sell price of 1,793.15, because 35 per cent of 1,793.15 is the profit. If the price includes VAT, the price is grossed up so the margin is made on what the shop keeps."
+  - q: "What happens when the job does not fit the press?"
+    a: "The estimate refuses to save. It names the sheet size and the press sheet range when the stock will not feed, and the number of printing units against the number needed when there are too many colours for one pass. A saddle stitched page count that is not a multiple of four is refused too."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most print shops lose money on short runs without noticing. A job of 5,000 A5 flyers on a five colour press needs about 625 sheets to make the copies and 1,440 sheets to get the eight plates up to colour. If the estimate does not know that, the quote is wrong before the paper is ordered. That is why the estimate in the printing module does the sheet arithmetic itself rather than taking a number typed in by the estimator. This chapter covers the set-up the price depends on, then the estimate tab by tab, then sending it and turning it into a job.
+
+## Part one: the numbers every price comes from
+
+An estimate is only as right as the rates behind it. Three lists under **Printing, Configuration** hold them, and they are worth an afternoon with the pressroom manager and whoever in finance owns the hourly rates.
+
+### Presses
+
+Each press record carries what the estimator needs to put a job on it:
+
+- **Kind**: sheet fed litho or digital toner. Litho uses plates, digital does not.
+- **Printing units** and whether the press **perfects** (prints both sides in one pass).
+- **Running speed** in sheets per hour. Use the speed the press holds on ordinary work, not the brochure figure, because every run time and every delivery promise comes off it.
+- **Make-ready** in minutes and in wasted sheets, per plate change.
+- **Rates**: press hour rate, plate cost, ink per thousand sheets, or click charge per side on a digital press.
+- **Sheet range**: minimum and maximum sheet width and height, and the gripper margin.
+
+The press form also shows utilisation and hours booked in the last thirty days, read straight off the job tickets.
+
+<Shot src="/odoo-guides/odoo-print-estimating-imposition/press-form.webp" alt="Press form in Odoo for a five colour sheet fed litho press with printing units, perfecting flag, running speed, make-ready minutes and waste sheets, press hour rate, plate cost, ink per 1000 sheets and minimum and maximum sheet sizes" width={1440} height={900} caption="A litho press: units, speed, make-ready, rates and the sheet range it will take." />
+
+### Paper stock
+
+Each stock has its sheet size, grammage, caliper, grain direction and finish, and the basis it is bought on: per sheet, per ream or per tonne. The module works out a cost per sheet from whichever you enter, so a coated stock bought by the ream and a bulk stock bought by the tonne are costed the same way on the estimate. If you link the stock to an Odoo product, the list shows the sheets in stock as well.
+
+Set up each size you actually run as its own stock. The demo carries large sheets for the big press and SRA3 cuts of the same papers for the small one, which is how most shops buy.
+
+<Shot src="/odoo-guides/odoo-print-estimating-imposition/paper-stock.webp" alt="Paper Stock list in Odoo with grammage, sheet width and height, long or short grain, finish and cost per sheet for offset, silk, board and recycled stocks" width={1440} height={900} caption="Paper stocks with grain, finish and the cost per sheet the estimate uses." />
+
+### Finishing operations
+
+Guillotining, folding, laminating, saddle stitching, perfect binding, foil blocking, drilling and packing each get a record with a kind, a basis (per press sheet, per finished copy or once per job), a run rate, set-up time and charge, an hourly rate and a material cost per unit. An operation done by a trade finisher is marked bought in and has to name the finisher; its lead time moves the delivery date.
+
+<Shot src="/odoo-guides/odoo-print-estimating-imposition/finishing-operations.webp" alt="Finishing Operations list in Odoo with guillotining, folding, laminating, saddle stitching, perfect binding, foil blocking, drilling and packing, each with basis, run rate, setup minutes, setup charge, hour rate, material cost and bought in flag" width={1440} height={900} caption="Finishing operations with their basis, set-up and run rates. Two are bought in." />
+
+## Part two: building the estimate
+
+Open **Estimating, Estimates** and click New. The list view shows every estimate with its customer, quantity, stock, press, number up, gross sheets, sell price, margin and status, with filters for the ones still waiting on the customer and the ones about to expire.
+
+### The Specification tab
+
+The top of the form takes the customer, their reference, the estimator and the site. The **Specification** tab has two halves.
+
+**The piece**: kind of work (flat or bound), finished width and height, pages, sides or binding, quantity, and the over or under run tolerance the customer has agreed to.
+
+**How it prints**: colours front and back, the stock, the press, and the bleed and gutter around each piece.
+
+From those the estimate imposes the job. It takes the press's gripper off the sheet, adds the bleed to each piece, tries the piece both ways round and keeps the layout that fits the most. Then it works out the forms (for bound work, how many sheets the page count needs), the plates, the passes, the net sheets, the running spoilage, the make-ready waste and the gross sheets you actually have to buy. Change the press or the stock and it all works out again.
+
+<Shot src="/odoo-guides/odoo-print-estimating-imposition/estimate-specification.webp" alt="Approved print estimate in Odoo for 5,000 A5 flyers, four colour both sides on 150gsm silk, with the Specification tab showing work kind, finished size, pages, sides, quantity, colours, stock, press, bleed and quantity tolerance, and the emailed quote in the chatter" width={1440} height={900} caption="An approved estimate. The quote that went to the customer sits in the chatter in full." />
+
+For the demo flyer, that comes out at 8 up, 4 across by 2 down on a 640 by 450 mm sheet, 8 plates in 2 passes, and 2,115 sheets to issue, of which 1,440 are make-ready.
+
+### The checks that stop a bad quote
+
+The estimate refuses to save when the job cannot be printed the way it is written:
+
+- The piece does not fit on the sheet once the gripper is taken off.
+- The sheet is outside the press's sheet range. The message names both.
+- There are more colours than the press has units for one pass. On a litho perfector, 4 over 4 needs eight units; on a digital duplex press, four.
+- A bound job has fewer than four pages, a saddle stitched book is not a multiple of four, or a perfect bound book has an odd page count.
+- Single sided work has colours on the back.
+
+A folded or bound job where the grain runs across the spine does not stop the save, but it shows a warning that the fold will crack and the stock should be ordered the other way round. It is a warning, not a block, so the estimator makes the call with the problem in front of them.
+
+### The Finishing tab
+
+Add the operations in the order they happen. Each line is costed from its set-up charge, its run rate against the number of sheets or copies it handles, its hourly rate and its material. The tab totals the finishing cost and the finishing hours. Bought in operations show as such, and their cost carries through to the price.
+
+### The Cost and Price tab
+
+The left side is the cost build-up, each part on its own line:
+
+- **Paper**: gross sheets times cost per sheet.
+- **Plates**: plates times plate cost. Zero on a digital press.
+- **Ink or clicks**: on litho, gross sheets times colours times the ink rate per thousand; on digital, printed sides times the click charge.
+- **Make-ready**: make-ready time times the press hour rate.
+- **Run time**: gross sheets over the running speed, times the press hour rate. A non-perfecting press doing both sides runs the stack twice.
+- **Finishing**, **bought in work** and **carriage**.
+
+Overhead goes on top at the house percentage. The right side is the price: target margin, sell price, price per copy and per thousand, gross profit and the margin actually achieved.
+
+<Shot src="/odoo-guides/odoo-print-estimating-imposition/estimate-cost-price.webp" alt="Cost and Price tab on an Odoo print estimate with paper, plates, ink or clicks, make-ready, run time, finishing, bought in work and carriage costs, and target margin, sell price, price per copy, price per 1000 and gross profit" width={1440} height={900} caption="The cost build-up on the left, the price from a 35 per cent target margin on the right." />
+
+On the demo flyer, the direct cost plus 12 per cent overhead comes to 1,165.55 pounds, and a 35 per cent target margin gives a sell price of 1,793.15 pounds for 5,000 copies, or 358.63 per thousand. Make-ready at 425.33 is the largest single cost on the job, bigger than the paper. That is the short run problem from the top of this chapter, in numbers.
+
+The margin is a margin on the sell price, not a mark-up on cost. If the market says a different price, type over the sell price and the record shows the margin you actually got. When the price includes VAT, the module grosses it up so the margin is made on what the shop keeps, not on what the customer pays.
+
+## Part three: sending, approving and opening the job
+
+A draft estimate has four buttons: **Send**, **Print**, **Lost** and **Cancel**.
+
+<Shot src="/odoo-guides/odoo-print-estimating-imposition/draft-estimate.webp" alt="Draft print estimate in Odoo for a 24 page saddle stitched A5 booklet with Send, Print, Lost and Cancel buttons and the Draft, Sent, Approved status bar" width={1440} height={900} caption="A draft estimate for a saddle stitched booklet, with its four buttons." />
+
+1. **Send** emails the quote to the customer from the estimate and moves it to Sent. The email stays on the chatter, so whoever picks up the file later sees exactly what was promised. Send is refused if the imposition does not work out.
+2. **Print** produces the quote as a PDF: the specification, the imposition line, the finishing, the price per thousand and the total, with the tolerance and proof terms printed underneath.
+3. **Customer Approved** records the yes. An expired estimate cannot be approved; check the paper price and re-issue it first.
+4. **Open Job Ticket** creates the job with the whole specification already on it. Only one live ticket can run off an estimate; a second run goes through the reprint button on the job.
+5. **Lost** needs a reason. Price, lead time and quality read very differently once you total them up, and the win rate report depends on it.
+
+The status bar runs Draft, Sent, Approved, with Lost, Expired and Cancelled to the side. It cannot be written by hand or by import; only the buttons move it. A decided estimate is copied, not reopened, when the customer wants a fresh quote.
+
+<Callout title="What the estimate does not do">It does not fetch paper prices from a merchant, check stock before quoting, or raise a purchase order when the job is won. Expired estimates are only closed off once the scheduled action that does it is switched on, and it ships off. And it prices one quantity per estimate: to quote 2,000, 5,000 and 10,000, copy the estimate and change the quantity.</Callout>
+
+Once the job ticket is open, the work moves to the shop floor. The next chapter, [job tickets, proofs and production](/odoo-guides/odoo-print-job-tickets-proof-approval/), takes the same flyer through proofing, the press, spoilage, finishing, despatch and the invoice.

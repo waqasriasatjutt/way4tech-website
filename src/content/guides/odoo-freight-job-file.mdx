@@ -1,0 +1,139 @@
+---
+title: "Freight job files in Odoo: air, sea FCL, LCL and road from booking to closing"
+metaTitle: "Job Files for Air, Sea and Road Freight"
+description: "Open and run a freight job file in Odoo 20: parties, cargo lines with HS codes, chargeable weight by mode, the document checklist and seven checked states."
+targetQuery: "odoo freight job file shipment management"
+category: "Industry"
+summary: "The job file is the centre of the system: how to open one, put the cargo on so customs and rating work, keep the document checklist honest and move the file through its states to closed."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 3
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo work out chargeable weight for air freight?"
+    a: "With this module, the file takes the volume from the case dimensions and pieces, converts it at the air divisor (6,000 cubic centimetres per kilo by default) and charges the greater of that and the actual gross weight. Road uses 3,000, LCL compares weight with a tonne per cubic metre, and FCL is rated on the box."
+  - q: "Why can I not change the mode on a file?"
+    a: "Once a file is booked the mode is fixed, because it is part of the file number and that number is already on a booking with a carrier. Cancel the file and open a new one in the right mode."
+  - q: "Why will the file not let me mark it delivered?"
+    a: "A required document is still outstanding and the message lists which. Log it in if you have it. If that document is genuinely not needed on this kind of file, untick Required on the document type rather than switching the whole check off."
+  - q: "Why can I not close a file?"
+    a: "Either a sell line has never been invoiced, or a cost with a named supplier has no supplier bill. The message says how many. Invoice or remove the sell line, book the bill or clear the accrual, then close."
+  - q: "Where do ETD, ETA and delay days come from?"
+    a: "From the routing. ETD is taken from the first leg, ETA from the last leg, and delay days compare the actual arrival with the estimate. Nobody types those fields on the file."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ask a forwarder where a shipment is and you will usually get the answer from three places: the booking email, the carrier's site and somebody's spreadsheet. Ask what it earned and you wait until month end. The job file in the freight module is the single record that answers both. It holds the parties, the cargo, the documents, the bills, the boxes, the legs, the customs entry and every charge, and it will not move to the next state until the thing that state depends on is true. This chapter covers opening a file, getting the cargo right, the document checklist and the seven states from draft to closed.
+
+## Opening a file
+
+Most files open themselves from a [won quotation](/odoo-guides/odoo-freight-quotation/). To open one from scratch, go to **Operations, Job Files** and press **New**.
+
+1. Set **Mode** and **Direction** first. The mode decides the numbering and the checklist, and cannot be changed after booking.
+2. Pick the **Office**. Its code becomes the front of the file number.
+3. Pick the **Customer**: the party the invoice goes to. On a nominated import that is often neither the shipper nor the consignee.
+4. Type the **Customer Reference**, their purchase order or booking number. It goes on the invoice, and invoices without it tend not to get paid.
+5. Set **Shipper**, **Consignee** and **Notify Party**. Leave notify empty and the arrival notice goes to the consignee.
+6. Set **Port of Loading** and **Port of Discharge**. The **Trade Lane** follows from their countries.
+7. Set the **Incoterm**. It decides who pays which leg, so it belongs on the file and the bill.
+8. If an overseas agent sent you the business, set **Overseas Agent** and tick **Agent Nomination**.
+9. Save. The file number is issued and the document checklist is laid out.
+
+<Shot src="/odoo-guides/odoo-freight-job-file/job-file-form.webp" alt="Freight job file form in Odoo for a Sea FCL import, with parties, the move, schedule with ETD, ETA, ATD, ATA and delay days, agent panel, master bill and tabs for cargo, routing, containers, bills, charges, documents and customs" width={1600} height={859} caption="Four panels (parties, the move, schedule, agent) and tabs for everything else. The planned activity on the right is the unbilled file chase." />
+
+The schedule panel fills itself in. ETD comes from the first routing leg, ETA from the last, and Delay Days is the actual arrival against the estimate.
+
+## The cargo
+
+On the **Cargo** tab, enter one line per commodity. Keep commodities apart even when they travel in the same box, because the customs entry is built from these lines and duty is charged per tariff code.
+
+1. Press **Add a line** and type the **Description** as it should read on the bill.
+2. Pick the **Package Type**: cartons, pallets, crates, drums, bags, bundles, rolls or loose.
+3. Pick the **HS Code**. Without one the cargo cannot be entered at customs.
+4. Type **Pieces**, case **Length**, **Width** and **Height** in centimetres, **Gross** and **Net** weight, and the **Value** from the commercial invoice.
+5. Save.
+
+<Shot src="/odoo-guides/odoo-freight-job-file/job-file-cargo.webp" alt="Cargo tab of an Odoo freight job file with three lines (portable computers, wine and porcelain tiles), each with package type, pieces, HS code, gross and net weight, volume, chargeable weight and value, and totals below" width={1600} height={896} caption="Three commodities on one file. They clear at three different rates, which is why they are three lines." />
+
+The volume is worked out from the case sizes and pieces. If the shipper gave you a total cubic and no case sizes, type the volume in directly. If you correct the dimensions later, press **Cube from Dimensions** to redo it, and **Refresh Charge Quantities** to update any charges that have not been invoiced or billed yet.
+
+The value and weights on the cargo lines matter twice: customs value is built from them, and every per kilo rate is applied to them. Filling the cargo tab in properly once removes two retypings later.
+
+## Chargeable weight
+
+Under the cargo the file keeps four totals: gross weight, net weight, volume and **Chargeable Weight**. The conversion depends on the mode:
+
+| Mode | Volume converts at | Rated on |
+|---|---|---|
+| Air | 6,000 cm³ per kilo | Greater of actual and volumetric |
+| Road | 3,000 cm³ per kilo | Greater of actual and volumetric |
+| Sea LCL | 1,000 kg per cubic metre | Weight or measure, whichever is greater |
+| Sea FCL | Not converted | The container and the TEU |
+
+All three divisors are settings, covered in the [setup chapter](/odoo-guides/odoo-freight-forwarding-setup/). If the chargeable weight does not match what the airline is charging, check the air divisor first: some carriers use 5,000.
+
+## The document checklist
+
+The moment a file is saved it picks up every document type for its mode and direction. The **Documents** tab is that checklist, with who issues each document and whether it is required, and the percentage received shows at the top.
+
+<Shot src="/odoo-guides/odoo-freight-job-file/document-checklist.webp" alt="Documents tab on an Odoo freight job file with commercial invoice, packing list, bill of lading, certificate of origin, import entry acceptance, delivery order and others, each with issuer, required, reference, received and received date" width={1600} height={896} caption="The checklist on an import, fully received. Issued By tells you who to chase when something is late." />
+
+- When a document arrives, press the tick at the end of its line, and attach the file to the message thread so it is on record.
+- If it turns out to be wrong, press the arrow on the line to put it back on the outstanding list.
+- If you changed mode or direction after opening the file, press **Rebuild Checklist**.
+
+A scheduled job emails the customer about documents still missing a set number of days before ETA (five by default).
+
+## The seven states
+
+The bar across the top only moves by its buttons, never by typing into it, and each button checks something first.
+
+| State | Button | Refused when |
+|---|---|---|
+| Draft | none | Where every file starts |
+| Booked | Book | No cargo, or no loading and discharge point |
+| In Transit | Sailed | No routing; an FCL file with no container; an air file with no master waybill |
+| Arrived | Arrived | The file is not in transit |
+| Customs Cleared | Customs Cleared | A declaration on the file is still open |
+| Delivered | Delivered | Required documents are outstanding |
+| Closed | Close File | Sell lines never invoiced, or supplier costs never booked |
+
+**Booking.** With the cargo on and both ports set, press **Book**. A note goes on the thread with pieces, gross weight, cubic and chargeable weight as booked. When the cargo turns up heavier than the shipper said, that note shows what you were told and when.
+
+**Sailed and arrived.** Press **Sailed** when the vessel or aircraft goes; if the first leg has no actual departure, today's goes on. Press **Arrived** when it lands; the last leg's actual arrival is filled in, and if the file is late a note records by how many days.
+
+**Cleared and delivered.** In practice the broker clears the customs entry and the file moves to Customs Cleared on its own. Press **Delivered** when the cargo is handed over.
+
+**The arrival notice.** Once a file has arrived, **Arrival Notice** emails the notify party (or the consignee) with the vessel, arrival date and what is still outstanding. It refuses on a file that has not arrived.
+
+<Callout title="Documents Before Delivery">With this setting on, the file will not be marked delivered while a required document is outstanding, and the refusal names them. Releasing cargo against a missing original is how a forwarder becomes liable for the goods. If a document is not really needed, untick Required on its document type instead of turning the setting off.</Callout>
+
+## Closing and cancelling
+
+A file is closed when the cargo is off your hands and the money is dealt with on both sides. Press **Close File**. It refuses, with a count, if any sell line was never invoiced, and again if any cost with a named supplier has no bill. Once both are clean the file moves to Closed with today's date.
+
+Those two checks are why the profit figures in the [reports chapter](/odoo-guides/odoo-freight-gross-profit-reports/) can be trusted. A file closed with an unbooked cost overstates its profit, and the correction arrives a month later with the shipping line's invoice.
+
+**Cancel** is for a booking that never happened. It refuses on a file with a posted invoice, a file whose customs entry has cleared, and a closed file, which has been delivered, invoiced and costed and is corrected with a credit note instead. A cancelled file can be sent back to Draft.
+
+## The operations desk, every morning
+
+1. Open **Operations, Job Files** and read the files arriving in the next three days.
+2. Report yesterday's arrivals on the last leg of each file and press **Arrived**.
+3. Send the arrival notice on anything that has landed.
+4. Check the document percentage on every file arriving this week and chase by issuer.
+5. Record yesterday's returned empties so detention counts from the right date.
+
+The documents, boxes and legs behind those steps are in the next chapter, [bills of lading, containers and routing](/odoo-guides/odoo-bill-of-lading-containers/).

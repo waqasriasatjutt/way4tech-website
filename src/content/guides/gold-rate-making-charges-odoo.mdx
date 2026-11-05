@@ -1,0 +1,113 @@
+---
+title: "Gold rate, purity and making charges in Odoo: setting up a jewellery shop"
+metaTitle: "Gold Rate, Purity and Making Charges"
+description: "Set up a jewellery shop in Odoo 19: shop settings, metals and buy-back margin, purities by fineness, the daily gold rate, items with making and wastage."
+targetQuery: "gold rate and making charges in odoo"
+category: "Industry"
+summary: "Day one in a jewellery shop on Odoo: the eight settings, metals, purities and counters, entering the daily rate, and loading items that price themselves from it."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-jewellery-management"
+seriesOrder: 1
+modules:
+  - name: "Jewelry Management"
+    technical: "wt_jewelry_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://jewelry-demo.way4tech.com/"
+  label: "Jewellery demo (Al Nour Jewellers)"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "Do I have to enter a rate for every purity every day?"
+    a: "No. Enter one rate per metal against its fine standard, normally 999, and every other purity of that metal is priced by its fineness. Enter a rate against a single purity only on the days you quote it differently from the ratio; a direct rate always wins."
+  - q: "What happens if nobody enters the rate in the morning?"
+    a: "With Carry the Rate Forward on and its scheduled job switched on, the last rate on file is copied to today and marked as carried forward, so the counter is never blank and nobody mistakes it for a fresh quote. The job ships switched off."
+  - q: "Can the making charge be a percentage instead of per gram?"
+    a: "Yes. Each item uses one of three methods: per gram, a percentage of the metal value, or a fixed amount. Wastage is a separate percentage of the weight, charged at the same rate as the metal."
+  - q: "Can one product carry two HUID numbers, or two products the same one?"
+    a: "No. An HUID belongs to one physical piece and the module refuses a duplicate. A piece at or above the hallmark weight will not sell until its number is recorded."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every mispriced ticket in a jewellery shop goes back to one of three mistakes: the wrong rate, the wrong weight, or a making charge somebody remembered differently. Fix those at setup and the counter, the buy-back desk and the stock count all inherit the right numbers. This chapter covers what a new shop does before it sells anything: the shop settings, metals and purities, counters, the daily rate, and loading jewellery items that price themselves from that rate. On the [demo](https://jewelry-demo.way4tech.com/) all of this is already filled in, so you can compare each step with a working shop.
+
+## Install and open the settings
+
+Install **Jewelry Management** from Apps. It needs Inventory and Accounting and installs them for you, because a piece of jewellery is stock that is also sold and invoiced. A Jewellery menu appears in the top bar.
+
+Then open **Jewellery, Configuration, Settings**. Eight settings decide how strict the shop is. They are company settings, so a group with two companies can give each its own rules.
+
+| Setting | What it does | Default |
+|---|---|---|
+| VAT charged on | Tax the whole ticket, or only the making charge and wastage | The whole ticket |
+| Refuse to sell without an HUID | A piece at or above the hallmark weight cannot be sold until its number is typed in | On |
+| Hallmark from | The net metal weight at or above which a piece needs an HUID | 2.0 g |
+| Weight tolerance | How far a counted weight or a bench return may drift before somebody writes down why | 0.15 g |
+| Purity gap needing a note | How far a tested purity may differ from the claimed one before the appraiser records what the test showed | 2.0 % |
+| Carry the rate forward | Copy yesterday's rate to today when nobody has entered one | On |
+| Memo value needing a manager | Above this value on one memo, only a manager can let the goods out | 5,000 |
+| Stone certificate required from | A stone at or above this weight, of a type that needs one, cannot be entered without its lab certificate | 0.30 ct |
+
+<Shot src="/odoo-guides/gold-rate-making-charges-odoo/shop-settings.webp" alt="Jewellery settings page in Odoo with VAT charged on, refuse to sell without an HUID, hallmark from 2.00 grams, weight tolerance, purity gap, stone certificate weight, carry the rate forward and memo value needing a manager" width={1500} height={900} caption="Every rule the counter and the bench are held to sits on one settings page." />
+
+Set the weight tolerance to what your scales can actually resolve. Too tight and every count line needs a reason; too loose and real loss slips through.
+
+## Metals and the buy-back margin
+
+**Configuration, Metals.** Gold, silver and platinum come ready. Each metal carries one number that matters at the counter: the **buy-back margin**, how far under the fine rate the shop buys old metal back. It covers refining loss and the cost of taking scrap to the refiner. The demo uses 3 percent on gold.
+
+Each metal also names an **old metal product**, so a buy-back lands on its own product and purchase account rather than disappearing off the sale.
+
+<Shot src="/odoo-guides/gold-rate-making-charges-odoo/metal-buy-back-margin.webp" alt="Gold metal form in Odoo with code AU, buy-back margin 3 percent, old metal product, and a purities tab listing 999, 916, 875, 750, 585 and 375 with fineness and today's rate per gram" width={1500} height={739} caption="A metal with its buy-back margin and its purities, each showing the rate it comes to today." />
+
+## Purity standards
+
+Each metal has its purity standards. The module ships with 999, 916, 875, 750, 585 and 375 for gold, 999 and 925 for silver, and 950 for platinum. A purity carries its karat and its fineness, and two flags:
+
+- **Fine or bullion standard.** The standard the market rate is quoted at, normally 999. Each metal has exactly one, and old metal is always credited against it.
+- **Assay office will hallmark.** The assay office marks pieces at this standard. A piece cannot be recorded as hallmarked on a standard the office does not mark.
+
+Add your own standards in **Configuration, Purity Standards** if you trade others.
+
+## Stone types and counters
+
+**Configuration, Stone Types** lists diamonds, coloured stones and pearls. Each is priced per carat or per stone, has an indicative rate to start from, and can be marked as needing a certificate.
+
+**Configuration, Counters** is where you describe the shop. A counter is a showroom, a workshop or bench, a vault or a bullion counter. Its **code** goes in front of every ticket, memo and job number raised there, so GS/JS/2026/00048 is a sale at the Gold Souk counter. Its **markup** is added to the bullion rate before it quotes, because a mall showroom usually runs a little above a souk counter. It also holds the memo due period, the sales journal, the stock location its tray is counted against, and the product used for making charges on invoices.
+
+## Enter the day's rate
+
+**Configuration, Metal Rates.** One row per metal, purity and day, with the rate per gram and where it came from: bullion market, trade association fix, supplier quote, entered by hand, or carried forward. A rate cannot be dated in the future, and a purity from one metal cannot carry another metal's rate.
+
+In practice one row a day is enough: the 999 gold rate. The 916, 750 and every other gold purity are worked out from it by fineness. On a day the shop quotes 22K at its own number, add a second row against 916 and it takes priority over the ratio.
+
+<Shot src="/odoo-guides/gold-rate-making-charges-odoo/metal-rate-table.webp" alt="Metal Rates list in Odoo with date, metal, purity, rate per gram and source for gold 999, 916, 750 and silver 925 across early November and late October" width={1500} height={600} caption="The rate table keeps its full history. Most days need only the 999 row." />
+
+**Counter, Rate Board** reads the same table the other way: every purity with the rate it works out to today, grouped by metal. It is the screen to glance at before quoting.
+
+The rate is stamped onto each sale line when the line is written. A ticket opened six months later still shows the rate it was sold at, not today's.
+
+<Callout title="The rate is typed, not fetched">Nothing polls a bullion exchange or an API. Someone with rights on Metal Rates enters it each morning. The carry forward job, which ships switched off, only copies the last rate; turn it on in Settings and replace the carried row once the market opens.</Callout>
+
+## Set up a jewellery item
+
+**Stock, Jewellery Items.** A jewellery item is an ordinary Odoo product with a **Jewellery** tab. Tick **Jewellery item** and the product is priced from the rate instead of a fixed sales price. Then fill in:
+
+1. **Metal and purity**, for example Gold, 750 (18K).
+2. **Design code**, the reference the shop uses for the design.
+3. **Gross weight and stone weight.** The net metal is worked out from them.
+4. **Making charge method and value**: per gram, a percentage of the metal value, or fixed.
+5. **Wastage percentage.**
+6. **Hallmarking**: not required, at the assay centre, hallmarked or failed assay, with the HUID, assay centre and date.
+7. **Stones set in the piece**, each with stone type, carats, colour, clarity, setting (prong, bezel, channel, pave, flush) and its certificate. Pave or channel work can go on one line with a stone count and total weight.
+
+The right side of the tab shows what the piece comes to at today's rate. Take the emerald cocktail ring on the demo: 9.360 g gross, 0.340 g of stones, 9.020 g net in 18K. At $58.19 a gram the metal is $524.87. An 18 percent making charge adds $94.48, 3 percent wastage adds $15.75, and the stones add $1,590.00, for a price today of $2,225.10. Change the rate and that figure moves.
+
+<Shot src="/odoo-guides/gold-rate-making-charges-odoo/jewellery-item-price-today.webp" alt="Emerald cocktail ring jewellery tab in Odoo with gross, stone and net weight, making charge as percentage of metal value, wastage, today's rate, metal value, making, wastage, stone value and price today, hallmark HUID and an IGI emerald certificate" width={1500} height={1240} caption="The emerald ring priced live from today's rate, with its HUID and the IGI certificate for the centre stone." />
+
+<Callout title="Two rules the item enforces">An HUID can be on only one piece. A stone at or above the certificate weight, on a stone type marked as needing one, cannot be saved without its certificate. Load your stock with that in mind: have the hallmark numbers and lab reports to hand before you start.</Callout>
+
+With the rate, the settings and a few items in place, the counter can sell. The [next chapter](/odoo-guides/odoo-jewellery-counter-sales-old-gold/) covers the ticket, VAT and old gold. The [hub page](/odoo-guides/odoo-jewellery-management/) has the overview and the PDF.

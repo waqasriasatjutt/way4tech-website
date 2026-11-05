@@ -1,0 +1,118 @@
+---
+title: "Shopify product and stock sync in Odoo: locations, stock policy, kits, prices and several stores"
+metaTitle: "Shopify Product and Stock Sync in Odoo"
+description: "Sync Shopify stock and products with Odoo 19: map locations to warehouses, hold back safety stock, push kits, and run one catalogue on several stores."
+targetQuery: "odoo shopify inventory sync"
+category: "Integration"
+summary: "How the Shopify Connector decides what Shopify may sell, per location, and how one Odoo catalogue sits on one or more Shopify stores with its own prices and publish state on each."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-shopify-connector"
+seriesOrder: 1
+modules:
+  - name: "Shopify Connector"
+    technical: "wt_shopify_connector"
+    note: "USD 149, Odoo 19 Community and Enterprise"
+demo:
+  url: "https://shopify-test.way4tech.com/"
+  label: "Shopify Connector demo"
+related: ["odoo-distribution-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can Shopify oversell what Odoo has in stock?"
+    a: "With the default quantity source, Free, the connector pushes on hand stock less what confirmed deliveries have reserved, per warehouse. Shopify therefore never sees units already promised to another order. A minimum to export can also push zero when only the last few units are left."
+  - q: "Can I keep part of my stock back for another sales channel?"
+    a: "Yes. The export percentage pushes only a share of the quantity, for example 80 percent, rounded down. The export offset then takes off a fixed safety stock the shop never sees. Both can be set for the whole store or per Shopify location."
+  - q: "How are kits and bundles synced?"
+    a: "With Manufacturing installed, a product whose bill of materials is a kit reports the number of kits its components allow in that warehouse. When any component moves, every kit that contains it is pushed again. Without Manufacturing, a kit is treated as an ordinary product."
+  - q: "Can the same product be on two Shopify stores with different prices?"
+    a: "Yes. A product carries one row per store, each with its own Shopify id, handle, status, publish state, SEO text and price. Each store can export from its own pricelist, and prices changed in Shopify can be kept as rules on an import pricelist so Odoo's sales price stays yours."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Stock is where a Shopify connection either earns its keep or causes trouble. If Shopify shows ten units and the warehouse has seven, the eighth order is a refund and an unhappy customer. If Shopify shows what is on the shelf but not what is already packed for another order, the same thing happens more slowly. And if the shop sells through a second channel, the business may not want Shopify to see all of it at all. This chapter of the [Odoo Shopify connector guide](/odoo-guides/odoo-shopify-connector/) covers how the connector decides the number Shopify shows, and how the products themselves are kept in step.
+
+## Step 1: map each Shopify location to a warehouse
+
+Shopify counts stock per location: a warehouse, a shop, a 3PL. Odoo counts it per warehouse. The first job is to connect the two.
+
+1. On the store form, press **Import Locations**. Each Shopify location appears on the **Locations** tab.
+2. Set the Odoo warehouse for each location.
+
+That mapping does two things. Stock for the location is read from that warehouse. And an order Shopify assigns to that location ships from that warehouse, which the [orders chapter](/odoo-guides/odoo-shopify-orders-payouts/) covers. A location left unmapped is skipped for stock and falls back to the store's default warehouse for orders. An hourly check raises a connected store that has no location at all.
+
+<Shot src="/odoo-guides/odoo-shopify-product-stock-sync/inventory-policy.webp" alt="Locations tab on the Shopify store form with two locations, Northwind Warehouse and Downtown Outlet, each mapped to an Odoo warehouse with sync inventory switched on and a stock policy: free stock for one, on hand 80 percent less 1 with a minimum of 2 for the other" width={1560} height={975} caption="Each location, its warehouse and the policy it pushes with, in one line." />
+
+## Step 2: decide what number Shopify sees
+
+Each location pushes stock through a policy. The store carries the default on its **Sync Behaviour** tab. To give one location its own rules, untick **Use store defaults** on that location's line.
+
+- **Quantity source.** **Free** is on hand less what confirmed deliveries have reserved. It is the default and the safe choice. **On hand** ignores reservations. **Forecast** adds confirmed incoming receipts and takes off confirmed outgoing deliveries.
+- **Export percentage.** Push only a share, for example 80, and keep the rest for other channels. It rounds down.
+- **Export offset.** A safety stock the shop never sees, taken off after the percentage, never below zero.
+- **Minimum to export.** Below it, zero is pushed, so the shop shows sold out rather than the last two units.
+- **Also count.** Other warehouses summed into this location. The mapped warehouse is still the one that ships.
+- **Include child companies.** Also counts stock held by branch companies, for a group whose branches share one Shopify store.
+
+The number pushed is worked out in that order: the source quantity over the location's warehouses, times the percentage, rounded down, minus the offset, and zero if the result is under the minimum. With 50 on hand, 80 percent, an offset of 1 and a minimum of 2, Shopify sees 39.
+
+<Shot src="/odoo-guides/odoo-shopify-product-stock-sync/pricing.webp" alt="Store Sync Behaviour tab with the inventory stock export policy set to free stock, 100 percent, offset 0 and minimum 0, the pricing section with a compare-at pricelist and export as draft, the last sync timestamps, and the alert settings" width={1560} height={975} caption="The store defaults: stock export policy on the left, pricing on the right." />
+
+Press **Push Inventory to Shopify** once after the first import. After that, a stock move queues a push, and a scheduled push runs every hour as a safety net. A number Shopify already has is not sent again.
+
+<Callout title="Pull inventory skips locations with a policy">Pull Inventory from Shopify writes Shopify's numbers into Odoo. It skips any location whose policy changes the number, because what Shopify shows there is not the warehouse's own figure and cannot be written back to it. The job says so once per location. Treat Odoo as the owner of stock and use the pull only for the first setup.</Callout>
+
+### Kits
+
+A product sold as a kit (a bill of materials of type kit, which needs Manufacturing) reports what its components allow: the smallest number of kits the components in that warehouse can make, less what is reserved. When a component moves, every kit containing it is pushed again. The location's policy applies to the kit count as it does to anything else. Without Manufacturing installed, a kit is just an ordinary product.
+
+## Step 3: products on one or several stores
+
+A product carries one row per Shopify store it is on. Open the **Shopify** tab on any product to see them. Each row keeps what belongs to that store: the Shopify id and handle, the status (active, draft or archived), whether it is published, its SEO title and description, the price as last sent or received, and the sync state.
+
+What is shared by every store is the catalogue itself: name, description, tags, vendor, product type, images and the variants. So one product can sit on two shops with two prices and two publish states, while its description is written once.
+
+<Shot src="/odoo-guides/odoo-shopify-product-stock-sync/product-shopify-tab.webp" alt="Product form for Trailhead 2-Person Tent with the Shopify tab open, showing shared vendor, product type and tags, and one store row for Northwind Outdoor Supply with the Shopify product id, handle, active status, price 189 and In sync" width={1560} height={975} caption="The Shopify tab on a product: shared catalogue fields above, one row per store below." />
+
+On a row you can:
+
+- **Publish** or **Unpublish** the product on that store's Online Store. From the product mapping list, the actions menu does it for several products at once.
+- Tick **Exclude from sync** to keep that store out entirely: the product is not exported there, that store's imports and webhooks leave it alone, and its stock is not pushed there. The Shopify id is kept for when you clear the box.
+- Add a row for another store. An export is then queued for that store only.
+
+When a product is deleted in Shopify, it is archived in Odoo if that was its only store. If it is on two stores, only the row for that store is marked archived.
+
+### Bulk export
+
+To put many products on a store, select them in the product list and choose **Export to Shopify** in the actions menu. Pick the store and the options: add products not on the store yet, export as draft, include images, only products with a SKU. One export job is queued per fifty products. Services, products excluded from sync on that store and, when you tick the box, products without a SKU are left out, and the wizard shows how many will go out before you press Export.
+
+<Shot src="/odoo-guides/odoo-shopify-product-stock-sync/bulk-export.webp" alt="Export to Shopify wizard over the product list with the Northwind store selected, add products not on the store yet and include images switched on, 52 products selected, 44 that will go out and 1 job" width={1560} height={975} caption="The bulk export from the product list: 52 selected, 44 eligible, one job." />
+
+**Export as draft**, on the store, sends every new product to Shopify as an unpublished draft, so someone can check it in the Shopify admin before customers see it. Products already on Shopify are updated as they are.
+
+## Step 4: prices
+
+Three pricelists on the store decide prices, all optional:
+
+- **Store pricelist.** The price exported for each variant. Without one, Odoo's sales price is sent.
+- **Compare-at pricelist.** The crossed-out "was" price Shopify shows next to it.
+- **Import prices into.** When a price is changed in Shopify, it is written as a fixed price rule on this pricelist, and Odoo's own sales price is left alone. That is what lets a product on two stores keep two prices in Odoo too.
+
+A pricelist in a currency other than the store's is converted at the company's rate for the day of the export, and the export job says so on a line. Odoo's sales price is never converted: it is sent as it is. So a store whose currency differs from the company's should always use a pricelist in the store's currency.
+
+### Metafields
+
+Under **Shopify, Configuration, Metafield Mappings**, a Shopify namespace and key can be mapped to an Odoo field on products, variants, orders or customers. On import the value is written to the field. On export of a product or customer it is written back. Order metafields are import only. Mappings are per store; if two stores map the same Odoo field, the last import wins.
+
+## Common stock problems and their cause
+
+| What you see | Usual cause |
+|---|---|
+| Shopify shows the wrong stock | The location is not mapped to a warehouse, or its policy holds stock back. The policy line on the Locations tab says exactly what is pushed. |
+| A product does not import | The Shopify variant has no SKU, or its SKUs sit on two different Odoo products. The failed job names them. |
+| A kit shows zero | One of its components is out of stock, or fully reserved, in that warehouse. |
+| A new product is not visible on the shop | Export as draft is on for the store, or the row is unpublished. Publish it from the row. |
+
+Next, the [orders, refunds and payouts chapter](/odoo-guides/odoo-shopify-orders-payouts/) follows an order from Shopify through delivery, refund and payout. To see the stock policy on a live store, open the [demo](https://shopify-test.way4tech.com/) or ask for a walkthrough through the [demos page](/demos/).

@@ -1,0 +1,110 @@
+---
+title: "Odoo attendance, shifts and overtime: check-in, monthly summary, rosters and paid overtime"
+metaTitle: "Attendance, Shifts and Overtime"
+description: "Attendance on Odoo 19 Community: My Space or device check-in, fixing missed punches, a monthly late and overtime summary, shift rosters and paid overtime."
+targetQuery: "odoo attendance shifts overtime"
+category: "Payroll and HR"
+summary: "How attendance reaches Odoo 19 from a button or a biometric device, how HR corrects it, the monthly summary of late arrivals and hours, shift types and rosters with swaps, and overtime requests that pay through the payslip."
+published: 2026-11-19
+updated: 2026-11-19
+series: "odoo-hrms"
+seriesOrder: 4
+modules:
+  - name: "HR Attendance Management"
+    technical: "wt_hrms_attendance"
+    note: "USD 25, needs HRMS Core and Odoo Attendances"
+  - name: "Employee Shift Scheduling"
+    technical: "wt_hrms_shifts"
+    note: "USD 25, needs HRMS Core"
+  - name: "Employee Overtime Management"
+    technical: "wt_hrms_overtime"
+    note: "USD 20, needs HRMS Core and HRMS Payroll"
+related: ["zkteco-adms-odoo", "odoo-labour-camp-management"]
+linkFrom: ["/products/wt-hrms-shifts/", "/products/wt-hrms-overtime/"]
+sources:
+  - label: "Odoo 19 documentation, Attendances"
+    url: "https://www.odoo.com/documentation/19.0/applications/hr/attendances.html"
+faqs:
+  - q: "Why is the Check in button missing from My Space?"
+    a: "A ZKTeco device is active and the setting Check in and out from My Space is on Unless a device does it, which hides the button on purpose. For people who work away from the device, such as field sales, set it to Always."
+  - q: "How are late arrivals counted?"
+    a: "Against the employee's working schedule. The monthly attendance summary shows, per person, days present and absent, late arrivals and minutes late, early departures, hours worked and overtime hours."
+  - q: "Does approved overtime get paid automatically?"
+    a: "The approved hours are written on the payslip by themselves, in the Overtime Hours field. You add one payroll rule once that turns hours into money, for example basic divided by monthly hours times 1.5. After that, overtime pays itself every month."
+  - q: "Can shifts cross midnight?"
+    a: "Yes. Tick Is Night Shift on a shift type that crosses midnight. The supplied night shift runs 22:00 to 06:00 with one hour of break."
+  - q: "Can a ZKTeco machine send attendance to Odoo?"
+    a: "Yes, with the separate WT ZKTeco ADMS add-on, which is not part of the suite. The device pushes each punch to Odoo over the internet using its own Cloud Server function. The ZKTeco guide on this site covers the setup."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In a factory, attendance is pay. A late arrival that nobody counts is a quarter hour paid for nothing, every day, for every person on the line. A forgotten punch out that runs into the next morning is fourteen hours of overtime somebody will claim. An overtime approval that lives on paper is one figure the payroll officer types again, and gets wrong. Standard Odoo [Attendances](https://www.odoo.com/documentation/19.0/applications/hr/attendances.html) records check-ins and check-outs. This chapter adds what an HR department does with them: decide how people check in, correct the gaps, read the month, plan shifts and pay overtime through the payslip.
+
+## Choose how people check in
+
+| Method | Good for | Watch out for |
+|---|---|---|
+| My Space button | Offices, small teams, people on a laptop or phone. | Anyone can check in from anywhere. Fine with trust, weak without it. |
+| ZKTeco device | Factories, gates, any site where attendance drives pay. | Needs a device on the internet and an IT person for half a day. |
+| Both | A device at the gate, the button for sales staff in the field. | Set the setting to Always, or the button disappears once the device is active. |
+
+The choice is the setting **Check in and out from My Space** under **WT HRMS, Configuration, Settings**: Unless a device does it, Always, or Never.
+
+### If you use a ZKTeco device
+
+Biometric attendance comes from a separate add-on, WT ZKTeco ADMS, which turns your Odoo into the server the machine reports to using the device's own Cloud Server (ADMS push) function. There is no PC or script in the office, and no inbound port to open. In outline: IT points the device at your Odoo address with the path `/iclock/`, the device appears in Odoo by itself as inactive, HR checks the serial number, sets the timezone offset and ticks Active, and each person's user number on the device is matched to their ZKTeco User ID or Badge ID on the employee. The workbook's Badge ID column fills that. The [ZKTeco ADMS guide](/odoo-guides/zkteco-adms-odoo/) has the full setup and the LAN option for devices that cannot reach the internet.
+
+Two device settings matter for pay. **Auto-Close Stale Sessions After** (default 14 hours) closes the open day of someone who forgot to punch out, instead of letting it run into the next day, and **Default Shift Length** (default 9 hours) is the length given to a day closed that way. Every raw punch is kept, so if a person's number was wrong you fix it on the employee, open the device and click **Reprocess Unprocessed Punches**.
+
+## Who is in today
+
+Managers see their own people on **My Space, My Team**: in, not checked in yet, or off today, with how many of their requests wait for a decision.
+
+<Shot src="/odoo-guides/odoo-attendance-shifts-overtime/my-team-presence.webp" alt="My Team page in WT HRMS showing two machine operators, one checked in since 16:57 and one not checked in, each with requests waiting" width={1440} height={900} caption="My Team for a shift supervisor: one person in, one not checked in, a decision waiting for each." />
+
+## Correcting attendance
+
+People forget to punch. HR opens **Time, Attendance, Check In/Out**, filters on the person and day, and corrects the times. Every change is logged. Do corrections before the monthly summary and before payroll, never after: the summary and anything paid on it read what is there on the day they run.
+
+## The monthly attendance summary
+
+At the start of each month the system builds a summary of the previous month for everyone: days present and absent, late arrivals and minutes late, early departures, hours worked and overtime hours. To build it by hand, for example after a round of corrections:
+
+1. Open **Time, Attendance, Generate Summary**.
+2. Choose the year and month. Leave Employees empty for everyone who had attendance that month. Click **Run**.
+3. Open **Time, Attendance, Monthly Summary**. Group by department, or filter on late count.
+
+<Shot src="/odoo-guides/odoo-attendance-shifts-overtime/generate-monthly-summary.webp" alt="Generate Monthly Summary dialog in Odoo with year, month and an optional employees field, and a Run button" width={997} height={351} caption="Running it again for the same month replaces the earlier figures." />
+
+<Shot src="/odoo-guides/odoo-attendance-shifts-overtime/monthly-attendance-summary.webp" alt="Attendance Summary list in Odoo for September with each production employee's days present, late count, total worked hours, overtime hours and total late minutes" width={1440} height={900} caption="September for the production floor: days present, late count, hours worked, overtime and minutes late." />
+
+<Callout title="The summary reports, it does not deduct">The summary counts lateness and absences but does not cut pay by itself. As shipped, the Basic payroll rule pays the full monthly wage whatever the days. If you deduct unpaid days, change the Basic rule to use worked days and type the days on the payslips that need it; the [payroll chapter](/odoo-guides/run-payroll-odoo-community/) shows how.</Callout>
+
+## Shifts
+
+If everybody works the company hours, skip this section. For rotating shifts:
+
+1. Correct the shift types in **Configuration, Shift Types**: start, end, break, and **Is Night Shift** for shifts that cross midnight. Morning, Day, Evening and Night ship with the module.
+2. Plan the roster in **Time, Shifts, Schedule**: one line per person per day.
+3. People see today's shift on My Space. Someone who wants to swap raises a **Shift swap** from My Space, naming their shift, the colleague and the shift they swap with; the manager approves it in To Approve.
+
+<Shot src="/odoo-guides/odoo-attendance-shifts-overtime/shift-types.webp" alt="Shift Types list in Odoo with Day, Evening, Morning and Night shifts, their start and end times, break hours, duration, net hours and the night shift flag" width={1440} height={900} caption="The supplied shift types, with net hours after breaks. The night shift crosses midnight." />
+
+If shift workers keep different hours from the office, give them their own working schedule as well (see the [implementation chapter](/odoo-guides/odoo-hr-implementation-plan/)), because leave and lateness are measured against the schedule on the employee.
+
+## Overtime that pays itself
+
+Overtime is a request like any other. The employee raises it from My Space with the date, hours, whether it was a weekday, weekend or holiday, and a reason. It walks the overtime approval chain, which ships as the direct manager then HR, each with 48 hours before escalation. Managers should approve only hours they know were worked, because approved hours are paid.
+
+The rates live in **Configuration, Overtime Policies**: weekday 1.5, weekend 2.0 and holiday 3.0, with a weekly cap. Approved hours in the pay period are written onto the payslip automatically, in the Overtime Hours field. What turns hours into money is one payroll rule you add once:
+
+1. **Payroll Config, Payroll Rules, New.** Name Overtime, code OT, category Allowance, sequence 25 (after the allowances, before gross).
+2. Computation type **Python Expression**, with the formula agreed with Finance, for example `round(wage / 208.0 * 1.5 * overtime_hours, 2)`: basic divided by 208 monthly hours (48 a week), times 1.5.
+3. Open your salary structure and add the Overtime rule to it.
+
+<Callout title="Hours arrive without the rule, money does not">If the payslip shows overtime hours but no overtime line, the OT rule is missing from the structure. Without it approved hours sit on the payslip and nobody is paid for them. The test script in the implementation chapter catches this if you include one overtime request.</Callout>
+
+## Month end for attendance
+
+Around day 25, remind managers to clear their To Approve lists: leave, overtime and work from home. Between days 26 and 28, correct missed punches. On the last day, approve the remaining overtime. On day 1 the summary for the month just closed builds itself, and in the first days of the month HR reads it for late arrivals and absences. Then the payroll officer runs the month, which is the next chapter: [running payroll in Odoo Community](/odoo-guides/run-payroll-odoo-community/).

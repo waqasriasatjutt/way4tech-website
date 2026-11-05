@@ -1,0 +1,109 @@
+---
+title: "Restaurant table reservations and waitlist in Odoo 19, with loyalty tiers, birthday offers and guest feedback"
+metaTitle: "Table Reservations, Waitlist and Loyalty"
+description: "Take table bookings in Odoo 19 with deposits and reminders, run a walk-in waitlist from the till, and add loyalty tiers, birthday coupons and QR feedback."
+targetQuery: "odoo restaurant table reservation waitlist"
+category: "Industry"
+summary: "The guest side of an Odoo 19 restaurant: the booking calendar, table suggestions, deposits, no-shows and reminders, the walk-in waitlist in the till and at the host stand, then loyalty tiers with their own prices, birthday coupons and a rate-your-meal QR on every receipt."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 7
+modules:
+  - name: "Restaurant Reservations"
+    technical: "w4_resto_reservations"
+    note: "USD 99, bookings, waitlist, host stand, guest messages"
+  - name: "Restaurant Loyalty"
+    technical: "w4_resto_loyalty"
+    note: "USD 99, tiers, birthday offers, feedback QR, needs Odoo POS loyalty"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: []
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+faqs:
+  - q: "Can Odoo stop double booking a restaurant table?"
+    a: "With Restaurant Reservations, yes. Two bookings never overlap on a table and there are 15 minutes between bookings. The refusal names the booking already there. A party larger than the seats warns, and more than twice the seats is refused."
+  - q: "How does the walk-in waitlist work?"
+    a: "The Waitlist button in the till opens the queue with each party's position, size, phone, arrival time and the real wait against the quoted wait. Add party takes three taps, Notify sends a table-ready message, and Seat opens a table picker with the best table pre-ticked."
+  - q: "How are booking reminders sent?"
+    a: "By Odoo SMS or a WhatsApp webhook, or only logged on the booking if no provider is set. There is a confirmation, a reminder three hours before, and a table-ready message for the waitlist."
+  - q: "Does the loyalty module replace Odoo's own loyalty programs?"
+    a: "No. Points, eWallet, gift cards and coupons are Odoo's own loyalty programs. Restaurant Loyalty adds tiers on top, each with its own discount turned into a price list, birthday coupons, the tier on the customer display and the feedback QR."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The door is the first and last thing a guest remembers. A booking that was lost, a family of six told "ten minutes" and left standing for forty, a regular who is treated like a stranger, a bad meal that only shows up as a one-star review a week later. Each one costs a returning guest, and returning guests are where a restaurant's margin is.
+
+This chapter covers the guest side: bookings and the walk-in queue, run from the till the host already has, and then loyalty tiers, birthday offers and feedback. Standard Odoo 19 has a Booking button on the POS when booking is enabled, as the [restaurant features documentation](https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html) notes. Restaurant Reservations adds the rules a busy restaurant needs around it: table suggestions, deposits, no-show tracking, reminders and a fair waitlist.
+
+## The booking calendar
+
+**Restaurant, Reservations, Calendar** shows the week coloured by branch, with list and kanban views by status. Each branch sets its own booking rules on the **Reservations** tab of the branch form: booking length, slots, no-show grace, reminders, deposits and waitlist times.
+
+<Shot src="/odoo-guides/odoo-restaurant-reservations-waitlist/reservations-calendar.webp" alt="Reservations calendar in Odoo for week 45 of November 2026 with bookings coloured by branch, Gulberg and DHA Phase 6, and a month picker" width={1600} height={1000} caption="The booking calendar for the week, coloured by branch." />
+
+## Making a booking
+
+1. **Guest, party size, time.** Fill in the guest, phone, party size, occasion and source (phone, walk-in and so on), and the start time. The branch time and duration follow from the branch rules.
+2. **Availability.** The button lists the free tables for that window, with the smallest table that fits already ticked.
+3. **Deposit.** A branch or a single booking can require a deposit before it is confirmed. The amount and its reference are recorded on the booking.
+4. **Confirm.** Confirm sends the confirmation message. **Seat**, **Complete**, **No-show** and **Cancel** follow as the evening goes on.
+
+<Shot src="/odoo-guides/odoo-restaurant-reservations-waitlist/reservation-form.webp" alt="Reservation RSV/00003 in Odoo, confirmed, for a business dinner of 6 at Gulberg at 11:45 for 90 minutes on table 9 of the Main Floor, with a deposit of 2,000 marked paid and its reference, and the chatter noting the confirmation message was logged only" width={1600} height={899} caption="A confirmed booking: party, table, duration and a paid deposit with its reference." />
+
+### The rules behind a booking
+
+| Rule | What it does |
+|---|---|
+| No double booking | Tables never overlap, with 15 minutes between bookings; the refusal names the other booking |
+| Party size | Larger than the seats warns; more than twice the seats is refused |
+| Reserved ring | 30 minutes before, the tables turn Reserved on the floor plan with a chip such as "11:45 Omar (6)" |
+| No-show | Released after the grace time, 20 minutes in the demo; from three no-shows, the guest's next booking shows a warning |
+| Deposits | Required per branch or per booking, recorded with a reference |
+| Closed days | Configuration, Booking Blackouts refuses bookings for a private event or a holiday |
+| Messages | Confirmation, a reminder 3 hours before, and table-ready, by SMS or a WhatsApp webhook, or logged only |
+
+<Callout title="Messages need a provider">Confirmations and reminders go out only once a sending method is chosen in Settings: Odoo SMS or a WhatsApp webhook. Until then they are logged on the booking and nothing reaches the guest, as in the screenshot above. Deposits are recorded with their reference; taking the deposit online is not part of the module.</Callout>
+
+## The walk-in waitlist
+
+The **Waitlist** button in the till opens the queue. Each party shows its position, size, phone and arrival time, and the real wait against the quoted wait in green, amber or red. The strip at the top counts parties and guests waiting, how many are over their quote, and the next quote to give.
+
+- **Add party** takes three taps: name, size, phone.
+- **Notify** sends "your table is ready".
+- **Seat** opens a table picker with the best table already ticked.
+- **Left** records a party that gave up, which is the number to watch on a Friday.
+
+Bookings due in the next two hours sit beside the queue, so the host sees both at once and does not give away a table that is held for 9:45.
+
+<Shot src="/odoo-guides/odoo-restaurant-reservations-waitlist/waitlist-in-pos.webp" alt="Waitlist in the Odoo POS with 5 waiting, 17 guests, 5 over quote and the next quote 30 minutes, parties with position, size, phone, arrival time, minutes waited against quoted, notify, seat and left buttons, and bookings due with times, table numbers and Seat buttons" width={1600} height={773} caption="The waitlist in the till: real wait against quoted wait, and the bookings due beside it." />
+
+For a host desk without a till, **Reservations, Host Stand** is the same queue on a tablet at the door, with its own Booking button. **Waitlist History** keeps every party, and **Reporting, Guest Messages** logs every SMS and WhatsApp message sent.
+
+## Loyalty tiers and tier prices
+
+**Restaurant, Configuration, Loyalty Tiers** sets Bronze, Silver and Gold, each reached by points earned in the last 12 months, with a discount that becomes a price list in one click. When a member is set on an order, their tier badge shows and their prices apply. The dish card in the till shows the Silver and Gold price next to the normal one, so a waiter can tell a regular what they will pay.
+
+<Shot src="/odoo-guides/odoo-restaurant-reservations-waitlist/loyalty-tiers.webp" alt="Loyalty Tiers in Odoo: Bronze from 0 points with 8 members, Silver from 500 points in 12 months with 5 percent off and a Silver members price list, Gold from 1,500 points with 10 percent off and a Gold members price list" width={1600} height={395} caption="Three tiers, each reached by points in the last 12 months, each with its own price list." />
+
+Underneath, points, eWallet, gift cards and coupons are Odoo's own loyalty programs. Starter programs are created at install: 1 point per 100 spent, and 100 points give 5 off. **Operations, Loyalty Members** shows guests grouped by tier with their points and balance, and the customer display shows the guest's name, tier and points on the screen facing them.
+
+**Birthday offer.** A few days before a guest's birthday the module issues a coupon, once a year, valid for 14 days, sent by message or noted on the contact. The amount and the days before are set in Settings, and **Reporting, Birthday Offers** lists the coupons sent.
+
+## Rate your meal
+
+Every receipt carries a **Rate your meal** QR. It opens a one-page form on the guest's phone with stars for overall, food and service, and a comment box. No website is needed; the page is served by Odoo.
+
+<Shot src="/odoo-guides/odoo-restaurant-reservations-waitlist/rate-your-meal.webp" alt="Rate your meal page on a phone for Lahore Grill House Gulberg with the order number, star ratings for overall, food and service, a comment box and a Send my rating button" width={1400} height={1292} caption="The page the receipt QR opens on the guest's phone." />
+
+**Reporting, Guest Feedback** shows ratings by branch, waiter and day. A rating of 2 or less creates a to-do for the branch managers the same day and, with the call center installed, opens a complaint. That is the point of the feature: the manager hears about the cold biryani that evening, while the guest can still be called, rather than reading it on a review site.
+
+<Shot src="/odoo-guides/odoo-restaurant-reservations-waitlist/guest-feedback.webp" alt="Guest Feedback list in Odoo for the last 30 days with date, branch, guest, order, overall rating and comment, with low ratings of 1 and 2 highlighted in red" width={1600} height={787} caption="Guest feedback by branch and guest; low ratings stand out and reach the managers as a to-do." />
+
+## Where to go next
+
+That completes the day, from the door to the dashboard. The [Restaurant Suite overview](/odoo-guides/odoo-restaurant-management/) lists every module and price, and the full printable guide is linked on that page. To see bookings, the waitlist and the rest working, open the [Restaurant Suite demo](https://restro.way4tech.com/) from the [demo directory](/demos/), or [describe your restaurant](/contact/) and I will say which modules it needs.

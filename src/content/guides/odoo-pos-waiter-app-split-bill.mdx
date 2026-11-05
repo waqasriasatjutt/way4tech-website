@@ -1,0 +1,135 @@
+---
+title: "Odoo POS waiter app: seats, courses, voids with a manager PIN and split bills"
+metaTitle: "Waiter App, Courses and Split Bills in Odoo"
+description: "How a waiter takes orders on Odoo 19 POS with seats, courses and hold, why sent dishes lock, and how to move tables, split a bill and add a service charge."
+targetQuery: "odoo pos waiter app split bill"
+category: "Industry"
+summary: "The waiter's side of an Odoo 19 restaurant: opening a table, options and sizes, seats and courses, holding a course, locked sent lines, voids with a manager PIN, table moves, four ways to split a bill and the service charge."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 2
+modules:
+  - name: "Restaurant Order Taker"
+    technical: "w4_resto_order_taker"
+    note: "USD 129, waiter mode, seats, courses, hold and fire"
+  - name: "Restaurant Table Operations"
+    technical: "w4_resto_table_ops"
+    note: "USD 99, transfers, merges, bill splitting, service charge"
+  - name: "Restaurant Mobile POS"
+    technical: "w4_resto_pos_mobile"
+    note: "USD 79, phone and tablet layouts"
+  - name: "Restaurant Menu Engineering"
+    technical: "w4_resto_menu"
+    note: "USD 99, modifiers, sizes, 86 list"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: []
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+faqs:
+  - q: "Can a waiter be stopped from taking payment in Odoo POS?"
+    a: "Not in standard Odoo. With the Restaurant Suite the Waiter role has no Payment button and the server refuses a payment from a waiter login, so a waiter can open tables, send orders and print the bill but cannot close an order or touch the drawer."
+  - q: "What happens when a waiter removes a dish the kitchen already has?"
+    a: "Sent lines are locked. Reducing or deleting one asks for a reason and then a manager PIN. A wrong PIN changes nothing. When approved, a VOID ticket goes to the stations that had the dish and the audit log records who asked, who approved and the amount."
+  - q: "How many ways can I split a bill?"
+    a: "Four: by item, by seat, into equal parts (up to eight, with the cents spread so nothing is lost) and by a custom amount one guest pays now while the rest stays on the table."
+  - q: "Can the service charge be removed by the waiter?"
+    a: "No. It is one line worked out from the order and cannot be edited from the keypad. Removing it needs Actions, Remove service charge and a manager PIN, unless the register allows cashiers to do it, and both removal and restore are logged."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The waiter is where most restaurant money is made and most of it leaks. A pizza goes to the kitchen without its sauce, the mains arrive while the guests are still on starters, a dish is quietly taken off after it was eaten, a table of eight wants six bills. Every one of those is a few minutes of argument at the pass or at the till. The Order Taker and Table Operations modules are built so the waiter can do everything the guest needs at the table, except take money, and so each of those moments has a rule behind it.
+
+Standard Odoo 19 already has a floor plan, courses, table transfer and bill splitting, as the [restaurant features documentation](https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html) shows. What the suite adds is the control: seats on every line, held courses, lines that lock once sent, a manager PIN on every risky change, and a waiter role that cannot reach the payment screen.
+
+## Taking an order at the table
+
+1. **Unlock the register.** The till opens on a lock screen. Tap Unlock Register, pick your name and type your POS PIN. Every action after that is recorded under your name. The buttons across the top (Waitlist, Online, Deliveries) carry live counts for the branch.
+2. **Read the floor plan.** Each table shows its state by colour and label: Ordered in amber, Food ready in blue, Bill requested in orange, Needs cleaning in red, and no ring when free. The corner shows guests and seats, a timer shows the minutes in that state, and a purple chip shows the next booking, for example "11:45 Omar (6)". The chips under the plan filter by section.
+3. **Open a table.** Tap a free table and an empty order opens on the product screen. Release table frees it again if the guests leave before ordering.
+4. **Add a dish with its options.** If the dish has modifier groups, the options window opens. In the demo the Funghi needs exactly one sauce, with Garlic as the default, and takes up to three extras, each with its price. Add stays off until the choice is inside the limits.
+5. **Pick a size.** A dish with sizes asks for one: Mango Lassi Small, Regular or Large, each with its own price difference.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/dish-options.webp" alt="Odoo POS options window for a Funghi pizza at 10.35 with Sauce choose one where Garlic is picked, and Extras up to three with Mushroom and Extra cheese picked, each extra with its price, and the Add and Discard buttons" width={1600} height={1112} caption="Options with limits: exactly one sauce, up to three extras, each extra priced." />
+
+## Seats, courses and holding a course
+
+**Seats.** Tap **Seat** and pick the guest before tapping their dishes. Lines carry an S1, S2 badge, the kitchen ticket shows it, and later the bill can be split by seat. Lines of different seats never merge, even for the same dish. The seat list follows the number of guests on the table.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/seat-picker.webp" alt="Seat for the next items dialog in the Odoo POS with Table no seat ticked, Seat 1 and Seat 2" width={1600} height={1112} caption="Pick the seat first; every dish after that carries the seat badge." />
+
+**Courses.** Tap **Course** to start a new course. Each course gets its own block on the order, so starters sit in Course 1 and mains in Course 2.
+
+**Hold.** Tap **Hold** on a course the guests are not ready for. A held course is not cooked when the order is sent: the kitchen screen shows it dimmed with HOLD at the end of its grid, and its timer starts only when the waiter releases it.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/course-on-hold.webp" alt="Odoo POS order with a Funghi on seat 1 with Garlic, Mushroom and Extra cheese, a large Mango Lassi and Pasta Bolognese on seat 2, and Course 2 marked On hold with a Club Sandwich, and the Send button showing Food 3 and Drinks 1" width={1600} height={1112} caption="Course 2 on hold. Send shows what goes where: three food lines and one drink." />
+
+<Callout title="Held courses on kitchen printers">On the kitchen screen a held course waits dimmed until it is fired. On a paper kitchen printer it does not yet: a held course currently prints on the first ticket with the rest of the order. If your kitchen works from paper only, tell the cooks to watch the course header, or send the held course later as a separate round until this is fixed.</Callout>
+
+**Send.** Send shows the count per station (Food 3, Drinks 1). The tickets go to the kitchen screens and printers of their stations, the lines lock, the table turns Ordered on every device, and the till goes back to the floor plan with a notice that the order was sent.
+
+## After the order is sent
+
+**Sent lines are locked.** Reopen the table and every sent line carries a lock, with Course 1 marked Fired. Adding more of the same dish makes a new line and needs nobody's approval.
+
+**Removing a sent dish asks why.** Select a sent line and reduce it or press delete. The till first asks for the reason ("Wrong dish", "Guest changed their mind"), then for a manager PIN. A wrong PIN is refused and nothing changes. When approved, a VOID ticket prints at the stations that had the dish, and the change goes into the audit log with who asked, who approved and the amount. The same rule protects a price typed by hand, a discount above the limit, cancelling a sent order and refunds.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/void-manager-pin.webp" alt="Void a sent line dialog in Odoo POS explaining that the Funghi with Garlic, Mushroom and Extra cheese was sent to the kitchen and a manager has to approve the change, with a PIN keypad, Approve and Discard" width={1600} height={1112} caption="A sent dish cannot be removed without a manager typing their PIN." />
+
+**Long-press a table.** Press and hold a table on the plan, or right-click on a computer. A small card shows its state, time, guests, waiter and amount, with quick buttons for Request bill, Food ready, Set guests, Open table and Mark clean.
+
+**Food ready and sold out.** When the kitchen finishes a ticket the table turns blue and the waiters of that section get a sticky notice with a bell and the list of items. Press and hold a dish to see its allergens, stock, price before and after tax and the loyalty tier prices. **Mark 86** marks it sold out at this branch: every till of the branch greys it out at once with an "86" ribbon.
+
+### How a table changes colour
+
+Nobody colours a table by hand. The table is Occupied when the first item lands, Ordered when it is sent, Food ready when the kitchen bumps the last station of the ticket, Bill requested when the bill prints, then Paid and Needs cleaning when the paid order leaves the table, and Free when someone taps Mark clean. It turns Reserved 30 minutes before a confirmed booking. The server keeps the same rules, so a second device or a phone order never leaves a table in the wrong colour.
+
+## Moving tables and changing the waiter
+
+The **Actions** menu on a table holds the moves. Each is logged with who did it, and the register decides which ones need a manager PIN.
+
+| Action | What happens | PIN by default |
+|---|---|---|
+| Transfer or Merge | Tap the destination table; the order moves and the old table becomes Needs cleaning or Free, per register | Manager PIN |
+| Merge table | Two tables for one party; the orders merge and the order reads "T 5 & 6" | Manager PIN |
+| Split (table) | Pick lines and send them to another table | None |
+| Change waiter | Hand the order to another waiter or cashier, for example at a shift change | Off |
+| Move to another POS | Send the order to another register of the same branch, such as the bar till | Manager PIN |
+| Transfer to branch | Send the order to another branch | Manager PIN |
+
+When a table with food in the kitchen is moved or merged, the stations holding its dishes get a "TABLE MOVED: 5 to 8" notice, so the runner takes the plates to the right table. **Reporting, Table Operations** lists every transfer, merge, split and waiter change with its approval.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/table-actions.webp" alt="Actions menu of a table in the Odoo POS with Customer Note, Bill, Guests, Split, Transfer or Merge, Transfer course, Merge table, Change waiter, Move to another POS, Transfer to branch, eWallet, Enter Code, Reward, Reset Programs and Pricelist" width={1600} height={1112} caption="The Actions menu: bill, guests, split, transfer and merge, change waiter, move to another register or branch." />
+
+## Four ways to split a bill
+
+| Way | How | Example |
+|---|---|---|
+| By item | Tap the lines each guest pays for | One guest pays for the drinks |
+| By seat | Tap a seat chip and every line of that seat is selected | Seats 1 and 2 pay separately |
+| Equal parts | Type the number of parts, up to eight; each part is worth exactly its share | 2.20 in three is 0.74, 0.73 and 0.73, so no cent is lost |
+| Custom amount | Type what one guest pays now; the rest stays on the table | A guest leaves early and pays 1,000 |
+
+Splitting by seat only works if the waiter used seats when ordering, which is the best argument for training waiters to tap Seat from the first night.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/bill-splitting.webp" alt="Bill Splitting screen in the Odoo POS with tabs By item, By seat, Equal parts and Custom amount, order lines Club Sandwich and Milkshake Banana, the order note, the amount selected and Payment, Split Order and Transfer buttons" width={1600} height={1112} caption="Bill splitting: by item, by seat, equal parts or a custom amount." />
+
+## Service charge and tips
+
+Each register sets a **service charge** rate, from how many guests it applies, and on which service: dine-in, takeaway or delivery. The demo charges 10 percent on dine-in tables of four or more.
+
+The charge is one line, worth the rate applied to the total of every other line including tax, but not tips. It is recalculated on every change: add a dish and it grows, drop below the guest threshold and it goes. 10 percent of 1,234.56 is 123.46. The waiter cannot change or delete it from the keypad. **Actions, Remove service charge** needs a manager PIN unless the register allows cashiers, and both removal and restore are logged with the amount. When the bill is split, each part carries its own share.
+
+<Shot src="/odoo-guides/odoo-pos-waiter-app-split-bill/service-charge-line.webp" alt="Odoo POS order with locked lines Pasta Bolognese and Minute Maid, a Coca-Cola, and a locked Service charge 10% line at 1.59, total 17.52" width={1600} height={1000} caption="The service charge as one locked line that follows every change to the order." />
+
+**Tips** use Odoo's own Tip button on the payment screen. The suite records which waiter served the order, so **Reporting, Tips by Waiter** shows tips and service charge per waiter per day.
+
+## The waiter on a phone
+
+The Mobile POS module lays the same till out for one hand: big tiles three across, category chips in a strip, a search box always open, and a bottom bar with the total and a Cart button. Swipe a line left to delete it. Favourites come first. It installs as an app on the home screen and keeps the screen awake during service.
+
+Once the order is sent, it is the kitchen's turn: the next chapter covers [the kitchen display and kitchen printing](/odoo-guides/odoo-kitchen-display-system/).

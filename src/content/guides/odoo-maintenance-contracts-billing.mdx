@@ -1,0 +1,128 @@
+---
+title: "Maintenance contracts in Odoo: what the fee covers, contract invoicing, renewals and chargeable work"
+metaTitle: "Maintenance Contracts and Chargeable Work"
+description: "Set up FM maintenance contracts in Odoo 19: cover lines, what the fee includes, invoicing cycles, renewals, rate cards, chargeable jobs and write-offs."
+targetQuery: "odoo maintenance contract billing facility management"
+category: "Industry"
+summary: "The commercial half of a facilities business with the Enterprise add-on: contracts that decide cover when the job is raised, invoices on a cycle, work outside the cover priced off a rate card, and write-offs with a reason."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 6
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+  - name: "Facility Management Enterprise"
+    technical: "wt_facility_enterprise"
+    note: "USD 850 add-on, needs Facility Management; adds Analytic"
+demo:
+  url: "https://facility-pro.way4tech.com/"
+  label: "CAFM demo with the Enterprise add-on"
+related: ["odoo-construction-ra-bill-job-costing", "uae-e-invoicing-odoo"]
+faqs:
+  - q: "Can Odoo invoice a maintenance contract monthly or quarterly?"
+    a: "With the Facility Management Enterprise add-on, yes. A contract is invoiced monthly, quarterly, half yearly or annually, by hand with Invoice the Period or by a nightly job, one invoice per period, with the period dates on the line and the due date from the customer's payment terms."
+  - q: "How does a job know whether it is covered?"
+    a: "When the job is raised it takes the most specific running contract line that covers it, asset first, then building, then site, inside the contract term. It then checks what the fee includes and flags anything outside as chargeable, with the reason."
+  - q: "What happens to old jobs when I change what a contract covers?"
+    a: "Nothing, on purpose. Jobs keep the cover they had when they were raised. A Facility Manager or Contracts and Billing user can press Re-check Cover on a job to match it against the contracts as they are now; it is refused on a job already invoiced or written off."
+  - q: "Is a written-off job deleted from the reports?"
+    a: "No. Written-off work keeps its amount and the required reason, shows a grey banner on the job, and stays on the reports and on the Contracts and Billing board."
+  - q: "Does the Enterprise add-on need Odoo Enterprise?"
+    a: "No. Facility Management Enterprise is the name of the module edition. It runs on Odoo 19 Community, with Accounting and Analytic from the standard apps."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A facilities business is not paid per work order. It signs an annual contract, agrees what the fee covers, invoices on a cycle, bills what falls outside, and gives credits when it misses the clock. The money is lost in the gaps between those steps: the call that was outside the contract but nobody flagged it, the parts that went over the allowance, the out of hours visit charged at nothing because the engineer forgot to tick a box. Most FM firms lose more to chargeable work that was never billed than to anything else.
+
+This chapter covers maintenance contracts, contract invoicing, renewals, rate cards and chargeable work in the [Facility Management Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_facility_enterprise/) add-on for Odoo 19. Service credits for missed SLAs have their own chapter, [SLA service credits and reports](/odoo-guides/odoo-sla-service-credits/).
+
+## Set up a contract
+
+Open **Contracts, Maintenance Contracts** and press **New**.
+
+1. Under Who, pick the **Customer**, the site contact, the **Customer Reference** (their PO number) and the **Contract Manager**.
+2. Under The Term, set **Starts**. **Ends** fills in a year less a day later, so a contract from 1 January ends on 31 December. Set the **Notice Period (days)**; Notice By is worked out.
+3. On **What Is Covered**, add a line per site, building or single asset, with a description, the planned visits per year and the annual value it was priced at.
+4. Under **Included in the Fee**, tick what the fee pays for: planned maintenance, reactive calls, callout charge included, out of hours included, and set **Parts Included Up To** per job.
+5. Under Anything Else, choose the **Charge Rates** card that prices work outside the cover.
+6. On **Money**, check the annual value (the sum of the lines) and choose **Invoiced Every**: monthly, quarterly, half yearly or annual.
+7. On **Terms**, write what was actually agreed: response times, exclusions, access. It is what everybody reads when there is an argument.
+
+<Shot src="/odoo-guides/odoo-maintenance-contracts-billing/contract-cover.webp" alt="What Is Covered tab of a maintenance contract in Odoo with one line for a tower, all hard services, 12 planned visits and 144,000 AED annual value, and the Included in the Fee section with planned maintenance, reactive calls and callout ticked, out of hours not included, parts included up to 1,500 AED, and a Standard Rates charge card" width={1600} height={1299} caption="What the fee covers, and the rate card for everything else." />
+
+### How a job finds its contract
+
+A line naming a site covers every building on it. A line naming a building covers that building only, and a line naming an asset covers one machine. When a job is raised, the most specific line wins: asset first, then building, then site. The job also has to fall inside the contract's term. This is how one estate can carry an owners association contract for the tower and a tenant's own contract for one chiller.
+
+## Put on cover: Scheduled and Running
+
+Press **Put on Cover**. The contract gets its own analytic account and its first invoice date. If the start date is today or earlier, it is **Running**, and jobs already raised on those buildings inside the term are put on it. If the start date is in the future, it is **Scheduled**: a banner says when cover starts, nothing is invoiced before then, and it becomes Running by itself on the start date. The other states are Draft, Expired, Renewed and Cancelled.
+
+## Invoicing the period
+
+Open a running contract and press **Invoice the Period**. An invoice for the next period is raised, dated the first day of the period, with the dates it covers on the line and the due date from the customer's payment terms. Next Invoice moves on to the following period, and any agreed service credit not yet applied comes off the same invoice as its own line.
+
+Nothing is invoiced twice. The contract remembers where it got to, and pressing the button before the next period starts tells you the date it does. A nightly job does the same for every contract that is due, oldest period first, so a catch-up run produces invoices in date order. The Print menu on a contract produces a contract statement: what was covered, what was done and what was charged on top.
+
+## Renewals
+
+When a contract enters its notice period, the contract manager gets an activity, the contract shows a "Notice is due" banner, and it appears under **Contracts, Renewals**. Press **Renew** and a draft copy is created, starting the day after the current end date, with the same cover lines and terms. Set the new price, agree it with the customer, then **Put on Cover**. It waits as Scheduled until its start date. The old contract keeps its jobs and billing to its own end date, then becomes Renewed.
+
+## Rate cards
+
+A rate card is what the customer is charged for work outside the contract. It is not what the work costs you; that stays on the technician and the contractor, and the difference is the job margin.
+
+<Shot src="/odoo-guides/odoo-maintenance-contracts-billing/rate-card.webp" alt="Rate card form in Odoo named Standard Rates with labour per hour 230 AED, out of hours premium 1.5, minimum charge one hour, subcontractor markup 15 percent, parts markup 22 percent, callout charge 320 AED and a 5 percent tax" width={1600} height={551} caption="A rate card: labour, out of hours premium, minimum charge, markups, callout and tax." />
+
+Under **Configuration, Rate Cards**, set the labour rate per hour, the out of hours premium (1.5 means time and a half), the minimum charge in hours, the subcontractor markup (a subcontracted hour is charged at its cost plus this margin), the parts markup, the callout charge and the taxes. Set a **Default Rate Card** in Settings too: it prices chargeable work when the contract names no card and every job with no contract. Without it, chargeable jobs show no price.
+
+## Covered or chargeable
+
+Cover is decided when the job is raised, not argued about at month end. The job takes its contract and checks what the fee includes. Work outside is flagged chargeable, with the reason:
+
+| Why chargeable | When |
+|---|---|
+| No Contract Covers It | No running contract covers the site, building or asset on that date. |
+| Outside What the Contract Covers | Planned or reactive work the fee does not include. |
+| Parts Over the Allowance | Parts past the per job allowance. Only the excess is charged. |
+| Out of Hours | Out of hours labour when the contract does not include it. If callouts are included, no callout is charged. |
+| Damage or Misuse | Set by hand when a tenant broke it. |
+| Project Work | Jobs with origin Project Work. |
+| Marked Chargeable by Hand | Set with Make It Chargeable on the job. |
+
+<Shot src="/odoo-guides/odoo-maintenance-contracts-billing/job-chargeable.webp" alt="Closed work order in Odoo with an SLA breached ribbon and an amber banner saying chargeable, outside what the contract covers, to be invoiced to the customer when the job is finished, with Invoice the Customer and Write It Off buttons and job cost and margin smart buttons" width={1600} height={366} caption="The banner says why the job is chargeable and who will be invoiced." />
+
+The **Charging** tab, visible to Contracts and Billing users, shows the price side: labour, parts and callout charged, the total to invoice, the rate card used and the job margin against the cost on the Parts and Labour tabs.
+
+<Shot src="/odoo-guides/odoo-maintenance-contracts-billing/charging-tab.webp" alt="Charging tab of a work order in Odoo with chargeable ticked, why chargeable, bill to, rate card schedule of rates tendered and invoicing status to invoice, and labour charged, parts charged, callout charged, total to invoice and job margin" width={1600} height={700} caption="The price side of a job, separate from its cost." />
+
+**Bill To** comes from the contract's customer; with no contract, from the building's owner; failing that, the site's. When none is set, the banner turns red and the job cannot be invoiced until you set one.
+
+Changing a contract applies to jobs raised from then on, so nobody's invoice changes behind their back. If a job really should be priced again, press **Re-check Cover** on it. The chatter records the before and after.
+
+## Invoice chargeable work, or write it off
+
+**Contracts, Chargeable Work** is the billing run. It opens on the To Invoice filter.
+
+<Shot src="/odoo-guides/odoo-maintenance-contracts-billing/chargeable-work.webp" alt="Chargeable Work list in Odoo with jobs, finished date, building, contract, why chargeable, bill to, labour and parts charged, amount to invoice, job margin and invoicing status of invoiced, to invoice or written off" width={1600} height={478} caption="The billing run: invoiced, waiting and written off in one list." />
+
+Check the figures, then press **Invoice the Customer** on a finished job, or tick several and use the Actions menu. A draft customer invoice opens with the hours as quantity, the rate as price and the job number and building on the line. Confirm it in Accounting as usual. With **Invoice Chargeable Jobs Automatically** on in Settings, closing a chargeable job raises the invoice by itself; leave it off if somebody checks prices first.
+
+Sometimes you decide not to bill: goodwill after a complaint, a disputed call, warranty rework. Press **Write It Off**, check the amount and write why. The reason is required.
+
+<Shot src="/odoo-guides/odoo-maintenance-contracts-billing/write-off.webp" alt="Write It Off dialog in Odoo with the job, the amount being written off and a required reason explaining a goodwill write-off agreed at the monthly review" width={1600} height={533} caption="A write-off needs a reason, and the amount stays on the reports." />
+
+The job's invoicing status becomes Written Off, a grey banner shows the amount and reason, and it stays on the reports. A write-off with a reason is a decision. A job nobody invoiced is a leak. Clear Chargeable Work every week and nothing vanishes quietly.
+
+## Cost budgets and analytic accounts
+
+Under **Contracts, Cost Budgets**, set your own annual budget for running an estate, per building or asset class, start it from last year's actual figures with **Fill from Last Year**, and press **Agree the Budget** to lock it. Spent fills in from job cost as work is done. Put a building or an asset class on every line: a line with neither picks up all the spend in the period, and the total then counts the same job twice.
+
+Each contract gets an analytic account when put on cover, and sites and buildings can carry one too. Every job's cost lands on the right account, so your accountant sees contract and building profitability in the normal Odoo accounting reports.
+
+<Callout title="What this does not do">There is no customer portal: the customer gets invoices and the printed statement, not a login. Contract prices do not index or escalate by themselves; you set the new price on the renewal. Contract invoices are standard Odoo invoices, so any e-invoicing your country requires comes from your Accounting setup, not from this module. Cost to serve only counts what was booked on jobs, so unbooked hours make a contract look more profitable than it is.</Callout>
+
+Open a running contract, a chargeable job and the billing run on the [demo with the Enterprise add-on](https://facility-pro.way4tech.com/). The next chapter covers [service credits and the reports](/odoo-guides/odoo-sla-service-credits/).

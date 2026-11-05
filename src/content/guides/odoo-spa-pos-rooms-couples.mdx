@@ -1,0 +1,130 @@
+---
+title: "Odoo spa POS: treatment rooms, cleaning time, couples, intake forms and the advance"
+metaTitle: "Spa POS: Rooms, Couples and Intake Forms"
+description: "Set up a spa till on Odoo 19: treatments with an advance, rooms with cleaning time, couples on one bill, day-spa itineraries, intake forms and reviews."
+targetQuery: "odoo spa management software"
+category: "Industry"
+summary: "The Spa POS layer step by step: treatments, therapists and rooms, the room board, booking with an advance, walk-ins, couples, itineraries, the intake form, reviews and cancellations."
+published: 2026-12-03
+updated: 2026-12-03
+series: "odoo-salon-spa-management"
+seriesOrder: 2
+modules:
+  - name: "WT Spa POS"
+    technical: "wt_spa_pos"
+    note: "USD 1,299, Odoo 19, installs on POS Salon and WT Salon Management"
+  - name: "POS Salon"
+    technical: "wt_pos_saloon"
+    note: "USD 949, the salon till Spa POS extends"
+  - name: "WT Salon Management"
+    technical: "wt_salon_management"
+    note: "USD 10, holds treatments, therapists, rooms and commission"
+demo:
+  url: "https://spa-app.way4tech.com/"
+  label: "Spa POS demo"
+related: []
+linkFrom: ["/products/wt-spa-pos/"]
+sources: []
+faqs:
+  - q: "Do I need POS Salon to run Spa POS?"
+    a: "Yes. Spa POS is a layer on the POS Salon till, which itself sits on WT Salon Management. Installing Spa POS installs the other two if they are missing, and everything POS Salon does (day view, tips, quick rebook, check-in) works on a spa till too."
+  - q: "Can a guest pay part of the advance now and the rest later?"
+    a: "Yes. The money button on the booking card takes whatever is still due, and two part payments add up. When the booking is billed, the bill takes off exactly what was paid, once."
+  - q: "What happens if two tills book the same room at the same moment?"
+    a: "The second booking is refused with the salon's own message naming the booking already in the way, and nothing is saved. The room's capacity decides how many overlapping bookings it accepts, so a couples suite set to two takes two."
+  - q: "Is the intake form a signed consent document?"
+    a: "It records Yes or No answers and a consent tick against the booking, with the wording the guest answered. It is not a drawn signature and it is not legal advice, so keep whatever your insurer or country requires alongside it."
+  - q: "Does the advance carry tax?"
+    a: "No. The advance line carries no tax. If your country taxes deposits at the moment they are taken, check with your accountant before using it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A spa sells time in a room as much as time with a therapist. The hammam needs twenty minutes to be cleaned before the next guest, the couples suite is worth nothing if it is booked for one, a first-time guest with high blood pressure should not be on the hot stone table without someone asking, and a no-show on a 90 minute treatment is a gap that cannot be resold at short notice. A salon till does not handle any of that. This chapter covers WT Spa POS, the layer that turns a POS Salon till into a spa front desk. The [main guide](/odoo-guides/odoo-salon-spa-management/) gives the overview; this is the step by step.
+
+## How the spa layer is built
+
+Spa POS keeps no records of its own. It installs on two modules and uses theirs:
+
+- **WT Salon Management** holds the treatments (salon services), the therapists (employees), the rooms and stations, the time slots, the advance each treatment asks for, the double booking guard and the commission rules.
+- **POS Salon** puts the day's bookings on a board inside the Point of Sale till, loads a booking onto the bill and prints it on the receipt. Its [chapter](/odoo-guides/odoo-salon-pos-till/) covers that till.
+
+On top, the spa layer adds a room board the till opens on, cleaning time between guests, spa Book and Walk-in popups, couples bookings, a day-spa itinerary, an intake form, a therapist gender preference, the advance at booking and therapist reviews. A separate Spa app in the back office shows only the spa's side. Because the bookings are the salon's own appointments, every salon report, commission and loyalty figure covers the spa too.
+
+Staff at a spa till need two roles: a Point of Sale role and the Salon Receptionist (or Manager) role. A cashier with no salon role cannot book, take an advance or record a review, and the till says which role is missing.
+
+## Step 1: treatments, therapists and rooms
+
+**Treatments.** Open **Spa, Treatments**. A treatment is a salon service in a category marked Spa Treatments, so the list shows only those and the hair and nail services stay in the Salon app. On each one set the price and duration (the duration holds both therapist and room), the rooms and stations it can be given in, the therapists who give it (empty means everyone), time slots if the room turns over at fixed times, and the advance as a percentage or a fixed amount, not both. Tick Spa Treatments on any category whose services the spa till should offer, under **Spa, Configuration, Treatment Categories**.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/treatment-form.webp" alt="Hot Stone Massage treatment form in the Odoo Spa app with category Massage, price 260 AED, duration 1 hour 15, two massage rooms, a 20 percent advance at booking and one available therapist" width={1600} height={1000} caption="A treatment: price, length, the rooms it can use, who gives it and the advance it asks for." />
+
+**Therapists.** Open **Spa, Therapists**. A therapist is an employee with Spa Therapist ticked on the Spa tab of the employee form. Their card shows the average rating and how many reviews it comes from. Commission uses the salon's own rules, one per therapist, worked out when the treatment is invoiced.
+
+**Rooms.** Add rooms and stations under **Spa, Configuration, Rooms and Stations**. Each has a kind (room, station, chair), a short code for the till and receipt, a capacity and a **Cleaning Buffer (min)**: the minutes the room is held after every treatment. A couples suite has capacity two. A hammam gets a long buffer and a nail station a short one. Zero means the next guest can follow at once.
+
+## Step 2: make the till a spa till
+
+Open the till's settings in Point of Sale and tick **Spa Till**, which turns on Salon Mode with it. **Ask for a Review on Done** opens the review popup whenever a treatment is marked done.
+
+Open the register and press Salon. A spa till opens on the room board: each room green when free, amber when its next booking is still to come today, red while a treatment is running, and blue for "Cleaning until 16:20" during the buffer. No booking or walk-in can start inside a room's cleaning time. The day's treatments are listed under each room, and you can pick another day at the top. The same board works on a tablet.
+
+## Step 3: book a treatment with its advance
+
+Press **Book** on a room, or at the top of the board. Pick the treatment, whose length, price and advance show on its card. Pick the day: **Free times** lists only the starts where a therapist who gives that treatment and a room it is given in are both free. Choosing a therapist or a room narrows the list, and one that is not free is greyed out. Find the guest by name or phone, or type a new name.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/book-treatment.webp" alt="Book a treatment popup on the Odoo spa till with a list of massages and facials showing length, price and advance, free start times, a therapist with rating, two massage rooms, a guest search, an intake form warning and a Take the advance now checkbox" width={1600} height={1000} caption="Booking a treatment: only times when both a therapist and a room are free are offered." />
+
+Leave **Take the advance now** ticked if the guest pays at booking. The till opens an order of its own with one Treatment Advance line, you take payment as usual, and the card shows Advance held. A booking made without it shows Advance due and a money button to take it later.
+
+When the booking is later loaded onto its bill, the advance comes off as a negative Treatment Advance line, so the guest pays only the rest.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/advance-off-bill.webp" alt="Odoo Point of Sale order with a Hot Stone Massage at 260 AED and a Treatment Advance line of minus 52 AED, total 208 AED" width={1600} height={1000} caption="The advance comes off the final bill as its own negative line." />
+
+The server checks every advance when the till sends the order and refuses the order if the money does not add up. An advance can never be more than the treatment and belongs to the guest who booked. The bill must take off exactly what was paid, once, on the bill for that treatment. Refunding the advance order releases it, but an advance already taken off a bill cannot be refunded on its own until that bill is. In the back office the booking keeps Advance Due, Advance Collected, Advance Settled By and Advance Held as separate fields.
+
+If the loyalty add-on is installed, the advance is taken as that add-on's deposit instead, and the spa till never takes one of its own, so a guest can never be charged both.
+
+## Step 4: walk-ins, couples and a day at the spa
+
+**Walk-in.** Press **Walk-In** and pick the treatment. The popup only offers a therapist and room free from now for the whole length of the treatment and picks the first of each. **Start and ring up** puts the booking In Progress and onto the order.
+
+**Couples.** Press **Couples** on the room board. Pick the day and start, then fill in Guest 1 and Guest 2, each with a treatment and a therapist (or any free therapist) and an optional preference. Choose how rooms are used: together if a room takes two, one room, or two rooms. **Check availability** lays out both treatments with time, therapist and room, or says exactly why one cannot be placed. **Book both** creates two bookings under one reference, or none at all.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/couples-booking.webp" alt="Couples booking popup on the Odoo spa till with two guests each booked for a Swedish Relaxation Massage, room option Together if a room takes two, and a green availability result placing both in the Couples Suite with two therapists" width={1600} height={1000} caption="A couples booking: two guests, two therapists, one suite, checked before anything is saved." />
+
+Press **Order** on either guest's card and both treatments land on one bill, paid once.
+
+**Day-spa itinerary.** Press **Itinerary**, enter the guest, the day and the first start, then build the day in order with treatments and breaks, choosing a therapist for each. Check availability shows every step with its time, therapist and room. If any step cannot be placed, it names the step and the reason and **Book the day** stays off. Booking creates every step or none.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/day-spa-itinerary.webp" alt="Day-spa itinerary popup in Odoo with a Swedish massage, a 30 minute break and a deep tissue massage laid out from 14:00 to 16:30 with therapist and room for each step" width={1600} height={1000} caption="An itinerary with a break, checked and ready to book in one go." />
+
+## Step 5: the intake form and gender preference
+
+A treatment category can require an intake form before a guest's first treatment of that kind (**Salon, Configuration, Service Categories, Intake Form Before First Treatment**). That booking shows an Intake needed badge, and pressing Start opens the form instead: medical conditions, allergies, pregnancy, medication and a consent statement, each Yes or No. **Save and start** records the answers and starts the treatment.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/intake-form.webp" alt="Intake form popup on the Odoo spa till before a guest's first treatment with Yes and No questions on medical conditions, allergies, pregnancy, medication and a consent statement, and buttons Save and start, Manager override and Not now" width={1600} height={1000} caption="The intake form opens in place of Start on a guest's first treatment of that kind." />
+
+A Yes on a safety question sets an alert on the guest that shows on later bookings. Questions can be reworded, switched off or added under **Spa, Configuration, Intake Questions**; a form already filled in keeps the wording the guest answered. A salon manager can press **Manager override** and give a reason to start without the form, and the reason, manager and time are kept on the booking.
+
+For gender preference, mark each therapist's gender on their employee record. A guest can ask for a female or male therapist on any booking or couples popup; the preference stays on the guest for next time, the card shows a badge, and the planners pick a matching therapist when one is free.
+
+## Step 6: payment, reviews and cancellations
+
+Press **Order** on a card and the treatment, with any advance held, lands on the order. The receipt carries a block headed Spa Treatment with the booking reference, time, treatment, therapist, room and length. Tips, quick rebook and check-in work exactly as on the salon till, credited to the therapist.
+
+A finished treatment shows a star button for a review: one to five stars and what the guest said. With Ask for a Review on Done switched on, the popup opens by itself. A treatment takes one review, only once it is done.
+
+<Shot src="/odoo-guides/odoo-spa-pos-rooms-couples/therapist-review.webp" alt="Review popup on the Odoo spa till for a therapist with four of five stars and the comment Lovely scrub, very calm room" width={1600} height={1000} caption="A review taken at the till, credited to the therapist." />
+
+Reviews are listed under **Spa, Reviews** with a pivot by therapist and rating. A therapist reads only the reviews about them, reception reads them all, and only a manager can delete one.
+
+To cancel, press the cross on the card. The room and therapist are free again at once. If the guest paid an advance, the card shows **Refund advance**, which opens an order paying it back and settles the advance on the booking. In the back office, **Spa, Bookings** shows the calendar and **All Bookings** the list; closed till sessions are Point of Sale's own.
+
+<Callout title="What Spa POS does not do">A couples bill is one order paid once; it cannot be split between two payers. The advance carries no tax. The intake form has no drawn signature. Cleaning time is a minimum gap per room, not a task list for the cleaner. Commission is calculated by the salon module, not paid out. Online booking for guests is the base module's booking page, not this module. In an itinerary, the first start offered is 09:00, so pick a later start if the rooms are busy then.</Callout>
+
+## Upgrading from 19.0.1.x
+
+The first version of Spa POS kept its own services, specialists, rooms, slots, commission plans and appointments. Upgrading to 19.0.2.0.0 or later copies all of them onto the salon's records, including each booking's advance, reviews, till orders and chatter. The copy is checked by row counts and money totals before anything is renamed, and if it does not add up the upgrade stops with nothing changed. The old tables are kept with a `_legacy` suffix.
+
+The [Spa POS demo](https://spa-app.way4tech.com/) runs a sample day spa with rooms, therapists and a week of bookings. To add loyalty points, prepaid packages and gift cards on top, see the [loyalty chapter](/odoo-guides/odoo-salon-loyalty-packages-memberships/).

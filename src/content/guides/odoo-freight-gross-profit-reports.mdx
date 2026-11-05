@@ -1,0 +1,106 @@
+---
+title: "Freight gross profit in Odoo: by lane and salesperson, and the reports that find leaks"
+metaTitle: "Freight Gross Profit and Leak Reports"
+description: "Read freight profit in Odoo 20 by trade lane, salesperson and agent, and find unbilled files, costs without a bill, arrival delays and under target files."
+targetQuery: "odoo freight gross profit report by lane"
+category: "Industry"
+summary: "Five reports built off the same charge lines the invoices come from: two that show how the business is doing and three that show where it is quietly losing money, plus a monthly routine for the manager."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 7
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: ["n8n-odoo-automation"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Where does the gross profit figure come from?"
+    a: "From the charge lines on each job file: the same lines the customer invoices were raised from and the supplier bills were booked against. Duty and tax lines are excluded. It is not a separate set of books."
+  - q: "How do I find files that were never invoiced?"
+    a: "Reporting, Unbilled Files lists files carrying cost with nothing invoiced. After the number of days in the Chase Unbilled Files After setting, 14 by default, the salesperson on the file also gets an activity."
+  - q: "Can I see profit by overseas agent?"
+    a: "Yes. Group the Gross Profit pivot by Overseas Agent. The agent share owed on a nominated file is calculated from the rate on the agent record, and only a Freight Manager can see it."
+  - q: "Can I export the reports to Excel?"
+    a: "Yes. The pivot views have Odoo's standard download button, which exports the pivot to a spreadsheet as you laid it out."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Forwarding margins are thin enough that a business can grow its revenue every quarter and still make less money. The cause is rarely one bad rate. It is a pattern: one lane quietly running under target, one salesperson winning the thin business, invoices that were never raised on files that carried cost, supplier bills that turn up a month after the profit was reported. The freight module's reports are built off the same charge lines the invoices come from, so they can be tied back to a document, and three of them exist only to find those leaks. This chapter is for the Freight Manager.
+
+## Gross profit
+
+**Reporting, Gross Profit** is a pivot of every file: sell, cost and profit. Rows start as trade lanes and columns as months, and both can be regrouped by anything on the file.
+
+<Shot src="/odoo-guides/odoo-freight-gross-profit-reports/gross-profit-pivot.webp" alt="Gross Profit pivot in Odoo with trade lanes as rows and August, September and October 2026 as columns, showing sell, cost and profit per lane and month and totals" width={1600} height={421} caption="Three months by trade lane in the demo. Exports to Europe and imports from the Far East bring similar revenue, at very different profit per month." />
+
+These figures are not a second set of books. They are the same charge lines that customer invoices were raised from and supplier bills were booked against, which is why a file cannot be closed until both sides are done. A profit report nobody can tie back to an invoice gets argued with; this one can be checked line by line through the [costing sheet](/odoo-guides/odoo-freight-charges-invoicing/).
+
+### Lane, salesperson, month
+
+1. Press the minus beside **Total** on the left to collapse the rows.
+2. Press the plus and choose what to group by: **Trade Lane**, **Salesperson**, **Customer**, **Mode**, **Office** or **Overseas Agent**.
+3. Do the same along the top for the columns.
+4. **Measures** switches between sell, cost and profit.
+5. The download button exports the pivot to a spreadsheet as laid out.
+
+Lane by salesperson is the view worth reading every month. It shows who is winning the thin business, which is a different conversation from who is winning the most business.
+
+## Unbilled files
+
+**Reporting, Unbilled Files** lists files carrying cost where nothing has been invoiced. After the number of days in **Chase Unbilled Files After** (14 by default), a scheduled job gives the salesperson on the file an activity: the file has this much cost on it and nothing invoiced since it opened, raise the invoice or write the cost off.
+
+This is where a forwarder's money quietly disappears. Nobody forgets to pay the shipping line, because the shipping line asks. The invoice that was never raised is missed by nobody until the file is six months old and the customer has forgotten the shipment.
+
+## Costs without a bill
+
+**Reporting, Costs Without a Bill** is the other side: charge lines with a cost and a named supplier where no supplier bill has been booked. Group it by supplier to chase them. Each line is one of two things. Either the supplier's invoice has not arrived, in which case the file's profit is right and the bill is coming, or it arrived and was not booked, in which case the profit on that file is overstated by exactly that amount until it is.
+
+<Callout title="Margin on grouped rows is not a margin">Margin (%) is stored per file and per charge line, and Odoo adds it up on grouped rows like any other number. Grouped by salesperson or supplier, these lists can show margins over 100 percent. Read the margin on individual lines, and on grouped rows or in a pivot compare profit with sell instead.</Callout>
+
+## Arrival delays
+
+**Reporting, Arrival Delays** shows average delay in days by trade lane, and by carrier if you group it that way. Switch to the list for the file by file view.
+
+<Shot src="/odoo-guides/odoo-freight-gross-profit-reports/arrival-delays-list.webp" alt="Arrival Delays list in Odoo with file number, opened date, mode, direction, customer, ports, ETA, delay days, amount sold, gross profit, margin and state for twelve arrived files" width={1600} height={537} caption="The same report as a list: every arrived file with its ETA and how many days late it ran." />
+
+Take the list, not the chart, into a carrier review. An average of four days late is an opinion. A list of files with vessel names, voyages and actual arrivals is a claim. The figures are only as good as the ETAs on the routing legs, so update a leg's ETA when the carrier moves the schedule, before the vessel arrives, as covered in [bills of lading, containers and routing](/odoo-guides/odoo-bill-of-lading-containers/).
+
+## Under target files
+
+A file whose margin falls below its lane's target, or below the company minimum where the lane has none, is flagged.
+
+1. Go to **Operations, Job Files**.
+2. In the search, choose the **Under Target Margin** filter.
+3. Group by **Customer** to see whether it is one account or a general slide.
+
+Read the flag against the lane, not the business. Fourteen percent on a transit corridor with a 15 percent target is close to plan; fourteen percent on an import lane targeted at 22 is well short. That is why target margins live on the lane rather than in one company wide number.
+
+## The agent's share
+
+On a file nominated by an overseas agent, **Agent Share** is what is owed to them out of the profit, worked out from the rate on the agent's record. Only a Freight Manager sees it. Group the Gross Profit pivot by **Overseas Agent** before the network statement goes out, so both sides start from the same number. The module calculates the share; it does not raise a payment or a bill to the agent.
+
+## Why We Lose
+
+The sales side has its own report, **Sales, Why We Lose**, which groups lost quotations by reason with the revenue and profit each reason cost. It is covered in the [quotations chapter](/odoo-guides/odoo-freight-quotation/), and it belongs in the quarterly review below.
+
+## A monthly routine for the manager
+
+1. Clear **Unbilled Files** to nothing, or to files you can explain.
+2. Work **Costs Without a Bill** down, chasing suppliers who have not invoiced.
+3. Close every file that is delivered and billed on both sides.
+4. Read **Gross Profit** by lane and by salesperson against last month.
+5. Open the under target files and ask why, one at a time.
+6. Take **Arrival Delays** by carrier into the next carrier review.
+7. Read **Why We Lose** for the quarter and act on the biggest reason.
+
+On Mondays, the first two items are enough. Once a quarter, also ask whether the lane targets are still the right numbers.
+
+If you want these figures pushed somewhere else, for example a weekly summary to a chat group, the [n8n and Odoo automation guide](/odoo-guides/n8n-odoo-automation/) shows how to read Odoo records from a workflow. To see the reports with data in them, ask for a login to the [freight forwarding demo](https://freight-demo.way4tech.com/) through the [contact page](/contact/), or go back to the [overview](/odoo-guides/odoo-freight-forwarding/).

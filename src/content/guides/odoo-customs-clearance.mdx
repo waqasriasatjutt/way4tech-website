@@ -1,0 +1,143 @@
+---
+title: "Customs clearance in Odoo: entries, tariff lines, duty, VAT and disbursement"
+metaTitle: "Customs Entries, Duty and VAT in Odoo"
+description: "Customs clearance in Odoo 20: entries built from cargo, freight apportioned by value, duty, excise and import VAT, restricted goods and transit."
+targetQuery: "odoo customs clearance declaration duty calculation"
+category: "Industry"
+summary: "How a customs broker raises an entry from a job file, brings freight and insurance into the customs value, works out duty, excise and VAT per tariff line, and recharges the duty without touching the margin."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 6
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is import VAT calculated on a customs entry?"
+    a: "Per tariff line, VAT is charged on the customs value plus the duty plus the excise, at the VAT rate on the HS code. If the code has no VAT rate, the standard import VAT rate from the settings is used."
+  - q: "How is freight added to the customs value?"
+    a: "The freight, insurance and other dutiable charges on the file are brought onto the entry and spread across the tariff lines in proportion to each line's invoice value, not evenly. Change any of them and press Reapportion Value."
+  - q: "Does the module submit the declaration to customs?"
+    a: "No. You lodge with customs in their own system and record the entry number, lodging, any query, clearance and release on the entry in Odoo. There is no electronic link to a customs authority."
+  - q: "Why does the duty not show in the file's profit?"
+    a: "Disburse Duty to the File puts duty and import VAT on the file as two charges flagged as duty and tax, with the same cost and sell. Flagged lines are recharged at cost and kept out of the margin."
+  - q: "Should duty on a transit entry be disbursed?"
+    a: "No. On a transit entry the duty and VAT shown are the security the bond has to cover, not a payment. Do not disburse them onto the file."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+For a forwarder that also clears goods, customs is where the largest sums of money pass through the business and the smallest share of them is profit. A single import can carry tens of thousands in duty and VAT against a few hundred in forwarding margin. If that duty is booked like any other charge, the margin report becomes useless, and if the freight is spread across the tariff lines evenly instead of by value, the importer pays duty they did not owe. The customs side of the freight module is built around getting those two things right. This chapter is mostly for the Customs Broker role.
+
+## Raising an entry
+
+1. Make sure every cargo line on the file has an HS code. Cargo without one has nothing to declare.
+2. Open the file and press **Raise Entry**.
+3. The entry is created with the regime set from the direction, the declarant set to the customer, and the entry port set to the discharge point on an import or the loading point on an export. The tariff lines are built at once.
+4. Type the **Entry Number** once customs gives you one.
+
+An office set to Forwarding Only cannot raise an entry, and the refusal names the office. The entry prints the filing office and the licence it is filed under, which come from the office record.
+
+## The regimes
+
+| Regime | When |
+|---|---|
+| Import for Home Use | Goods entering and staying. Duty and VAT are paid. |
+| Permanent Export | Goods leaving. |
+| Transit | Goods crossing on the way elsewhere, secured by a bond. |
+| Customs Warehousing | Goods into a bonded warehouse, duty deferred. |
+| Temporary Admission | Goods in for a while and going out again. |
+| Inward Processing | Goods in to be worked on and re-exported. |
+| Re-export | Goods going back out. |
+
+## Building the tariff lines
+
+**Build From Cargo** takes the cargo off the file and makes one tariff line per commodity, with description, pieces, weights and value, and the duty, excise and VAT rates from the HS code. It then brings in freight and insurance and apportions them. The button only works while the entry is a draft. Once lodged, an entry is amended through a correction with customs, not by rebuilding it here.
+
+<Shot src="/odoo-guides/odoo-customs-clearance/customs-entry-draft.webp" alt="Draft customs declaration in Odoo with job, filing office, regime import for home use, customs office, licence, three tariff lines for computers, wine and tiles with invoice value, apportioned freight, customs value, duty and VAT, and totals for duty, excise, import VAT and total payable" width={1600} height={859} caption="Three commodities on one entry. Computers clear at zero duty, tiles at 25 percent, and the wine line is flagged as restricted and carries excise too." />
+
+## What goes into the customs value
+
+Customs charges duty on the landed value, not the invoice value, so three figures are added to the goods:
+
+| Field | Where it comes from |
+|---|---|
+| Freight to Add | Freight, origin and destination charges on the file. On a CIF invoice it is already in the price; on FOB it is not. |
+| Insurance to Add | The insurance charged on the file. |
+| Other Charges | Handling, inspection or agency fees that customs counts as part of the value. |
+
+These are spread across the tariff lines **by value**, not evenly. On the entry above, 1,740 dollars of freight is split 783, 522 and 435 across the three commodities in proportion to what each is worth. Splitting it in three equal parts would have moved value from the zero duty line onto the 25 percent lines and cost the importer money. Correct any of the three figures and press **Reapportion Value** to redo the split.
+
+## How the duty is worked out
+
+Per line, in this order:
+
+| Figure | Worked out as |
+|---|---|
+| Customs Value | Invoice value + apportioned freight + apportioned insurance and other charges |
+| Duty | Customs value × duty rate |
+| Excise | Customs value × excise rate |
+| Import VAT | (Customs value + duty + excise) × VAT rate |
+| Line Total | Duty + excise + VAT |
+
+VAT sits on top of duty and excise, not beside them. Rates come from the HS code, so setting the tariff codes correctly once, as in the [setup chapter](/odoo-guides/odoo-freight-forwarding-setup/), makes every entry built from cargo correct. Government fees and levies that are charged per entry rather than per tariff line belong on the file as duty and tax charge codes, not as tariff lines.
+
+## Restricted goods
+
+A tariff code marked restricted makes its line restricted on the entry. An entry with a restricted line will not clear without something in **Licence or Permit**, and the refusal lists the codes that need one. Customs will not release restricted goods without the permit, and the system should not record a clearance that has not really happened.
+
+## Lodging, queries and clearing
+
+1. Check the lines and press **Lodge**. The entry moves to Lodged with the time recorded.
+2. If customs comes back with a question, press **Customs Queried** and write what they asked in **Query Note**. A queried entry can be corrected and lodged again.
+3. When it clears, make sure the entry number is on and press **Cleared**.
+4. When the goods are released, press **Released**.
+
+Clearing the last open entry on a file moves the file to Customs Cleared and posts a note with the entry number and the total paid. The broker does not need write access to the operations file for that to happen.
+
+## Disbursing the duty to the file
+
+Duty and import VAT are the importer's money, laid out by you.
+
+1. Open the cleared entry.
+2. Press **Disburse Duty to the File**.
+3. Two charges appear on the file, duty and excise, and import VAT, each quoting the entry number, flagged as duty and tax, with the same figure on cost and sell.
+
+Because the two lines carry the same cost and sell they make no profit, and because they are flagged they stay out of the file's margin. A file that moved a large duty bill still shows the forwarding profit it really earned. The button refuses on an entry that has not cleared, and a second time if the duty is already on the file. An entry cannot be cancelled once its duty has been disbursed; take the charges off the file first.
+
+## Transit entries
+
+A transit entry is raised the same way with **Regime** set to Transit. Duty and VAT are still worked out, because that is the figure the bond has to cover, but the goods are entered for home use at the far end and nothing is paid here.
+
+<Shot src="/odoo-guides/odoo-customs-clearance/transit-entry.webp" alt="Lodged transit customs entry in Odoo for a road file, with regime transit, entry number, importer of record, two tariff lines for steel and hand tools with customs value, duty and VAT, and total payable shown as the bond amount" width={1600} height={835} caption="A transit entry for goods moving on by road under bond. The total here is the security, not a payment." />
+
+<Callout title="Never disburse a transit entry">The amount on a transit entry is the bond security. The module will still offer Disburse Duty to the File once the entry clears, so write on the entry's note that it is transit, so the next person does not recharge the importer for money that never left the business.</Callout>
+
+## The worksheet
+
+**Print** produces the customs worksheet: your reference, broker reference, file, regime, office and licence, every tariff line with net weight, value, customs value, duty and VAT, and the totals payable.
+
+<Shot src="/odoo-guides/odoo-customs-clearance/customs-worksheet.webp" alt="Printed customs worksheet PDF with reference, broker reference, file, regime, customs office, entry date and licence, three tariff lines with HS code, description, net kg, value, customs value, duty and VAT, the wine line marked licence required, and totals for invoice value, freight, customs value, duty, excise, VAT and payable" width={1469} height={1901} caption="The worksheet goes in the file and is checked against what customs assessed. The restricted line is marked licence required." />
+
+## Duty by commodity
+
+**Customs, Duty and Tax by Commodity** lists every tariff line across every entry. Group by HS code to see what each commodity has cost in duty over a year, or by declarant to see which importer carries the tax.
+
+## The broker's routine
+
+- Raise the entry as soon as the documents are in, not when the vessel berths.
+- Check the HS codes on the cargo before building lines: the rate is only as good as the code.
+- Check what has been brought into the value, and reapportion if freight changed.
+- Chase the permit on anything restricted before lodging.
+- Record a query the day it comes back.
+- Clear, put the entry number on, and disburse the duty onto the file. Never disburse on transit.
+
+The effect of all this on the numbers is in the last chapter, [freight gross profit and leak reports](/odoo-guides/odoo-freight-gross-profit-reports/).

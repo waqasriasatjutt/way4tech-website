@@ -1,0 +1,128 @@
+---
+title: "Kitchen display system for Odoo 19 Community: stations, expo and kitchen printers without an IoT box"
+metaTitle: "Kitchen Display System for Odoo Community"
+description: "A kitchen display for Odoo 19 Community: stations, routing, bump and recall, expo, timers, kitchen printing without an IoT box and kitchen times."
+targetQuery: "odoo kitchen display system community"
+category: "Industry"
+summary: "How the kitchen works on Odoo 19 Community with the Restaurant Suite: station screens, routing, start, bump, recall and rush, the expo view, network and Windows kitchen printers, and the kitchen times report."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-restaurant-management"
+seriesOrder: 3
+modules:
+  - name: "Restaurant Kitchen Display"
+    technical: "w4_resto_kds"
+    note: "USD 149, needs the free Restaurant Suite Base"
+  - name: "POS Print Anywhere"
+    technical: "w4_pos_print"
+    note: "USD 59, printing engine, also sold for any shop"
+  - name: "Restaurant Print Bridge"
+    technical: "w4_resto_print_bridge"
+    note: "No separate price, kitchen and void tickets, needs POS Print Anywhere"
+demo:
+  url: "https://restro.way4tech.com/"
+  label: "Restaurant Suite demo"
+related: []
+sources:
+  - label: "Odoo 19 documentation, Point of Sale: restaurant features"
+    url: "https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/restaurant.html"
+  - label: "odoo/odoo on GitHub, 19.0 branch addons (no preparation display in Community)"
+    url: "https://github.com/odoo/odoo/tree/19.0/addons"
+faqs:
+  - q: "Does Odoo Community have a kitchen display?"
+    a: "No. Odoo's preparation display, opened through the Kitchen Display app, is part of Enterprise and is not in the Community addons. The Restaurant Kitchen Display module is a full kitchen screen built on Odoo 19 Community."
+  - q: "Can I use kitchen screens and printers together?"
+    a: "Yes. Each station is set to display, printer or both. A busy grill can work from a screen while the bar keeps a printer, or both can run side by side during the change."
+  - q: "Do I need an IoT box to print kitchen tickets from Odoo?"
+    a: "Not with POS Print Anywhere. A network thermal printer with its own IP address is reached directly from Odoo in ESC/POS or Star language, and any printer Windows can see is reached through the Way4Tech print server on a PC in the restaurant."
+  - q: "What happens to kitchen tickets when the internet drops?"
+    a: "Tickets are kept on the till and sent when the connection is back, once and never twice. A restaurant with a poor line can run Odoo on a small PC inside the restaurant so the kitchen screens work over the local network."
+  - q: "How do I measure how fast the kitchen is?"
+    a: "Reporting, Kitchen Times shows preparation minutes per dish, station and hour, and how many tickets went past the late threshold set on each station."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A kitchen fails quietly. A chit falls behind the grill, the bar never hears about the drinks for table nine, a cook makes the pizza without the nut warning, and the waiter keeps walking back to ask if the food is ready. The kitchen screen exists to stop those four things: every order reaches the station that cooks it, every ticket shows how long it has waited, allergies and notes are impossible to miss, and the waiter hears the moment the food is up.
+
+Standard Odoo 19 notifies the kitchen through printing, and its preparation display is an Enterprise app: the [Community addons for 19.0](https://github.com/odoo/odoo/tree/19.0/addons) do not include it. On Community, kitchen printing also needs an IoT box or an Epson ePOS printer. The Kitchen Display module and the two printing modules cover both gaps on Community. Kitchens that prefer paper keep their printers, and many run screens and printers side by side.
+
+## Setting up kitchen stations
+
+**Restaurant, Configuration, Kitchen Stations.** Make one station per screen in the kitchen: Hot Kitchen, Bar, Grill, Pastry. For each station set:
+
+- **Branch.** A station belongs to one branch.
+- **Categories.** The POS categories it cooks. A dish goes to every station whose categories include the dish's category or its parent, so Food goes to the Hot Kitchen and Drinks to the Bar. A station with no category takes everything.
+- **Expo station.** Tick it for the pass. Expo sees every ticket.
+- **Order types.** Limit a station to dine-in, takeaway or delivery if needed. A bar can skip delivery orders.
+- **Mode.** Display, printer or both.
+- **Timers.** When a ticket turns amber (Warn After) and red (Late After), in minutes, and how long a bumped ticket stays in the Done strip. The demo Hot Kitchen warns at 8 minutes and is late at 15.
+
+<Shot src="/odoo-guides/odoo-kitchen-display-system/kitchen-station-form.webp" alt="Kitchen station form in Odoo for Hot Kitchen at Gulberg with code HOT, colour, Food category, order types dine in takeaway and delivery, mode Display, all-day counts on, warn after 8 minutes, late after 15 and keep bumped for 10" width={1600} height={883} caption="A station: branch, the categories it cooks, order types, display or printer, and its timers." />
+
+Put the product categories right before the first service. If a new dish sits in a category no station cooks and there is no catch-all station, it reaches no screen at all.
+
+## Working the screen
+
+1. **Open the screen.** On the kitchen tablet open **Restaurant, Kitchen, Station Display**, pick the station once (the tablet remembers it) and go full screen. The cook logs in with the Kitchen role; no register is needed.
+2. **Work a ticket.** Tap a line to mark it preparing, tap again for ready. **Start** moves the whole ticket to preparing. **Bump** finishes it at this station and moves it to the Done strip, where **Recall** brings it back if it was bumped by mistake.
+3. **Rush, allergies and changes.** **Rush** makes the card pulse red on every screen. ALLERGY and RECALLED banners sit at the top of the card. A dish removed after sending is struck through in red; one removed after it was bumped raises a VOID notice.
+4. **Held courses.** A course on hold shows dimmed with HOLD at the end of the grid. When the waiter fires it, its timer starts.
+
+Each card shows the table, service type, waiter, guests, course, seat and every option, with its age in the corner. The strip across the top counts what is open, late and rushed, and the ALL DAY row totals every dish still to cook, so the grill cook can drop six portions at once instead of reading six tickets.
+
+<Shot src="/odoo-guides/odoo-kitchen-display-system/kitchen-station-screen.webp" alt="Hot Kitchen station display in Odoo for Gulberg with 14 open, 13 late and 2 rush tickets, an all day count of every dish, and ticket cards for tables 5, 4, 3, 8 and 2 with waiter, guests, a RUSH banner, an ALLERGY banner with a nut allergy note, line options, Start, Rush and Bump buttons" width={1600} height={690} caption="The Hot Kitchen screen: all-day totals on top, one card per ticket with its age, rush and allergy banners." />
+
+There is a dark mode for a hot, bright kitchen, with larger text, from the moon button in the top bar.
+
+## The expo view
+
+The expo, or pass, is where someone checks every plate before it leaves. The Expo screen shows every ticket across all stations, with a pill per station that turns green when that station has bumped its part: "Hot Kitchen 1/1, Bar 0/1" means the food is up and the drink is not.
+
+The ticket is ready when every station has bumped its part. At that moment the branch hears it, the waiters of the table's section get the food-ready alert, the table turns blue on the floor plan, and, for a delivery, the delivery turns Ready on the dispatch board.
+
+<Shot src="/odoo-guides/odoo-kitchen-display-system/expo-screen.webp" alt="Expo display in Odoo showing all tickets with each line labelled by station, Hot Kitchen and Bar pills showing how many lines each station has finished, and Bump buttons" width={1600} height={833} caption="Expo: every ticket, every line labelled with its station, and a pill per station." />
+
+The full path of an order is: waiter sends, lines split by station; stations cook while the timer goes green, amber, red; each station bumps its part; expo bumps the whole ticket; the waiter is alerted and the table turns Food ready. Without a kitchen screen, a manager can send the same food-ready alert from **Operations, Table Board**.
+
+## Kitchen printers without an IoT box
+
+POS Print Anywhere is the printing engine and also sells on its own for any shop. Restaurant Print Bridge adds the restaurant tickets on top: kitchen tickets per station, void tickets and table moved notices. They print two ways:
+
+- **Network printer, direct.** The printer has an IP address on the restaurant network and Odoo sends the ticket straight to it in its own language: ESC/POS for Epson, Xprinter, Bixolon, Sunmi and clones, or Star raster for the Star TSP100, TSP143 and TSP650.
+- **Way4Tech print server.** A small Windows service on a PC in the restaurant prints to any printer Windows sees: USB, Bluetooth, LAN, label printers or an A4 laser for reports.
+
+A printer can have a **backup**. If the kitchen printer is off, the ticket goes to its backup with a band reading "REROUTED: Kitchen did not answer", and the cashier sees which printer took it.
+
+**Add a printer** in **Point of Sale, Configuration** is a three-screen wizard: how the printer is connected, where it is (type the IP, scan the network for devices answering on port 9100, or pick the Windows printer from a list), and what it prints for which registers. It creates the printer, links it and prints a test page. The Windows printer name is picked from the list, never typed, because a typo in that name is the most common reason nothing prints.
+
+<Shot src="/odoo-guides/odoo-kitchen-display-system/add-a-printer.webp" alt="Add a printer wizard in Odoo Point of Sale asking how the printer is connected: on the network with its own IP address, plugged into a Windows PC that runs the print server, or Epson ePOS, with an explanation of each" width={1600} height={721} caption="Add a printer: on the network, through a Windows PC, or Epson ePOS." />
+
+The printer form sets the language, paper (58 mm, 80 mm or 80 mm narrow), copies, cut, cash drawer, whether it prints one ticket per order, per line or per item (labels for cups), the branch and the order types it takes.
+
+| What prints | When | Where |
+|---|---|---|
+| Kitchen ticket | Send, or firing a course | Each kitchen or bar printer, only the lines of its categories |
+| VOID ticket | A sent dish is removed with a manager PIN | The printers that had the dish |
+| TABLE MOVED | A table with food in the kitchen is moved or merged | The stations that hold its lines |
+| Bill and receipt | Bill button, and on payment | Receipt printer; the cash drawer opens on cash |
+| Delivery slip | From the delivery order | Receipt printer, with a maps QR |
+| Day report | Print on receipt printer | Report printer |
+
+<Shot src="/odoo-guides/odoo-kitchen-display-system/kitchen-printer-ticket.webp" alt="Kitchen printer ticket image for a dine-in order at Restaurant Gulberg, table 12 on the Main Floor, 2 guests, waiter Bilal Ahmed, Course 1 with a Funghi with Garlic, Mushroom and Extra cheese for seat 1 and a Pasta Bolognese with Garlic for seat 2, and Course 2 with a Club Sandwich" width={1200} height={1326} caption="A kitchen ticket: table, floor, guests, waiter, course headers and seat and course badges. Course 2 was on hold and still printed, see the note below." />
+
+Tickets are sent as an image, so Urdu or Arabic text prints correctly on any thermal printer. **Operations, Print Jobs** keeps every ticket with its picture, printer, branch and who printed it, with Reprint in one click, and **Printer Health** shows each printer's last check, which the till repeats as coloured dots.
+
+<Callout title="Known limit: held courses on paper">A held course is kept back on the kitchen screen, but the printed kitchen ticket currently includes it with the rest of the order, as on the ticket above. The course header is printed, so a cook can see it, but the printer does not wait for the course to be fired. Kitchens that rely on holding courses should use screens for those stations until this is fixed.</Callout>
+
+## When the internet drops
+
+Kitchen tickets are kept on the till and sent when the line is back, never twice. The till keeps taking orders. If the restaurant's connection is poor, Odoo can run on a small PC inside the restaurant: the tills, kitchen screens and printers then talk over the local network, and only online orders, messages, tax submission and the call center wait for the internet.
+
+## Measuring the kitchen
+
+**Kitchen, Tickets** lists every ticket with its stations, priority, minutes and state. **Reporting, Kitchen Times** shows preparation minutes per dish, station and hour, and how many tickets went past the late threshold. Group it by station to see which part of the kitchen holds service up, or by hour to see whether the problem is the Friday 9 pm rush or every evening.
+
+<Shot src="/odoo-guides/odoo-kitchen-display-system/kitchen-times-report.webp" alt="Kitchen Times bar chart in Odoo with average preparation minutes per station: Hot Kitchen GUL, Bar GUL, Hot Kitchen DHA and Bar DHA" width={1600} height={995} caption="Kitchen Times grouped by station, per branch." />
+
+Once the food is out, the money comes in: the next chapter covers [payments, closing the day and the audit trail](/odoo-guides/odoo-restaurant-cashier-day-close/).

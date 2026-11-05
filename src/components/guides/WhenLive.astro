@@ -1,0 +1,17 @@
+---
+/*
+ * Renders its content only once the named guide is live. A live guide that
+ * links to a chapter released later wraps that text in this, so the link
+ * appears on the chapter's release-day build instead of pointing at a 404.
+ */
+import { getCollection } from 'astro:content';
+import { isLive } from '~/lib/guides';
+
+export interface Props {
+  slug: string;
+}
+const { slug } = Astro.props;
+const target = (await getCollection('guides')).find(g => g.slug === slug);
+const show = Boolean(target && isLive(target));
+---
+{show && <slot />}

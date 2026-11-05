@@ -4311,7 +4311,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Sales/Commerce",
   "version": "19.0.5.4.1",
-  "price": 98.0,
+  "price": 149.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_shopify_connector/",
   "published": true

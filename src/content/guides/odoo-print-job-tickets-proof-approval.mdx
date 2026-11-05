@@ -1,0 +1,126 @@
+---
+title: "Print job tickets in Odoo: proof approval, spoilage, reprints and invoicing at the delivered quantity"
+metaTitle: "Job Tickets, Proofs and Production in Odoo"
+description: "Run print production in Odoo 19: job tickets from prepress to despatch, proof approval before press, spoilage by reason, reprints and over or under runs."
+targetQuery: "print job ticket and proof approval in odoo"
+category: "Industry"
+summary: "How a won estimate becomes a job ticket, why nothing goes on press without an approved proof, and how spoilage, finishing time and the delivered quantity become the actual cost and the invoice."
+published: 2026-12-03
+updated: 2026-12-03
+series: "odoo-printing-press-management"
+seriesOrder: 2
+modules:
+  - name: "Printing Press and Print Shop Management"
+    technical: "wt_printing_press"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://printing-demo.way4tech.com/"
+  label: "Printing press demo"
+related: ["odoo-garage-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can Odoo stop a job going on press without an approved proof?"
+    a: "With the printing module, yes. The No Press Without an Approved Proof setting makes the On Press button refuse until a proof on the ticket is approved, and an approval is refused unless the name of the person who approved it is entered."
+  - q: "How are over and under runs invoiced?"
+    a: "Each job carries a tolerance in per cent, 10 by default in the demo. Despatch needs the delivered count. Inside the band the job despatches and the invoice goes out at the delivered quantity times the price per copy from the estimate. Outside the band despatch is refused with the figures shown."
+  - q: "How does the module cost spoilage?"
+    a: "Each spoilage line records the sheets, a reason and a stage, and its cost is the paper, the ink and the press time it took to make those sheets, not just the paper. Reasons can be marked as chargeable to the customer, which puts the amount on the invoice, or as forcing a reprint."
+  - q: "Can I drag jobs between stages on the press board?"
+    a: "No. The board is grouped by stage, but writing the stage directly is refused, so a dragged card stays put. Jobs move with the buttons on the ticket, which is where the proof, sheet count, finishing time and tolerance checks happen."
+  - q: "Does it send proof reminders to the customer?"
+    a: "Yes, once the scheduled action is switched on. A proof that sits with the customer longer than the chase setting (two days in the demo) is chased by email every time that period passes again, and after two chases the account handler gets an activity to call."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Six weeks after a delivery, a customer rings to say the phone number on the back of the menus is wrong. Whether the reprint comes out of the printer's margin or goes on the customer's bill depends on one thing: can the shop show which proof was approved, by whom and when. Most shops cannot, because the approval was an email somebody remembers. The same is true of the sheets that went in the bin and the time finishing really took. If nobody writes it down against the job, the actual cost is a copy of the estimate and the estimate never gets better. This chapter follows a job ticket from the moment the estimate is won to the invoice, and shows where each of those facts gets captured.
+
+## The ticket and its stages
+
+An approved estimate opens a ticket with **Open Job Ticket**. The ticket carries the whole specification across: customer and reference, finished size, pages, colours, stock, press, imposition, sheets to issue, plates and passes, the finishing operations and the quantity tolerance. Find tickets under **Printing, Shop Floor, Job Tickets** or on the **Press Board**.
+
+The stages run in the order the work moves:
+
+1. **Draft**, then **Prepress** with Start Prepress.
+2. **Proofing**, once a proof is raised.
+3. **On Press**, only with an approved proof.
+4. **Finishing**, after Off Press with a sheet count.
+5. **Ready to Despatch**, after Finishing Done with every operation booked off.
+6. **Delivered**, after Despatch with the delivered count inside tolerance.
+7. **Invoiced**, after Invoice.
+
+The stage cannot be written directly, from an import, a bulk edit or by dragging a card on the board. The buttons at the top change as the job moves, and each one checks its own condition before it moves anything. A red LATE ribbon shows the moment the delivery date has passed and the job has not been despatched.
+
+**Book on Press** puts the job on the press at the start of the next shift, using the shift start time in settings, and sets the delivery date from there, adding the longest lead time of any bought in finishing. **Print Ticket** prints the job ticket that travels round the shop with the work: specification, imposition, sheets to issue and make-ready, plates, passes, the approved proof, and blank boxes for the sheet count, spoilage and delivered quantity.
+
+## Proofs: nothing goes on press without one
+
+On the ticket, **Raise Proof** creates a numbered proof version. Each proof records the method (PDF, on screen, hard copy, wet proof on the press or a contract colour target), who it was sent to, when it was sent and when approval is due. Raising a new version supersedes the earlier one that was still open, and a superseded proof cannot be approved.
+
+Open the proof and click **Send** to email it to the customer. Then one of two things happens:
+
+- **Record Approval** needs the name of the person who approved it. "The customer approved it" is not accepted. The approval timestamp is stored with the name.
+- **Reject** needs a reason, so the same mistake does not go out on the next version.
+
+<Shot src="/odoo-guides/odoo-print-job-tickets-proof-approval/job-proofing.webp" alt="Print job ticket in Odoo in the Proofing stage with a LATE ribbon, a red warning that there is no approved proof, the Proofs tab listing proof version 1 sent as a hard copy, and a chatter note that the proof was rejected because the telephone number was a digit short" width={1440} height={900} caption="A job in proofing. The first proof was rejected with a reason, and the press is blocked until a version is approved." />
+
+With **No Press Without an Approved Proof** switched on in settings, the On Press button refuses until a proof is approved, and the ticket shows a red banner saying so. The **Proof Approval Record** prints as a one page PDF for the job bag: proof number and version, job, method, customer, sent and due dates, who approved it, when, what they said, and a line stating that artwork supplied after that time was not printed.
+
+Proofs that sit with the customer get chased by email once they have waited longer than the chase setting, and again each time that period passes. After two chases, the account handler gets a scheduled activity to call the customer, because three chases is a delivery date that has already slipped. The chasing runs as a scheduled action that ships switched off.
+
+## On the press
+
+Once a proof is approved, **On Press** moves the job to the press. The buttons now read Off Press, Book on Press, Raise Reprint, Print Ticket and Cancel.
+
+The **Off the Press** tab is where the operator records what happened. On the left, what ran: sheets printed, spoilage sheets, good sheets and actual press hours. On the right, what went out: delivered quantity, the tolerance and the minimum and maximum quantities it allows.
+
+<Shot src="/odoo-guides/odoo-print-job-tickets-proof-approval/job-on-press.webp" alt="Print job ticket in Odoo on press with Off Press, Book on Press, Raise Reprint, Print Ticket and Cancel buttons, a LATE ribbon, and the Off the Press tab showing sheets printed, spoilage sheets, good sheets, actual press hours, delivered quantity, tolerance and minimum and maximum quantity" width={1440} height={900} caption="On press: the Off the Press tab holds the sheet count, spoilage and the tolerance band." />
+
+**Off Press** is refused until the sheet count off the press counter is entered. Without it there is no actual cost.
+
+## Spoilage and reprints
+
+Every spoiled sheet is booked with a reason and a stage: prepress, make-ready, on press, finishing, material fault or customer change. Reasons are set up under Configuration in the pressroom's own words (getting to colour, ink density drift, out of register, feeder jam, guillotine error and so on). Each reason can be marked:
+
+- **Chargeable**, for spoilage that is the customer's fault, such as artwork changed after approval. The cost goes on the invoice as charged spoilage.
+- **Forces a reprint**, for faults that mean the job has to run again.
+
+The cost of each line is the paper, the ink and the press time it took to make those sheets. That is far more than the paper alone, and it is why spoilage gets under-reported when only paper is counted. **Shop Floor, Spoilage** lists every line with its job, press, reason, stage, sheets and cost, coloured by kind.
+
+<Shot src="/odoo-guides/odoo-print-job-tickets-proof-approval/spoilage.webp" alt="Spoilage list in Odoo with spoilage records per job and press, reasons such as getting to colour, ink density drift, out of register and guillotine error, the stage, sheets, cost and a forces reprint flag" width={1440} height={900} caption="Spoilage by reason and stage, costed. The two lines in red force a reprint." />
+
+**Raise Reprint** opens a new ticket against the original, with the same specification and a new proof cycle. It is refused until a spoilage line with a reprint reason has been booked on the job, so a reprint can never be raised without the fault being written down first. Because the reprint is its own ticket, its cost never disappears into the first run's numbers, and the Reprints report shows what reprints cost and what caused them.
+
+## Finishing, booked off with real time
+
+The operations from the estimate come across to the ticket's **Finishing** tab with their planned units, hours and cost. Each one is booked off by the person who did it, with the minutes it actually took. Booking an operation off without the time is refused, because that time is what makes the actual cost real rather than a copy of the estimate.
+
+<Shot src="/odoo-guides/odoo-print-job-tickets-proof-approval/job-finishing.webp" alt="Print job ticket in Odoo in the Finishing stage with the Finishing tab listing guillotining and gloss laminating with planned units, planned hours, planned cost, actual minutes, actual cost, done by and state" width={1440} height={900} caption="Finishing operations with planned against actual, each booked off by the operator." />
+
+**Finishing Done** is refused while any operation is still open, and names the ones that are.
+
+## Despatch, tolerance and the invoice
+
+A press run does not stop on the number. The tolerance agreed on the estimate (10 per cent in the demo) sets a band around the ordered quantity. **Despatch** needs the delivered count. Inside the band, the job despatches and moves to Delivered. Outside it, despatch is refused with the delivered quantity, the ordered quantity and the band in front of you, so somebody decides to run the shortfall or agree the change with the customer and widen the tolerance, rather than a delivery note deciding it.
+
+**Invoice** is refused until the job is delivered, and raises a standard Odoo customer invoice at the delivered quantity times the price per copy from the estimate, plus any chargeable spoilage. The ticket's smart button opens it. A scheduled action can invoice despatched jobs overnight; it ships switched off.
+
+<Shot src="/odoo-guides/odoo-print-job-tickets-proof-approval/job-invoiced.webp" alt="Invoiced print job ticket in Odoo with the Cost and Invoice tab showing paper used, press and finishing cost, actual cost against estimated cost and cost variance, price per copy, charged spoilage and invoice totals, and a chatter history of proof approval, spoilage, despatch and a reprint" width={1440} height={900} caption="The finished flyer: actual cost against estimate, the invoice, and the whole story in the chatter." />
+
+On the demo flyer from the [estimating chapter](/odoo-guides/odoo-print-estimating-imposition/), the chatter tells the whole job: proof sent and approved by a named person, 1,440 sheets spoiled getting to colour, 40 to ink density drift, 120 out of register which forced a reprint, and 4,900 copies despatched. The **Cost and Invoice** tab sets the actual cost (paper 355.58, press 680.76, finishing 143.17, total 1,321.05 pounds) against the 1,165.55 estimated, a variance of 155.50. The invoice went out for 4,900 copies, inside the 10 per cent band, at the estimate's price per copy.
+
+Those variances roll up into the Estimated Against Actual report by press and month, covered on the [hub page](/odoo-guides/odoo-printing-press-management/).
+
+<Callout title="Limits on the shop floor">Sheet counts and press hours are entered by the operator; nothing reads the press counter or a RIP. Paper is not issued out of stock by the ticket, and trade finishing is not bought from it. There is no customer portal for proofs: they go out and are approved by email, and the approval is recorded by your staff. Whether a reprint is billed is your call: the reprint ticket has the same Invoice button as any other job.</Callout>
+
+## Try it on the demo
+
+The quickest way to see this is to take one job through on the [demo](https://printing-demo.way4tech.com/):
+
+1. Create an estimate for 2,000 A5 leaflets, 4 over 4 on 150gsm silk on the five colour press, add guillotining and boxing, then Send, Customer Approved and Open Job Ticket.
+2. On the ticket, Start Prepress, Raise Proof, then open the proof, Send and Record Approval with a name.
+3. Click On Press, enter the sheets off the press and one spoilage line with a reason, then Off Press.
+4. Put minutes against each finishing operation, book each off, then Finishing Done.
+5. Enter the delivered quantity, Despatch, then Invoice and open the invoice.
+6. Print the ticket, then find the job in Reporting, Estimated Against Actual.

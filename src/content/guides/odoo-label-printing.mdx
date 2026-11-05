@@ -1,0 +1,163 @@
+---
+title: "Odoo label printing: design product, lot and price labels and print them as PDF or Zebra ZPL"
+metaTitle: "Odoo Label Printing: PDF and Zebra ZPL"
+description: "Design product, lot, package, location and price tag labels in Odoo 19 by drag and drop, and print them as PDF sheets or ZPL for a Zebra printer."
+targetQuery: "odoo label printing / zebra labels"
+category: "Operations"
+summary: "How to design and print product, lot, package, location and price labels from Odoo 19 Community, on A4 sheets or a Zebra roll, and how the Print Suite sends them to the printer without a dialog."
+published: 2026-12-10
+updated: 2026-12-10
+series: "odoo-label-printing"
+seriesOrder: 0
+modules:
+  - name: "Label Designer"
+    technical: "wt_label_designer"
+    note: "USD 59, Odoo 19 Community, needs Inventory"
+  - name: "Direct Print"
+    technical: "w4_direct_print"
+    note: "USD 79, prints any Odoo report without the preview"
+  - name: "Print Suite"
+    technical: "wt_print_suite"
+    note: "Free, installs itself when both paid modules are installed"
+  - name: "Direct Print for Inventory"
+    technical: "wt_direct_print_stock"
+    note: "Free companion of Direct Print"
+  - name: "Direct Print for Invoicing"
+    technical: "wt_direct_print_account"
+    note: "Free companion of Direct Print"
+related: ["odoo-distribution-management", "odoo-van-sales"]
+linkFrom: ["/modules/inventory/", "/modules/barcode/"]
+sources: []
+faqs:
+  - q: "Can Odoo print labels on a Zebra printer?"
+    a: "Odoo ships fixed product and lot label layouts, including a ZPL version. What it does not have is a designer for your own layout. The Label Designer writes ZPL from the same drag and drop design it uses for the PDF, so a custom label can go to any printer that reads ZPL II."
+  - q: "Which barcodes can I put on a label?"
+    a: "EAN-13, EAN-8, UPC-A, Code 128, Code 39, QR and Data Matrix. A value the symbology cannot carry, such as an EAN-13 with a wrong check digit, is refused with the reason. It is never swapped for a different symbology behind your back."
+  - q: "Does the Label Designer need Odoo Enterprise or the IoT box?"
+    a: "No. It depends only on Odoo's own Inventory app and runs on Odoo 19 Community. It also runs on Enterprise. To print straight to a printer without opening the PDF you add Direct Print, which uses its own small print agent instead of the IoT box."
+  - q: "Has it been tested on a real Zebra printer?"
+    a: "Not in this release. The ZPL was checked by rendering it with the public Labelary service and decoding every barcode in the result, and printing was tested against a simulated network printer and the Windows Microsoft Print to PDF printer. Print one label on your own printer before you rely on it."
+  - q: "Can I print several labels per A4 sheet?"
+    a: "Yes, as PDF. A sheet template sets the columns, rows, margins and spacing, and Skip positions leaves the used positions of a partly used sheet empty. ZPL always prints one label after another, as a roll printer does."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Labels are where stock control meets the shelf. A receipt of 24 jars that goes onto the shelf without a barcode is 24 jars nobody can scan at the till, count by scanner or trace when the lot is recalled. A price tag that still shows last month's price is a complaint at the counter. The data is already in Odoo: the product, the variant, the lot and its expiry date, the location. The work is getting it onto a sticker of the right size, on the printer you actually own, without retyping anything.
+
+This guide covers the Way4Tech Print Suite for Odoo 19: the Label Designer, which designs and prints labels, and Direct Print, which sends documents and labels to a printer without the PDF preview. This page covers designing and printing labels. The second chapter, [direct print without the preview](/odoo-guides/odoo-direct-print-without-preview/), covers the print agent, printers, rules and the print queue.
+
+## What a business needs from its labels
+
+Before choosing anything, write down which labels you print and on what:
+
+- **Product and variant labels.** Name, internal reference, barcode, sometimes the price. Usually 50 x 25 mm on a roll.
+- **Lot and serial labels.** The lot or serial number as a barcode, often the expiry date. Food, cosmetics and electronics need these on receipt.
+- **Package labels.** A larger label for a box or pallet that leaves the warehouse.
+- **Location labels.** A barcode or QR code on each shelf, so the scanner knows where it is.
+- **Price tags.** Many per A4 sheet, printed on the office laser for the shop floor.
+
+Then the printers: a Zebra or compatible label printer at receiving, an office laser for sheets, maybe a receipt printer at the counter. The same design has to come out right on each.
+
+## What standard Odoo does and does not do
+
+Odoo's Inventory app can print product and lot labels from fixed layouts, including a ZPL version for Zebra printers. That works when the built-in layout happens to match your label stock. What standard Odoo does not give you is a way to change that layout: you cannot move the barcode, add the expiry date with a caption, put your logo on it, choose a 60 x 40 mm size or lay out a 3 by 8 price tag sheet without a developer editing report templates. Package and location labels with your own design are in the same position.
+
+Standard Odoo also prints by opening a PDF in the browser, after which someone picks the printer and the scale. On a label printer that is where labels come out shrunk or cut. Getting labels straight to the printer is covered in the [direct print chapter](/odoo-guides/odoo-direct-print-without-preview/).
+
+## The modules and what they cost
+
+The Print Suite is two paid modules that also work alone, plus three free modules that join them up:
+
+| Module | Price | What it does |
+|---|---|---|
+| [Label Designer](https://apps.odoo.com/apps/modules/19.0/wt_label_designer/) | USD 59 | Designs labels by drag and drop, prints them as PDF or ZPL |
+| [Direct Print](https://apps.odoo.com/apps/modules/19.0/w4_direct_print/) | USD 79 | Sends any Odoo report to a printer without the preview |
+| [Print Suite](https://apps.odoo.com/apps/modules/19.0/wt_print_suite/) | Free | Joins the two: Send to printer in the label dialog, labels on receipt |
+| [Direct Print for Inventory](https://apps.odoo.com/apps/modules/19.0/wt_direct_print_stock/) | Free | Prints delivery slips and transfer reports when a transfer is validated |
+| [Direct Print for Invoicing](https://apps.odoo.com/apps/modules/19.0/wt_direct_print_account/) | Free | Prints invoices when they are confirmed |
+
+Both paid modules together cost USD 138, once, with no subscription. You can buy only the Label Designer: it prints PDF and downloads ZPL on its own. All of it runs on Odoo 19 Community, and on Enterprise.
+
+## Step 1: start from a label template
+
+A template is the design of one kind of label: what it prints for, its size, and the fields, barcodes and lines on it. Open **Inventory, Configuration, Labels, Label Templates**. Six templates ship ready to use:
+
+| Template | Prints for | Size | Layout |
+|---|---|---|---|
+| Product | Products | 50 x 25 mm | Roll |
+| Variant | Product variants | 50 x 25 mm | Roll |
+| Lot / Serial | Lots and serial numbers, with expiry | 60 x 40 mm | Roll |
+| Package | Packages | 100 x 50 mm | Roll |
+| Location | Locations, with a QR code | 70 x 30 mm | Roll |
+| Price tag, A4 sheet 3 x 8 | Product variants | 70 x 37 mm, 24 per sheet | Sheet |
+
+Copy a template before you change it, so the original stays as a reference.
+
+<Shot src="/odoo-guides/odoo-label-printing/templates.webp" alt="Label Templates list in Odoo Inventory with six templates, what each prints for, roll or sheet layout, label width and height, labels per page and default printer" width={1600} height={1000} caption="The six templates that ship with the module, each with its own default printer." />
+
+On the template form you set the size in millimetres, to the hundredth, and the layout. **Roll** prints one label after another, for label printers. **Sheet** places several on an A4 or US Letter page, with columns, rows, margins and the space between them.
+
+The other setting that matters is the **ZPL resolution**. It must match the Zebra the template prints on: 203 or 300 dpi. A 203 dpi printer fed a label written for 300 dpi prints it too big, and the other way round prints it too small. The template can also carry a default printer, which the print dialog offers first.
+
+<Shot src="/odoo-guides/odoo-label-printing/template-form.webp" alt="Label template form for the A4 price tag sheet: product variant, 70 by 37 mm, sheet layout, 203 dpi, A4 with 3 across and 8 down, and the elements list with logo, name, price, EAN-13 barcode and reference" width={1600} height={1000} caption="The price tag sheet: 3 across, 8 down on A4, with every element and its position in millimetres." />
+
+## Step 2: design the label
+
+Open the template and press **Open Designer**. The canvas shows a real record from your database while you design, so you see the actual product name and price, not a placeholder.
+
+1. Add elements from the left panel: **Text**, **Barcode**, **Logo or image**, **Line** and **Box**. Or click a field directly, such as Sales price with currency, Lot / serial number or Expiry date, and it lands on the label already set up.
+2. Drag an element to move it, and drag its blue corner to resize. The arrow keys move it by 0.5 mm, with Shift by 5 mm. Delete removes it.
+3. In the right panel, set what it shows, a caption in front of the value (for example "Exp: "), the exact position and size in millimetres, the font size, bold and alignment. For a barcode, choose the symbology.
+4. Press **Save**, then **Preview PDF** or **Preview ZPL** to see the output.
+
+The field list covers product name with or without the variant, internal reference, product barcode, sales price with or without currency, currency code, lot or serial number, expiry date, package, location and location barcode, quantity, unit of measure, company name and print date. If you need something else, **Custom field path** takes a path such as `categ_id.name` or `product_id.weight`.
+
+<Shot src="/odoo-guides/odoo-label-printing/designer.webp" alt="Label designer canvas showing a price tag for Market Staff T-Shirt L with a logo placeholder, a barcode and a large 14 dollar price selected, with the side panel showing position, size, font size, bold and right alignment" width={1600} height={1000} caption="The price tag on the canvas; the selected price shows its settings in the side panel." />
+
+A lot label usually carries two barcodes: a Data Matrix or QR code for phone scanners and a Code 128 for older handhelds. Both can show the lot number, and the expiry date sits next to them with its caption.
+
+<Shot src="/odoo-guides/odoo-label-printing/designer-lot.webp" alt="Label designer showing a lot label for Greek Yogurt 500 g with lot YOG-2609-01, expiry 10/17/2026, a Data Matrix code selected in the side panel and a Code 128 barcode across the bottom" width={1600} height={1000} caption="A lot label with a Data Matrix and a Code 128 of the same lot number." />
+
+The barcodes supported are EAN-13, EAN-8, UPC-A, Code 128, Code 39, QR and Data Matrix. If a value cannot be carried by the symbology you chose, for example an EAN-13 with a wrong check digit, the label is refused with the reason. It is never quietly printed as a different symbology, which matters when a retailer's till only reads EAN.
+
+The expiry date comes from Odoo's own Expiration Dates setting. If that is not switched on in Inventory settings, the field stays empty on the label.
+
+## Step 3: print the labels
+
+Labels print from where the goods are: products, variants, transfers, lots, packages and locations.
+
+1. Select the records and open **Print, Labels (designer)**. On a receipt or a delivery, press **Labels** at the top of the transfer.
+2. On a transfer, choose **One label per unit** or **One label per line**. Per unit follows the unit of measure: 2 dozen eggs are 24 labels, while 12.5 kg of rice is one label. **Labels each** multiplies either choice, and you can change the count on any line before printing.
+3. On a sheet template, **Skip positions** leaves the first positions empty, so a sheet with six labels already used is not wasted.
+4. Press **Print PDF**, **Download ZPL** or **Show ZPL**.
+
+<Shot src="/odoo-guides/odoo-label-printing/print-receipt.webp" alt="Labels dialog on receipt WH/IN/00006 with the Lot / Serial 60 x 40 mm template, one label per unit, and lines for coffee, olive oil with a lot, two serial numbered scanners, eggs in dozens and rice in kg, 63 labels in total" width={1600} height={1000} caption="A receipt: one line per operation line with its lot or serial number, 63 labels in total." />
+
+The dialog keeps each operation line separate, so two serial numbered scanners get one label each with their own serial, and the olive oil gets 12 labels with its lot number. That is what makes the labels usable for tracing later.
+
+## One design, two outputs
+
+The same design produces the PDF for an office printer and the ZPL for a Zebra. You do not keep two versions of a label.
+
+<Shot src="/odoo-guides/odoo-label-printing/pdf-lot.webp" alt="Printed PDF lot label for Extra Virgin Olive Oil 750 ml with lot OIL-2609-A, expiry 03/18/2028, a Data Matrix code and a Code 128 barcode of the lot number" width={934} height={649} caption="The lot label as the PDF prints it." />
+
+<Shot src="/odoo-guides/odoo-label-printing/labelary-lot.webp" alt="The same olive oil lot label written as ZPL and rendered at 203 dpi, with the lot, expiry, Data Matrix and Code 128 barcode in the same positions" width={479} height={318} caption="The same label as ZPL, rendered by the public Labelary service at 203 dpi." />
+
+A few differences are worth knowing. ZPL has no bold face, so bold text is printed slightly wider instead. Logos are printed in black and white. Several labels per sheet is a PDF feature: ZPL prints one label after another, as a roll printer does.
+
+<Callout title="Not yet run on a physical Zebra">The ZPL in this release was checked by rendering it with the Labelary service and decoding every barcode in the result. Printing was tested against a simulated network printer and the Windows "Microsoft Print to PDF" printer, not a real Zebra. Before going live, print one real label from each template on your own printer and scan every barcode with the scanner you use.</Callout>
+
+## Before you go live
+
+1. Set the label size and media type (gap or black mark) in the printer's own settings, then calibrate it.
+2. Match each template's ZPL resolution to its printer: 203 or 300 dpi.
+3. Print one real label from each template you use and check it is not shifted or cut. Adjust darkness and speed for your label stock.
+4. Scan every barcode with the scanner you use at the till or in the warehouse.
+5. If you print price tags on sheets, print one sheet on plain paper first and hold it against the label sheet.
+
+## Next: print without the preview
+
+Downloading a ZPL file or opening a PDF works, but at a busy receiving desk nobody wants a dialog for every pallet. With Direct Print installed as well, the label dialog gets a **Send to printer** button, each template can have its own printer, and a validated receipt can print its labels on its own. That is the subject of the [direct print chapter](/odoo-guides/odoo-direct-print-without-preview/).
+
+The [Inventory module page](/modules/inventory/) and the [Barcode module page](/modules/barcode/) explain where these labels sit in standard Odoo. If you need a label this guide does not cover, such as a label that pulls data from a custom app, [send a short description](/contact/) and I will say whether the designer can do it.

@@ -1,0 +1,109 @@
+---
+title: "Jewellery repair job cards and approval memos in Odoo: metal in, metal out, goods signed for"
+metaTitle: "Repair Job Cards and Approval Memos"
+description: "Run jewellery repairs and custom orders in Odoo 19 with the customer's metal weighed in and out, and send goods out on approval or memo at a signed value."
+targetQuery: "jewellery repair job card odoo"
+category: "Industry"
+summary: "Repairs, custom orders and melt-and-remake jobs with the metal reconciled before hand-back, the goldsmith's own bench screen, and approval, salesman and exhibition memos with a manager limit."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-jewellery-management"
+seriesOrder: 3
+modules:
+  - name: "Jewelry Management"
+    technical: "wt_jewelry_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://jewelry-demo.way4tech.com/"
+  label: "Jewellery demo (Al Nour Jewellers)"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo track gold loss on a jewellery repair?"
+    a: "The job card records the customer's metal in, any shop metal added, the weight of the finished piece and the filings returned. The difference is the variance. If it is outside the weight tolerance, the job cannot be handed back until somebody writes down where the metal went."
+  - q: "Does the repair job card create a manufacturing order?"
+    a: "No. The job card holds the metal, the bench charge and the materials on one record. It does not create bills of materials or work orders, and Odoo Manufacturing is not needed."
+  - q: "Can a goldsmith see prices or invoices?"
+    a: "No. A user in the Goldsmith group sees My Bench, the jobs assigned to them, and has no rights on tickets, rates or the accounts."
+  - q: "What stops a salesman taking a valuable tray out on memo?"
+    a: "Above the memo value limit in the settings, only a Jewellery Manager can issue the memo, and the manager's name is stamped on it. The check sits on the record itself, so an import or outside call cannot get round it."
+  - q: "Are customers reminded about finished repairs and overdue approvals?"
+    a: "Two email templates ship, one for a repair that is ready and one for approval goods due back, sent by scheduled jobs that ship switched off. Turn them on once your outgoing mail server works. There is no customer portal."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The hard part of a jewellery repair is not the labour. It is the gold. A customer hands over two worn bangles to be melted into one wider one and expects to get the same metal back in a new shape. If the card only says "repair" and nobody weighed anything, a missing two grams becomes an argument with no record behind either side. The same is true of stock that leaves the shop unsold: a tray on approval with a customer, a salesman's bag, an exhibition stand. This chapter covers the workshop job card, which makes the metal add up, and the memo, which makes every piece out of the shop signed for at a value.
+
+## Take a job in
+
+Open **Jewellery, Workshop, Repairs and Custom Orders** and press **New**.
+
+1. Pick the **customer** and the **counter**, and the **kind** of job: repair, resizing, custom order, melt and remake, polish and clean, stone setting, rhodium or plating, engraving.
+2. Under **The piece**, describe what was handed over and set the metal and purity.
+3. Under **What is wanted**, write it in the customer's own words. A card that says "fix" is the one that comes back wrong.
+4. Weigh the customer's metal in front of them and enter it as **Metal in**.
+5. Set the **promised for** date the customer was told, and take an **advance** if it is a custom order.
+6. Press **Take In**. The module refuses if a weight has been entered with no metal against it.
+
+<Shot src="/odoo-guides/jewellery-repair-job-card-odoo/workshop-board.webp" alt="Repairs and Custom Orders list in Odoo with job numbers, customers, kinds such as custom order, stone setting, polish, repair and engraving, piece taken in, bench, promised date, variance in grams, amount and state" width={1500} height={480} caption="The workshop board, sorted by promised date, with the variance on each job as it stands." />
+
+## Send it to the bench
+
+Name a **bench** (one of your own goldsmiths) or an **outside goldsmith** on the card, then send it. Metal does not leave the counter until somebody is named; the button refuses an empty bench.
+
+A goldsmith signs in and opens **Workshop, My Bench**, which lists only the jobs assigned to them. They see no tickets, rates or accounts.
+
+Materials and charges go on the **Materials and Charges** tab: metal, stones, findings, bench work, work sent out and plating. If shop metal is used in the piece, it goes on these lines and as **Shop metal added** on the Metal tab.
+
+## Make the metal add up
+
+When the piece comes back, weigh it and record **Metal out** and the **Filings returned**. The job card does the sum:
+
+| Figure | Meaning |
+|---|---|
+| Metal in | The customer's metal, weighed at the counter |
+| Plus shop metal added | Metal from the shop worked into the piece |
+| Less metal out | What the finished piece weighs |
+| Less filings returned | Dust and offcuts handed back |
+| Equals the variance | Positive means metal is missing |
+
+Three checks protect that figure:
+
+- **Mark Ready** refuses if no metal out has been weighed, and refuses if the metal charged on the material lines does not match the shop metal added.
+- If more metal came back than went out, the card refuses to save and asks whether shop metal was used without being written down.
+- **Hand Back** refuses while the variance is above the weight tolerance in the settings and nobody has written down where it went: polishing loss, solder burnt off, a piece cut away.
+
+<Shot src="/odoo-guides/jewellery-repair-job-card-odoo/job-metal-reconciled.webp" alt="Handed back melt and remake job card in Odoo with 24.420 g metal in, no shop metal added, 24.338 g metal out, 0.020 g filings returned and a variance of 0.062 g or 0.25 percent with a note on where the difference went" width={1500} height={1211} caption="Two old bangles in at 24.420 g, one new bangle out at 24.338 g plus 0.020 g of filings: a 0.062 g variance, explained." />
+
+Handing back records the variance for good. **Invoice** then bills the labour and materials less the advance. A job cannot be invoiced while it is still at the bench, and a posted invoice has to be credited rather than the job cancelled underneath it.
+
+**Print Job Card** gives the slip that goes to the bench with the piece, carrying the weights it has to be reconciled against and lines for the counter, the bench and the customer to sign.
+
+<Shot src="/odoo-guides/jewellery-repair-job-card-odoo/printed-job-card.webp" alt="Printed jewellery job card from Odoo with piece taken in, what is wanted, metal, a metal reconciliation table of customer's metal in, shop metal added, finished piece out, filings and variance, bench charge and signature lines" width={1280} height={395} caption="The printed job card: the metal reconciliation and the charges, with signature lines." />
+
+## Goods out on approval or memo
+
+Stock leaves the shop without being sold more often than an owner would like. Open **Jewellery, Stock, Approval and Memo** and press **New**. Pick the kind:
+
+- **Customer approval**: goods go home with a named customer. The customer is required.
+- **Salesman memo**: goods go out in a named salesman's bag. The salesman is required.
+- **Exhibition**: goods go to a stand or show.
+- **Out to the workshop**: goods go to the bench or an outside goldsmith.
+
+List the pieces and issue the memo. At that moment the weight and the value at that day's rate are stamped on each line, so the figure the memo was signed against does not move with the market. A memo with no pieces, or a line with no value, is refused.
+
+<Shot src="/odoo-guides/jewellery-repair-job-card-odoo/memo-book.webp" alt="Approval and Memo list in Odoo filtered to still out, showing an exhibition, a salesman memo and a customer approval with issue and due dates, pieces, weight out, total value, pending pieces and value still out" width={1500} height={320} caption="The memo book filtered to what is still out. The overdue exhibition memo shows in red." />
+
+**The manager limit.** Above the memo value needing a manager in the settings, only a Jewellery Manager can issue the memo, and their name goes on it as Authorised By.
+
+**Back, sold, still out.** As pieces return or sell, the memo moves to Partly Back and its front shows what came back, what sold and what is still out, in pieces, grams and value. **Turn Into a Sale** makes a counter ticket from the kept pieces, carrying the customer and the weights across. **Everything Came Back** returns the rest in one step. **Close** refuses while any piece is unaccounted for.
+
+<Shot src="/odoo-guides/jewellery-repair-job-card-odoo/memo-partly-back.webp" alt="Customer approval memo GS/MEM/2026/0002 in Odoo marked partly back, with pieces out, HUID, weight, value each, value, back, sold and still out columns and totals for weight out, total value, sold pieces and value still out" width={1500} height={1118} caption="Three pieces out on approval: one sold, two still out worth 1,223.42 at the value signed for." />
+
+**Print Note** gives the memo note to be signed when the goods leave, listing every piece and its value.
+
+<Callout title="Reminders are switched off until you turn them on">Three scheduled jobs ship inactive: carrying the rate forward, chasing finished and overdue repairs, and chasing goods out on memo. The two customer emails (repair ready, approval goods due) only go once the jobs are on and an outgoing mail server is set up. Customers have no portal to check a repair or an approval themselves.</Callout>
+
+The [last chapter](/odoo-guides/jewellery-stock-count-by-weight-odoo/) covers counting the tray by weight, stone certificates and the reports, including Metal Reconciliation across every job.

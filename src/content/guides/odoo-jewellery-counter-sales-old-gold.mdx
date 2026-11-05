@@ -1,0 +1,115 @@
+---
+title: "Jewellery counter sales and old gold exchange in Odoo: the ticket, VAT and buy-back"
+metaTitle: "Counter Sales, VAT and Old Gold"
+description: "Sell jewellery in Odoo 19 priced from the day's gold rate, check the HUID, put VAT on the making charge only, and credit old gold on its tested purity."
+targetQuery: "odoo jewellery counter sale and old gold exchange"
+category: "Industry"
+summary: "How a counter ticket prices each piece into metal, making, wastage and stones, what confirm checks, how VAT on making works, and how old gold is tested, credited and settled."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-jewellery-management"
+seriesOrder: 2
+modules:
+  - name: "Jewelry Management"
+    technical: "wt_jewelry_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://jewelry-demo.way4tech.com/"
+  label: "Jewellery demo (Al Nour Jewellers)"
+related: ["uae-e-invoicing-odoo", "zatca-e-invoicing-odoo-community"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can Odoo charge VAT only on the making charge of a jewellery sale?"
+    a: "With this module, yes. Set VAT charged on to the making charge in the jewellery settings and the invoice splits into an untaxed metal and stone line and a taxed making charge line. Check the treatment with your tax adviser first; it is one setting per company."
+  - q: "What happens if the gold rate changes while a quotation is open?"
+    a: "Press Apply Today's Rate and every line is repriced from the rate table for the rate day. Once the ticket is confirmed the rate is fixed, because the customer has agreed the price."
+  - q: "Is old gold credited at the purity stamped on it?"
+    a: "No. The credit is worked out from the pure weight: the net weight times the tested fineness, less the impurity deduction, priced at the fine rate less the metal's buy-back margin. The claimed purity is recorded only to measure the gap."
+  - q: "Can a buy-back be paid out without a sale?"
+    a: "Yes. A buy-back settles against a purchase, in cash, as store credit or as a credit note. A walk-in sale of old gold with nothing bought in return is settled on its own and the receipt is printed from the exchange."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The counter is where a jewellery shop either earns its margin or gives it away. A salesperson working the price out on a pad can round the rate down for a regular, forget the wastage, or credit old gold at the purity the customer insists on. None of that shows up until the month end figures look thin. This chapter covers the counter ticket, which does the arithmetic and keeps the four parts of the price apart, and the old gold exchange, which credits metal on the test result rather than on trust. It assumes the rate and items are set up as in the [setup chapter](/odoo-guides/gold-rate-making-charges-odoo/).
+
+## Raise the ticket
+
+1. Open **Jewellery, Counter, Sales** and press **New**.
+2. Pick the **counter**, the **customer** and the **rate day**, which is almost always today. The ticket number takes the counter's code, so GS/JS/2026/00046 is a sale at the Gold Souk counter.
+3. On the **Pieces** tab, add each piece.
+
+Each line fills itself in from the item: metal and purity, gross and stone weight, net metal, making method and value, wastage, and stone value. The rate for the day is pulled from the rate table and the counter's markup is applied. Any of it can be corrected at the counter, because a bangle rarely weighs exactly what its tag says, and the weighed figure is what the customer pays on.
+
+At the bottom, the ticket totals metal, making, wastage and stones separately, then tax and the total. A **Margin** tab shows cost and margin, visible only to the Jewellery Manager group.
+
+<Shot src="/odoo-guides/odoo-jewellery-counter-sales-old-gold/counter-ticket.webp" alt="Counter sale quotation GS/JS/2026/00046 in Odoo with customer, counter, rate day, gross and net metal weight, a solitaire ring line at 18K with rate per gram and metal amount, and totals for metal, making, wastage, stone, tax and total" width={1500} height={1109} caption="A quotation. The line carries its rate for the day; the totals split metal, making, wastage and stones." />
+
+## Reprice, discount, confirm
+
+**Apply Today's Rate.** If the rate moves while the quotation is open, this button reprices every line from the rate table for the rate day. Once confirmed, the rate is fixed.
+
+**Discounts need a reason.** A shop trims the making charge for a regular customer. A ticket with a discount and an empty reason will not save, so next year somebody can still tell why it was given.
+
+**Confirm** runs three checks and refuses the ticket if any fail:
+
+- Every line has a metal rate. A line with no rate stops the sale.
+- Any old gold attached to the ticket has been accepted or rejected, so the credit cannot move after the customer has agreed the price.
+- No piece at or above the hallmark weight is going out without its HUID, when Refuse to Sell Without an HUID is on. The error names the pieces.
+
+## Invoice and the VAT split
+
+**Invoice** raises a normal Odoo customer invoice from the ticket, with the same taxes the lines showed, so the customer is never billed a figure they did not see. The ticket moves to Invoiced and links to its invoice.
+
+How tax is applied depends on the **VAT charged on** setting:
+
+- **The whole ticket.** One line per piece, taxed in full. The piece line on the invoice carries the HUID, weight and purity in its label.
+- **Making charge only.** The invoice splits each piece into an untaxed metal and stone line and a taxed making and wastage line, so the tax base on the invoice is the making charge. This is how jewellery is commonly taxed in the Gulf; confirm your own treatment with your adviser before switching it on.
+
+Old gold credited against the sale appears as its own negative line, labelled with the pure weight and the exchange number.
+
+<Shot src="/odoo-guides/odoo-jewellery-counter-sales-old-gold/invoice-with-old-gold.webp" alt="Draft customer invoice in Odoo with a 22K bridal necklace set line showing HUID and weight taxed at 15 percent and a negative line for old gold taken in with its pure weight and exchange reference" width={1500} height={789} caption="An invoice from a ticket with VAT on the whole ticket: the piece, then the old gold credit as its own line." />
+
+**Print** gives the estimate, which doubles as the bill on an A5 slip: each piece with weight and purity, the split into metal, making, wastage and stones, VAT, old gold credited and the amount left to pay.
+
+## Take old gold in
+
+Old gold comes back over the same counter, as part payment or as a straight sale to the shop. The rule the module enforces is simple: the credit rests on what the test says, never on the stamp.
+
+1. Open **Counter, Old Gold Exchange** and press **New**, or add it from the **Old Gold In** tab of the ticket.
+2. On **What Came In**, describe what the customer handed over in words they would recognise on a receipt. Record the metal, the **claimed purity** (what they say or what is stamped), the gross weight and any stone weight.
+3. Record the **test method** (touchstone, acid, XRF analyser or fire assay) and the **tested fineness** the test gave.
+4. Enter the **impurity deduction** for solder, plating and dirt the test does not see.
+
+The exchange then works out the credit:
+
+| Step | Figure |
+|---|---|
+| Gross weight less stones | Net weight |
+| Net weight times tested fineness, less the impurity deduction | Pure weight |
+| Fine rate less the metal's buy-back margin | Buy-back rate |
+| Pure weight times buy-back rate | Credit |
+
+<Shot src="/odoo-guides/odoo-jewellery-counter-sales-old-gold/old-gold-exchanges.webp" alt="Old Gold Exchange list in Odoo with exchange numbers, customers, tested by, gross, net and pure weight, credit, the purchase each was set against and states taken in, tested, accepted, settled and rejected" width={1500} height={640} caption="Buy-backs at every stage: taken in, tested, accepted, settled or rejected." />
+
+## Mind the purity gap
+
+When the tested purity is further from the claimed one than the **purity gap** in the settings, the appraiser has to write down what the test showed before the exchange can be accepted. A customer says 22K, the XRF reads 20K: that conversation is recorded with a name against it, not settled by whoever is on the counter.
+
+## Settle the exchange
+
+The exchange moves through Taken In, Tested, Accepted and Settled, or Rejected if the shop turns it away. It settles one of four ways:
+
+- **Against a purchase** on the same visit; the credit comes off what the customer pays.
+- **Paid in cash.**
+- **Store credit.**
+- **Credit note.**
+
+<Shot src="/odoo-guides/odoo-jewellery-counter-sales-old-gold/old-gold-tested-settled.webp" alt="Settled old gold exchange in Odoo with a 916 gold claim tested by XRF at 0.9050 fineness, 21.600 g net, 19.255 g pure, a credit of 1,407.16 and settlement against a purchase" width={1500} height={1071} caption="Claimed 916, tested at 0.905 by XRF: 21.600 g net becomes 19.255 g pure, and the credit is worked out from that." />
+
+**Print Receipt** gives the old gold receipt: what came in, what the test gave, the pure weight and the credit. That receipt is what the customer leaves with.
+
+<Callout title="What the counter does not do">The ticket is a backend form, not a touch till. It does not connect to Odoo POS, a cash drawer, a card terminal or a receipt printer, and weights are typed rather than read from a scale. The module does not file anything with a tax authority; if your country requires e-invoicing, that is a separate piece of work on the Odoo invoice.</Callout>
+
+For e-invoicing in the Gulf, see the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/) and the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/). The [next chapter](/odoo-guides/jewellery-repair-job-card-odoo/) covers repairs and goods out on memo.

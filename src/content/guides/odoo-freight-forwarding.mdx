@@ -1,0 +1,131 @@
+---
+title: "Odoo freight forwarding: job files, bills, customs and gross profit per shipment"
+metaTitle: "Odoo Freight Forwarding and Customs Guide"
+description: "Run a forwarder or customs broker on Odoo 20: air, sea FCL, LCL and road job files, bills of lading, containers, customs entries and profit per lane."
+targetQuery: "odoo freight forwarding module"
+category: "Industry"
+summary: "What a forwarder or customs broker needs from Odoo, what standard Odoo leaves out, and how one job file carries a shipment from the quoted rate to the profit it actually made."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 0
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: ["odoo-20-whats-new-migration", "n8n-odoo-automation"]
+linkFrom: ["/industries/freight-forwarding/", "/solutions/freight-forwarding/", "/products/wt-freight-forwarding/"]
+sources: []
+faqs:
+  - q: "Does Odoo have a freight forwarding app?"
+    a: "Not as standard. Odoo has contacts, incoterms, invoicing and supplier bills, but no job file, bill of lading, container, routing leg or customs entry. The Freight Forwarding and Customs Clearance module adds those and raises its invoices and bills through Odoo's own accounting."
+  - q: "Which Odoo version and edition does it run on?"
+    a: "It is built for Odoo 20 and runs on Community or Enterprise. It depends only on Odoo's base, mail, product and Invoicing apps. An Odoo 19 build is also listed on the apps store at the same price."
+  - q: "Does it handle air, sea and road in one system?"
+    a: "Yes. A file is opened as Air, Sea FCL, Sea LCL or Road. The mode sets the file numbering, the documents the file asks for and how chargeable weight is worked out, and all four share the same charges, invoicing and reports."
+  - q: "Can a customs broker use it without the forwarding side?"
+    a: "An office can be set as Customs Broker Only, Forwarding Only or both, and there is a separate Customs Broker role. Customs entries are still raised from a job file, because the tariff lines are built from the cargo on that file."
+  - q: "Does it connect to a customs authority or a carrier system?"
+    a: "No. The entry number, the lodging and the clearing are recorded by hand after you file with customs in their own system. There is no link to a customs single window, a carrier booking portal or a tracking feed."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A forwarder rarely loses money on the freight rate it negotiated. It loses it in the gaps around the rate: a terminal handling charge left off the quote, a chargeable weight that was right on the booking and wrong on the invoice, a haulier's bill booked a month after the file was closed, forty thousand dollars of import duty passing through the books and making the margin report unreadable. Odoo can hold every one of those facts, but only if they sit on one record that follows the shipment from the first rate to the last supplier bill. This guide explains how that works with the Freight Forwarding and Customs Clearance module on Odoo 20, chapter by chapter.
+
+## What a forwarding business needs from its system
+
+Whether you move air freight, full containers, groupage or trucks across a border, the office needs the same few things:
+
+1. **One file per shipment.** Customer, shipper, consignee, notify party, incoterm, load and discharge points, the trade lane and the salesperson. Everything else hangs off that file.
+2. **Chargeable weight worked out the same way every time.** Air rates on the greater of actual and volumetric weight, groupage on weight or measure, full containers on the box. If the quote and the invoice do the sum differently, the customer wins the argument.
+3. **Two sides on every charge.** What it costs you and what you sell it for, on the same line, so the profit on a file is a fact and not a month end estimate.
+4. **The documents the cargo moves against.** Master and house bills of lading, air waybills, CMR notes, released only against something you can account for.
+5. **Containers and legs that tell the truth.** A container number that is checked when it is typed, a verified gross mass before loading, and routing that includes the inland leg so the ETA means something.
+6. **Customs duty kept out of the margin.** Duty and import VAT are the importer's money. They have to be recharged at cost and never counted as revenue.
+7. **Reports that find the leaks.** Files carrying cost with nothing invoiced, costs with no supplier bill behind them, files under the lane's target margin.
+
+## What standard Odoo does and does not do
+
+Standard Odoo gives a forwarder the accounting and the address book. Contacts hold customers, shippers and carriers. Invoicing raises customer invoices and supplier bills in more than one currency. Incoterms are already there as a list. That is a sound base, and this module uses all of it rather than replacing it.
+
+What Odoo does not have is any of the freight records themselves. There is no job file, no chargeable weight, no bill of lading, no container with a seal and a VGM, no routing leg with a vessel and voyage, no customs entry with tariff lines and duty, and no report of profit by trade lane. People who try to run forwarding on plain Odoo usually end up with a sales order per shipment and a spreadsheet beside it for everything that matters. The spreadsheet is where the money goes missing.
+
+## The module, the price and what it needs
+
+[Freight Forwarding and Customs Clearance](https://apps.odoo.com/apps/modules/20.0/wt_freight_forwarding/) (`wt_freight_forwarding`) is one module at **USD 399**, built for Odoo 20 and running on Community or Enterprise. It depends on Odoo's base, mail, product and Invoicing apps and nothing else. There is no separate enterprise edition of it: everything in this guide works on Odoo Community. An Odoo 19 build is also on the store at the same price.
+
+| Area | Standard Odoo | With the module |
+|---|---|---|
+| Customers, carriers, incoterms | Yes | Yes |
+| Customer invoices and supplier bills | Yes | Raised straight from the file's charges |
+| Job file per shipment, numbered by office and mode | No | Yes |
+| Chargeable weight by mode, divisors as settings | No | Yes |
+| Quotations with cost and sell on every line | No | Yes, won quote opens the file |
+| Master and house bills, air waybills, CMR notes | No | Yes, with release and surrender |
+| Containers with ISO 6346 check digit and VGM | No | Yes |
+| Routing legs with vessel, voyage or flight | No | Yes, ETA taken from the last leg |
+| Customs entry with tariff lines, duty, excise, VAT | No | Yes, duty disbursed outside the margin |
+| Gross profit by lane, salesperson, agent | No | Yes |
+
+## The job file, and the four modes
+
+Everything hangs off the job file. A file is opened in one of four modes, and the mode decides the numbering, the document checklist and how the cargo is rated:
+
+| Mode | Document | Rated on |
+|---|---|---|
+| Air | Air waybill | Greater of actual weight and volume at 6,000 cm³ per kilo |
+| Sea FCL | Bill of lading | The container and the TEU |
+| Sea LCL | Bill of lading | Weight or measure, a tonne to the cubic metre |
+| Road | CMR consignment note | The truck, or volume at 3,000 cm³ per kilo |
+
+The file number is drawn from a separate series per mode and starts with the office code, so a reference such as MBA/FCL/2026/00004 tells anyone reading a booking which branch, which mode and which file it is before they open it. That is also why the mode cannot be changed once a file is booked: the number is already on a booking with a carrier.
+
+<Shot src="/odoo-guides/odoo-freight-forwarding/job-files-list.webp" alt="Job Files list in Odoo with file numbers by mode, opened date, customer, port of loading, port of discharge, ETA, delay days, amount sold, gross profit, margin and state" width={1600} height={825} caption="The file list in the demo database: one line per shipment, with what was sold and what is left after cost." />
+
+## Who uses it: four roles
+
+The module ships four roles, and three of them sit beside each other rather than on top of each other:
+
+- **Freight Sales** quotes and opens the files they sold. A record rule limits them to their own quotations and files, so a commission sheet can go in front of one salesperson without showing them the whole branch.
+- **Operations Desk** runs every file on the branch: cargo, documents, bills, containers, routing, charges, invoices and supplier bills. It reads customs entries but does not lodge them.
+- **Customs Broker** owns the declarations from building to clearing, and maintains the tariff codes. Clearing an entry moves the file forward without the broker needing write access to it.
+- **Freight Manager** has all of the above plus configuration, deleting, and three figures nobody else sees: the standard cost on a rate card, an agent's profit share rate, and the agent share owed on a file.
+
+Roles are given in **Settings, Users and Companies, Users**, on the person's Access Rights tab under Freight Forwarding. Add Invoicing rights for anyone who posts invoices or bills. These are internal roles; do not give one to an overseas agent or a customer.
+
+<Shot src="/odoo-guides/odoo-freight-forwarding/operations-menu.webp" alt="Freight app in Odoo with the Operations menu open showing Job Files, Bills of Lading, Containers and Sailings and Flights" width={1600} height={608} caption="Five menus: Operations, Sales, Customs, Reporting and Configuration. Day to day work lives under Operations." />
+
+<Callout title="Cost is not hidden from sales or operations">Only the three manager figures above are restricted. Cost rates and the gross profit on a file are visible to the operations desk and to sales. If a figure must never reach a customer, rely on the documents you send them (the printed quotation shows only sell rates) rather than on a field permission the module does not have.</Callout>
+
+## How the chapters fit together
+
+Read the setup chapter once, when the system goes in. After that, go to the chapter for the job in front of you:
+
+1. [Setting up freight forwarding in Odoo](/odoo-guides/odoo-freight-forwarding-setup/): the settings, offices, ports, trade lanes, agents, charge codes, tariff codes, container types and document types, and the order to enter them.
+2. [Freight quotations with cost and sell](/odoo-guides/odoo-freight-quotation/): rate lines with two sides, the lane target margin, validity, won quotations that open a file, and the Why We Lose report.
+3. [Job files for air, sea and road freight](/odoo-guides/odoo-freight-job-file/): opening a file, cargo lines with HS codes, chargeable weight, the document checklist and the seven states from draft to closed.
+4. [Bills of lading, containers and routing](/odoo-guides/odoo-bill-of-lading-containers/): master and house bills, prepaid or collect, release types, container check digits and VGM, reefers, and routing legs with actual arrivals.
+5. [Freight charges, invoices and costing](/odoo-guides/odoo-freight-charges-invoicing/): the eight charge bases, invoicing the customer, booking supplier bills, what locks once posted, and the costing sheet.
+6. [Customs entries, duty and VAT in Odoo](/odoo-guides/odoo-customs-clearance/): regimes, tariff lines built from the cargo, freight apportioned by value, duty and VAT, restricted goods, transit and disbursement.
+7. [Freight gross profit and leak reports](/odoo-guides/odoo-freight-gross-profit-reports/): profit by lane and salesperson, unbilled files, costs without a bill, arrival delays, under target files and a monthly routine.
+
+## The demo database
+
+Every screen in these chapters comes from one demo database, so the numbers carry across: a made up forwarder and licensed customs broker called Meridian Freight Services, with one branch that forwards and clears and one that forwards only, books in US dollars, about twenty five job files across all four modes, fifteen quotations and seven customs entries. Your company name, ports, currency and tariff rates will be your own. The system is not tied to one country; duty rates, VAT rates, regimes and levies are configuration.
+
+## What it does not do
+
+- **No link to a customs authority.** You file with customs in their own system, then record the entry number, lodging, query and clearance on the entry here.
+- **No carrier or tracking integration.** Schedules, departures and arrivals are typed or confirmed on the routing legs. Nothing pulls vessel positions or airline status.
+- **No customer or agent portal.** Outside parties receive documents and the arrival notice by email; they do not log in.
+- **No warehouse or bonded store management.** Customs warehousing is a regime on the entry, not a stock location with bins.
+- **No trucking fleet management.** Road files carry a truck reference on the leg. For running your own trucks, drivers and trips, see the Transport demo on the [demos page](/demos/).
+
+## Try it
+
+The [freight forwarding demo](https://freight-demo.way4tech.com/) runs the same database as these screens, on Odoo 20. Ask for a login through the [contact page](/contact/) and say whether you forward, clear, or both, and which modes you run; I will point you at the files in the demo that look most like your business. The [freight forwarding industry page](/industries/freight-forwarding/) covers how a forwarding office is usually phased onto Odoo, and if you are still deciding on a version, the [Odoo 20 guide](/odoo-guides/odoo-20-whats-new-migration/) covers what changed.

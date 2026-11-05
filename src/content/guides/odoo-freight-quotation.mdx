@@ -1,0 +1,116 @@
+---
+title: "Freight quotations in Odoo: cost and sell on every rate line, and why you lose"
+metaTitle: "Freight Quotations with Cost and Sell"
+description: "Quote freight in Odoo 20 with a cost and sell on every rate line, a lane target margin, validity dates, won quotes that open a file, and lost reasons."
+targetQuery: "odoo freight quotation rate margin"
+category: "Industry"
+summary: "How a forwarder quotes in Odoo with the margin visible before the rate goes out, turns a won quotation into a job file with its rates, and measures why business is lost."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 2
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does the customer see my cost on the printed quotation?"
+    a: "No. The printed quotation shows the sell rate, quantity and amount per charge and the total. Cost, profit and margin stay on the screen."
+  - q: "Can I win a quotation after its validity date?"
+    a: "No. A quotation past its Valid Until date refuses to be marked won and asks you to requote. A nightly job also moves unanswered quotations past validity to Expired."
+  - q: "What happens to the quantities when the shipment differs from the quote?"
+    a: "The rates are copied to the job file exactly as quoted, but the quantities are recalculated from the file. Quote two containers and ship one, and the per container lines drop to one."
+  - q: "Is a quotation under the target margin blocked?"
+    a: "No. It is flagged as Under Target so the decision is taken in front of the number. You can still send it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A forwarder's margin is decided the moment the rate goes out. If the quote leaves off terminal handling, sells documentation at a price nobody checked, or rates a light air shipment on the wrong divisor, no amount of good operations will put the money back. The usual fix is a spreadsheet of buy rates next to the quote. The freight module puts the buy rate and the sell rate on the same line of the quotation instead, shows the margin against the lane's target while you type, and carries the rates onto the job file when the customer says yes. This chapter covers raising, sending, winning and losing a quotation.
+
+## Raising a quotation
+
+1. Open **Sales, Quotations** and press **New**.
+2. Pick the **Customer**, and type a **Contact Name** if the enquiry came from one person.
+3. Set **Mode** (Air, Sea FCL, Sea LCL or Road) and **Direction**.
+4. Set **From** and **To**. The **Trade Lane** fills itself in from the two countries.
+5. Enter what you know about the cargo: **Pieces**, **Gross Weight**, **Volume** and the **Commodity**. **Chargeable Weight** is worked out from the mode, with the same divisors the job file uses.
+6. Set the **Valid Until** date and **Transit (days)**. Both print on the quotation and customers ask about both.
+7. Add the rate lines, below, and save.
+
+<Shot src="/odoo-guides/odoo-freight-quotation/quotation-form.webp" alt="Freight quotation form in Odoo for a Sea FCL import from Shanghai, with customer, salesperson, office, incoterm, trade lane, transit days, validity, cargo weights, chargeable weight and a rate line with cost and sell" width={1600} height={859} caption="A full container quotation in the demo. It was marked won, so it shows the job file it became." />
+
+## Rate lines with two sides
+
+Each line on the **Rates** tab is one charge with a cost side and a sell side.
+
+1. Press **Add a line** and pick the **Charge Code**. The description, basis and standard cost and sell come across from the rate card.
+2. Check the **Basis** and **Quantity**. Two forty foot boxes is a quantity of two on a per container line; a per kilo line takes the chargeable weight.
+3. Type the **Cost Rate** and **Sell Rate**, each in its own currency if they differ.
+4. Repeat for every charge the customer will pay. A quote that leaves out terminal handling is not cheaper, it is wrong.
+
+Put the zero cost lines in too. Documentation and the customs entry fee often cost nothing to buy and sell for real money, and leaving them off understates both the price and the margin.
+
+## Margin against the lane target
+
+As lines go on, **Amount Cost**, **Amount Sell**, **Gross Profit** and **Margin (%)** update. If the margin falls below the target on the trade lane, or below the company minimum when the lane has none, the quotation shows an Under Target ribbon.
+
+The flag is a prompt, not a block. There are good reasons to quote under target: a first shipment from a customer who will bring more, or a backhaul that would otherwise run empty. The point is that the decision is made in front of the number, not found three months later in the gross profit report. The margin is also a column on the quotation list, so a thin quote is visible before anyone opens it.
+
+## Sending it
+
+1. Press **Print** to produce the PDF and read the validity date and transit time on it.
+2. Press **Send**. The quotation moves to Sent and the date is recorded.
+
+<Shot src="/odoo-guides/odoo-freight-quotation/quotation-pdf.webp" alt="Printed freight quotation PDF showing routing Shanghai to the destination port, mode Sea FCL, incoterm FOB, transit 26 days, validity date, cargo as advised and six sell-side charges with basis, quantity, rate and amount" width={1469} height={1901} caption="The printed quotation carries the sell side only, plus the routing, incoterm, transit time and validity." />
+
+<Callout title="Check the PDF before it goes">The printed quotation shows sell rates and totals, never cost or margin. Read it anyway. It is the one document in the system read by somebody deciding whether to give you the business, and a wrong quantity on a per container line prints exactly as typed.</Callout>
+
+## Won: the file opens with the rates on it
+
+1. Open the quotation and press **Won, Open a File**.
+2. The system opens a job file, copies every rate line onto it as a charge, and takes you to the file.
+3. The quotation shows which file it became, and the file shows which quotation it came from.
+
+The rates stay exactly as quoted. The quantities are recalculated against what is actually on the file, so if the customer quoted two containers and shipped one, the per container lines come down to one. This is what stops the invoice disagreeing with the quote.
+
+A quotation whose validity date has passed cannot be won. The system names the date and asks you to requote. A rate from six weeks ago is not a rate, and winning against it only moves the loss onto the file.
+
+## Lost, and why
+
+1. Press **Lost**.
+2. Pick a **Lost Reason**: beaten on rate, transit time, service or schedule, credit terms, no answer, shipment did not happen, or other.
+3. Write a line in **Lost Note**. "Beaten by a direct service, nine days quicker" is useful in three months. "Too expensive" is not.
+
+The reason is asked for at the moment the quote is marked lost, because that is the only time anyone remembers it.
+
+## Expiry
+
+A quotation still in Draft or Sent after its validity date is moved to Expired by a nightly scheduled job. It is not lost, because nobody said no; it is simply no longer a live rate. Expired quotations are kept out of the lost analysis for that reason, so the report below measures real decisions by customers.
+
+## The Why We Lose report
+
+**Sales, Why We Lose** groups lost quotations by reason, with the revenue and gross profit each reason cost you.
+
+<Shot src="/odoo-guides/odoo-freight-quotation/why-we-lose.webp" alt="Why We Lose pivot in Odoo grouping lost freight quotations by reason with amount sold and gross profit for beaten on rate, transit time and service or schedule" width={1600} height={359} caption="In the demo, service or schedule cost more lost revenue than rate did." />
+
+Most forwarders believe they lose on rate. Measured over a quarter it is often transit time, schedule or credit terms, and those are fixed by different people: a conversation with the carrier, or with the finance team about limits, rather than another price cut. The report is only as good as the reasons people pick, so make choosing a real reason part of how the sales team works.
+
+## A salesperson's routine
+
+- Quote with every charge on it, including the ones that cost nothing to buy.
+- Set a validity date you are willing to be held to and a transit time you have checked.
+- Watch the margin while you type, not after.
+- Mark a quotation lost the day you know, with the real reason.
+- Answer the activities on your unbilled files, covered in the [reports chapter](/odoo-guides/odoo-freight-gross-profit-reports/). They are your revenue.
+
+A salesperson with the Freight Sales role sees only quotations where they are the salesperson, and files where they are the salesperson or opened the file themselves. That is a record rule, so it holds on lists, searches and reports. If someone says quotations are missing from their list, that is usually why.
+
+When the customer confirms, the work moves to the [job file](/odoo-guides/odoo-freight-job-file/).

@@ -1,0 +1,130 @@
+---
+title: "Freight charges in Odoo: cost and sell per line, invoices, supplier bills and the costing sheet"
+metaTitle: "Freight Charges, Invoices and Costing"
+description: "Bill a freight job file in Odoo 20: cost and sell on every charge, quantities by basis, invoices and supplier bills from the file, and a costing sheet."
+targetQuery: "odoo freight invoicing job costing"
+category: "Industry"
+summary: "How every charge on a file carries what it costs and what it sells for, how the invoice and the supplier bills are raised from those lines, what locks once posted, and how to read the costing sheet."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 5
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: []
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can one job file raise more than one invoice?"
+    a: "Yes. The Invoice button groups uninvoiced sell lines by who they are billed to and by currency, so a file where part of the charges go to a different party, or are sold in a second currency, raises one draft invoice per group."
+  - q: "Can I edit a charge after it has been invoiced?"
+    a: "Not the money. Once the invoice is posted, the sell rate, quantity, tax, currency, billing party and charge code are locked; the description can still be corrected. If the invoice is wrong, issue a credit note."
+  - q: "What happens to a cost with no supplier named?"
+    a: "Book Supplier Bills leaves it alone. It is treated as an accrual, not a bill. It still counts as cost in the file's profit."
+  - q: "Does the costing sheet go to the customer?"
+    a: "No. It shows cost and margin and is an internal document. The customer receives the invoice."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In most forwarding offices the profit on a shipment is worked out twice: once roughly when it is quoted, and once properly at month end when the shipping line's invoice finally arrives and somebody matches it up. Between those two moments nobody knows what the file earned. The freight module removes the second calculation. Every charge on a file carries its cost and its sell on the same line, the customer invoice is raised from the sell side, the supplier bills from the cost side, and the file cannot close until both are done. This chapter shows how that works in practice.
+
+## A charge line
+
+On the file's **Charges** tab each line holds:
+
+| Field | What it is |
+|---|---|
+| Charge Code | The rate card entry. Brings description, category, basis, product and tax. |
+| Basis | What the quantity is counted in. |
+| Quantity | Taken off the file by the basis. You should rarely type it. |
+| Cost Rate | What you pay per unit. |
+| Pay To | The supplier. A cost with nobody to pay is an accrual, not a bill. |
+| Sell Rate | What you charge per unit. |
+| Bill To | The party invoiced, when not the file's customer. |
+| Duty and Tax | Ticked on a disbursement: recharged at cost and kept out of profit. |
+
+<Shot src="/odoo-guides/odoo-freight-charges-invoicing/file-charges.webp" alt="Charges tab on an Odoo freight air import file showing air freight per chargeable kilo, terminal handling, documentation, haulage, customs entry, customs duty and import VAT lines with cost, sell and profit, and totals for amount cost, amount sell, gross profit, margin, duty and tax paid out, invoiced and billed" width={1600} height={896} caption="An air import. Of the 24,028 dollars invoiced, 10,867 is duty and import VAT passing through at zero profit; the file earned 2,264." />
+
+Look at the totals in that screenshot. Amount Sell and Gross Profit exclude the duty and tax lines, which are shown separately as Duty and Tax Paid Out. That is why the margin on the file is 17 percent rather than a misleading 9.
+
+## Where the quantity comes from
+
+The basis on the charge code decides what the quantity is counted in, and the file supplies the number:
+
+| Basis | Quantity |
+|---|---|
+| Per Shipment | One |
+| Per Container | Containers on the file |
+| Per TEU | TEU total |
+| Per Chargeable Kilo | Chargeable weight |
+| Per Gross Kilo | Gross weight |
+| Per Cubic Metre | Volume |
+| Per Bill of Lading | Live bills on the file |
+| Per Declaration | Customs entries on the file |
+
+If the cargo changes after the charges went on, press **Refresh Charge Quantities** on the file. It redoes the quantity on every charge not yet invoiced or billed and leaves the rest alone. Nobody retypes a tonnage onto a rate line, so the invoice cannot disagree with the file about how heavy the shipment was.
+
+## Currencies
+
+The cost side and the sell side each carry their own currency. Buy ocean freight in dollars and sell local charges in your home currency on the same line if that is how you work; the file converts both into the company currency for its profit figures.
+
+## Adding charges
+
+Charges from a won quotation arrive on their own. To add one:
+
+1. On the **Charges** tab press **Add a line** and pick the **Charge Code**.
+2. Check the **Quantity** against the file.
+3. Type the **Cost Rate** and set **Pay To** if a supplier bill is coming.
+4. Type the **Sell Rate**, and set **Bill To** if the line goes to someone other than the customer.
+5. Save.
+
+Put the cost on as soon as you know it, even before the supplier's invoice arrives. A file with cost on and nothing invoiced appears in the Unbilled Files report and gets chased. A file with neither appears nowhere and is forgotten.
+
+## Invoicing the customer
+
+1. Open the file and press **Invoice**.
+2. Every sell line not yet invoiced goes onto a draft invoice, grouped by billing party and currency.
+3. Check the draft and post it the usual Odoo way.
+
+The invoice is an ordinary Odoo customer invoice, so registering payments, follow-up and your accounting reports work on it as on any other invoice. The button refuses on a draft or cancelled file, and when every sell line is already invoiced.
+
+<Callout title="Add charges on the file, not on the invoice">If you need to invoice more, put the charge on the file first and press Invoice again. Lines typed straight onto the invoice are invisible to the file, so the file and the invoice stop agreeing and the profit figure is wrong.</Callout>
+
+## Booking the supplier bills
+
+1. Press **Book Supplier Bills**.
+2. Every cost line with a named supplier and no bill yet goes onto a draft bill, grouped by supplier and currency.
+3. Check each draft against the supplier's own invoice and post it.
+
+<Shot src="/odoo-guides/odoo-freight-charges-invoicing/supplier-bill.webp" alt="Draft vendor bill in Odoo raised from a freight job file for the airline, with air freight per chargeable kilo and origin and destination terminal handling lines and their amounts" width={1600} height={981} caption="The airline's bill, raised from the cost side of the same charge lines." />
+
+A cost with no supplier named is left alone on purpose. It is an accrual or a deferment, and it still counts as cost on the file.
+
+## What locks once posted
+
+Once a charge sits behind a posted invoice, its sell rate, quantity, tax, currency, billing party and charge code are locked. The same applies on the cost side once a supplier bill is posted. The description can still be corrected.
+
+The reason is simple: swapping the charge code on an invoiced line would move money in or out of gross profit without the posted invoice changing by a cent. If an invoice is wrong, credit it, so the correction is a document both the customer and the auditor can see.
+
+## The costing sheet
+
+**Costing Sheet** prints the file's whole money position on one page: every charge with cost, sell, profit and the invoice it went on, the supplier each cost is bought from, the gross profit and margin, and the disbursements listed separately underneath.
+
+<Shot src="/odoo-guides/odoo-freight-charges-invoicing/costing-sheet.webp" alt="Printed file costing sheet PDF for an air import with customer, reference, mode, lane, salesperson, routing, incoterm, arrival and delay, a table of charges with cost, sell, profit and invoice number, gross profit on the file, and a separate disbursements table for duty and import VAT" width={1469} height={1901} caption="The costing sheet. Duty and VAT sit in their own table below the gross profit line." />
+
+This is the page to have in front of you before closing a file. It is internal: it shows cost and margin and does not go to the customer.
+
+## All charges
+
+**Reporting, All Charges** lists every charge line on every file with cost, sell, profit, margin, and whether it has been invoiced and billed. Group it by charge code to see what each service earns across the business, or by supplier to see what you buy from each carrier and haulier.
+
+## Closing the loop
+
+The file will not close while a sell line is uninvoiced or a named supplier cost is unbilled, as covered in the [job file chapter](/odoo-guides/odoo-freight-job-file/). Duty and import VAT reach the file through the customs entry, not as ordinary charges, which is the subject of the next chapter, [customs entries, duty and VAT](/odoo-guides/odoo-customs-clearance/).

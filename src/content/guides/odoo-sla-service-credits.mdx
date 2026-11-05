@@ -1,0 +1,117 @@
+---
+title: "SLA service credits and facility reports in Odoo: penalty schedules, monthly statements and the boards"
+metaTitle: "SLA Service Credits and FM Reports"
+description: "Work out SLA service credits in Odoo 19 from recorded breaches: rules per priority, allowances, caps, a monthly statement, then the FM boards and reports."
+targetQuery: "odoo sla service credits penalties"
+category: "Industry"
+summary: "How the Enterprise add-on turns missed response and resolution times into a monthly credit with its workings, and which boards and reports a facilities team reads every week."
+published: 2026-11-12
+updated: 2026-11-12
+series: "odoo-cafm-facility-maintenance"
+seriesOrder: 7
+modules:
+  - name: "Facility Management and Maintenance (CAFM)"
+    technical: "wt_facility_management"
+    note: "USD 349, Odoo 19 Community, needs Inventory and Accounting"
+  - name: "Facility Management Enterprise"
+    technical: "wt_facility_enterprise"
+    note: "USD 850 add-on, needs Facility Management; adds Analytic"
+demo:
+  url: "https://facility-pro.way4tech.com/"
+  label: "CAFM demo with the Enterprise add-on"
+related: ["n8n-odoo-automation", "odoo-construction-ra-bill-job-costing"]
+faqs:
+  - q: "How is the period charge for a service credit worked out?"
+    a: "A month is a twelfth of the contract's annual value, whatever the invoicing cycle. A contract worth 60,000 a year has a period charge of 5,000 for a monthly credit. Percentage rules and caps are worked out from that figure."
+  - q: "Can a service credit wipe out a whole month's fee?"
+    a: "No. Each rule has its own cap as a percentage of the period charge, ten percent by default, and however many rules apply, a month's credit is never more than the month's period charge."
+  - q: "Is the credit taken off the invoice automatically?"
+    a: "Only once it is agreed. A draft credit is worked out after each month, you review it and press Agree the Credit, and the next contract invoice deducts it as its own line. A credit can also be waived with a reason."
+  - q: "Do the base modules have the dashboards?"
+    a: "No. The three boards, Estate Performance, Contracts and Billing and My Work, come with the Enterprise add-on. The base module has three pivot reports: SLA Performance, Planned Against Reactive and Asset Lifetime Cost."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most FM contracts say what a missed SLA costs: a fixed sum per breach, or a percentage of the monthly charge, with a few breaches forgiven and a cap. Most FM firms then work that figure out once a month in a spreadsheet, from a job export, the night before the review. The customer works it out too, from their own records, and the meeting is spent reconciling the two. The breaches were already recorded on the jobs. What was missing was a schedule that reads them and shows the workings.
+
+This chapter covers service credits in the [Facility Management Enterprise](https://apps.odoo.com/apps/modules/19.0/wt_facility_enterprise/) add-on for Odoo 19, then the boards and reports that show whether the estate is under control. The clocks themselves, response and resolution with cover hours, are explained in the [work orders chapter](/odoo-guides/odoo-help-desk-work-orders-facility/).
+
+## Set the credit schedule on the contract
+
+Open the contract and its **Service Credits** tab. Add a line per rule in the contract:
+
+1. A **Name** people will recognise on the statement.
+2. The **Priority**, or Any Priority.
+3. The **Breach**: Response Missed, Resolution Missed or Either.
+4. The **Basis**: Fixed Amount per Breach with the amount, or Percent of the Period Charge per Breach with the percent.
+5. **Allowed**: how many breaches a month are forgiven before the rule charges.
+6. **Capped At (%)** of the period charge.
+
+<Shot src="/odoo-guides/odoo-sla-service-credits/credit-schedule.webp" alt="Service Credits tab of a maintenance contract in Odoo with a Work Out Last Month button and three rules: a percentage per missed P1 response capped at 10 percent, a fixed 350 AED per missed P2 resolution after one allowed capped at 5 percent, and a fixed 120 AED per missed response on any priority after one allowed, with credits not yet applied" width={1600} height={891} caption="A credit schedule: one rule per clause in the contract, each with an allowance and a cap." />
+
+Write the rules the way the contract is worded, one clause to one line. When the statement goes to the customer, each line on it should be a clause they can find in the signed document.
+
+<Callout title="Every rule should have a cap">A rule with no cap can take a month's fee on a bad week. The cap defaults to ten percent of the period charge per rule, and on top of the rule caps, the total credit for a month is never allowed to exceed that month's period charge.</Callout>
+
+### How the figure is worked out
+
+The **period charge** is a month's share of the annual contract value, the annual value divided by twelve, whatever the invoicing cycle. A quarterly invoiced contract still has a monthly credit based on a twelfth of the year, not on the quarterly invoice amount.
+
+For each rule, the system counts the month's jobs on the contract that match it (priority and type of breach), takes off the allowed breaches, and charges the rest: a fixed amount each, or the percent of the period charge each. The result is limited by the rule's cap. The rules are added up, and the total is limited to the period charge.
+
+## The monthly cycle
+
+After each month ends, a draft credit is worked out for every contract. To do it by hand, press **Work Out Last Month** on the contract, or use the same action under **Contracts, Service Credits**.
+
+<Shot src="/odoo-guides/odoo-sla-service-credits/credit-draft.webp" alt="Draft service credit in Odoo for one contract and one month with buttons Agree the Credit, Work It Out, Waive and Print the Statement, the contract, customer, site and dates, how the month went with work orders, response missed, resolution missed and met percentages, and the period charge of 5,000 AED and a credit of nil" width={1600} height={1067} caption="A draft credit: how the month went, the period charge and the credit." />
+
+Open the draft. **How the Month Went** shows the jobs, the misses and the met percentages. The **Workings** tab has one row per rule: breaches, how many were charged, the amount before the cap, whether the cap bit, and the credit.
+
+<Shot src="/odoo-guides/odoo-sla-service-credits/credit-workings.webp" alt="Workings tab of a service credit in Odoo with one rule row: three missed responses, two charged after the allowance, 240 AED before the cap, not capped, credit 240 AED" width={1600} height={594} caption="The workings: three misses, one allowed, two charged at the fixed rate." />
+
+1. If jobs were corrected since the draft was made, press **Work It Out** to recalculate.
+2. Press **Print the Statement** and take it to the monthly review. It carries signature lines for both sides.
+3. When agreed, press **Agree the Credit**. If the customer lets it go, write the waive reason and press **Waive**.
+4. The next contract invoice deducts every agreed credit as its own line, and the credit becomes Applied with a link to that invoice. **Credits Not Yet Applied** on the contract shows what is agreed and still to come off.
+
+The credit is only as fair as the clocks behind it. If the service level's cover hours or time zone are wrong, the credit will be wrong in the same direction every month. Check them before the first statement goes out.
+
+## The boards
+
+The add-on adds three boards under **Dashboards**. Two boxes at the top filter everything: **Site** (empty means all) and **Period**. Every card opens the records behind it, and each role only sees the cards it can open.
+
+- **Estate Performance**, for the facility manager and supervisors. It starts with what needs somebody now (P1 emergencies, jobs past the SLA, not yet assigned, on hold), then whether the estate is under control (jobs open, planned work as a share of all work with a Firefighting badge below 60 percent, response met, resolution met), then what it is costing against the cost budget.
+- **Contracts and Billing**, for the contract manager and finance: invoices due, chargeable work not yet billed, contracts running and up for renewal, invoiced against cost to serve, contracts losing money and what was written off.
+- **My Work**, for engineers on a phone or laptop: overdue, due today, open jobs and hours this week. If it is empty, the user is not linked to a technician record.
+
+<Shot src="/odoo-guides/odoo-sla-service-credits/estate-board.webp" alt="Estate Performance board in Odoo with site and period filters, cards for P1 emergencies, past the SLA, not yet assigned and on hold, then jobs open, planned work 50.6 percent with a Firefighting badge, response met and resolution met with missing the target badges" width={1600} height={960} caption="Estate Performance: what needs somebody now, then whether the estate is under control." />
+
+Work the board top down every morning. The first row is a list of conversations to have before lunch; the second is the trend you report to the customer.
+
+## The reports
+
+Reports live under **Reporting** and open as pivot tables you can break down, switch to a graph and download to Excel.
+
+| Report | What it shows | Edition |
+|---|---|---|
+| SLA Performance | Jobs, response met and resolution met by contractor and priority. | Base |
+| Planned Against Reactive | Jobs, planned jobs and planned share by month and site. | Base |
+| Asset Lifetime Cost | Own cost, replacement value and spend against replacement by class and asset. | Base |
+| Contract Profitability | Annual value, invoiced, cost to serve and margin by customer and contract. | Enterprise |
+| Job Margin | Job cost, what was charged and the margin, by origin and contract. | Enterprise |
+| Cost per Building | Jobs, spend this year and cost per square metre per building. | Enterprise |
+
+The met percentages in SLA Performance are worked out from the totals, so a total row is right even when the rows have different numbers of jobs, rather than being an average of averages.
+
+<Shot src="/odoo-guides/odoo-sla-service-credits/planned-vs-reactive.webp" alt="Planned Against Reactive pivot in Odoo by month for one site, with jobs, planned jobs and planned percentage, showing early months fully planned and the summer months at about a third planned" width={837} height={1655} caption="The work mix by month. The months at about a third planned are the next review's conversation." />
+
+<Shot src="/odoo-guides/odoo-sla-service-credits/contract-profitability.webp" alt="Contract Profitability pivot in Odoo with annual value, invoiced, cost to serve and margin per customer" width={1455} height={743} caption="Contract Profitability by customer: invoiced against what the jobs actually cost." />
+
+<Callout title="Read the money figures with care">Cost to serve counts only hours, parts and subcontractor cost booked on jobs. Overheads, travel, supervision and any hours not booked are not in it, so margins read higher than the business really makes. The money cards on the boards compare with the same span of the previous period; treat that trend line as a pointer and open the records behind it before quoting a percentage to anyone.</Callout>
+
+## A monthly routine
+
+In the first week of the month: open each draft credit, press Work It Out if jobs changed, print the statement for the review, then agree or waive. Run SLA Performance by contractor and bring it to their review instead of their own report. Check Planned Against Reactive per site. Quarterly, run Asset Lifetime Cost and list the plant whose spend is climbing towards replacement value.
+
+The contract side, invoicing and chargeable work, is in the [maintenance contracts chapter](/odoo-guides/odoo-maintenance-contracts-billing/). To push breaches into a chat channel or a customer report outside Odoo, see the [n8n guide](/odoo-guides/n8n-odoo-automation/). The boards and credits can be opened on the [demo with the Enterprise add-on](https://facility-pro.way4tech.com/).

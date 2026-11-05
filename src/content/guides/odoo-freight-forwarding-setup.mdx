@@ -1,0 +1,143 @@
+---
+title: "Setting up freight forwarding in Odoo: offices, lanes, charge codes and tariff codes"
+metaTitle: "Setting Up Freight Forwarding in Odoo"
+description: "Configure a forwarder in Odoo 20: volumetric divisors, offices, ports, trade lanes with target margins, agents, charge codes, HS codes and document types."
+targetQuery: "odoo freight forwarding configuration charge codes trade lanes"
+category: "Industry"
+summary: "Half a day of configuration that decides how every file is numbered, rated, checked and measured: the settings, offices, ports, lanes, agents, charge codes, tariff codes and document types."
+published: 2026-11-26
+updated: 2026-11-26
+series: "odoo-freight-forwarding"
+seriesOrder: 1
+modules:
+  - name: "Freight Forwarding and Customs Clearance"
+    technical: "wt_freight_forwarding"
+    version: "20.0"
+    note: "USD 399, Odoo 20 Community or Enterprise, needs Invoicing"
+demo:
+  url: "https://freight-demo.way4tech.com/"
+  label: "Freight Forwarding demo"
+related: ["odoo-20-whats-new-migration"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What air volumetric divisor should I use in Odoo?"
+    a: "The module defaults to 6,000 cubic centimetres per kilo, which is the IATA figure. Some carriers rate on 5,000. Set the figure your main carriers use in Configuration, Settings; it applies to quotations and job files alike."
+  - q: "How do I keep customs duty out of the forwarding margin?"
+    a: "Set up Customs Duty, Import VAT and any government levies as charge codes with Duty and Tax ticked. Lines on those codes are recharged at cost and kept out of the gross profit on the file."
+  - q: "Do I need one trade lane per mode?"
+    a: "Usually not. A lane is a pair of countries with a target margin, and Mode can stay on Any Mode. Only split by mode if you genuinely price the same country pair differently by air and sea. Never create two lanes over the same pair and mode."
+  - q: "Who can change the configuration?"
+    a: "A Freight Manager. The Configuration menu is hidden from the sales, operations and customs broker roles. The Settings page inside it also needs Odoo's own Administrator rights, because Odoo guards its settings screen separately."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most of the arguments a forwarder has with its customers start in configuration. A volumetric divisor that differs between the quote and the invoice, a duty line counted as revenue, a lane target that does not exist so every thin file looks fine. The freight module asks you to write down decisions the business has already made: how it rates air freight, which branches may lodge customs entries, what margin each lane should earn, what each charge is counted in. Get those right once and most fields on a job file fill themselves in. This chapter is for the Freight Manager, the only role that can open the Configuration menu.
+
+## The settings: eight figures
+
+Open **Configuration, Settings**. These apply company wide, so a second office on the same company uses the same divisors.
+
+| Setting | Default | What it decides |
+|---|---|---|
+| Air Volumetric Divisor | 6000 | Cubic centimetres to the kilo for air. Some carriers use 5,000, and on light cargo the difference is real money. |
+| Road Volumetric Divisor | 3000 | The same for groupage road freight. |
+| LCL Weight or Measure | 1000 | Kilos to the cubic metre for sea groupage. The greater of weight and measure is charged. |
+| Minimum Margin | 15% | The floor a file or quotation is measured against when its lane has no target. |
+| Documents Before Delivery | On | A file cannot be marked delivered while a required document is outstanding. |
+| Chase Unbilled Files After | 14 days | How long a file may carry cost with no invoice before the salesperson gets an activity. |
+| Chase Documents Before Arrival | 5 days | How far ahead of ETA the customer is emailed about missing documents. |
+| Standard Import VAT | 16% | Used on a tariff line when its HS code has no VAT rate, so a new commodity does not clear at zero. |
+
+The divisors are settings rather than code for one reason: the quotation and the job file must answer the chargeable weight question the same way. Change it here and both follow.
+
+Opening the Settings page needs Odoo's Administrator role as well as Freight Manager, because Odoo protects its general settings screen separately. Give that to the person who sets the system up.
+
+## Offices
+
+**Configuration, Offices.** An office is a branch. Its short code goes on the front of every file number it opens, and its type decides whether it may lodge a customs entry at all.
+
+1. Press **New**, type the **Name** and a short **Code**. Three letters works best, because it is printed on every file number.
+2. Set **Office Type** to Forwarding Only, Customs Broker Only, or Forwarding and Broking.
+3. If the office clears goods, enter its **Customs Licence Number**. It prints on every customs worksheet the office files.
+4. Set the **Address** for documents, and the **Sales Journal** and **Purchase Journal** its invoices and supplier bills post to.
+5. Save.
+
+A Forwarding Only office cannot raise a declaration, and the refusal names the office. That is deliberate: a customs licence belongs to a branch, and an entry filed under the wrong one is a problem with the authority.
+
+## Ports and airports
+
+**Configuration, Ports and Airports** holds sea ports, airports, border posts, rail terminals and inland depots in one list, each with its UN/LOCODE, country and whether goods can be entered there. Add the inland points as well as the sea ports. A container discharged at the port and railed to an inland depot is two legs, and the file's ETA is only honest if the second one exists.
+
+## Trade lanes and target margins
+
+**Configuration, Trade Lanes.** A lane is a pair of countries and a target margin. Each file finds its own lane from the loading and discharge points, so nobody has to remember to set it.
+
+1. Press **New**, name the lane the way the business already talks about it, and give it a short code.
+2. Set **Origin Country** and **Destination Country**.
+3. Leave **Mode** on Any Mode unless you really price the same pair differently by mode.
+4. Set **Target Margin (%)**. Files and quotations under it are flagged.
+
+<Shot src="/odoo-guides/odoo-freight-forwarding-setup/trade-lanes.webp" alt="Trade Lanes list in Odoo with code, name, origin and destination country, mode, target margin percentage and number of files per lane" width={1600} height={439} caption="Lanes in the demo with their own targets: a transit corridor at 15 percent, an import lane from the Far East at 16, exports to Europe at 20." />
+
+<Callout title="One lane per country pair">Two lanes over the same pair make the match between them arbitrary, and the gross profit report then splits one lane's business across two rows. If you need a different target by mode, set Mode on each lane so the pairs no longer overlap.</Callout>
+
+## Agents
+
+**Configuration, Agents** holds the overseas end: forwarding agents, co-loaders, NVOCCs, customs brokers and hauliers, with the lanes each one covers and the share of profit they keep on business they nominate to you. When a file is marked as an agent nomination, the agent's share is worked out from the rate on the agent record. If the file's lane is not one the agent covers, the file refuses the nomination and names the lane, which usually means the lane on the file is wrong. Enter agents last, because they refer to lanes.
+
+## Charge codes: the rate card
+
+**Configuration, Charge Codes** is where most of the work is. Each code carries a category, the basis it is charged on, the Odoo product and tax behind it, and a standard cost and sell. The basis is what puts a quantity on a charge line without anybody retyping a tonnage.
+
+| Basis | Quantity taken from the file |
+|---|---|
+| Per Shipment | One |
+| Per Container | Number of containers |
+| Per TEU | TEU total, so a forty foot box counts twice |
+| Per Chargeable Kilo | Chargeable weight |
+| Per Gross Kilo | Gross weight |
+| Per Cubic Metre | Cargo volume |
+| Per Bill of Lading | Live bills on the file |
+| Per Declaration | Customs entries on the file |
+
+<Shot src="/odoo-guides/odoo-freight-forwarding-setup/charge-codes.webp" alt="Charge Codes list in Odoo showing code, name, category, basis, standard cost, standard sell and the duty or import tax flag on customs duty, import VAT and levies" width={1600} height={663} caption="Seventeen charge codes. The ticked ones at the foot and the levies near the top are duty and tax codes, recharged at cost." />
+
+Set up customs duty, import VAT and any government fees or levies on imports as their own charge codes with **Duty and Tax** ticked. A charge on one of those codes is recharged at cost and never counted as forwarding revenue, so a file that carried a large duty bill still shows the profit it really earned. Put zero cost services such as documentation and the customs entry fee in as codes too. They cost nothing to buy and sell for real money.
+
+## Tariff codes
+
+**Configuration, Tariff Codes** lists the HS codes you actually handle, each with duty, excise and VAT rates and whether the commodity is restricted.
+
+1. Press **New** and type the **Code** and **Description**.
+2. Set **Duty (%)**, **Excise (%)** and **VAT (%)**. Leave VAT empty to use the standard rate from Settings.
+3. Tick **Restricted** if the goods need a permit, and say which permit in **Licence Note**.
+
+<Shot src="/odoo-guides/odoo-freight-forwarding-setup/tariff-codes.webp" alt="Tariff Codes list in Odoo with HS code, description, duty percentage, import VAT percentage, licence required flag and licence note for wine and medicaments" width={1600} height={537} caption="Thirteen commodities. Wine and medicaments are marked restricted, with the permit each one needs written on the code." />
+
+The licence note exists for the clerk who meets the refusal. An entry with a restricted line will not clear without a licence reference, and the note tells them which authority to go to instead of ringing the broker to ask. The Customs Broker role has write rights on tariff codes too, although the Configuration menu itself is shown only to managers.
+
+## Container types and document types
+
+**Configuration, Container Types** holds the box sizes you book, with TEU factor, maximum payload, internal capacity and a reefer flag. The payload and capacity are what a container is checked against when it is stuffed.
+
+**Configuration, Document Types** is the checklist. Each document says which mode and direction it applies to, who issues it (shipper, consignee, us, the carrier, customs, a chamber of commerce or an insurer) and whether it is required. A new file picks up every document that matches its mode and direction the moment it is saved.
+
+<Shot src="/odoo-guides/odoo-freight-forwarding-setup/document-types.webp" alt="Document Types list in Odoo with commercial invoice, packing list, bill of lading, air waybill, CMR note, certificate of origin and others, each with mode, direction, issuer and required flag" width={1600} height={535} caption="Thirteen document types. Required is ticked on the ones that must be in before delivery." />
+
+Be careful with **Required**. With Documents Before Delivery switched on, a required document that has not arrived stops the file being marked delivered. That is exactly what you want for an original bill of lading and a nuisance for a packing list.
+
+## The order to do it in
+
+1. Settings: the three divisors and the minimum margin.
+2. Offices, with codes, licences and journals.
+3. Ports, including inland depots and border posts.
+4. Trade lanes, one per country pair, with targets.
+5. Container types, if you move boxes.
+6. Charge codes, with duty and tax codes marked.
+7. Tariff codes for the commodities you handle.
+8. Document types, and which are genuinely required.
+9. Agents, last.
+
+Then give people their roles, as described in the [overview](/odoo-guides/odoo-freight-forwarding/), and open a test quotation as the next chapter shows.

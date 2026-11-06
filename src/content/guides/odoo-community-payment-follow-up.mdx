@@ -1,0 +1,126 @@
+---
+title: "Payment follow-up in Odoo 19 Community: automatic late payment reminders at 3, 7, 14 and 30 days"
+metaTitle: "Payment Follow-Up and Reminders"
+description: "Send late payment reminders from Odoo 19 Community: rules by days overdue, four e-mail templates, a daily run, a send now button and an opt out."
+targetQuery: "odoo community payment follow up reminder"
+category: "Operations"
+summary: "The four reminder rules and their e-mails, how the daily run picks the next reminder, sending one by hand, taking a disputed invoice out of the run, the settings, and what to check before the first run."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-accounting-tools"
+seriesOrder: 5
+modules:
+  - name: "Payment Follow-Up and Dunning"
+    technical: "wt_late_payment_reminder"
+    note: "USD 10, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://accounting-demo.way4tech.com/"
+  label: "Accounting tools demo"
+related: ["odoo-community-accounting-tools", "odoo-community-financial-reports", "odoo-accounting-dashboard"]
+linkFrom: ["/products/wt-late-payment-reminder/"]
+sources: []
+faqs:
+  - q: "Does Odoo Community send payment reminders?"
+    a: "No. Follow-up is part of Odoo Enterprise accounting. Payment Follow-Up and Dunning adds a daily run to Community that sends reminder e-mails by days past due, with four rules and templates included."
+  - q: "Will a customer get the same reminder twice?"
+    a: "No. Each invoice remembers the last rule sent. The run only sends a rule with more days past due than the last one, so each reminder goes once and nothing is sent after the final notice."
+  - q: "Can I stop reminders for one customer's invoice?"
+    a: "Yes. Tick Disable follow-up on the invoice and the run skips it. There is also a minimum amount per rule and a global minimum in Settings, and a master switch that pauses everything."
+  - q: "Can I send a reminder straight away?"
+    a: "Yes. Send Reminder Now on the invoice sends the next rule the invoice has reached, without waiting for the morning run, and logs it in the chatter."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The invoice was due thirty days ago, the customer is perfectly able to pay, and nobody has asked. In most small finance teams chasing late payers is the job that slips, because it is dull and it is easy to forget who was chased when. Odoo Enterprise has a follow-up module. Odoo 19 Community has nothing, so reminders are sent by hand or not at all. Payment Follow-Up and Dunning (`wt_late_payment_reminder`) adds a daily run that sends the right reminder at the right time, once, and records each one on the invoice. The examples come from the demo company, Halden Pike Trading Ltd, which has 23 overdue invoices being chased.
+
+## The rules
+
+Open **Invoicing, Configuration, Late Payment Rules**. Four rules ship with the module.
+
+<Shot src="/odoo-guides/odoo-community-payment-follow-up/lp-rules.webp" alt="Late Payment Rules list with four rules at 3, 7, 14 and 30 days past due, each with its e-mail template" width={1440} height={900} caption="Friendly, second, urgent and final, at 3, 7, 14 and 30 days." />
+
+| Days past due | Rule | Tone |
+|---|---|---|
+| 3 | Friendly Reminder | A polite first nudge |
+| 7 | Second Notice | Firmer, one week late |
+| 14 | Urgent | An explicit escalation warning |
+| 30 | Final Notice | The last reminder before recovery |
+
+<Shot src="/odoo-guides/odoo-community-payment-follow-up/lp-rule-final.webp" alt="Rule +30 days Final Notice with days past due 30, e-mail template Late Payment Final Notice, also notify a finance user, skip if amount due below 0.00, sequence 40, active, and an internal note" width={1440} height={900} caption="A rule: days, template, an internal copy and a minimum amount." />
+
+Each rule has the days past due, the **e-mail template**, an internal user to **Also notify (CC)**, a **Skip if amount due below** threshold, a sequence, an active box and an internal note. You can add rules, for example a 60 day one, or switch one off.
+
+## What the four e-mails say
+
+The templates are ordinary Odoo e-mail templates on the invoice, so they fill in the customer, the invoice number, the dates and the amount due. As shipped:
+
+- **Friendly reminder** (subject "Friendly reminder: Invoice ... is past due"): the invoice was due on a date and remains unpaid; ignore this if payment is arranged, otherwise please settle at your earliest convenience.
+- **Second notice**: payment has not been received; please arrange it to avoid further follow-up, and get in touch if there are difficulties.
+- **Urgent**: despite previous reminders the invoice is unpaid; please settle within 7 days or the matter may be escalated; reply or call if there is an issue.
+- **Final notice**: the last reminder; if full payment is not received within 7 days the account goes to the recovery process and fees and interest may apply; settle now or ask for a payment plan.
+
+The final notice mentions fees and interest. The module does not charge either, so change that sentence if your terms do not allow it. Each template is signed with the company name.
+
+## How the daily run picks a reminder
+
+The scheduled action "Late Payment Reminder, daily sweep" runs every day. It looks at posted customer invoices that are unpaid or partly paid, have a due date and an amount left, and are not taken out of the run. For each one it picks the highest rule the invoice has reached that is above the last rule already sent.
+
+- An invoice 20 days late that has had the 7 day notice gets the 14 day one.
+- An invoice that has had the 30 day notice gets nothing more.
+- An invoice below the rule's minimum, or below the global minimum, is skipped.
+
+Each reminder is sent with the rule's template, counted on the invoice and logged in the chatter.
+
+<Shot src="/odoo-guides/odoo-community-payment-follow-up/inv-reminded.webp" alt="Invoice INV/2026/00039 to Fellgate Hospitality Group, partly paid, due 10 June, with the Late Payment Reminder group showing reminders sent 4 and the last rule, a Send Reminder Now button, and the final notice and urgent e-mails in the chatter" width={1440} height={900} caption="Four reminders on one invoice, each logged with its rule." />
+
+On the invoice, the **Late Payment Reminder** group shows Disable follow-up, the number of reminders sent, when the last one went and which rule it was. **Send Reminder Now** sends the next rule due straight away.
+
+## Take a disputed invoice out
+
+If a customer disputes an invoice, chasing them for it does not help. Tick **Disable follow-up** on that invoice and the run leaves it alone. Add a note in the chatter saying why, as the demo does on INV/2026/00077.
+
+Three filters in the invoice search help the credit controller: **Overdue (follow-up due)** for invoices still in the run, **Reminders already sent** for those already chased, and **Follow-up disabled** for the ones taken out.
+
+<Shot src="/odoo-guides/odoo-community-payment-follow-up/inv-due-filter.webp" alt="Customer invoices filtered on Overdue (follow-up due), 23 invoices with customer, invoice date, due date in red, amounts and posted or partially paid status" width={1440} height={900} caption="Everyone still due a reminder, oldest at the bottom." />
+
+## Settings
+
+Under **Invoicing, Configuration, Settings, Late Payment Reminders**:
+
+<Shot src="/odoo-guides/odoo-community-payment-follow-up/cfg-settings.webp" alt="Settings section Late Payment Reminders with the enable checkbox ticked, send from set to a credit control address and skip if amount due below 25.00" width={1440} height={900} caption="The master switch, the sender and the global minimum." />
+
+- **Enable automatic late-payment reminders** is the master switch. Off, the run stays scheduled and sends nothing.
+- **Send from** overrides the template's sender, for example a credit control mailbox.
+- **Skip if amount due below** ignores small balances everywhere.
+
+<Callout title="Before the first run">
+Reminders go to real customers as soon as the module is installed and the daily run finds an overdue invoice. On a database with old unpaid invoices, switch the master switch off first and tidy the ledger. Then read the four templates and reword them in your own voice: as shipped, the rule names and subjects use long dashes and the amount box in the body shows as pale text on a pale background in the chatter.
+</Callout>
+
+## A worked example
+
+Take an invoice due on 1 March with nothing paid:
+
+| Date | Days past due | What the run does |
+|---|---|---|
+| 4 March | 3 | Sends the friendly reminder (if the amount is above the rule's minimum) |
+| 8 March | 7 | Sends the second notice |
+| 15 March | 14 | Sends the urgent notice, copied to the user on the rule if one is set |
+| 31 March | 30 | Sends the final notice |
+| Any day after | 31 and up | Nothing more: every rule up to its age has been sent |
+
+If the module is installed when the invoice is already 20 days late, the first run sends the 14 day notice straight away and skips the earlier two, because it always picks the highest rule reached. A part payment does not reset the count: the invoice stays in the run while any amount is left, and the next rule is the next one up.
+
+## A weekly credit control routine
+
+1. Open the invoices with the **Overdue (follow-up due)** filter and sort by due date.
+2. Ring the customers on the final notice rather than waiting for a fifth e-mail.
+3. Tick **Disable follow-up** on anything in dispute and say why in the chatter.
+4. Check the [Aged Receivable report](/odoo-guides/odoo-community-financial-reports/) for the total by age.
+
+## What it is not
+
+It sends e-mails. It does not print letters, add late fees or interest, or keep a per customer follow-up level. Each invoice is chased on its own. For a view of who owes what and how old it is, use the Aged Receivable report in the [financial reports chapter](/odoo-guides/odoo-community-financial-reports/).
+
+The module costs USD 10 and runs on Odoo 19 Community. The [series overview](/odoo-guides/odoo-community-accounting-tools/) covers the other four accounting add-ons.

@@ -1,0 +1,123 @@
+---
+title: "Fixed assets and depreciation in Odoo 19 Community: asset types, boards, posting, revaluation and disposal"
+metaTitle: "Fixed Assets and Depreciation"
+description: "Run a fixed asset register in Odoo 19 Community: asset types, straight line and declining boards, automatic posting, revaluation, sale and scrapping."
+targetQuery: "odoo community fixed asset depreciation"
+category: "Operations"
+summary: "Asset types and their accounts, assets raised from vendor bills, the depreciation board and its three methods, posting by hand or by the scheduled action, revaluing, pausing and disposing of an asset, and the printed schedule."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-accounting-tools"
+seriesOrder: 1
+modules:
+  - name: "Fixed Asset Management"
+    technical: "wt_account_asset"
+    note: "USD 89, Odoo 19 Community, needs only Invoicing"
+demo:
+  url: "https://accounting-demo.way4tech.com/"
+  label: "Accounting tools demo"
+related: ["odoo-community-accounting-tools", "odoo-community-financial-reports", "odoo-asset-register-facility-management"]
+linkFrom: ["/products/wt-account-asset/"]
+sources: []
+faqs:
+  - q: "Which depreciation methods does the module support?"
+    a: "Straight line, declining balance, and declining balance that switches to straight line once that gives the higher figure. Periods can be monthly, quarterly or yearly, and prorata temporis starts an asset bought mid-period from the day it was bought."
+  - q: "Are the depreciation entries real journal entries?"
+    a: "Yes. Each board line becomes a posted entry in the journal on the asset type, debiting the depreciation expense and crediting accumulated depreciation. The register's depreciated and book values are read from those posted lines."
+  - q: "Can an asset be created from a vendor bill?"
+    a: "Yes. Set an asset type on the fixed asset account in the chart of accounts. Every vendor bill line posted to that account then creates an asset of that type, confirmed straight away if the type has Confirm Automatically on."
+  - q: "What happens to depreciation when an asset is sold?"
+    a: "The disposal can post any depreciation due up to the sale date first. It then clears the cost and the accumulated depreciation, books the proceeds and posts the gain or loss to the accounts on the asset type. Lines scheduled after the sale are dropped."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every business with a van, a server and a few desks has a fixed asset register, even if it is a spreadsheet on the bookkeeper's laptop. Each month somebody works out the depreciation, types a journal entry into Odoo and hopes the two still agree at year end. Odoo 19 Community has no asset management at all, so that is the usual setup. Fixed Asset Management (`wt_account_asset`) puts the register back inside Odoo: the board is worked out for you, each line posts as a real journal entry, and the register and the balance sheet cannot drift apart.
+
+The examples come from the demo company, Halden Pike Trading Ltd, which has thirteen assets bought between 2021 and 2026 in every state the register knows.
+
+## Start with asset types
+
+An asset type holds everything an asset needs to depreciate. Open **Assets, Configuration, Asset Types**.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/cat-vehicles.webp" alt="Asset type Vehicles: straight line, 60 depreciations of 1 month, prorata on, Confirm Automatically and Post Entries Automatically on, journal Miscellaneous Operations, asset account 005000 Vehicles, depreciation account 005100 Vehicles Depreciation, expense account Depreciation - Tangible Assets, gain and loss accounts for disposal" width={1440} height={900} caption="The Vehicles type: method and periods, automation, the four accounts and the disposal accounts." />
+
+1. **Depreciation.** Method, number of depreciations, period length (months, quarters or years), the declining factor if you chose a declining method, and Prorata Temporis.
+2. **Automation.** Confirm Automatically makes an asset raised from a bill start running at once. Post Entries Automatically lets the daily scheduled action post each line when it falls due. Turn it off for a family you want to review by hand.
+3. **Accounts.** A miscellaneous journal, the asset account holding the cost, the accumulated depreciation account and the expense account. The asset and depreciation accounts must differ, or the entries would cancel out.
+4. **Disposal.** The gain and loss accounts used when an asset is sold or scrapped.
+
+The three methods behave differently, and the choice belongs to your accountant:
+
+| Method | Each period | Typical use |
+|---|---|---|
+| Straight Line | Gross less salvage, divided by the number of periods | Vehicles, furniture, buildings |
+| Declining Balance | Book value less salvage, times the factor for the period | Plant that loses value early |
+| Declining then Straight Line | The higher of the declining figure and an even spread of what is left | IT equipment |
+
+Periods are anchored on the calendar, so a quarterly board posts at the end of March, June, September and December.
+
+## Let the bills raise the assets
+
+Open the fixed asset account in the chart of accounts, for example 005000 Vehicles, and set its **Asset Type**. From then on every vendor bill line posted to that account creates an asset when the bill is posted, with the bill's vendor, date and amount. On the bill lines there is an optional Asset Type column; clear it on a line to post that cost to the profit and loss instead. On the demo every asset came in this way.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/asset-list.webp" alt="Assets list filtered on Running with eight assets: server and core network switch, Toyota Hilux, LED lighting retrofit, handheld scanners, Linde forklift, office laptops, warehouse racking and Ford Transit, with gross 225,000, depreciated 76,648.10 and book value 148,351.90" width={1440} height={900} caption="The register: gross value, depreciated so far and book value, with totals." />
+
+An asset moves through four states. **Draft** while it is checked, with Compute Board to preview the plan. **Running** once confirmed. **Paused** while out of service. **Closed** once fully depreciated, sold or scrapped. Gross value has to be above zero and salvage below it.
+
+## Read the board
+
+The board is one line per period with the amount, the running total, what is left and the journal entry.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/asset-van-board.webp" alt="Ford Transit Custom depreciation board: first line 31 March 2023 for 354.84, then 500.00 a month, cumulative and remaining columns, each line linked to a MISC journal entry and marked posted" width={1440} height={900} caption="Straight line over 60 months, bought on 10 March 2023 with prorata on." />
+
+The van cost GBP 34,500 with GBP 4,500 salvage. March 2023 is a part month, so the first line is GBP 354.84, then GBP 500 a month. The part month pushes a 61st line onto the end. The last line always takes whatever is left, so the board ends exactly at the salvage value.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/asset-fork-board.webp" alt="Linde forklift depreciation board on declining balance at 25 percent a year over eight years, with falling yearly amounts" width={1440} height={900} caption="A declining board: each year's charge is a share of what is left." />
+
+When something changes, Compute Board rebuilds only the lines not yet posted. A posted line is never rewritten, and deleting a journal entry that belongs to an asset is refused.
+
+## Post the depreciation
+
+Two ways, set per asset type:
+
+- **Automatic.** The scheduled action "Assets: post depreciation that has come due" runs daily and posts every line dated today or earlier on running assets whose type has Post Entries Automatically on. One asset failing does not stop the rest. When the last line posts, the asset closes itself.
+- **By hand.** Press Post on a line of the board, or use **Assets, Depreciation**, which opens on the Due filter: every line dated today or earlier that is not posted yet.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/dep-lines.webp" alt="Depreciation list on the Due filter with two lines dated 30 September for the LED lighting retrofit and the warehouse racking, 2,600 in total, each with a Post button" width={1440} height={900} caption="The Due filter: two quarterly lines waiting for the finance review." />
+
+Each posting debits the depreciation expense and credits accumulated depreciation, so the [Profit and Loss](/odoo-guides/odoo-community-financial-reports/) shows depreciation on its own line.
+
+## Revalue, pause or dispose
+
+**Change Value** opens a window for the reason, the date, the new gross value, the salvage value, the total number of depreciations and a counterpart account: a revaluation reserve for an increase, an impairment expense for a decrease. Apply posts the difference against the asset account and rebuilds the rest of the board. On the demo two of six handheld scanners were damaged, and the gross value came down from GBP 4,800 to GBP 3,200 against an impairment account.
+
+**Pause** stops the scheduled action for that asset; **Resume** puts it back and rebuilds the unposted lines.
+
+**Dispose** handles a sale or a scrap.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/wiz-dispose.webp" alt="Dispose of Asset window for the Toyota Hilux with Scrapped or Sold, disposal date, Post Depreciation First ticked, journal, gain and loss accounts, and the result showing book value 27,878.24 and the gain or loss" width={1440} height={900} caption="The result is shown before anything posts." />
+
+Choose Scrapped or Sold and the date. For a sale, enter the price and the proceeds account. Post Depreciation First brings the board up to the disposal date so the book value is right. The disposal entry clears the cost and the accumulated depreciation, books the proceeds and posts the difference as a gain or a loss.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/asset-sold.webp" alt="Showroom display units, closed, disposal date 31 July 2026, with the chatter noting the asset was sold and naming the disposal entry" width={1440} height={900} caption="Sold for GBP 7,500 against a book value of GBP 6,857.18: a GBP 642.82 gain." />
+
+<Callout title="Limits worth knowing">
+The disposal window can take several assets, but it only opens from the Dispose button on one asset's form, so assets are disposed of one at a time. There is no one-row-per-asset register report; use the asset list with its totals, the pivot view or an export. The chatter logs every posted line, which makes it long on an old asset.
+</Callout>
+
+## Print the schedule
+
+From an asset, or a selection in the list, print the **Depreciation Schedule**: the asset, its terms and every board line with the entry behind it. It is the page an auditor asks for.
+
+<Shot src="/odoo-guides/odoo-community-fixed-asset-depreciation/doc-asset.webp" alt="Depreciation Schedule PDF for AST/00015 Delivery Van with company letterhead, asset type, acquisition date, vendor, method, gross, salvage, depreciated and book value, then the dated lines with cumulative, remaining and entry numbers" width={1440} height={900} caption="One schedule per asset, several assets in one PDF." />
+
+## Setting it up on your own books
+
+1. Check you have a cost account and an accumulated depreciation account per asset family, and a depreciation expense account.
+2. Create one asset type per family.
+3. Put each type on its fixed asset account.
+4. Enter your existing assets with their original cost and date, confirm them, and post the history up to your cut-off.
+5. Leave Post Entries Automatically on for the families you trust and off for the ones you review.
+
+The module costs USD 89 and runs on Odoo 19 Community. The [series overview](/odoo-guides/odoo-community-accounting-tools/) covers the other four accounting add-ons.

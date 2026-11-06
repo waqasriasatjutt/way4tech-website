@@ -1,0 +1,131 @@
+---
+title: "Import bank statements into Odoo 19 Community: OFX, QIF, CAMT.053 and CSV with duplicate protection"
+metaTitle: "Bank Statement Import: OFX, CAMT, CSV"
+description: "Import OFX, QIF, CAMT.053 and CSV bank statements into Odoo 19 Community, with journal and currency checks, partner matching and no duplicate lines."
+targetQuery: "odoo community bank statement import ofx camt csv"
+category: "Operations"
+summary: "The four file formats, how the journal and currency are found, why overlapping downloads import nothing twice, partner matching, the import history and setting up a CSV mapping per bank."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-accounting-tools"
+seriesOrder: 4
+modules:
+  - name: "Bank Statement Import"
+    technical: "wt_bank_statement_import"
+    note: "USD 79, Odoo 19 Community, needs only Invoicing"
+demo:
+  url: "https://accounting-demo.way4tech.com/"
+  label: "Accounting tools demo"
+related: ["odoo-community-accounting-tools", "odoo-community-financial-reports", "odoo-community-payment-follow-up"]
+linkFrom: ["/products/wt-bank-statement-import/"]
+sources: []
+faqs:
+  - q: "Can Odoo Community import a bank statement file?"
+    a: "Not on its own: Community can hold a bank statement but statements are typed in by hand. Bank Statement Import adds file import for OFX, QIF, CAMT.053 and CSV."
+  - q: "What happens if I import the same file twice?"
+    a: "Nothing is created the second time. Every statement line keeps the reference it was imported under, or a fingerprint of the transaction when the file has no reference, and each one is checked against the journal before anything is written. The import record shows Nothing New."
+  - q: "Does it reconcile the statement lines with my invoices?"
+    a: "No. It creates the statement and its lines and matches counterparties to partners where it can. Matching the lines to invoices and bills is still done in Odoo."
+  - q: "My bank only gives me a CSV. Will that work?"
+    a: "Yes. Set up a column mapping once for that bank: separator, encoding, header row, lines to skip, date format, decimal and thousands separators and which column holds what. Attach it to the journal and the import window offers it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Odoo 19 Community can hold a bank statement, but it cannot read one. Every month somebody downloads the statement from online banking and types it into Odoo line by line, or the bank journal is simply left out of date. Bank Statement Import (`wt_bank_statement_import`) reads the file the bank gives you and creates the statement and its lines. It also makes sure an overlapping download never creates the same line twice. The examples come from the demo company, Halden Pike Trading Ltd, which has ten imports across a sterling current account, a savings account and a euro account.
+
+## Before the first import
+
+1. Open each bank journal (Invoicing, Configuration, Journals) and put the bank account number on it. That is how a file finds its journal.
+2. If any bank only offers CSV, create a mapping for it under **Bank Import, Configuration, CSV Mappings** and attach it to the journal (see below).
+3. For a foreign currency account, make sure the journal has that currency.
+
+## Import a file
+
+Open **Bank Import, Import A File**, or a bank journal's Actions menu, which opens the same window with the journal already filled in.
+
+<Shot src="/odoo-guides/odoo-bank-statement-import-ofx-camt-csv/bi-wizard.webp" alt="Import Bank Statement window with an upload button, Format set to Detect From The File, a Journal field and a note explaining that OFX, QIF and CAMT.053 are read as they are and a CSV needs a mapping" width={1440} height={900} caption="Upload, leave the format on Detect, and import." />
+
+1. Upload the file.
+2. Leave **Format** on Detect From The File, or choose OFX, QIF, CAMT.053 or CSV.
+3. Choose a journal only if the file does not say which account it belongs to.
+4. For a CSV, pick the mapping. The window offers the one attached to the journal.
+5. Press **Import**. The result shows how many lines were imported and skipped, with Open Statement, Import Detail and Import Another.
+
+| Format | What it is | Reference used against duplicates |
+|---|---|---|
+| OFX | Both the older SGML flavour and OFX 2 XML, read with no extra library | The bank's FITID |
+| QIF | Quicken's line prefix format | A fingerprint of the transaction |
+| CAMT.053 | ISO 20022 end of day statement, any schema version, with balances and counterparty IBANs | The bank's entry reference |
+| CSV | Any layout, through a mapping | A bank reference column, or a fingerprint |
+
+If you leave the journal empty, the account number in the file is matched against your bank journals, including files that print only the last digits. A file issued in a currency the journal does not keep is refused before anything is written. Files that are not statements get a plain answer: a camt.052 intraday report or a camt.054 notification is told to ask for camt.053, a PDF is told to ask for a data file, and a spreadsheet is told to save as CSV.
+
+## When the wizard says no
+
+The import stops before writing anything, with a message that says what to do, in these cases:
+
+| Situation | What you are told |
+|---|---|
+| No bank journal, or more than one, carries the account number in the file | Put that number on one journal's bank account, or pick the journal by hand |
+| The file does not say which account it belongs to (most QIF and CSV files) | Choose the journal by hand |
+| The file is in a different currency from the journal | Import it into a journal held in the file's currency |
+| The file is not a statement at all | What the file is, and what to ask the bank for |
+
+Because nothing is written until every check has passed, a refused file leaves no half built statement behind.
+
+## Overlapping files are safe
+
+A "last 30 days" download run every week repeats three weeks each time. That is the normal case, so the module checks every transaction against the journal before writing anything.
+
+<Shot src="/odoo-guides/odoo-bank-statement-import-ofx-camt-csv/bi-log-overlap.webp" alt="Import IMP/2026/0003 of current_account_30days.ofx into the Current Account: 6 in the file, 2 imported, 4 skipped, net movement 2,480.60, opening balance 56,784.25, closing balance 63,721.15, and the transactions with an Already Imported badge on the first four" width={1440} height={900} caption="Four lines already in Odoo, two new ones imported." />
+
+Each statement line keeps the reference it was imported under, unique per journal. QIF and most CSV exports carry no reference, so the module builds a fingerprint from the transaction itself, and the same file still imports nothing the second time.
+
+<Shot src="/odoo-guides/odoo-bank-statement-import-ofx-camt-csv/bi-log-dup.webp" alt="Import IMP/2026/0004, the same OFX file run again, in state Nothing New with every transaction already imported" width={1440} height={900} caption="The same file a week later: nothing new, but the attempt is on record." />
+
+## Partners and the import history
+
+Each line is matched to a partner by the counterparty's account number first, because an account number belongs to one person and a name on a bank line can be anything. Only then by name, and only when exactly one partner has it. On the demo, the CAMT file's "Fellgate Hosp. Group" still finds Fellgate Hospitality Group through its IBAN.
+
+Every import leaves a record under **Bank Import, Imports**: the file, its format, the account number in it, the journal, the statement, who ran it, the counts, the opening and closing balances and every transaction with its result. Print gives an Import Audit Trail PDF. **Bank Import, Transactions** lists every line of every file, and its Skipped filter is how you prove a payment had already arrived.
+
+<Shot src="/odoo-guides/odoo-bank-statement-import-ofx-camt-csv/bi-tx.webp" alt="Imported Transactions list filtered on Skipped, showing date, import reference, label, counterparty, amount and an Already Imported badge for each line" width={1440} height={900} caption="Every line ever read, searchable by the bank's reference." />
+
+A weekly scheduled action deletes import records older than a year. The statements themselves stay.
+
+## A CSV mapping per bank
+
+Every bank's CSV is different. A mapping describes one layout once.
+
+<Shot src="/odoo-guides/odoo-bank-statement-import-ofx-camt-csv/bi-map-gb.webp" alt="CSV mapping Current Account (online banking CSV): comma separator, header row, columns matched by name, date format day month year, point decimal, comma thousands, one signed amount column, used on the Current Account journal, with columns Date, Description, Counterparty, Amount and Transaction ID" width={1440} height={900} caption="Columns found by their heading; the bank's own ID used as the reference." />
+
+| Setting | Choices |
+|---|---|
+| Separator | Detect, comma, semicolon, tab, pipe |
+| Encoding | Detect, UTF-8, Windows-1252 and others |
+| Header row, lines to skip | For exports with account details above the data |
+| Columns matched by | Heading or position |
+| Date format | Python style, for example %d/%m/%Y |
+| Decimal and thousands separators | Point, comma, none or space |
+| Amount | One signed column, or debit and credit columns |
+
+<Shot src="/odoo-guides/odoo-bank-statement-import-ofx-camt-csv/bi-map-sav.webp" alt="CSV mapping Business Savings: semicolon separator, two lines to skip, columns matched by position, date format year month day, debit and credit columns, with positions 0 to 4 for date, label, debit, credit and running balance" width={1440} height={900} caption="A savings export with two lines of account details on top, read by column position." />
+
+The mapping is checked when you save it. It needs a Date column, an Amount column (or both Debit and Credit), no field mapped twice, and a header row if columns are matched by name. The demo also has a euro mapping for a German style export with decimal commas and point thousands.
+
+## A monthly routine
+
+1. Download the statement from online banking in OFX or CAMT.053 if the bank offers it. They carry the bank's own references and the account number, so the journal is found and duplicates are caught by reference.
+2. If the bank only gives CSV, use the mapping you set up for it.
+3. Import. Read the counts: two new and four skipped is normal for an overlapping download.
+4. Open the statement and match the lines in the bank journal.
+5. If a payment the customer says they made is missing, search **Transactions** by the bank's reference before asking the bank.
+
+On the demo, the current account went from a QIF export in August, to OFX downloads in September, to a CAMT.053 file in October and a CSV in November, which is roughly how a bank's export options change over the years. Each import is still there, in order, with who ran it.
+
+<Callout title="What it does not do">
+The module creates the statement and its lines. It does not match them to your invoices and bills; in Community that is still done by hand from the bank journal. The import record has a Failed state, but a file that cannot be read stops with a message and leaves no record, so you will not see it used.
+</Callout>
+
+The module costs USD 79 and runs on Odoo 19 Community. Once the bank lines are in, the [payment follow-up chapter](/odoo-guides/odoo-community-payment-follow-up/) covers chasing the customers who have still not paid; the [series overview](/odoo-guides/odoo-community-accounting-tools/) covers all five add-ons.

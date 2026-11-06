@@ -1,0 +1,110 @@
+---
+title: "Budgets in Odoo 19 Community: budget against actual, committed spend from purchase orders and an over budget block"
+metaTitle: "Budgets and Commitment Control"
+description: "Set budgets in Odoo 19 Community by department or account group, count purchase orders as committed spend and refuse orders that would go over budget."
+targetQuery: "odoo community budget vs actual"
+category: "Operations"
+summary: "Budget lines on analytic accounts and account groups, actual from posted entries, committed from confirmed purchase orders, the approval steps, the purchase order block with its tolerance, and the reports."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-accounting-tools"
+seriesOrder: 2
+modules:
+  - name: "Budget Management"
+    technical: "wt_budget_control"
+    note: "USD 99, Odoo 19 Community, reads Purchase if installed"
+demo:
+  url: "https://accounting-demo.way4tech.com/"
+  label: "Accounting tools demo"
+related: ["odoo-community-accounting-tools", "odoo-community-financial-reports", "odoo-event-supplier-quotes-budget"]
+linkFrom: ["/products/wt-budget-control/"]
+sources: []
+faqs:
+  - q: "Does Odoo Community have budgets?"
+    a: "No. Budgets are part of Odoo Enterprise accounting. Budget Management adds them to Community: budget lines on analytic accounts, account groups or both, with planned, actual, committed and available figures."
+  - q: "What counts as committed spend?"
+    a: "Lines of confirmed purchase orders whose planned date falls inside the budget period, counting only the quantity not yet billed and converted to the company currency. Once the bill is posted, that amount moves from committed to actual."
+  - q: "Can a purchase order be blocked if it goes over budget?"
+    a: "Yes. Tick Block Over Budget on a confirmed budget and any purchase order that would take one of its expense lines past the planned amount plus the tolerance is refused at confirmation, with a message naming the line and the overspend."
+  - q: "Does it work without the Purchase app?"
+    a: "Yes. Budget against actual works on posted entries alone. Without Purchase, committed reads zero and there is nothing to block."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Budgets usually look healthy right up to the week the invoices land. The marketing manager signed a print order in September, the stand for the spring show was ordered in October, and the ledger knows nothing about either until the bills are posted. A budget built only on posted entries cannot see money that has already been promised. Odoo 19 Community has no budgets at all, so most businesses keep one in a spreadsheet that is out of date the day after it is approved.
+
+Budget Management (`wt_budget_control`) adds budgets to Community and counts confirmed purchase orders as committed spend. If you want, it also refuses an order that would take a line over. The examples come from the demo company, Halden Pike Trading Ltd, with a confirmed FY2026 budget, a trade show budget, a closed Q4 2025 budget and a draft for 2027.
+
+## Before you start
+
+1. **Analytic Accounting.** Turn it on in Invoicing, Configuration, Settings, then create analytic accounts for your departments or projects. The demo has Sales, Warehouse and Logistics, Marketing and Administration.
+2. **Account groups.** A budget line can watch a family of accounts by code range. A fresh Community chart often has no account groups, so add them (they sit under the chart of accounts configuration, in developer mode). The demo has eight, such as Selling and Distribution 600000 to 699999.
+3. **Purchase.** Install it if you want committed spend and the block. Without it the module still works and committed reads zero.
+
+## Build the budget
+
+Open **Budgets, Budgets** and create one: a name, start and end dates and the responsible person, who receives the over budget notice. Then add lines.
+
+<Shot src="/odoo-guides/odoo-community-budget-control/budget-fy.webp" alt="FY2026 Operating Budget form, confirmed, period 1 January to 31 December, Block Over Budget ticked with 5 percent tolerance, one line over budget, and lines with planned, actual, committed and available, the marketing line in red and warehouse energy in amber" width={1440} height={900} caption="The demo's FY2026 budget, with the purchase block on." />
+
+Each line watches something:
+
+| On the line | It reads | Demo line |
+|---|---|---|
+| Account group only | Posted items on accounts in that code range | Payroll, all departments (700000 to 709999) |
+| Analytic account only | Everything tagged to it, on any account | Autumn Trade Show: everything tagged Marketing |
+| Both | Items on those accounts tagged to that analytic account | Marketing: advertising and shows |
+
+Set the **Type**: Expense counts debits, Revenue counts credits so a sales target reads as a positive figure. **Warning At %** (90 by default) colours the line amber when consumption passes it. Two lines on one budget cannot watch the same combination.
+
+<Callout title="An analytic account on its own reads everything">
+A line with only an analytic account adds up every item tagged to it, revenue and expense, payroll included. If the same department has a revenue target and a cost budget, give each line an account group as well, or the two will read the same postings.
+</Callout>
+
+## Approve it
+
+| Button | Who can press it | What it does |
+|---|---|---|
+| Confirm | Approve Budgets | Needs at least one line. Refreshes the figures, sets Confirmed and logs the planned total. |
+| Refresh Figures | Any budget user | Recomputes actual and committed now. |
+| Print | Any budget user | The budget report PDF. |
+| Close | Approve Budgets | Final refresh, then Closed. A closed budget blocks nothing. |
+| Reset to Draft | Approve Budgets | Back to draft for changes. |
+
+The state, the block and the tolerance can only be changed by the Approve Budgets group, even through an import or a list view. A preparer cannot switch the block off quietly. A budget that is not in draft cannot be deleted.
+
+## Actual, committed and available
+
+<Shot src="/odoo-guides/odoo-community-budget-control/bline-mkt.webp" alt="Budget line Marketing: advertising and shows on the Marketing analytic account and the Selling and Distribution account group, planned 27,000, actual 23,612.50, committed 4,200, available minus 812.50, achievement 87.45 percent and consumed 103 percent" width={1440} height={900} caption="Actual plus committed takes this line past its planned figure." />
+
+- **Actual** is posted journal items dated inside the period. With an analytic account, the analytic share counts, so a bill line split 60/40 between two departments adds 60 percent to one line and 40 percent to the other. Tax and payment term rows are ignored.
+- **Committed** is confirmed purchase order lines with a planned date in the period, counting only what has not been billed yet, at the product's expense account, converted to the company currency.
+- **Available** is planned less actual less committed. Below zero, the line is over budget.
+- **Achievement** is actual against planned. **Consumed** is actual plus committed against planned, the figure the block works on.
+
+**Actual Entries** and **Committed Orders** on the line open the journal items and order lines behind the figures.
+
+<Shot src="/odoo-guides/odoo-community-budget-control/po-mkt.webp" alt="Purchase order P00004 to Pemberton Print and Signs for the spring catalogue print run, 4,200, confirmed, with the Marketing analytic distribution" width={1440} height={900} caption="A confirmed order, not yet billed: all of it is committed." />
+
+The figures are stored so they can be grouped and pivoted. A daily scheduled action, "Budgets: refresh actual and committed", brings live budgets up to date and e-mails the responsible person when a line is over, at most once a day per budget. The Refresh Figures button does the same on demand.
+
+## The over budget block
+
+Tick **Block Over Budget** on a confirmed budget and set a **Tolerance %**. When a buyer confirms a purchase order, the module reads each expense line's actual and committed fresh, adds what the order would add, and compares it with the planned amount plus tolerance.
+
+<Shot src="/odoo-guides/odoo-community-budget-control/po-block.webp" alt="Invalid Operation message on purchase order P00007: it would take the Marketing budget line over budget, planned 27,000, already spent 23,612.50, already committed 4,200, this order adds 38,000, overspend 37,462.50" width={1440} height={900} caption="A 38,000 trade show stand refused at confirmation." />
+
+The order is not changed; it stays a request for quotation until the approver raises the planned amount or the tolerance. The rules: only confirmed budgets with the box ticked block, revenue lines are never touched, only order lines with a planned date inside the period count, and an order that was confirmed once is not blocked again by its own amount. With a 5 percent tolerance, a GBP 27,000 line can reach GBP 28,350 before orders are refused.
+
+## Reports
+
+**Budgets, Reporting, Budget Lines** lists confirmed lines grouped by analytic account, with pivot and graph views over the same figures.
+
+<Shot src="/odoo-guides/odoo-community-budget-control/bline-list.webp" alt="Budget Lines list grouped by analytic account: Administration, Marketing at 99.70 percent consumed, Warehouse and Logistics, and lines with no analytic account, with planned, actual, committed and available totals" width={1440} height={900} caption="Every confirmed line by department." />
+
+**Budget Report** opens a window for the period, the budget state, specific budgets or analytic accounts, Over Budget Only and Refresh Figures. Print gives a PDF per budget with lines grouped by analytic account and a subtotal for each; Open Lines shows the same lines on screen.
+
+<Shot src="/odoo-guides/odoo-community-budget-control/wiz-budget-report.webp" alt="Budget Report window with period from 1 January to 31 December, budget state Confirmed, budgets and analytic accounts to choose, Over Budget Only and Refresh Figures, and Print and Open Lines buttons" width={1440} height={900} caption="Print for the board pack, or open the lines on screen." />
+
+The module costs USD 99 and runs on Odoo 19 Community. For the ledger side of the same figures, see the [financial reports chapter](/odoo-guides/odoo-community-financial-reports/); the [series overview](/odoo-guides/odoo-community-accounting-tools/) covers all five add-ons.

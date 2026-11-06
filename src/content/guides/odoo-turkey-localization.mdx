@@ -1,0 +1,140 @@
+---
+title: "Turkish localization in Odoo 19: VKN and TCKN, KDV tevkifat, e-Fatura, e-Arşiv, e-İrsaliye and Mizan"
+metaTitle: "Turkish Localization for Odoo 19, Step by Step"
+description: "Run a Turkish company in Odoo 19: VKN and TCKN, KDV with tevkifat and stopaj, e-Fatura or e-Arşiv chosen per customer, e-İrsaliye, Mizan and Bilanço."
+targetQuery: "Odoo Turkish localization"
+category: "Tax and compliance"
+region: "Türkiye"
+summary: "What a Turkish company needs from Odoo beyond the l10n_tr chart, and how the Way4Tech Turkish Localization Suite covers identity numbers, the tax engine, e-Fatura and e-Arşiv, e-İrsaliye and the month-end reports, with its limits stated plainly."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-turkey-localization"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-turkey-localization.pdf"
+  pages: 76
+modules:
+  - name: "Turkish Localization Suite"
+    technical: "wt_tr_suite"
+    note: "USD 1,990, installs all six modules below plus the accountant dashboard, Odoo 19 Community"
+  - name: "Turkish Localization Base"
+    technical: "wt_tr_localization"
+    note: "USD 199, VKN and TCKN, provinces, districts, tax offices, setup wizard, audit trail"
+  - name: "Turkish Tax Engine"
+    technical: "wt_tr_tax"
+    note: "USD 299, tevkifat, stopaj, KDV exemption codes, ÖTV rules"
+  - name: "Turkish Accounting Reports"
+    technical: "wt_tr_account"
+    note: "USD 349, Mizan, Bilanço, Gelir Tablosu, Ba/Bs, declaration datasets, e-Defter"
+  - name: "Turkish e-Document Core"
+    technical: "wt_tr_edocument"
+    note: "USD 499, UBL-TR builder and validator, integrator layer, queue, mock integrator"
+  - name: "Turkish e-Fatura & e-Arşiv"
+    technical: "wt_tr_efatura"
+    note: "USD 599, routing, numbering, GİB user list, inbox, e-Arşiv daily report"
+  - name: "Turkish e-İrsaliye"
+    technical: "wt_tr_eirsaliye"
+    note: "USD 249, electronic delivery note on outgoing deliveries"
+demo:
+  url: "https://tr-demo.way4tech.com/"
+  label: "Turkish Localization demo"
+related: ["uae-e-invoicing-odoo", "zatca-e-invoicing-odoo-community", "odoo-accounting-dashboard"]
+linkFrom: ["/countries/turkey/", "/countries/turkey/e-invoicing/", "/countries/turkey/accounting-tax/", "/modules/accounting/"]
+sources: []
+faqs:
+  - q: "Does standard Odoo cover Turkish e-invoicing?"
+    a: "Odoo 19 ships the Turkish chart of accounts and taxes in l10n_tr, and its e-Fatura, e-Arşiv and e-İrsaliye modules are built around one integrator, Nilvera. The Way4Tech suite adds separate VKN and TCKN fields, a rule-based tax engine for tevkifat and stopaj, its own e-document engine and the Tekdüzen month-end reports."
+  - q: "Can the Way4Tech suite send invoices to GİB today?"
+    a: "Not out of the box. The current version ships one integrator adapter, a mock that never leaves the database, so a real connection needs an adapter for your özel entegratör written against the suite's interface. Everything up to the hand-over, from routing to the validated UBL-TR, works today."
+  - q: "Do I choose e-Fatura or e-Arşiv on each invoice?"
+    a: "No. When the invoice is posted the suite reads the customer's VKN or TCKN, checks the GİB e-Fatura user list and picks the document type, then writes the reason on the invoice. An e-Document Manager can override it, and the override is recorded."
+  - q: "Are tevkifat ratios and stopaj rates included?"
+    a: "No rates are shipped. Each tevkifat, stopaj, exemption and ÖTV rule is a record you keep, with effective dates and a Verified tick, and a company in Production refuses to send a document that uses an unverified rule."
+  - q: "Does it file the KDV return or the e-Defter?"
+    a: "No. The declaration screens produce the figures for KDV-1, KDV-2, Muhtasar and Geçici Vergi, and the e-Defter screen builds and validates the journal and ledger packages. Filing, signing with the mali mühür and the berat exchange stay with GİB's systems and a certified integrator."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+A Turkish invoice is not a PDF you email. It is a UBL-TR file with a sixteen-character number and a UUID, it goes through the Revenue Administration (GİB, Gelir İdaresi Başkanlığı), and whether it goes as an e-Fatura or an e-Arşiv depends on whether your customer is on GİB's list of registered users. The KDV on it may be split, with the buyer keeping part of it under tevkifat. When you pay rent to a person you withhold stopaj. Goods on the road need an e-İrsaliye, and the month closes on a Mizan laid out in the Tekdüzen chart. This guide explains what Odoo 19 gives you for all that, and then walks through the Way4Tech Turkish Localization Suite on a demo company in İstanbul.
+
+## What a Turkish company needs from its ERP
+
+| Need | Turkish term | What it means in practice |
+|---|---|---|
+| Two kinds of identity number | VKN, TCKN | A company has a 10-digit VKN (Vergi Kimlik Numarası), a person an 11-digit TCKN (T.C. Kimlik Numarası). Routing and the UBL party block depend on which one it is. |
+| Address and tax office | il, ilçe, vergi dairesi | Province, district and tax office on every partner and on the company. |
+| VAT that is not just a rate | KDV, tevkifat, istisna | Standard 20%, reduced 10% and 1%; withholding VAT on listed services; exempt lines that must carry a reason code. |
+| Income tax withheld at source | stopaj | Withheld on rent paid to people and on fees to self-employed professionals, reported on the Muhtasar return. |
+| The right e-document | e-Fatura, e-Arşiv | e-Fatura when both sides are registered users, e-Arşiv for everybody else, with a daily report of e-Arşiv invoices. |
+| Delivery notes | e-İrsaliye | The vehicle, the driver and the despatch time, for goods leaving the warehouse. |
+| Month-end reports | Mizan, Bilanço, Gelir Tablosu | Trial balance, balance sheet and income statement in the Tekdüzen code ranges. |
+| Monthly notices and returns | Form Ba/Bs, KDV-1, KDV-2, Muhtasar | Purchases and sales per counterparty above a threshold, and the figures for each return. |
+| Electronic books | e-Defter | The journal (yevmiye) and general ledger (kebir), signed with the mali mühür. |
+
+## What standard Odoo gives you
+
+Odoo 19 ships `l10n_tr`, the Turkish chart of accounts with its taxes, including KDV at 20%, 10% and 1% and the tevkifat group taxes, one per ratio. That is the base the suite builds on, and you still load it yourself: the suite never installs or replaces a chart.
+
+For e-invoicing, Odoo's own Turkish modules (`l10n_tr_nilvera` and its e-invoice and e-dispatch extensions) are tied to Nilvera as the integrator. If you already work with another özel entegratör, or you want an engine that is not tied to one provider, that is the gap. Odoo's single Tax ID field also accepts a VKN or a TCKN without saying which, and Odoo Community has no rule records for tevkifat, stopaj or exemption codes, no Mizan at a chosen Tekdüzen depth, and no Ba/Bs.
+
+## The Way4Tech Turkish Localization Suite
+
+The suite is seven modules on Odoo 19 Community. You can buy the [suite](https://apps.odoo.com/apps/modules/19.0/wt_tr_suite) for USD 1,990, or start with one part; each module installs the ones it builds on.
+
+| Module | Price | Adds |
+|---|---|---|
+| Turkish Localization Base | USD 199 | Separate VKN and TCKN with checksums, taxpayer type, 81 provinces, 973 districts, a starter list of tax offices, the setup wizard, health check, audit trail and six roles |
+| Turkish Tax Engine | USD 299 | Tevkifat, stopaj, KDV exemption and ÖTV rules with dates and a Verified tick; the KDV split on every line |
+| Turkish Accounting Reports | USD 349 | Mizan, Bilanço, Gelir Tablosu, Form Ba/Bs, KDV-1, KDV-2, Muhtasar and Geçici Vergi datasets, e-Defter packages, 7/A or 7/B, partner sub-accounts |
+| Turkish e-Document Core | USD 499 | The e-document lifecycle, UBL-TR builder and validator, the integrator layer, the outbox and error queue, retries, request log and console |
+| Turkish e-Fatura & e-Arşiv | USD 599 | Automatic routing with a written reason, scenario and invoice type, numbering series, GİB user list, incoming inbox, e-Arşiv daily report, cancellation wizard |
+| Turkish e-İrsaliye | USD 249 | The e-İrsaliye on outgoing deliveries, with plate, driver, carrier and despatch time |
+| Turkish Localization Suite | USD 1,990 | All six, plus the accountant dashboard and a demo loader |
+
+The suite opens on a dashboard built for the accountant's first ten minutes: what went out, what came back rejected, what is waiting for an answer, this month's KDV and tevkifat, and whether the configuration is still healthy.
+
+<Shot src="/odoo-guides/odoo-turkey-localization/board.webp" alt="The Türkiye dashboard of Galata Örnek Ticaret A.Ş. with red alerts for a document that used up its retries and a GİB rejection, amber alerts for an unmatched incoming invoice and a commercial invoice to answer, then today's counts of created, sent, accepted, pending and rejected documents" width={1440} height={1375} caption="The dashboard: alerts only for what someone has to act on." />
+
+### How it is set up
+
+1. **Load the Türkiye chart** on the company from Invoicing settings, before anything else.
+2. **Install the suite**, then open **Türkiye, Configuration, Setup Wizard**: company VKN or TCKN, tax office, MERSİS, trade registry, province, district and environment, then the cost method (7/A or 7/B, deliberately with no default), e-documents, the integrator, document series, the GİB user list and a connection test.
+3. **Check the health board** under **Configuration, Localization Health**. Every line is Healthy, Warning or Critical, with a button to the screen that fixes it.
+4. **Clean the partners.** Each contact gets a Türkiye tab with VKN, TCKN, tax office, province and district, a checksum button and a GİB registration check. A server action moves numbers typed into the wrong box after an import.
+5. **Keep your tax rules.** Tevkifat ratios, stopaj rates and exemption codes are records with effective dates, confirmed with your mali müşavir and then marked Verified.
+6. **Post invoices as usual.** The e-document type, scenario and invoice type are worked out, numbered and sent from a background queue.
+
+<Shot src="/odoo-guides/odoo-turkey-localization/health.webp" alt="Turkish Localization Health dialog listing company VKN, tax office, province and district, chart of accounts, cost method and Ba/Bs threshold as healthy, and environment, integrator, UBL-TR schema and error queue as warnings" width={986} height={819} caption="The health check, with an Open button wherever there is something to fix." />
+
+### Environments and the Verified tick
+
+Each company runs in Development, Staging or Production. Only in Development and Staging may the mock integrator and the demo loader be used. A company in Production refuses to transmit any document that relies on a rule nobody has marked Verified, whether a tevkifat rule, an exemption code, a stopaj rule or the UBL-TR schema version. The suite ships no rates at all, so the figures you rely on are always ones somebody in your company confirmed.
+
+<Callout title="Before you buy: what this version does not do">
+- **It does not connect to GİB out of the box.** The only integrator adapter shipped is a mock that never leaves the database. A real özel entegratör needs its adapter written against the suite's interface. Everything up to that point, routing, numbering and the validated UBL-TR, works now.
+- **Credit notes do not build as e-documents** in this version, and invoices to foreign buyers are refused because they have no VKN, so export invoicing needs a fix first.
+- **It files nothing.** The declaration screens give the figures; KDV, Muhtasar and Ba/Bs are filed in GİB's systems.
+- **It does not sign the e-Defter.** It builds and validates the books; signing and the berat go through a certified integrator.
+- **ÖTV rules are configuration only.** Nothing on an invoice line reads them yet.
+- **It is not certified by GİB** or affiliated with it.
+</Callout>
+
+## The demo
+
+The [Turkish Localization demo](https://tr-demo.way4tech.com/) runs Galata Örnek Ticaret A.Ş., an invented office furniture and IT equipment trader in Şişli, İstanbul, in Turkish lira on the Tekdüzen chart. It has three months of sales and purchases, rent and accountant's fees with stopaj, a cleaning contract with purchase tevkifat, an installation service with sales tevkifat, e-Fatura and e-Arşiv invoices that are accepted, pending, rejected and stuck in retry, incoming invoices to match and answer, delivery notes, and the August to October reports. Every company, person and identity number on it is invented, and it uses the suite's mock integrator, so nothing on it is ever sent to GİB. [Ask us for a login](/contact/) or see the other [demos](/demos/).
+
+<Shot src="/odoo-guides/odoo-turkey-localization/inv-efatura.webp" alt="Customer invoice INV/2026/00042 to ABC Teknoloji A.Ş. with the Türkiye electronic document block showing e-Fatura, the routing reason that the recipient is registered in the GİB e-Fatura user list, scenario TEMELFATURA, invoice type SATIS and the ETTN" width={1440} height={1030} caption="An invoice that routed itself to e-Fatura, and says why." />
+
+<WhenLive slug="odoo-tevkifat-stopaj-kdv">
+
+## The chapters
+
+Each part of the suite has its own chapter: [the tax engine, tevkifat, stopaj and exemptions](/odoo-guides/odoo-tevkifat-stopaj-kdv/), [e-Fatura and e-Arşiv from invoice to accepted](/odoo-guides/odoo-e-fatura-e-arsiv/), [e-İrsaliye delivery notes](/odoo-guides/odoo-e-irsaliye/), and [Mizan, Bilanço, Gelir Tablosu, Ba/Bs and the declaration datasets](/odoo-guides/odoo-mizan-bilanco-turkish-reports/).
+
+</WhenLive>
+
+## Where to go from here
+
+The [Türkiye country page](/countries/turkey/) covers payments, shipping and payroll alongside tax, and the [e-invoicing overview for Türkiye](/countries/turkey/e-invoicing/) sets out the GİB rules in more depth. If you work in more than one market, the [UAE e-invoicing guide](/odoo-guides/uae-e-invoicing-odoo/) and the [ZATCA guide](/odoo-guides/zatca-e-invoicing-odoo-community/) show how other regimes compare. If you want the suite on your own Odoo with your partners cleaned and an adapter for your integrator, [get in touch](/contact/).

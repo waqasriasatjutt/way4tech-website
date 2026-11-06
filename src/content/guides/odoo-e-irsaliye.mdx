@@ -1,0 +1,108 @@
+---
+title: "e-İrsaliye in Odoo 19: the electronic delivery note with plate, driver and despatch time"
+metaTitle: "e-İrsaliye Delivery Notes in Odoo"
+description: "Issue the e-İrsaliye from an Odoo 19 delivery: vehicle plate, trailer, driver TCKN, carrier and despatch time, a UBL-TR despatch advice and its checks."
+targetQuery: "e-İrsaliye Odoo"
+category: "Tax and compliance"
+region: "Türkiye"
+summary: "The Turkish e-İrsaliye module on the demo: switching it on, the e-İrsaliye tab on a delivery, the checks before issue, the despatch advice it builds, and what happens when the recipient is registered for e-Fatura but not for e-İrsaliye."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-turkey-localization"
+seriesOrder: 3
+modules:
+  - name: "Turkish e-İrsaliye"
+    technical: "wt_tr_eirsaliye"
+    note: "USD 249, installs e-Fatura & e-Arşiv (USD 599) and Inventory, Odoo 19 Community"
+  - name: "Turkish Localization Suite"
+    technical: "wt_tr_suite"
+    note: "USD 1,990, all seven modules"
+demo:
+  url: "https://tr-demo.way4tech.com/"
+  label: "Turkish Localization demo"
+related: ["odoo-turkey-localization", "odoo-e-fatura-e-arsiv", "odoo-tevkifat-stopaj-kdv"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "When does Odoo issue the e-İrsaliye?"
+    a: "With the e-İrsaliye module and e-İrsaliye Enabled on the company, the document is created when an outgoing delivery is validated. If it cannot be created, the delivery still completes and the problem is posted on it, and the document can be created later from the Create e-İrsaliye button."
+  - q: "What does the e-İrsaliye need before it can be issued?"
+    a: "A vehicle plate, a recipient with a VKN or TCKN, at least one line and a unit of measure on every line. The module lists every missing item at once. The driver's TCKN, if entered, must pass its checksum."
+  - q: "Is e-İrsaliye registration the same as e-Fatura registration?"
+    a: "No. A company can be registered for one and not the other, so the module checks the e-İrsaliye entry in the GİB user list, not the e-Fatura one. On the demo, Ege Tekstil is registered for neither, and its delivery note is refused before it is sent."
+  - q: "Does the delivery note carry prices?"
+    a: "No. An irsaliye is about the movement of goods, so the module builds a UBL-TR despatch advice with quantities, the shipment, the vehicle and the driver, not an invoice with prices and tax."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A lorry stopped on the D-100 has to show what it is carrying, for whom, in which vehicle and with which driver. In Türkiye that is the irsaliye, and for registered companies it is electronic. If the plate on the document is not the plate on the lorry, or the despatch time is the time the order was planned instead of the time the goods left, the delivery note is wrong at exactly the moment someone checks it. This chapter of the [Turkish localization series](/odoo-guides/odoo-turkey-localization/) shows the e-İrsaliye module on Odoo deliveries.
+
+## Switching it on
+
+Install Turkish e-İrsaliye (it brings e-Fatura & e-Arşiv, the e-Document Core and Inventory) and tick **e-İrsaliye Enabled** on the company, next to the other e-document settings. It is off by default because e-İrsaliye registration is separate from e-Fatura registration: a company may be on one and not the other.
+
+From then on every outgoing delivery of the company carries an **e-İrsaliye** tab, and validating it creates the e-İrsaliye. The document uses the same e-document engine as invoices: the same lifecycle, queue, retries, request log and console, and its own numbering series, IRS on the demo.
+
+## The e-İrsaliye tab
+
+| Field | Turkish term | Notes |
+|---|---|---|
+| Vehicle Plate | Plaka | Required. Upper-cased, and checked against the usual format such as 34 ABC 123. An unusual plate gets a warning but is accepted. |
+| Trailer Plate | Dorse Plakası | Optional, normalised the same way. |
+| Driver Name | | |
+| Driver TCKN | | Eleven digits, and must pass the TCKN checksum. |
+| Carrier | Taşıyıcı | Set when a third party carries the goods. |
+| Actual Despatch Time | Fiili Sevk | When the goods actually left, which is what the document states. Not the scheduled date. |
+
+<Shot src="/odoo-guides/odoo-e-irsaliye/pick-ready.webp" alt="Delivery WH/OUT/00007 to ABC Teknoloji ready to ship, with the e-İrsaliye tab showing vehicle plate 34 GLT 142, driver name, driver TCKN, carrier and actual despatch time fields" width={1440} height={748} caption="A delivery waiting to leave, with the vehicle and driver filled in." />
+
+## Validate, and the delivery note is issued
+
+Validate the delivery as usual. The module creates the e-İrsaliye, posts the vehicle and driver on the delivery's chatter and, with Send Automatically on, queues it. A failure never holds the goods: the transfer is still done, the problem is posted on it, and **Create e-İrsaliye** issues the document once the cause is fixed. The smart button on the delivery opens the document.
+
+<Shot src="/odoo-guides/odoo-e-irsaliye/pick-done.webp" alt="Delivery WH/OUT/00002 to XYZ Lojistik carried by Hızlı Örnek Kargo, validated, with its e-İrsaliye IRS2026000000001 accepted" width={1440} height={738} caption="Validated, issued and accepted: IRS2026000000001." />
+
+Before a document is issued the module checks that there is a vehicle plate, a recipient, a VKN or TCKN on that recipient, at least one line and a unit of measure on every line, and lists every missing item together.
+
+## A despatch advice, not an invoice
+
+An irsaliye describes a movement, so it carries no prices and no tax. The module builds a UBL-TR **DespatchAdvice** with the quantities, the shipment, the vehicle and the driver, and validates it before it goes out. Reusing the invoice builder would produce a document that says the wrong thing.
+
+<Shot src="/odoo-guides/odoo-e-irsaliye/doc-irs-xml.webp" alt="The XML tab of e-İrsaliye IRS2026000000001 showing a UBL-TR DespatchAdvice with despatch line quantities, the shipment and the vehicle plate" width={1440} height={900} caption="The despatch advice: quantities, shipment, vehicle, driver." />
+
+## Before the first delivery: what to check
+
+Three things decide whether the first e-İrsaliye goes out cleanly, and all three are set up once.
+
+1. **The e-İrsaliye series.** Under **Türkiye, Configuration, e-Documents, Document Series**, create a series with document type e-İrsaliye for the current year. Its three-letter prefix is yours to choose (IRS on the demo). Without one, the document cannot be numbered.
+2. **Registration of your customers.** The GİB user list keeps e-İrsaliye registration as its own entry per customer. The daily refresh fills it from your integrator. A customer missing from it is looked up live when the document is sent rather than assumed unregistered.
+3. **Identity numbers on the recipients.** Every recipient needs a VKN or TCKN on its Türkiye tab. Deliveries to a contact person inside a company use the company's number, because the module reads the commercial partner.
+
+## A day in the warehouse
+
+On the demo, the warehouse of Galata Örnek Ticaret A.Ş. ships office furniture and IT equipment from İstanbul to customers in Ankara, İzmir, Bursa and Antalya. Some loads go in the company's own vans, some with a carrier. The routine is the same each time:
+
+1. Open the delivery from **Inventory, Transfers** and check the quantities.
+2. Fill the **e-İrsaliye** tab: the plate of the vehicle actually leaving, the trailer if there is one, the driver and the driver's TCKN. For a carrier, set the **Carrier** contact as well.
+3. Set **Actual Despatch Time** when the vehicle leaves, not when the order was planned. It is what the delivery note will state.
+4. **Validate.** The e-İrsaliye is created and, with Send Automatically on, queued for the integrator in the background. The driver does not wait for it.
+5. Check **e-Documents, Error Queue** later in the day for anything refused, fix the cause on the delivery or the partner, and use **Create e-İrsaliye** for a delivery whose document could not be created.
+
+Because the document is built from the validated delivery, the note describes what actually left the warehouse.
+
+## When the recipient is not registered
+
+Routing reads the e-İrsaliye entry in the GİB user list, not the e-Fatura one. On the demo, Ege Tekstil Sanayi is registered for neither. Its October delivery still left the warehouse, but its e-İrsaliye was refused before it was sent, with TR-GIB-002, and is waiting in the error queue.
+
+<Shot src="/odoo-guides/odoo-e-irsaliye/doc-irs-refused.webp" alt="e-İrsaliye for Ege Tekstil Sanayi in error with code TR-GIB-002, the recipient not registered, and the suggested fix" width={1440} height={900} caption="Refused before sending: the recipient is not registered for e-İrsaliye." />
+
+<Callout title="Notes on this version">
+- **The refusal message mentions the e-Fatura user list** although the check it ran was the e-İrsaliye entry; the wording is shared with invoices.
+- **It runs on the mock integrator out of the box.** As with invoices, a real connection needs an adapter for your integrator.
+- **The document's number is taken when it is sent**, in sending order, so a delivery sent late gets a later number than one validated after it.
+</Callout>
+
+## Where next
+
+The invoice side of the same deliveries is in [e-Fatura and e-Arşiv](/odoo-guides/odoo-e-fatura-e-arsiv/), and the [series overview](/odoo-guides/odoo-turkey-localization/) has the setup and module prices.

@@ -1,0 +1,124 @@
+---
+title: "KDV tevkifat, stopaj and exemption codes in Odoo 19: rules, invoice lines and the split"
+metaTitle: "Tax Engine: Tevkifat, Stopaj, Exemptions"
+description: "Set up KDV tevkifat ratios, stopaj rates, exemption codes and ÖTV rules in Odoo 19, and see withheld and collected KDV on Turkish invoices and bills."
+targetQuery: "tevkifat odoo"
+category: "Tax and compliance"
+region: "Türkiye"
+summary: "How the Turkish Tax Engine keeps tevkifat, stopaj, KDV exemption and ÖTV rules as dated, verifiable records, and how a sales invoice, a rent bill and a cleaning bill show the split between charged, withheld and collected."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-turkey-localization"
+seriesOrder: 1
+modules:
+  - name: "Turkish Tax Engine"
+    technical: "wt_tr_tax"
+    note: "USD 299, installs Turkish Localization Base (USD 199), Odoo 19 Community"
+  - name: "Turkish Localization Suite"
+    technical: "wt_tr_suite"
+    note: "USD 1,990, all seven modules"
+demo:
+  url: "https://tr-demo.way4tech.com/"
+  label: "Turkish Localization demo"
+related: ["odoo-turkey-localization", "odoo-e-fatura-e-arsiv", "odoo-mizan-bilanco-turkish-reports"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does Odoo calculate KDV tevkifat on a sales invoice?"
+    a: "With the Tax Engine, the line carries a tevkifat rule such as 2/10. Choosing it replaces the line's tax with the rule's group tax, so the KDV is not charged twice, and the invoice shows the full KDV, the part the buyer withholds and the part you collect. On an 18,000 TRY service at 20%, that is 3,600 KDV, 720 withheld by the buyer and 2,880 collected."
+  - q: "Does the module ship the current tevkifat ratios?"
+    a: "No. Ratios, rates and codes change by communiqué, so every rule is a record you create and confirm with your mali müşavir. Each has effective dates and a Verified tick, and a company in Production refuses to send a document that uses an unverified rule."
+  - q: "How is stopaj on rent recorded?"
+    a: "Create a stopaj rule with the rate and a withholding account, press Create Matching Tax, and put the rule on the bill line. A 45,000 TRY rent at 20% withholds 9,000 and leaves 36,000 payable to the landlord, and the 9,000 appears on the Muhtasar dataset."
+  - q: "Is ÖTV calculated on invoices?"
+    a: "Not in this version. ÖTV rules can be kept with their list, method, rate and dates, but nothing on an invoice line reads them yet, so post ÖTV with an ordinary Odoo tax."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Turkish VAT rarely stops at amount times rate. On a cleaning contract the buyer keeps seven tenths of the KDV and pays it to the tax office himself. On rent paid to a person the tenant withholds income tax before paying. An export line carries no KDV but must say which exemption applies. Get any of these wrong and the e-invoice is refused, or worse, accepted with the wrong figure. This chapter of the [Turkish localization series](/odoo-guides/odoo-turkey-localization/) sets up the rules in the Turkish Tax Engine and follows them onto real invoices and bills on the demo.
+
+## Why the rules are records, not built-in rates
+
+Tevkifat ratios, stopaj rates and exemption codes are set by GİB communiqués and they change. A module that hard-codes them is right until the next communiqué and wrong afterwards, without telling anyone. The Tax Engine ships no rates at all. Every rule is a record with a code, the figures, the dates it applies from and to, and a **Verified** tick that records who confirmed it. In Development and Staging you can work with unverified rules; a company in Production refuses to send a document that uses one.
+
+## The taxes Odoo already has
+
+The Türkiye chart (`l10n_tr`) loads KDV at 20%, 10% and 1% for sales and purchases, a 0% exempt tax and a group tax per tevkifat ratio, named like **WH 20% (2/10)**: the 20% KDV plus a negative child of -4%, the two tenths of the KDV that the buyer withholds. The Tax Engine keeps those and adds a Türkiye tab to each tax: the Turkish tax type (KDV, KDV exempt, tevkifat, stopaj, ÖTV or other), the underlying KDV rate, the GİB tax code used in the UBL and, on a zero-rated tax, a default exemption code.
+
+<Shot src="/odoo-guides/odoo-tevkifat-stopaj-kdv/tax-form.webp" alt="The 20% sales tax form in Odoo with the Türkiye tab open, showing Turkish tax type KDV, underlying KDV rate 20 and the GİB tax code field" width={1440} height={562} caption="The Türkiye tab on an ordinary Odoo tax." />
+
+## Tevkifat rules
+
+Open **Türkiye, Configuration, Taxes, Tevkifat Rules**. A rule has:
+
+- a **code** and name, plus a separate GİB code if you keep one;
+- the **ratio** as numerator and denominator, for example 2/10, shown both as a ratio and a decimal; it must be above zero and no more than one;
+- whether it may be used on **sales**, on **purchases** or both;
+- the **sales tax** and **purchase tax** it puts on the line, which are the `l10n_tr` group taxes;
+- optional seller and withholding accounts, a service category and product categories;
+- **effective from** and **to** dates, and **Mark Verified**.
+
+The demo has four illustrative rules, 2/10 machinery maintenance, 5/10 construction, 7/10 cleaning and 9/10 consultancy, all left unverified on purpose.
+
+<Shot src="/odoo-guides/odoo-tevkifat-stopaj-kdv/tev-form.webp" alt="Tevkifat rule DEMO-210 Makine ve teçhizat bakım onarım with ratio 2 over 10, applying to sales and purchases, with the WH 20% (2/10) sales and purchase taxes and the Mark Verified button" width={1440} height={900} caption="A tevkifat rule: ratio, taxes, scope and dates." />
+
+Put the rule on a product (Invoicing, Products, the Türkiye group) and it is filled in on every line that uses the product, without overwriting a choice somebody already made. The same group holds a stopaj rule, an exemption code and the GTİP customs code.
+
+## A sales invoice with tevkifat
+
+INV/2026/00043 on the demo bills Marmara İnşaat for one installation and maintenance service at 18,000 TRY. The product carries the 2/10 rule, so the line took the WH 20% (2/10) tax. Choosing a rule swaps the tax rather than adding one, which is what stops the KDV being charged twice. Under the totals the invoice shows the Turkish summary.
+
+<Shot src="/odoo-guides/odoo-tevkifat-stopaj-kdv/inv-tevkifat.webp" alt="Customer invoice INV/2026/00043 to Marmara İnşaat for an 18,000 TRY installation service, with the Turkish summary showing KDV in full 3,600 and 720 withheld by the buyer, with a total of 20,880" width={1440} height={1250} caption="The split on the invoice: charged, withheld by the buyer, collected by you." />
+
+| Figure | Amount (TRY) |
+|---|---|
+| Service, untaxed | 18,000 |
+| KDV calculated at 20% | 3,600 |
+| Withheld by the buyer (2/10) | 720 |
+| KDV collected (8/10) | 2,880 |
+| Customer pays | 20,880 |
+
+The invoice type becomes TEVKIFAT by itself and the split goes into the UBL-TR, which the [e-Fatura chapter](/odoo-guides/odoo-e-fatura-e-arsiv/) shows. On the buying side it works the same way: the demo's October cleaning bill is 30,000 plus 6,000 KDV, of which the company withholds 4,200 as the buyer under the 7/10 rule and pays the supplier 31,800. That 4,200 is what the KDV-2 dataset reports.
+
+<Shot src="/odoo-guides/odoo-tevkifat-stopaj-kdv/bill-tevkifat.webp" alt="Vendor bill from Pırıl Örnek Temizlik for 30,000 TRY of cleaning with KDV 6,000, the 7/10 tevkifat rule on the line and 4,200 withheld by the buyer" width={1440} height={1165} caption="Purchase tevkifat: the buyer withholds and reports it on KDV-2." />
+
+## Stopaj
+
+Stopaj is income tax withheld at source when you pay rent to a person or a fee to a self-employed professional. A stopaj rule holds the rate, the **withholding account** where the withheld amount posts, sales or purchases (purchases by default), who it applies to (any payee, legal entities only, or natural persons only) and the **Muhtasar code** of the declaration line. **Create Matching Tax** makes a negative-rate Odoo tax from the rule, once.
+
+<Shot src="/odoo-guides/odoo-tevkifat-stopaj-kdv/stp-form.webp" alt="Stopaj rule DEMO-STJ Kira stopajı at 20 percent with withholding account 360, Muhtasar code 041 demo and the Create Matching Tax and Mark Verified buttons" width={1440} height={856} caption="A stopaj rule, with its tax created from it." />
+
+<Callout title="Account 360 in the Turkish chart">
+Odoo's `l10n_tr` chart types 360 Ödenecek Vergi ve Fonlar as a payable account, and Odoo requires a due date on every line of a payable account. A withholding tax that posts there will not save. On the demo we changed 360 to a current liability before creating the stopaj taxes. Do the same, or pick another account, before you press Create Matching Tax.
+</Callout>
+
+On the demo the landlord, Kemal Örnekçi, is a natural person with a TCKN. October's rent is 45,000 TRY gross; 9,000 is withheld and 36,000 is payable to him. The accountant's monthly fee from Elif Deneme carries KDV and a 20% freelance stopaj, so the KDV and the stopaj cancel and 18,000 is payable. Both land on the Muhtasar dataset in the [reports chapter](/odoo-guides/odoo-mizan-bilanco-turkish-reports/).
+
+<Shot src="/odoo-guides/odoo-tevkifat-stopaj-kdv/bill-stopaj.webp" alt="Vendor bill KIRA-202610 from Kemal Örnekçi for 45,000 TRY warehouse and office rent with 20 percent stopaj, 9,000 withheld and 36,000 total" width={1440} height={1075} caption="Rent with stopaj: gross 45,000, withheld 9,000." />
+
+## Exemptions and ÖTV
+
+A **KDV exemption code** has a code, the reason, the tax it exempts from, the type (full, partial, export or other) and dates. Full exemption keeps the right to reclaim input KDV; partial does not, which decides where the amount lands on the return. A line with a 0% exempt tax but no code is flagged. When every product line on an invoice is exempt, the invoice type becomes ISTISNA.
+
+**ÖTV rules** record the annexed list (I petroleum, II vehicles, III alcohol and tobacco, IV other goods), the method (a percentage, a fixed amount per unit, or a percentage with a per-unit minimum), the rate or amount, whether the KDV base includes the ÖTV, product categories or a GTİP prefix, and dates.
+
+## What the engine checks before anything is sent
+
+The engine lists Turkish tax problems on the invoice in plain sentences:
+
+- an exempt tax with no exemption code;
+- an exemption code, tevkifat rule or stopaj rule outside its dates;
+- a tevkifat rule with no tax for this kind of document;
+- a stopaj rule with neither an account nor a tax, or used for a payee it does not apply to;
+- on a Production company, any rule that is not Verified.
+
+<Callout title="Limits in this version">
+- **ÖTV is configuration only.** Nothing on an invoice line reads the ÖTV rules yet.
+- **No rates ship.** You enter every ratio, rate and code, and confirm them with your mali müşavir.
+- **The dashboard's stopaj tile reads customer invoices.** Stopaj is normally on vendor bills, so read it from the Muhtasar dataset instead.
+</Callout>
+
+## Where next
+
+The figures this engine produces flow into the e-invoice, covered in [e-Fatura and e-Arşiv](/odoo-guides/odoo-e-fatura-e-arsiv/), and into the KDV-1, KDV-2 and Muhtasar datasets in the [reports chapter](/odoo-guides/odoo-mizan-bilanco-turkish-reports/). For the setup and the module list, go back to the [series overview](/odoo-guides/odoo-turkey-localization/).

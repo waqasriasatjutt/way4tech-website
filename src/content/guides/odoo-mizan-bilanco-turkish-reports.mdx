@@ -1,0 +1,116 @@
+---
+title: "Mizan, Bilanço and Gelir Tablosu in Odoo 19, with Form Ba/Bs, KDV and Muhtasar datasets and e-Defter"
+metaTitle: "Mizan, Bilanço, Ba/Bs and e-Defter"
+description: "Run a Turkish Mizan at any Tekdüzen level in Odoo 19, the Bilanço and Gelir Tablosu, Form Ba/Bs, the KDV-1, KDV-2 and Muhtasar figures and e-Defter books."
+targetQuery: "Mizan Odoo"
+category: "Tax and compliance"
+region: "Türkiye"
+summary: "The Turkish Accounting Reports module on three months of demo trading: the trial balance, the balance sheet and income statement in the Tekdüzen layout, Form Ba and Bs, the declaration datasets, the e-Defter packages, the 7/A or 7/B choice and partner sub-accounts."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-turkey-localization"
+seriesOrder: 4
+modules:
+  - name: "Turkish Accounting Reports"
+    technical: "wt_tr_account"
+    note: "USD 349, installs Turkish Localization Base and the Tax Engine, Odoo 19 Community"
+  - name: "Turkish Localization Suite"
+    technical: "wt_tr_suite"
+    note: "USD 1,990, all seven modules"
+demo:
+  url: "https://tr-demo.way4tech.com/"
+  label: "Turkish Localization demo"
+related: ["odoo-turkey-localization", "odoo-tevkifat-stopaj-kdv", "odoo-accounting-dashboard"]
+linkFrom: ["/countries/turkey/accounting-tax/"]
+sources: []
+faqs:
+  - q: "Can Odoo produce a Turkish Mizan?"
+    a: "With the Turkish Accounting Reports module, yes. Reporting, Mizan gives opening, period, cumulative and closing balances for any date range at one, two, three, four or six digits of the Tekdüzen chart, or per account, with filters for an account range, a partner or an analytic account, and a CSV export."
+  - q: "Why does the Bilanço not balance?"
+    a: "Until the period is closed, the year's result sits in the 6xx accounts rather than in 590 or 591, so Aktif and Pasif differ by the profit or loss so far. The report says this in a warning. Once the closing entries are posted the two agree."
+  - q: "Does the module file Form Ba/Bs or the KDV return?"
+    a: "No. It produces the figures, with where each comes from, and a CSV export. Filing stays in GİB's own systems, and which figure goes on which line of each form should be confirmed with your mali müşavir."
+  - q: "Does it sign and submit the e-Defter?"
+    a: "No. It generates the journal and ledger for a month, validates them and builds the package with a checksum. Signing with the mali mühür and the berat exchange are done through a certified integrator, and the Sign button says so rather than pretending."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+At the start of every month a Turkish mali müşavir asks for the same things: the Mizan, the balance sheet and income statement in the Tekdüzen layout, the Ba and Bs lists, the figures for the KDV and Muhtasar returns, and the e-Defter books. In standard Odoo Community you get a trial balance in Odoo's own layout and have to rebuild the rest in a spreadsheet. This chapter of the [Turkish localization series](/odoo-guides/odoo-turkey-localization/) runs each of them in the Turkish Accounting Reports module on three months of trading at the demo company, Galata Örnek Ticaret A.Ş.
+
+## Before you run anything: the cost method
+
+Turkish companies keep their 7xx cost accounts either by function (7/A) or by nature (7/B). The company's **Cost Method** has no default, on purpose, and the statements refuse to run until it is set. Once the company has posted entries it is locked, because changing it is an accounting migration, not a setting. The demo uses 7/A: rent, fees and cleaning post to 770, freight to 760, and a month-end entry reflects them to 632 and 631 through 771 and 761.
+
+## Mizan
+
+**Türkiye, Reporting, Mizan** runs from 1 January to today by default. Choose posted entries or all entries, the **level** (1, 2, 3, 4 or 6 digits, or the full account), an account range such as 100 to 399, whether to hide empty accounts, and optionally one partner or one analytic account.
+
+<Shot src="/odoo-guides/odoo-mizan-bilanco-turkish-reports/mizan-run.webp" alt="Mizan for Galata Örnek Ticaret at three digits with columns for opening, period, cumulative and closing debit and credit, showing account groups 102, 120, 153, 191, 255, 320, 360, 391, 500, 570, 600, 621, 631, 632 and the 7xx accounts" width={986} height={819} caption="The Mizan at three digits, balanced." />
+
+Each group shows the opening balance (Açılış), the movements in the period (Dönem), the cumulative totals (Toplam) and the closing balance (Bakiye) on its natural side, and the report checks that debits equal credits. **Export CSV** downloads the same figures.
+
+<Callout title="Group labels at three digits">
+At three digits a group takes its label from one account under it. Where partner sub-accounts exist, a group such as 120 can show a customer's name as its label instead of the account heading. Read the code, or run at Full account, where every account has its own name.
+</Callout>
+
+## Bilanço and Gelir Tablosu
+
+**Reporting, Bilanço / Gelir Tablosu** encodes the Tekdüzen layout and sums your accounts into it by code prefix, so sub-accounts such as 120.01 are picked up without configuration. Hover a line to see the code ranges it sums.
+
+The **Bilanço** is cumulative to the end date: Aktif with current assets (Dönen Varlıklar) and fixed assets (Duran Varlıklar), Pasif with short-term and long-term liabilities and equity (Özkaynaklar). Until the period is closed, Aktif and Pasif differ by the year's result, because it reaches 590 or 591 only with the closing entries. The report says so in a warning.
+
+The **Gelir Tablosu** covers the period, from gross sales down to net profit.
+
+<Shot src="/odoo-guides/odoo-mizan-bilanco-turkish-reports/gelir-run.webp" alt="Gelir Tablosu for 1 August to 31 October 2026 with gross sales 2,802,400, cost of sales 1,513,340, gross profit 1,289,060, operating expenses 323,100 and net profit 965,960 Turkish lira" width={986} height={872} caption="The income statement for August to October on the demo." />
+
+| Line | August to October (TRY) |
+|---|---|
+| C. Net Satışlar (net sales) | 2,802,400 |
+| D. Satışların Maliyeti (cost of sales) | 1,513,340 |
+| Brüt Satış Kârı (gross profit) | 1,289,060 |
+| E. Faaliyet Giderleri (operating expenses) | 323,100 |
+| Dönem Net Kârı (net profit) | 965,960 |
+
+## Form Ba and Form Bs
+
+**Reporting, Form Ba / Bs** lists purchases (Ba) or sales (Bs) per counterparty for a period. The threshold comes from the company and can be changed on the run; it is a legal parameter, and the demo uses 50,000 as a placeholder. Counterparties at or above it are reportable, with VKN or TCKN, tax office, province, number of documents and amount. Those below are shown for review. Partners with no identity number are counted at the top so they can be fixed first.
+
+<Shot src="/odoo-guides/odoo-mizan-bilanco-turkish-reports/bs-run.webp" alt="Form Bs for October 2026 listing six reportable customers with VKN, tax office, province, document count and amount, led by Marmara İnşaat and ABC Teknoloji, with a total of 1,141,600" width={986} height={926} caption="Form Bs for October: six customers at or above the threshold." />
+
+## The declaration datasets
+
+**Reporting, Declaration Datasets** gives the figures for four returns for a period, each line saying where it comes from:
+
+| Dataset | What it shows | October on the demo |
+|---|---|---|
+| KDV-1 | Taxable base and KDV by rate, the exempt base, the base under tevkifat and the seller's share of KDV on it, deductible KDV on purchases | Base 1,156,900 at 20% and 57,600 at 10% |
+| KDV-2 | Base and VAT withheld per tevkifat rule used on purchases | 7/10 cleaning: base 30,000, withheld 4,200 |
+| Muhtasar | Gross base and amount withheld per stopaj rule, with its Muhtasar code | Rent 45,000 with 9,000 withheld; accountant's fee 18,000 with 3,600 |
+| Geçici Vergi | The provisional tax base from the income statement for the quarter | Run for July to September |
+
+<Shot src="/odoo-guides/odoo-mizan-bilanco-turkish-reports/muhtasar-run.webp" alt="Muhtasar dataset for October 2026 showing stopaj on the accountant's fee, base 18,000 and 3,600 withheld, and on rent, base 45,000 and 9,000 withheld, with the total withheld" width={986} height={518} caption="The Muhtasar figures for October." />
+
+Every dataset opens with the same statement: it is a dataset, not a filing, and which figure belongs on which line of the form must be confirmed with your mali müşavir.
+
+## e-Defter
+
+**Reporting, e-Defter** keeps one package per book per month: the journal (Yevmiye Defteri) and the general ledger (Defter-i Kebir). **Generate Book** writes the month's entries into the XML and validates it, checking debits against credits and the structure, and the **Validation** tab holds the report. **Build Package** zips the book with a checksum into the **Files** tab. On the demo the September books are packaged and the October books are generated.
+
+<Shot src="/odoo-guides/odoo-mizan-bilanco-turkish-reports/edefter-built.webp" alt="e-Defter package Defter-i Kebir 2026-09 with entries, lines, total debit and credit and the validation report No problems found" width={1440} height={763} caption="A September ledger package, validated." />
+
+**Sign** goes through the integrator. In this version no shipped integrator signs, so the button explains that signing with the mali mühür and the berat exchange are done by a certified integrator, rather than marking anything signed.
+
+## Partner sub-accounts
+
+Turkish practice often gives each customer and supplier its own account, 120.01, 120.02, 320.01 and so on. With **Partner Sub-Accounts** on, each partner gets a **Generate Sub-Account** button on its Türkiye tab. It numbers the next free code under the receivable and payable prefixes and makes those the partner's accounts, so its later invoices post there. Earlier entries stay where they were, and the Mizan and statements pick up both by prefix.
+
+<Callout title="Limits">
+- **Nothing here is filed.** Ba/Bs, KDV, Muhtasar and Geçici Vergi are prepared, not submitted.
+- **The e-Defter is not signed** by the module, and the envanter defteri (inventory book) is not among the books it builds.
+- **Statutory additions and deductions** are not modelled in the Geçici Vergi base.
+</Callout>
+
+## Where next
+
+The tax figures in these datasets come from the [tax engine](/odoo-guides/odoo-tevkifat-stopaj-kdv/), and the [series overview](/odoo-guides/odoo-turkey-localization/) has the setup and prices. For a general view of Odoo's accounting screens see the [accounting dashboard guide](/odoo-guides/odoo-accounting-dashboard/) and the [accounting overview](/modules/accounting/).

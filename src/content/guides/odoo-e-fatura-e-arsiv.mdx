@@ -1,0 +1,117 @@
+---
+title: "e-Fatura and e-Arşiv in Odoo 19: routing, numbering, the queue, errors and incoming invoices"
+metaTitle: "e-Fatura and e-Arşiv, Invoice to Accepted"
+description: "How Odoo 19 picks e-Fatura or e-Arşiv per customer, numbers and builds the UBL-TR, queues and retries it, explains rejections and reads incoming invoices."
+targetQuery: "e-Fatura e-Arşiv Odoo"
+category: "Tax and compliance"
+region: "Türkiye"
+summary: "The Turkish e-Document Core and e-Fatura & e-Arşiv modules on the demo: the routing decision and its reason, the sixteen-character number, the background queue and console, the error queue, cancellation, the GİB user list, the e-Arşiv daily report and the inbox."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-turkey-localization"
+seriesOrder: 2
+modules:
+  - name: "Turkish e-Fatura & e-Arşiv"
+    technical: "wt_tr_efatura"
+    note: "USD 599, installs the e-Document Core (USD 499), Odoo 19 Community"
+  - name: "Turkish e-Document Core"
+    technical: "wt_tr_edocument"
+    note: "USD 499, UBL-TR builder and validator, integrator layer, queue"
+  - name: "Turkish Localization Suite"
+    technical: "wt_tr_suite"
+    note: "USD 1,990, all seven modules"
+demo:
+  url: "https://tr-demo.way4tech.com/"
+  label: "Turkish Localization demo"
+related: ["odoo-turkey-localization", "odoo-e-irsaliye", "odoo-tevkifat-stopaj-kdv"]
+linkFrom: ["/countries/turkey/e-invoicing/"]
+sources: []
+faqs:
+  - q: "How does Odoo decide between e-Fatura and e-Arşiv?"
+    a: "With the e-Fatura & e-Arşiv module, when an invoice is posted it reads the customer's VKN or TCKN and checks the GİB e-Fatura user list. A registered customer gets an e-Fatura, anyone else an e-Arşiv, and a customer with no number goes to e-Arşiv because registration cannot be checked. The reason is written on the invoice."
+  - q: "What does an e-Fatura number look like?"
+    a: "Sixteen characters: a three-letter prefix, the four-digit year and nine digits, such as WAY2026000000001. The number is taken only after validation, in one database statement, and kept if the send is retried, so a timeout does not leave a gap."
+  - q: "What happens when GİB rejects an invoice?"
+    a: "The document moves to the error queue with GİB's code, the reason as GİB gave it in Turkish and a suggested fix. A rejection is never retried. Fix the cause on the invoice, then use Cancel / Correct to take the rejected document out of the queue and issue a new one."
+  - q: "Can the module send credit notes and export invoices?"
+    a: "Not in the current version. A credit note posts in accounting but its e-document fails to build, and invoices to foreign buyers are refused because the engine requires a Turkish VKN or TCKN on every recipient. Both need a fix in the module."
+  - q: "Which özel entegratör does it work with?"
+    a: "The design is integrator-neutral, but the current version ships only a mock adapter. Connecting a real integrator means writing its adapter against the suite's interface, after which it appears in the integrator list."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most Turkish e-invoice problems start before the invoice is sent. The clerk picks e-Fatura for a customer who is not registered. The number series skips one on a timeout and nobody can explain the gap. A rejection comes back as a code nobody can read, and the invoice is sent again with the same mistake. This chapter of the [Turkish localization series](/odoo-guides/odoo-turkey-localization/) shows how the e-Document Core and the e-Fatura & e-Arşiv modules take those decisions away from the user and explain the ones that go wrong, on a demo that uses a mock integrator and sends nothing to GİB.
+
+## Routing: the user never chooses
+
+When an invoice is posted the module reads the customer's identity and the GİB user list and picks the document type. It writes the reason on the invoice in plain words, for example "The recipient is registered in the GİB e-Fatura user list (cache, checked ...)".
+
+| Situation | Result |
+|---|---|
+| Customer on the GİB e-Fatura list | e-Fatura; scenario TICARIFATURA if set on that customer, otherwise TEMELFATURA |
+| Customer not on the list | e-Arşiv, scenario EARSIVFATURA |
+| No VKN or TCKN on the customer | e-Arşiv, because registration cannot be checked |
+| Foreign customer, customs VKN set on the company | e-Fatura, scenario IHRACAT |
+| Foreign customer, no customs VKN | e-Arşiv, and the reason says to set the customs VKN |
+
+The invoice type is derived too: IADE for a credit note, TEVKIFAT when a line has a tevkifat rule, ISTISNA when every product line is exempt, otherwise SATIS. An e-Document Manager can override the document type where that is legally right; the invoice is then flagged Routing Overridden and the change goes into the audit trail.
+
+<Shot src="/odoo-guides/odoo-e-fatura-e-arsiv/inv-efatura.webp" alt="Invoice INV/2026/00042 to ABC Teknoloji with the Türkiye electronic document block: e-Fatura, the routing reason, scenario TEMELFATURA, invoice type SATIS, ETTN and status accepted" width={1440} height={1030} caption="Routing on the invoice: the decision and the reason." />
+
+A partner missing from the cached list is not assumed to be unregistered: the module asks the integrator directly and caches the answer. The list itself (**Configuration, e-Documents, GİB User List**) is refreshed daily, keeps e-Fatura and e-İrsaliye registration as separate entries, and an entry older than the company's maximum age (seven days by default) is flagged on the health check.
+
+## Numbering
+
+A Turkish e-document number is sixteen characters: a three-letter prefix, the year and nine digits. Each document type has its own series per year under **Configuration, e-Documents, Document Series**; on the demo they are WAY for e-Fatura, ARS for e-Arşiv and IRS for e-İrsaliye. The number is taken in one database statement, only after the document has passed validation, and reused if the send is retried. **Check for Gaps** lists any number the series issued that no live document holds, **Open Next Year** creates next year's series and **Close Series** stops one.
+
+## Sending, the queue and the console
+
+With **Send Automatically** on, posting the invoice queues its e-document. With it off, as on the demo, the document waits as Draft until somebody presses **Send**. Either way the work happens in a background job that runs every two minutes, so nobody waits for the integrator, and two people pressing Send at once still produce one transmission.
+
+The lifecycle runs Draft, Queued, XML Generated, Sent, then Accepted. Off that path a document can be Rejected (a business refusal, never retried), in Error (a technical failure, retried after 1, 2, 4, 8 minutes and so on, capped at an hour, up to the integrator's limit of five by default), or Cancelled. A failure never stops the invoice from posting.
+
+<Shot src="/odoo-guides/odoo-e-fatura-e-arsiv/doc-console.webp" alt="The Console tab of e-document WAY2026000000028 showing the pipeline steps validated, numbered, UBL-TR generated, sent to integrator, answered by GİB and PDF retrieved, with a log below" width={1440} height={900} caption="The console: every step of one document, live." />
+
+The e-document form holds the parties with their identities, the GİB block (type, scenario, invoice type, ETTN, GİB status), the transmission details and the timeline. The **XML** tab holds the UBL-TR, built on Odoo's own UBL 2.1 builder with the Turkish parts added. Before it leaves, the validator checks required elements, both parties, scenario against invoice type, the ETTN, totals, lines and units, and reports every problem at once instead of one per round trip. The **Request Log** keeps every call to the integrator with its timing and response, and **Get GİB PDF** fetches the PDF that comes back.
+
+<Shot src="/odoo-guides/odoo-e-fatura-e-arsiv/doc-log.webp" alt="Request Log tab of e-Fatura WAY2026000000028 listing the send_invoice and get_status calls with success, HTTP status 200 and duration in milliseconds" width={1440} height={900} caption="The request log: every call to the integrator, with its timing." />
+
+<Callout title="The mock integrator">
+The only integrator adapter in this version is **Mock GİB**. It never leaves the database, keeps its own state and returns a real PDF. A marker on the partner reference, the partner name or the invoice notes makes it reject, stay pending, time out or fail in other ways a real integrator does, which is how the demo shows every state. It is refused on a company in Production. A live connection needs an adapter for your özel entegratör written against the suite's interface.
+</Callout>
+
+## The error queue
+
+**e-Documents, Error Queue** lists rejected and failed documents with the partner, identity number, scenario, type, total, the suite's error code and the GİB code, and a Retry button on each row. Open a rejection and the Error tab shows the code, the reason as GİB returned it, in Turkish with the English alongside, and a suggested fix.
+
+<Shot src="/odoo-guides/odoo-e-fatura-e-arsiv/doc-errors.webp" alt="Error Queue with five documents: a rejected e-Fatura to Akdeniz Turizm with GİB code MOCK-9999, an e-İrsaliye to Ege Tekstil with TR-GIB-002, a return invoice with TR-PROVIDER-003 and two export e-Arşiv invoices with TR-VKN-006" width={1440} height={441} caption="The error queue on the demo, with each problem's code." />
+
+## Cancelling and correcting
+
+There is no single Cancel, because what is legally possible depends on how far the document got. **Cancel / Correct** works out the one route that applies and explains it:
+
+- **Abandon**, for a document that never reached the integrator, or one GİB rejected;
+- **Request cancellation**, for an e-Arşiv, or an e-Fatura that was sent but not yet answered;
+- **Issue a return invoice (IADE)**, for an accepted e-Fatura, which opens Odoo's credit note wizard.
+
+A reason is required and every route is recorded. The e-Arşiv cancellation window is a legal parameter, and the wizard says to confirm it with your mali müşavir.
+
+<Callout title="Two limits in this version">
+- **Credit notes do not build.** A return invoice posts in accounting, but its e-document fails when the UBL is built, so the IADE route above ends in the error queue.
+- **Export invoices are refused.** A foreign buyer has no Turkish VKN or TCKN and the engine requires one on every recipient, whichever way the invoice is routed.
+</Callout>
+
+## The e-Arşiv daily report
+
+e-Arşiv invoices are reported to GİB rather than exchanged. **e-Documents, e-Arşiv Daily Reports** holds one report per day with its documents, totals and state. A nightly job collects and sends yesterday's report; **Recollect** rebuilds a draft one and a sent report is never rewritten. A report not sent within the company's deadline (24 hours by default) shows as overdue.
+
+## Incoming invoices
+
+Suppliers' e-invoices are fetched every 30 minutes into **e-Documents, Inbox**. Each is matched to a supplier by the VKN field, then TCKN, then the plain Tax ID, then the Tax ID with a TR prefix, and the record says which rule matched. A draft vendor bill is created with the XML attached and is never posted automatically. A TICARIFATURA invoice waits for **Accept** or **Reject**, sent back through the integrator. Senders nobody knows go to the **Review Queue**; correct the supplier and press **Match Supplier**.
+
+<Shot src="/odoo-guides/odoo-e-fatura-e-arsiv/in-ticari.webp" alt="Incoming commercial invoice TIC2026000000107 from İstanbul Nakliyat with scenario TICARIFATURA and the Match Supplier, Open Draft Bill, Accept and Reject buttons" width={1440} height={900} caption="An incoming commercial invoice waiting for an answer." />
+
+## Where next
+
+Goods that leave the warehouse get their own document, covered in [e-İrsaliye](/odoo-guides/odoo-e-irsaliye/). The tax split inside each invoice comes from the [tax engine](/odoo-guides/odoo-tevkifat-stopaj-kdv/), and the GİB rules themselves are summarised on the [Türkiye e-invoicing page](/countries/turkey/e-invoicing/).

@@ -1,0 +1,110 @@
+---
+title: "Pharmacy insurance claims in Odoo: co-pay split, tariff discount, approvals and rejections"
+metaTitle: "Insurance Co-pay and Claims"
+description: "Split a pharmacy bill between insurer and patient in Odoo, apply the payer's tariff, track e-claims from submitted to paid and collect each shortfall."
+targetQuery: "pharmacy insurance claims odoo co-pay"
+category: "Industry"
+region: "UAE and GCC"
+summary: "Insurers with co-pay, tariff discount and pre-approval rules, patient policies with annual limits, the co-pay split at the counter, and each claim from draft to paid, partly approved or rejected, with the shortfall written back."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pharmacy-management"
+seriesOrder: 4
+modules:
+  - name: "Pharmacy Management"
+    technical: "w4t_pharmacy_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://pharmacy-demo.way4tech.com/"
+  label: "Pharmacy demo"
+related: ["odoo-pharmacy-management", "odoo-pharmacy-dispensing-safety-check", "odoo-garage-service-plans-insurance-claims"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is the co-pay worked out?"
+    a: "From the patient's policy, which takes its default from the insurer. On a dispense against a policy, the claimable lines are priced after the insurer's tariff discount, the insurer pays the policy's share of them, and the patient pays the co-pay plus every line that is not claimable on insurance."
+  - q: "What happens when the insurer pays less than claimed?"
+    a: "The claims desk records the approved amount and the claim becomes Partly Approved. The settled figure is written back onto the dispense, and the gap shows there as Patient Shortfall, which the counter can filter on and collect."
+  - q: "Can a claim go over the policy's annual limit?"
+    a: "Approving a claim for more than is left on the policy is refused. Approved, partly approved and paid claims count towards the limit, and a policy that has used it all moves to Limit Reached, after which no new claim can be submitted against it."
+  - q: "Does the module send the claim to the payer portal?"
+    a: "No. It builds the e-claim reference from your prefix, the payer code and the claim number, and records submission, approval code, approved amount and rejection reason. The transmission itself happens on the payer's own portal."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In a Gulf pharmacy a large share of the prescription revenue arrives weeks after the patient has left, from an insurer, at a price the insurer set, and only if the claim was right the first time. A claim for the wrong pack size comes back rejected for price above the tariff. A claim above the payer's threshold without a pre-approval code comes back unpaid. A partly approved claim leaves a gap nobody goes back to collect. The pharmacy that tracks this well keeps its margin; the one that does not is working for the insurer. This chapter covers how the Pharmacy Management module handles the money from the counter to the settlement.
+
+## The insurer
+
+Insurers are kept under **Insurance, Insurers**, visible to pharmacy managers. Each one has:
+
+- a **Payer Account**, the Odoo contact behind it;
+- a **Default Co-pay**, copied onto new policies;
+- a **Tariff Discount**, the contracted discount off your shelf price;
+- **Pre-approval Above a Value** and **Approval Needed Above**, the amount above which a claim cannot be submitted without an approval code;
+- the **E-claim Scheme** and **Payer Code**, which go into the claim reference;
+- **Settles In (days)**, how long the payer normally takes, used to chase late claims.
+
+<Shot src="/odoo-guides/odoo-pharmacy-insurance-claims/insurer.webp" alt="Insurer form in Odoo with default co-pay, tariff discount, pre-approval threshold, payer code and settlement days" width={1440} height={900} caption="An insurer: co-pay, tariff discount and the pre-approval threshold." />
+
+The insurer form also shows how many policies and claims it has and the amount awaiting settlement.
+
+## The policy
+
+A policy belongs to one patient and one insurer: policy number, member number, plan name, category (basic, enhanced, comprehensive or VIP), valid from and to, co-pay and annual limit. Two figures are worked out from the claims: **Used**, the sum of approved, partly approved and paid claims, and **Remaining**.
+
+<Shot src="/odoo-guides/odoo-pharmacy-insurance-claims/policies.webp" alt="Insurance policies list in Odoo with insurer, category, validity, co-pay, annual limit, used, remaining and state" width={1440} height={900} caption="Policies with their annual limit, what is used and what is left." />
+
+The state follows from those figures and the dates: **Not Started** before the start date, **Active** while in date, **Expired** after the end date, and **Limit Reached** once used equals the limit. A claim can only be submitted against an active policy.
+
+<Callout title="Policy state is not restated nightly">The policy state is worked out when the policy or its claims change. There is no job that restates it each night, so a policy whose end date passed last week still shows Active until it is opened and saved or a claim moves on it. The check on submission reads the stored state, so watch the Expired filter around renewal time.</Callout>
+
+## The split at the counter
+
+When a patient with a live policy is dispensed to, the policy is picked up on the dispense with its co-pay. Then, line by line:
+
+1. A line whose medicine is **Claimable on Insurance** gets the insurer's tariff discount as its **Insurer Discount**. The price is the contracted one.
+2. The insurer's share is the claimable total times one minus the co-pay. That is **Insurer Pays**.
+3. Everything else, the co-pay plus any non-claimable line such as a supplement, is **Patient Pays**.
+
+<Shot src="/odoo-guides/odoo-pharmacy-insurance-claims/dispense-split.webp" alt="Dispense in Odoo on an insurance policy with co-pay percentage and the claim raised for the insurer's share" width={1440} height={900} caption="The split at the counter: co-pay for the patient, a claim for the insurer." />
+
+Because the discount comes off before the margin is worked out, the **Margin** report grouped by insurer shows what each contract actually earns. On **Dispense**, the module raises a claim for the insurer's share and posts a note on the dispense if the claim is above what is left on the policy. The patient's invoice shows every item at full value with the insurer's share taken off as one line, so it totals what the patient paid.
+
+## The claim, step by step
+
+Claims live under **Insurance, Claims**, with filters for Not Yet Submitted, Out With the Insurer, Approved Short, Approved but Unpaid, Rejected and Older Than 30 Days.
+
+<Shot src="/odoo-guides/odoo-pharmacy-insurance-claims/claims-list.webp" alt="Insurance claims list in Odoo with e-claim reference, patient, insurer, amounts claimed and approved, days out and state" width={1440} height={900} caption="Claims from draft to paid." />
+
+1. **Draft.** Raised by the dispense, with the insurer's share as the amount claimed and the patient's share as the co-pay.
+2. **Submit.** Checks the policy is active and, above the insurer's approval threshold, that an approval code is on the claim. Stamps the submit date and builds the e-claim reference: your prefix (ECL by default), the payer code and the claim number.
+3. **Approved or Partly Approved.** Enter the payer's approval code and the amount approved and press Approved. An approval with no code, with a zero amount or above what is left on the policy is refused. Less than claimed makes it Partly Approved.
+4. **Rejected.** Pick the reason (medicine not covered, policy expired, annual limit exceeded, no pre-approval, duplicate claim, member number not recognised, prescription not attached, price above the contracted tariff, other), add a note and press Rejected. If the branch has an email address, a rejection email goes to it.
+5. **Paid.** Records the settlement date. A paid claim cannot be cancelled or reset.
+
+<Shot src="/odoo-guides/odoo-pharmacy-insurance-claims/claim-partial.webp" alt="Partly approved pharmacy insurance claim in Odoo with approval code, amount claimed, amount approved and the gap not paid" width={1440} height={900} caption="Partly approved: the gap becomes the patient's shortfall on the dispense." />
+
+At every step that settles the claim, the amount the payer agreed is written back onto the dispense as **Insurer Settled**. The difference between what was billed to the insurer and what it settled is the **Patient Shortfall**, and the dispense list has a filter for it: Patient Owes a Shortfall. That filter is the counter's collection list.
+
+**Cancel** withdraws a claim and clears the settled figure. **Reset to Draft** clears the dates, the approved amount and the reason so a corrected claim can go again.
+
+## Chasing late claims
+
+The scheduled job **Pharmacy: chase claims the insurer has gone quiet on** runs daily and puts a to-do activity on any submitted claim older than the insurer's settlement days, unless it already has one. It ships switched off; turn it on once your insurers' settlement days are filled in.
+
+## The claims report
+
+**Reporting, Claims Analysis** pivots the claims by insurer and state, with claimed, approved and rejected amounts. It is the quickest way to see which payer rejects most and what for.
+
+<Shot src="/odoo-guides/odoo-pharmacy-insurance-claims/claims-analysis.webp" alt="Claims Analysis pivot in Odoo with claimed, approved and rejected amounts by insurer and state" width={1440} height={900} caption="Claims Analysis by insurer and state." />
+
+## Limits worth knowing
+
+- **Nothing is transmitted.** The module records what happened on the payer portal; it does not post to eClaimLink, Shafafiya or any other scheme.
+- **No pre-approval request.** The approval code is typed in after the pharmacy has obtained it.
+- **The default co-pay setting does not split money on its own.** Without a policy on the dispense, the insurer's share is zero and the patient pays everything, whatever the company default says.
+- **Policy from the script button.** A dispense opened from a prescription's Dispense button does not fill in the policy; pick it before the safety check.
+
+The [dispensing chapter](/odoo-guides/odoo-pharmacy-dispensing-safety-check/) covers the rest of the dispense, and the [pharmacy management hub](/odoo-guides/odoo-pharmacy-management/) has the overview and the full PDF.

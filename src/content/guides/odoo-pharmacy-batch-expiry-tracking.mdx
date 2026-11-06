@@ -1,0 +1,113 @@
+---
+title: "Pharmacy batch and expiry tracking in Odoo: receiving, FEFO, near expiry value and write-offs"
+metaTitle: "Batches, Expiry and Write-offs"
+description: "Track pharmacy batches in Odoo: receive with expiry and cost, quarantine, first expiry first out at the counter, value at risk and destruction records."
+targetQuery: "pharmacy batch expiry tracking odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "Batches received with expiry, cost and shelf, quarantined and released, banded by expiry, handed out first expiry first out, and written off with an approver, a witness and a certificate."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pharmacy-management"
+seriesOrder: 1
+modules:
+  - name: "Pharmacy Management"
+    technical: "w4t_pharmacy_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://pharmacy-demo.way4tech.com/"
+  label: "Pharmacy demo"
+related: ["odoo-pharmacy-management", "odoo-pharmacy-dispensing-safety-check", "odoo-purchase-inventory-dashboard"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the module decide which batch to hand out?"
+    a: "First expiry, first out at the dispensing branch. It sorts the available batches by expiry date and skips any that have expired, while Refuse Expired Batches is on, or that have less shelf life left than the Minimum Shelf Life setting, 30 days by default. If one batch cannot cover the quantity, the line is split across batches."
+  - q: "What counts as expiring soon?"
+    a: "Any batch whose expiry date is inside the Expiry Warning Window, 90 days unless you change it. The band is stored so lists can filter on it, and a daily scheduled job restates it. That job ships switched off and has to be turned on when you go live."
+  - q: "Can a pharmacist write off stock on their own?"
+    a: "They can prepare the write-off, but only a user with the Pharmacy Manager role can approve it, and the check is made in the code, not only by hiding the button. A write-off with controlled stock on it also needs a witness before it can be posted."
+  - q: "Does receiving a batch update Odoo Inventory stock levels?"
+    a: "It creates a stock lot with the batch number and expiry, so the batch is traceable in Inventory. The quantities themselves are kept on the pharmacy batch; the module does not post Inventory receipts or deliveries."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ask a pharmacy owner where the money goes and the honest answer is often the expired shelf. A box that expires behind newer stock, a cold chain delivery put away without checking the temperature log, a slow line ordered in the same quantity every month: none of it shows up until somebody counts the bin. And when a manufacturer recalls a batch, the question is not how many boxes of the product you sold, but which patients took home that batch number. This chapter covers how the Pharmacy Management module keeps stock by batch, from the delivery dock to the destruction certificate.
+
+## A batch is how stock arrives
+
+Every intake is a batch: a batch number, the medicine, the branch holding it, the supplier and their delivery reference, received, manufacture and expiry dates, the quantity received, the unit cost and a shelf location. It starts in **Draft**, which means it is on the dock and nothing can be dispensed from it yet.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/batch-draft.webp" alt="Draft pharmacy batch in Odoo with medicine, branch, shelf, received and expiry dates, quantity received, unit cost and supplier reference" width={1440} height={900} caption="A delivery on the dock: nothing can be dispensed from it until it is received." />
+
+Pressing **Receive** puts it on the shelf. The state becomes Available, the quantity on hand becomes the quantity received, and a stock lot with the same number and the pharmacy expiry date is created in Inventory. If two branches receive boxes from the same supplier batch, they share one lot, and the second batch posts a note saying where else that number is held, so a recall reaches both. An already expired batch cannot be received at all; the module tells you to raise a supplier return instead.
+
+The batch keeps four quantities in step: received, on hand, dispensed and written off. On hand can never go below zero and on hand plus written off can never be more than was received. The unit cost on the batch is the cost dispensing uses for margin, so the margin on a sale is the margin on those specific boxes, not on an average.
+
+## Quarantine and release
+
+When something is wrong with a delivery, such as a cold box that arrived warm or a damaged carton, the batch is quarantined. Fill **Why It Was Pulled** and press **Quarantine**; a quarantine with no reason is refused, because it is the one an inspector asks about. A quarantined batch is not offered at the counter and does not count in the medicine's counter stock.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/batch-quarantine.webp" alt="Quarantined pharmacy batch in Odoo with the reason it was pulled: cold box arrived warm" width={1440} height={900} caption="A quarantined batch, with the reason an inspector will ask about." />
+
+**Release** puts it back to Available and clears the reason. A batch that expired while it sat in quarantine cannot be released and has to go on a write-off. **Reset to Draft** is only possible while nothing has been dispensed from the batch.
+
+## First expiry, first out at the counter
+
+Standard Odoo Inventory has a FEFO removal strategy for transfers. The module applies the same idea at the counter, where it matters most. When a pharmacist presses **Allocate Batches** on a dispense, the module looks at the available batches of that medicine at that branch, earliest expiry first, and:
+
+- skips any batch that has expired, while **Refuse Expired Batches** is on;
+- skips any batch with less shelf life left than **Minimum Shelf Life on Dispensing**, so a patient does not walk out with a course that expires halfway through;
+- takes what it needs from the first batch, and if that is not enough, splits the line and takes the rest from the next.
+
+If the branch cannot cover the quantity from batches that are safe to hand over, it says how much it does have, which is the number a pharmacist needs to offer a part supply. The safety check later refuses any line whose batch is expired, not available, or too small, and warns about a batch with little shelf life left.
+
+## Expiring soon and expired, in money
+
+Each batch is banded **In Date**, **Expiring Soon** or **Expired** from its expiry date and the **Expiry Warning Window**, 90 days by default. Two lists sit under Stock: **Expiring Soon**, grouped by branch, and **Expired Stock**, both limited to batches with stock left, and both showing the value as well as the count.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/expiring-soon.webp" alt="Expiring Soon list in Odoo grouped by branch, with days left, quantity on hand and value of each batch" width={1440} height={900} caption="Expiring Soon, grouped by branch, with the value on the shelf." />
+
+The value is what makes these lists useful. A pharmacy owner can act on a money figure per branch in a way they cannot act on a count of batches. The **Value at Risk** report under Reporting shows the same figure as a pivot, every batch with stock left by branch and band.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/value-at-risk.webp" alt="Value at Risk pivot in Odoo showing stock value by branch split into expired, in date and expiring soon" width={1440} height={900} caption="Value at Risk: stock value by branch and expiry band." />
+
+<Callout title="The banding needs its daily job">The band is stored so the lists can filter and group on it, which means it has to be restated as the days pass. The scheduled action "Pharmacy: restate batch expiry banding" does that once a day, and like every job in the module it ships switched off. Turn it on in Settings, Technical, Scheduled Actions on the day you go live, or a batch that crossed into the warning window last week will still show In Date.</Callout>
+
+A second job, the weekly near expiry digest, emails each branch's superintendent pharmacist the list of stock expiring and stock already gone. It also ships off.
+
+## The write-off
+
+Expired, damaged, recalled, cold chain or lost stock comes off the books on a write-off. Pick the branch and the reason (Expired, Damaged, Recalled by the Manufacturer, Cold Chain Break, Loss or Theft, Other) and press **Pull In Expired Stock**: every expired batch at that branch with stock left lands on a line at its full on-hand quantity and unit cost. Damaged or recalled batches are added by hand with the quantity affected.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/writeoff-draft.webp" alt="Draft pharmacy write-off in Odoo with expired batches pulled in, quantities and values, witness and destruction reference" width={1440} height={900} caption="A draft write-off after Pull In Expired Stock." />
+
+Then the controls:
+
+1. **Approve.** Only a Pharmacy Manager can approve. Whoever counted the stock out does not also sign for it, and the check sits in the code, so it cannot be bypassed from a list view. The approver and the time are recorded.
+2. **Destroyed.** Posting takes the quantities off the batches for good: written off goes up, on hand comes down, and a batch with nothing left is marked Written Off. If any line carries a controlled medicine, posting is refused until a witness is named.
+3. **Certificate.** The Certificate of Destruction prints the reference, branch, reason, date, approver, witness and the waste contractor's docket number, then every medicine with batch, expiry, schedule, quantity and value, and the total destroyed.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/destruction-certificate.webp" alt="Certificate of Destruction printed from Odoo with branch, reason, approver, witness, contractor docket and each batch destroyed" width={1368} height={1322} caption="The Certificate of Destruction, every batch number on it." />
+
+A destroyed write-off cannot be cancelled or reset, because stock does not come back from a skip. A draft or approved one can be cancelled if it was raised in error, and reset to draft to correct it.
+
+## Reorder levels and the suggested purchase list
+
+Each medicine carries **Reorder At** and **Reorder Up To**. When counter stock across the branch's live batches falls to the reorder level, the medicine appears under **Stock, Below Reorder Level**. A **Suggested Purchase** list per branch turns that into a shopping list: press **Rebuild From Stock** and every short medicine gets a line with on hand, the two levels, the suggested quantity (up to the maximum, less what is on hand), the last batch cost and the amount. Edit quantities or suppliers, **Confirm**, then mark it **Ordered** when it goes to the wholesaler.
+
+<Shot src="/odoo-guides/odoo-pharmacy-batch-expiry-tracking/suggested-purchases.webp" alt="Suggested purchase list in Odoo for one branch with on hand, reorder level, suggested quantity, last cost and amount per medicine" width={1440} height={900} caption="A suggested purchase list built from the reorder levels." />
+
+A weekly job builds a fresh list for every branch that has something short and no recent draft list. It ships switched off.
+
+<Callout title="What purchasing does not do">The suggested list is a list. It does not create an Odoo purchase order and does not receive stock. Goods still arrive as a batch that somebody counts and receives, which is the point: the batch number and expiry have to be read off the box.</Callout>
+
+## Questions to settle before go-live
+
+- **How long is your warning window?** Ninety days suits most retail; a hospital outpatient pharmacy returning stock to a central store may want longer.
+- **What minimum shelf life do you hand out?** Thirty days is the default. A pharmacy dispensing three month chronic supplies should raise it.
+- **Who approves write-offs?** Give the Pharmacy Manager role only to the people who sign destruction, not to every senior pharmacist.
+- **What is the opening stock?** Receive it as batches with their real expiry dates and costs, not as one batch per medicine, or the first expiry list will be wrong.
+
+The dispensing side, where batches are actually drawn down, is the next chapter: [prescriptions, dispensing and the safety check](/odoo-guides/odoo-pharmacy-dispensing-safety-check/). The [pharmacy management hub](/odoo-guides/odoo-pharmacy-management/) has the overview and the full PDF.

@@ -1,0 +1,97 @@
+---
+title: "Veterinary prescriptions in Odoo: dispensing from stock, controlled drugs, withdrawal periods and lab requests"
+metaTitle: "Prescriptions, Withdrawal and Lab Requests"
+description: "Dispense veterinary prescriptions in Odoo from dispensary stock, list controlled drugs, work out withdrawal dates for farm animals and track lab requests."
+targetQuery: "veterinary prescription withdrawal period odoo"
+category: "Industry"
+region: "UK"
+summary: "Prescriptions with dose, route, frequency and days taken out of the dispensary stock, the controlled drug register, withdrawal periods worked out for food-producing animals, and lab requests from sample to result."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-veterinary-clinic-management"
+seriesOrder: 3
+modules:
+  - name: "Veterinary Clinic Management"
+    technical: "wt_veterinary_management"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://vet-demo.way4tech.com/"
+  label: "Veterinary demo"
+related: ["odoo-veterinary-clinic-management", "odoo-veterinary-consultations-patient-records", "odoo-pharmacy-dispensing-safety-check"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does dispensing a prescription take the medicine out of stock?"
+    a: "Yes, when the clinic has a Dispensary Location set. Dispensing creates and completes a stock move from that location to the customer for every storable medicine on the prescription. If the move cannot be made, for example for lack of stock, the prescription is still dispensed and the reason is posted in its chatter."
+  - q: "How is the withdrawal date worked out?"
+    a: "Each prescription line has withdrawal days, taken from the medicine. The line's withdrawal end is the prescription date plus the days of treatment plus the withdrawal days. The prescription shows the latest of its lines, and the patient shows the latest across its dispensed prescriptions as Withheld Until."
+  - q: "Who can sign a prescription?"
+    a: "Only a team member with Can Prescribe ticked. The prescriber field only offers them, and saving a prescription with anyone else is refused."
+  - q: "Does the controlled drug register keep a running balance?"
+    a: "No. It is the list of dispensed prescriptions that contain a product marked as a controlled drug, with the patient, prescriber and date. It does not keep a cabinet balance or a witness signature."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Medicines are where a practice's records meet the law. A controlled drug used in theatre has to be accounted for. A tablet handed to an owner has to come off the dispensary shelf, or the stock count drifts. And on a farm call, an antibiotic given to a dairy cow means her milk cannot go into the tank until the withdrawal period is over, which is a rule the farmer, the vet and the buyer all care about. This chapter covers prescriptions, controlled drugs, withdrawal periods and lab requests in the Veterinary Clinic Management module.
+
+## Writing a prescription
+
+Prescriptions live under **Clinical, Prescriptions** and on the consultation's Prescriptions tab. A prescription has the patient, the consultation it came from, the prescriber and the date. Only team members with **Can Prescribe** are offered as prescribers, and saving one with anyone else is refused.
+
+Each line is a medicine with:
+
+- the **dose**, free text such as 1 tablet or 0.5 ml/kg;
+- the **route**: oral, subcutaneous, intramuscular, intravenous, topical, aural, ocular, intranasal or inhaled;
+- the **frequency**: once daily, twice daily, three or four times daily, every other day, weekly, single dose or as needed;
+- the number of **days**, the **quantity dispensed** and its unit;
+- the **withdrawal days**, from the medicine;
+- the **owner's instructions**, which print on the prescription.
+
+<Shot src="/odoo-guides/odoo-veterinary-prescriptions-withdrawal/prescription.webp" alt="Dispensed veterinary prescription in Odoo with medicine, dose, route, frequency, days and quantity" width={1440} height={900} caption="A dispensed prescription." />
+
+## Dispensing
+
+**Dispense** does three things. First it reads the patient's allergy note and refuses if the name of any medicine on the prescription appears in it. Then it takes the stock: for every storable medicine, a stock move is created from the clinic's **Dispensary Location** to the customer and completed, and the moves are kept on the prescription. Finally it marks the prescription Dispensed and, if there is a withdrawal period, posts the date in the chatter.
+
+If the stock cannot be moved, for example because there is not enough in the dispensary, the prescription is still dispensed and the chatter says the medicine was not taken out of stock and why. Somebody then corrects the stock by hand.
+
+<Callout title="Two things to set before dispensing">Set the clinic's Dispensary Location, or no stock moves at all. And write allergies on the patient using the product name, because the allergy check is a text match of the product name against the allergy note, not a match on the active ingredient.</Callout>
+
+**Print** produces the prescription: the practice and its licence number, the patient and owner, each medicine with dose, route, frequency, days, quantity and instructions, the prescriber and their registration number, and the withdrawal end date when there is one. **Cancel** retires a draft. A dispensed prescription cannot be cancelled; record a return instead.
+
+## Controlled drugs
+
+A product marked as a controlled drug makes any prescription containing it **Controlled**, highlighted on the prescription list. **Reporting, Controlled Drug Register** lists every dispensed prescription that includes one, with the date, patient, species and prescriber. On the demo that is methadone given for pain at surgery and dental work.
+
+<Shot src="/odoo-guides/odoo-veterinary-prescriptions-withdrawal/controlled-register.webp" alt="Controlled drug register in Odoo listing dispensed prescriptions that include methadone" width={1440} height={900} caption="The controlled drug register." />
+
+The register is a filtered view of the prescriptions themselves, so it cannot drift from what was dispensed. It does not keep a running balance of the cabinet, a witness signature or a separate entry per ampoule, so a practice that has to keep a formal controlled drugs book still needs one. There is a Controlled Register Header setting in this version, but no screen or report reads it yet.
+
+## Withdrawal periods
+
+A species can be marked **Food Producing**: cattle, sheep, goats and poultry are, on the shipped list. Patients of those species carry a herd or flock reference and the Under Withdrawal filter applies to them.
+
+For each prescription line, the **withdrawal end** is the prescription date plus the days of treatment plus the withdrawal days. The prescription shows the latest of its lines, and once it is dispensed the patient shows the latest across all its dispensed prescriptions as **Withheld Until**, on the Clinical tab. The Under Withdrawal filters on patients and prescriptions find every animal still inside its period.
+
+<Shot src="/odoo-guides/odoo-veterinary-prescriptions-withdrawal/withdrawal.webp" alt="Veterinary prescription in Odoo for a dairy cow with oxytetracycline and 28 withdrawal days and the withdrawal end date" width={1440} height={900} caption="A farm prescription with its withdrawal date." />
+
+On the demo, a dairy cow treated for mastitis with oxytetracycline for three days with 28 withdrawal days shows the date her milk can be sold again, both on the prescription and on her record.
+
+<Callout title="Where withdrawal days come from">The medicine's withdrawal days are copied onto the prescription line, where they can be edited. In this version the product form has no screen for the veterinary fields, so the days on the product are set when the products are imported. Check the line before dispensing on a farm call.</Callout>
+
+## Lab requests
+
+Lab requests sit under **Clinical, Lab Requests** and on the consultation's Lab tab. A request has the patient, the consultation, the requesting vet, the date, the test (haematology, biochemistry, urinalysis, cytology, histopathology, parasitology, culture and sensitivity, serology, imaging, other), the sample, and whether it goes to an **external** lab, which then has to be named.
+
+<Shot src="/odoo-guides/odoo-veterinary-prescriptions-withdrawal/lab-requests.webp" alt="Lab requests list in Odoo with test type, sample, external lab and state" width={1440} height={900} caption="Lab requests from requested to result in." />
+
+It moves through **Requested**, **Sample Collected** (Sample Taken), **Sent** (Send), and **Result In**. Recording the result needs the result text, and **Abnormal** flags it. Abnormal results show in red on the list, and filters pick out Waiting on a Result, Abnormal and Sent Out. Cancel withdraws a request.
+
+<Callout title="Record the result, then tick Abnormal">The module is meant to put a to-do on the requesting vet when an abnormal result comes in. In this version that step fails with an error when the vet has an Odoo user, and the result is not saved. Until it is fixed, record the result first and tick Abnormal afterwards.</Callout>
+
+<Shot src="/odoo-guides/odoo-veterinary-prescriptions-withdrawal/lab-result.webp" alt="Lab request in Odoo with the result recorded and marked abnormal" width={1440} height={900} caption="A result recorded and flagged abnormal." />
+
+Results are typed in. There is no connection to a laboratory's system, so a PDF report from an outside lab is attached to the request in the chatter.
+
+Next: [boarding, grooming and pet insurance claims](/odoo-guides/odoo-pet-boarding-kennel-management/). The [veterinary hub](/odoo-guides/odoo-veterinary-clinic-management/) has the overview and the full PDF.

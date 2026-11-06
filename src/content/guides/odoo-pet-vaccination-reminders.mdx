@@ -1,0 +1,101 @@
+---
+title: "Pet vaccination schedules and reminders in Odoo: protocols, boosters, batch numbers and the card"
+metaTitle: "Vaccination Courses and Reminders"
+description: "Schedule puppy and kitten courses in Odoo from a protocol, record each dose with batch and site, book the booster automatically and email reminders."
+targetQuery: "pet vaccination reminder software odoo"
+category: "Industry"
+region: "UK"
+summary: "Vaccination protocols per species, the course scheduled on the patient, due and overdue lists, each dose recorded with batch, expiry and site, the booster that follows, the card, and the reminder email."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-veterinary-clinic-management"
+seriesOrder: 2
+modules:
+  - name: "Veterinary Clinic Management"
+    technical: "wt_veterinary_management"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://vet-demo.way4tech.com/"
+  label: "Veterinary demo"
+related: ["odoo-veterinary-clinic-management", "odoo-veterinary-consultations-patient-records", "odoo-pet-boarding-kennel-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the booster get booked?"
+    a: "When a dose is recorded as given, the module schedules the next dose in the protocol. After the last dose of a primary course, or for a dose with a repeat interval, it schedules the booster that many months after the date the dose was actually given, as long as one is not already due."
+  - q: "Is the batch number required?"
+    a: "Yes. A dose cannot be recorded as given without a batch number, because it has to be traceable from the animal back to the manufacturer. A batch expiry before the date given is refused."
+  - q: "What happens when an adult animal is registered?"
+    a: "Applying the protocol schedules every dose by age. Doses that fell due more than 120 days before today are recorded as skipped, with a note saying they fell due before registration, so an older animal does not arrive with a puppy course showing as owed."
+  - q: "Can the reminder be sent by SMS?"
+    a: "No. The reminder is an email to the owner, sent by a daily scheduled job for doses falling due inside the reminder window, 14 days by default. Each dose is reminded once. The job ships switched off and has to be turned on."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+For most small animal practices, vaccinations are the reason clients come back every year, and the annual visit is when everything else gets noticed: the lump, the weight gain, the bad tooth. A practice that loses track of boosters loses those visits, and a practice that cannot say which batch went into which dog has a problem the day a manufacturer issues a notice. This chapter covers how the Veterinary Clinic Management module schedules courses, records every dose and reminds owners.
+
+## The protocol
+
+Courses are set up once per species under **Configuration, Vaccination Protocols**. A protocol has a name, a species and a description, and a line per dose: the dose name, the vaccine product, the age in weeks it falls due, and for a booster, **Then Every (months)**. A dose can be marked as rabies, which matters for travel paperwork.
+
+<Shot src="/odoo-guides/odoo-pet-vaccination-reminders/protocol.webp" alt="Vaccination protocol in Odoo for puppies with doses at set ages and an annual booster interval" width={1440} height={900} caption="A puppy course: doses by age, then a yearly booster." />
+
+The demo carries three: a puppy primary course and annual booster, a kitten course, and a rabbit course. Write yours to match the vaccines and intervals your practice actually uses.
+
+## Scheduling a patient
+
+On a new patient, **Schedule Vaccinations** applies every protocol for the animal's species. Each dose with an age gets a due date from the animal's date of birth plus that many weeks; a booster dose falls due its interval after the last time it was given, or after today if it never has been. For a young animal that gives the whole course in the diary of due dates on day one.
+
+An older animal is handled sensibly. Doses that fell due more than 120 days before today are recorded as **Skipped**, with the note that they fell due before the patient was registered. They stay visible so the course reads correctly, but they are not on anybody's to-do list. A dose already scheduled is never created twice.
+
+## Due, overdue, given and skipped
+
+**Preventive Care, Vaccinations** lists every dose with its patient, species, name, due date, date given, batch and state. Filters give Due, Overdue, Given and Rabies, and the list groups by patient, species or status.
+
+<Shot src="/odoo-guides/odoo-pet-vaccination-reminders/vaccinations.webp" alt="Vaccinations list in Odoo with patient, dose, due date, date given, batch and state" width={1440} height={900} caption="Every dose, due, given or skipped." />
+
+**Preventive Care, Overdue** is the list reception works from: doses still due whose date has passed. A patient with an overdue dose is flagged red on the patient list and carries a Vaccination Overdue filter of its own.
+
+<Shot src="/odoo-guides/odoo-pet-vaccination-reminders/overdue.webp" alt="Overdue vaccinations list in Odoo showing doses past their due date" width={1440} height={900} caption="The overdue list reception rings through." />
+
+## Recording a dose
+
+When the vaccine goes in, open the dose (from the list, the patient's Vaccinations tab or the consultation) and fill the traceability block:
+
+- **Batch No.**, which is required;
+- the batch expiry;
+- the **site** given: left or right fore, left or right hind, scruff, oral or intranasal;
+- who gave it and at which consultation;
+- for rabies, the certificate number.
+
+Then **Record as Given**. The module refuses a batch that had expired on the day it was given, and refuses to record the same dose twice. **Skip** marks a dose that will not be given, for example when an owner declines leptospirosis.
+
+<Shot src="/odoo-guides/odoo-pet-vaccination-reminders/dose-given.webp" alt="Vaccination record in Odoo marked given with batch number, batch expiry, site and the vet who gave it" width={1440} height={900} caption="A dose recorded with its batch and site." />
+
+## The booster books itself
+
+Recording a dose as given schedules what comes next. If there is a later dose in the same protocol, that is created as due. If the dose itself repeats, such as an annual booster, the next one is due that many months after the date it was actually given, not the date it was originally due. So a client who comes in three weeks late does not have next year's booster three weeks early. If a matching dose is already due, nothing is duplicated.
+
+## The vaccination card
+
+**Vaccination Card** on the patient prints the card: the animal's name, number, species, breed, sex, date of birth and microchip, the owner, every dose with the date given, batch number, site and vet, and the next vaccination due.
+
+<Shot src="/odoo-guides/odoo-pet-vaccination-reminders/card.webp" alt="Printed vaccination card from Odoo with the animal, owner, microchip and each dose with batch, site and vet" width={685} height={799} caption="The vaccination card." />
+
+<Callout title="One document, not two">The module's listing mentions a rabies certificate. In this version the vaccination card is the only vaccination document. Each rabies dose has a certificate number field, which prints nowhere yet, so a travel certificate still has to come from your usual paperwork.</Callout>
+
+## The reminder email
+
+The scheduled job **Veterinary: vaccination reminders** runs once a day. For every dose still due with a due date inside the reminder window, 14 days by default and set under Settings as Vaccination Reminder, it emails the owner using the Vaccination Due template, then marks the dose as reminded so the owner is not emailed again. Owners without an email address are skipped.
+
+The job ships switched off, so that installing the module does not email a whole client list overnight. Turn it on once owners and their animals are imported and the protocols are applied, in Settings, Technical, Scheduled Actions.
+
+## Before go-live
+
+- **Check the protocols** against your vaccine supplier's schedule, including intervals of more than twelve months.
+- **Import dates of birth.** The schedule is worked out from them. An animal without one gets no age-based doses at all, only boosters due from today.
+- **Import past doses as given** where you have them, with batch numbers, so boosters are scheduled from real dates.
+- **Clean owner email addresses** before the reminder job goes on.
+
+Next: [prescriptions, controlled drugs and withdrawal periods](/odoo-guides/odoo-veterinary-prescriptions-withdrawal/). The [veterinary hub](/odoo-guides/odoo-veterinary-clinic-management/) has the overview and the full PDF.

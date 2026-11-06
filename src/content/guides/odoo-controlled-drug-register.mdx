@@ -1,0 +1,105 @@
+---
+title: "Controlled drug register in Odoo: narcotics, psychotropics, witness signatures and batch balance"
+metaTitle: "The Controlled Drug Register"
+description: "Keep a controlled drug register in Odoo: schedules on the medicine, licensed branches, authorised pharmacists, a second signature and the batch balance."
+targetQuery: "controlled drug register software odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "How narcotics, psychotropics, controlled medicines and precursors are scheduled, who may prescribe, hold and sign for them, and the register every controlled line lands in, with both pharmacists and the batch balance."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pharmacy-management"
+seriesOrder: 3
+modules:
+  - name: "Pharmacy Management"
+    technical: "w4t_pharmacy_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://pharmacy-demo.way4tech.com/"
+  label: "Pharmacy demo"
+related: ["odoo-pharmacy-management", "odoo-pharmacy-dispensing-safety-check", "odoo-pharmacy-batch-expiry-tracking"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a controlled medicine be sold over the counter if the setting allows it?"
+    a: "No. A medicine on any controlled schedule is refused on a counter sale and on any dispense without a validated prescription, whatever the company settings say. There is no switch that turns this off."
+  - q: "What happens at a branch without a controlled drug licence?"
+    a: "The branch's May Hold Controlled Stock flag is worked out from its controlled drug licence number and expiry. Without a licence in date, any dispense of a scheduled medicine at that branch is refused at the safety check and again at the moment of dispensing."
+  - q: "Can the register be edited?"
+    a: "No. The register is a read-only view of the dispensed lines themselves, with no create or edit on its list or form. To correct an entry you cancel the dispense, which puts the stock back on the batch, and dispense again."
+  - q: "Does it file anything with the health authority?"
+    a: "No. The module keeps the register, the licences and the destruction records in Odoo, in the form an inspector asks to see. It does not connect to a regulator's system or submit returns."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+When an inspector walks into a pharmacy, the controlled drugs cabinet is usually the first thing they ask to see, and the register is the second. For every narcotic or psychotropic that left the counter they want the date, the patient, the doctor, the batch, the pharmacist who handed it over, the second pharmacist who watched, and what should be left in the cabinet now. A paper register that is a day behind, or a spreadsheet that does not agree with the shelf, is the finding. This chapter covers how the Pharmacy Management module makes the register a by-product of dispensing rather than a second job.
+
+## The schedule lives on the medicine
+
+Every medicine has a **Drug Schedule**: Not Scheduled, Narcotic, Psychotropic, Controlled or Precursor Chemical. Anything other than Not Scheduled marks the medicine **Controlled**, and from then on four parties have to be in order before it can leave the counter: the prescriber, the branch, the pharmacist and the witness.
+
+<Shot src="/odoo-guides/odoo-controlled-drug-register/medicine-schedule.webp" alt="Pharmacy tab on a medicine in Odoo with drug schedule Narcotic, controlled, prescription only and pregnancy category" width={1440} height={900} caption="Tramadol on the narcotic schedule." />
+
+The demo carries two: tramadol as a narcotic and diazepam as a psychotropic. A prescription line for a controlled medicine switches generic substitution off, and a prescription containing one cannot carry repeats; each supply needs its own script.
+
+## The prescriber
+
+Each prescriber has a registration number, a licence expiry and **May Prescribe Controlled Drugs**. A prescription with a controlled line from a prescriber without that flag cannot be validated, and a controlled dispense naming them is refused. A prescriber whose licence has expired cannot have any script validated at all.
+
+## The branch
+
+A branch has a trade licence and a separate **Controlled Drug Licence** with its own expiry. **May Hold Controlled Stock** is worked out from the two: the licence number is filled in and the date has not passed. On the demo, Ninebridge Marina holds a licence and Ninebridge Downtown does not, so a tramadol script presented at Downtown is refused with the reason that the branch has no controlled drug licence in date.
+
+<Shot src="/odoo-guides/odoo-controlled-drug-register/branch-licence.webp" alt="Pharmacy branch in Odoo with trade licence and an empty controlled drug licence, so it may not hold controlled stock" width={1440} height={900} caption="A branch without a controlled drug licence cannot dispense scheduled medicines." />
+
+Licence numbers are visible to pharmacy managers only. They are kept off the counter screens because they are the numbers people copy onto forms they should not.
+
+## The pharmacist and the witness
+
+Each pharmacist has **May Sign for Controlled Drugs** and a registration expiry. A controlled dispense is refused if the pharmacist is not authorised, or if their registration has lapsed. When the company setting **Second Pharmacist for Controlled Drugs** is on, which it is by default, the dispense also needs a **Second Check**: another pharmacist named as the witness. A pharmacist cannot witness their own dispense; the record refuses it.
+
+<Shot src="/odoo-guides/odoo-controlled-drug-register/controlled-dispense.webp" alt="Controlled dispense in Odoo with the dispensing pharmacist and a second pharmacist named as the witness" width={1440} height={900} caption="A controlled dispense with the second check named." />
+
+These rules are checked twice: at the safety check, where they appear in Safety Findings, and again at the moment of **Dispense**, where the branch's licence and the pharmacist's authority are read fresh. A dispense cannot be pushed to Dispensed from a list view either; the record refuses to be marked as handed over while its safety check is pending or refused.
+
+<Callout title="No setting turns this off">The company settings can relax the prescriber rule for prescription-only medicines and the second signature. They cannot let a controlled medicine go without a validated prescription. That refusal is written into the check itself.</Callout>
+
+## The register
+
+**Compliance, Controlled Drug Register** lists every controlled line that has been dispensed or invoiced, grouped by schedule when it opens. Each row has:
+
+- the date and time it was dispensed;
+- the patient and the prescriber;
+- the medicine and its schedule;
+- the quantity and the batch number;
+- the pharmacist who dispensed it and the witness;
+- the **Batch Balance**: what was left in that batch after this supply.
+
+<Shot src="/odoo-guides/odoo-controlled-drug-register/register.webp" alt="Controlled drug register in Odoo grouped by schedule, with quantity and batch balance totals per schedule" width={1440} height={900} caption="The register opens grouped by schedule." />
+
+The batch balance is the column an inspector runs their finger down. Grouped by medicine and sorted by date, it should step down supply by supply until the next delivery. If the cabinet count does not match the last balance, the gap is between two named entries.
+
+Filters pick out Narcotics and Psychotropics, and the list groups by schedule, medicine, pharmacist or month. Opening a row shows the entry on its own, read only, with the prescription it was made against and the Inventory lot behind the batch.
+
+<Shot src="/odoo-guides/odoo-controlled-drug-register/register-entry.webp" alt="Read-only controlled drug register entry in Odoo with medicine, batch, batch balance, both pharmacists, patient and prescription" width={1440} height={900} caption="One register entry: what went out, both signatures and the balance left." />
+
+Because the register is the dispense lines themselves, it cannot drift from what was handed over. There is no create or edit on the register screens. A wrong entry is corrected by cancelling the dispense, which puts the quantity back on the batch, and dispensing again.
+
+## Controlled stock that is destroyed
+
+Expired or damaged controlled stock leaves through a write-off, not the register. A write-off with any controlled line on it cannot be posted until a **witness** is named, and the Certificate of Destruction prints the schedule against each batch, with the approver, the witness and the waste contractor's docket number. The [batches and expiry chapter](/odoo-guides/odoo-pharmacy-batch-expiry-tracking/) covers the write-off in full.
+
+## Setting it up
+
+1. Set the **Drug Schedule** on every scheduled medicine in your range. This is the step that switches every other rule on.
+2. Fill in each branch's **Controlled Drug Licence** and its expiry. Leave it empty at any branch that is not licensed.
+3. Tick **May Sign for Controlled Drugs** only for pharmacists who may, and keep registration expiry dates current. The Registration Lapsed filter on the pharmacist list is worth checking monthly.
+4. Tick **May Prescribe Controlled Drugs** on prescribers who are licensed to.
+5. Leave **Second Pharmacist for Controlled Drugs** on unless your authority does not require a witness.
+
+## What it does not do
+
+The module does not connect to a health authority system, file returns, or keep a separate running cabinet count outside the batches. The register is the record of supplies; the count comes from the batches' on hand quantities. Receiving controlled stock is an ordinary batch receipt, so any special paperwork the supplier sends has to be attached to the batch.
+
+The money side of a dispense, including insurance, is in the next chapter: [insurance co-pay and claims](/odoo-guides/odoo-pharmacy-insurance-claims/). The [pharmacy management hub](/odoo-guides/odoo-pharmacy-management/) has the overview and the full PDF.

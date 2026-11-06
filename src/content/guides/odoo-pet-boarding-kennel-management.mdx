@@ -1,0 +1,117 @@
+---
+title: "Pet boarding and kennel management in Odoo: stays, day care, grooming and pet insurance claims"
+metaTitle: "Boarding, Grooming and Insurance Claims"
+description: "Run kennels in Odoo: boarding, day care, in-patients and grooming by kennel with care plans, check in and out, invoicing, and pet insurance claims."
+targetQuery: "pet boarding kennel management software odoo"
+category: "Industry"
+region: "UK"
+summary: "Kennels by size and species, stays from booked to invoiced with feeding, medication and belongings, day care, hospitalisation and grooming on the same record, the overdue check-out job, and pet insurance claims with excess and shortfall."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-veterinary-clinic-management"
+seriesOrder: 4
+modules:
+  - name: "Veterinary Clinic Management"
+    technical: "wt_veterinary_management"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://vet-demo.way4tech.com/"
+  label: "Veterinary demo"
+related: ["odoo-veterinary-clinic-management", "odoo-pet-vaccination-reminders", "odoo-veterinary-consultations-patient-records"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can two animals be put in the same kennel by mistake?"
+    a: "No. A kennel cannot hold two stays whose dates overlap, and a kennel set up for certain species refuses an animal of another species. Both are checked when the stay is saved."
+  - q: "Does admission check vaccinations?"
+    a: "Boarding and day care cannot be checked in until the Vaccination Checked tick is set on the stay. The module does not read the patient's vaccination record for this; the tick is the person at the desk confirming it."
+  - q: "How is a stay billed?"
+    a: "Invoice raises the owner's invoice for the number of nights at the stay's daily rate, using the product on the stay, plus a line for each extra added to it, such as a bath or medication given."
+  - q: "Does the module send claims to the pet insurer?"
+    a: "No. A claim records the insurer, policy number, consultations and invoice claimed for, the amount claimed, the excess, and what the insurer settled. The shortfall the owner still owes is worked out. Submission happens outside Odoo."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A practice with kennels runs a small hotel beside its surgery. In August every run is full, each guest has its own food and its own tablets, owners ring to ask how their dog is, and the bill at the end has to match the nights. In-patients recovering from surgery need the same care plan in a kennel, often in isolation. And when the owner hands over an insurance form at the desk, somebody has to follow it until the insurer pays. This chapter covers boarding and pet insurance claims in the Veterinary Clinic Management module.
+
+## Kennels
+
+**Boarding, Kennels** opens as cards grouped by size: small, medium, large and walk-in run. Each kennel has a name, the clinic, the species it is set up for, an **isolation** flag, a daily rate and a state:
+
+- **Free**, ready for the next guest;
+- **Occupied**, with the stay that holds it;
+- **Cleaning**, set when a guest checks out;
+- **Out of Use**, for a kennel under repair.
+
+<Shot src="/odoo-guides/odoo-pet-boarding-kennel-management/kennels.webp" alt="Kennels in Odoo grouped by size with state free, occupied or cleaning" width={1440} height={900} caption="Kennels by size and state." />
+
+A kennel goes to Cleaning on check-out and stays there until somebody presses **Free**, which mirrors how kennels actually work: nobody puts a dog in a run that has not been washed.
+
+## The stay
+
+**Boarding, Stays** opens as a calendar from date in to date out, with a list beside it. Filters give In House, Arriving Today, Leaving Today and To Invoice. A stay has:
+
+- the patient and owner, the clinic and the **kennel**;
+- the kind: **Boarding**, **Day Care**, **Hospitalisation** or **Grooming**;
+- date in and date out, and the nights worked out from them;
+- the product and daily rate it is billed at;
+- **Vaccination Checked**;
+- the care plan: **feeding plan**, **medication plan** and **belongings** (the bed, the blanket, the toy that must go home);
+- extras, each a product, description, quantity and price.
+
+<Shot src="/odoo-guides/odoo-pet-boarding-kennel-management/stay.webp" alt="Boarding stay in Odoo with patient, kennel, dates, daily rate, vaccination checked and the care plan" width={1440} height={900} caption="A booked stay with its care plan." />
+
+A kennel cannot be double-booked over the same dates, and a kennel set up for dogs refuses a cat. Both rules are checked when the stay is saved.
+
+## Booked, in, out, invoiced
+
+1. **Booked.** The stay is in the calendar.
+2. **Check In.** Needs a kennel, and for boarding and day care the Vaccination Checked tick. The kennel becomes Occupied.
+3. **Check Out.** Stamps the actual time the animal went home and puts the kennel into Cleaning.
+4. **Invoice.** Bills the nights at the daily rate, or one unit for a same-day stay, plus every extra, to the owner.
+
+**Cancel** frees the kennel. An invoiced stay cannot be cancelled; credit the invoice instead.
+
+<Shot src="/odoo-guides/odoo-pet-boarding-kennel-management/stays-calendar.webp" alt="Calendar of boarding stays in Odoo from date in to date out" width={1440} height={900} caption="Stays in the calendar." />
+
+<Callout title="The vaccination check is a tick">The setting Check Vaccination Before Boarding is not read in this version, and admission does not look at the patient's vaccination record. What stops an unvaccinated dog being admitted is the Vaccination Checked tick, which somebody at the desk sets after looking. Make it part of the admission routine.</Callout>
+
+## Hospitalisation, day care and grooming
+
+The same record covers the other ways an animal stays. A **hospitalisation** stay puts an in-patient in a kennel, often the isolation one, with its medication plan written on the stay. **Day care** is a same-day stay billed as one unit. **Grooming** has its own menu, **Boarding, Grooming**, which opens the same records filtered to grooming in a calendar and a list, with the grooming product as the charge. Check In needs a kennel for every kind of stay, grooming included, so set up a grooming table or bath as a kennel of its own.
+
+<Shot src="/odoo-guides/odoo-pet-boarding-kennel-management/grooming.webp" alt="Grooming list in Odoo with grooming sessions by patient and state" width={1440} height={900} caption="Grooming on the same record." />
+
+## Guests who should have gone home
+
+The scheduled job **Veterinary: chase overdue boarding checkouts** runs every six hours. Any stay still checked in after its date out gets a to-do: call the owner. It is the one job in the module that ships switched on.
+
+## Pet insurance claims
+
+Claims sit under **Billing, Insurance Claims**. A claim belongs to a patient; picking it fills the insurer and policy number from the patient's Insurance tab. It then records the date, the consultations claimed for, the invoice, the **amount claimed** and the **excess** the policy makes the owner pay.
+
+<Shot src="/odoo-guides/odoo-pet-boarding-kennel-management/claims.webp" alt="Pet insurance claims list in Odoo with insurer, amount claimed, settled, shortfall and state" width={1440} height={900} caption="Claims from draft to settled." />
+
+It moves through:
+
+1. **Draft**, while the form is being filled in.
+2. **Submitted**, which stamps the submitted date. Add the insurer's reference when it comes.
+3. **Queried**, when the insurer comes back with a question, such as the full clinical history.
+4. **Settled**, once the amount the insurer actually paid is entered. Settling for more than was claimed is refused.
+5. **Rejected**, for example for a pre-existing condition.
+
+For a settled or rejected claim, the **shortfall**, what was claimed less what was settled, is what the owner still owes. **Reset to Draft** reopens any claim.
+
+<Shot src="/odoo-guides/odoo-pet-boarding-kennel-management/claim-settled.webp" alt="Settled pet insurance claim in Odoo with amount claimed, excess, amount settled and shortfall" width={1440} height={900} caption="A settled claim and its shortfall." />
+
+<Callout title="Claims are a record, not a connection">Nothing is sent to an insurer, and the insurer is an ordinary contact rather than a configured payer with its own rules. The claim keeps the practice's side of the conversation in one place and puts a number on what the owner still has to pay.</Callout>
+
+## Before go-live
+
+- Create every **kennel** with its size, species and rate, and mark the isolation ones.
+- Create **products** for boarding per night, day care, grooming and common extras, with VAT.
+- Decide who sets **Vaccination Checked**, and what they check.
+- Put each insured patient's **insurer and policy number** on the patient, so claims fill themselves in.
+
+The [veterinary hub](/odoo-guides/odoo-veterinary-clinic-management/) has the overview of the module and the full step-by-step PDF.

@@ -1,0 +1,110 @@
+---
+title: "Veterinary patient records and consultations in Odoo: the diary, SOAP notes, vitals and invoicing"
+metaTitle: "Patients and Consultations"
+description: "Keep pet records in Odoo by species and breed, book a diary by vet and room, write SOAP notes with vitals, and invoice and discharge in one record."
+targetQuery: "veterinary patient records software odoo"
+category: "Industry"
+region: "UK"
+summary: "The patient record with its owner, alerts and weight chart, and the consultation from the diary through SOAP notes, vitals and charges to the invoice and the discharge note."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-veterinary-clinic-management"
+seriesOrder: 1
+modules:
+  - name: "Veterinary Clinic Management"
+    technical: "wt_veterinary_management"
+    note: "USD 249, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://vet-demo.way4tech.com/"
+  label: "Veterinary demo"
+related: ["odoo-veterinary-clinic-management", "odoo-pet-vaccination-reminders", "odoo-clinic-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can one owner have several animals?"
+    a: "Yes. Each animal is its own patient record linked to the owner, an ordinary Odoo contact. The owner's phone and email show on the patient, and invoices and reminders go to the owner."
+  - q: "What stops a vet being double-booked?"
+    a: "The consultation checks the vet and the room. Saving a consultation that overlaps another one for the same vet, or the same room, is refused with the name of the patient already booked. Cancelled and no-show appointments do not count."
+  - q: "Where does the weight chart come from?"
+    a: "Every weight recorded on a finished consultation is filed in the patient's weight history with the body condition score. Preventive Care, Weights shows the history as a line chart, and the patient's current weight is the latest entry."
+  - q: "Can the consultation be invoiced without a separate sales order?"
+    a: "Yes. The Charges tab is the bill. Invoice raises the owner's customer invoice straight from those lines, with the patient and diagnosis in the invoice notes, and the consultation moves to Invoiced."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The consulting room is where a practice earns its living and where its records are tested. A vet with ten minutes per appointment needs the animal's alerts and history in front of her before she starts, somewhere to write notes that a colleague can follow next week, and a bill that reflects what was actually done, without a second trip to a different screen. Reception needs a diary that does not let two clients be booked with the same vet at the same time. This chapter covers the patient record and the consultation in the Veterinary Clinic Management module.
+
+## The patient
+
+**Clinical, Patients** opens as cards with the animal's photo, name, species and breed, owner and an overdue vaccination flag. The list view adds the patient number, age, last visit, next vaccination and current weight, with overdue patients in red. Filters pick out Vaccination Overdue, Insured, Senior, Under Withdrawal, Alive and Deceased.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/patients.webp" alt="Veterinary patient cards in Odoo showing pet name, species, breed and owner" width={1440} height={900} caption="The patient list as cards." />
+
+The patient form is split the way a vet thinks about an animal:
+
+- **Animal:** species, breed with the breed's watch-out note, sex, neutered or spayed, colour, date of birth and age, temperament (calm, nervous, handle with care, muzzle required), microchip number and pet passport. Farm animals also carry a herd or flock reference.
+- **Owner:** the contact who pays, with phone and email editable from the patient.
+- **Clinical:** allergies, chronic conditions and a diet note under Alerts; deceased and the date under End of Life; and, for food-producing animals, the date the animal's meat or milk is withheld until.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/patient-clinical.webp" alt="Veterinary patient form in Odoo on the Clinical tab with allergies, chronic conditions and diet note" width={1440} height={900} caption="Alerts the vet sees before treating." />
+
+The remaining tabs are the history: consultations, vaccinations, prescriptions, weight, insurance (insurer, policy number and expiry) and stays. Three buttons sit on the form: **New Consultation** opens a visit for this animal with the owner and clinic filled in, **Schedule Vaccinations** applies the species protocol, and **Vaccination Card** prints the card.
+
+The patient number comes from the clinic's code and a sequence. A patient past three quarters of the typical lifespan for its species is flagged **Senior**, which is when most practices start senior screening.
+
+### Weight history
+
+Every consultation finished with a weight on it adds a row to the patient's weight history, with the body condition score from 1 (emaciated) to 5 (obese) and the consultation it was taken at. Weights can also be entered directly. **Preventive Care, Weights** shows them as a line chart, so a slow gain over a year is visible rather than remembered.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/weight-chart.webp" alt="Weight history line chart in Odoo for veterinary patients" width={1440} height={900} caption="Weight history as a chart." />
+
+## The diary
+
+**Clinical, Consultations** opens as a calendar of every appointment. Each consultation has a patient, owner, clinic, the vet seeing it, an optional room, the date and a duration, defaulting to the Appointment Length in settings, a quarter of an hour unless you change it. The type is one of consultation, vaccination, follow-up, emergency, surgery, dental, grooming or euthanasia; emergencies show in red on the list.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/diary.webp" alt="Odoo calendar of veterinary consultations for the week by vet" width={1440} height={900} caption="The consultation diary." />
+
+Two rules keep the diary honest. A vet cannot be booked into two consultations that overlap, and a room cannot hold two at once. Either clash is refused when the consultation is saved, naming the patient already in that slot. Cancelled and no-show appointments free their slot.
+
+## The consultation, step by step
+
+1. **Scheduled.** Booked in the diary.
+2. **Arrived.** Reception marks the client checked in.
+3. **In Progress.** The vet presses Start.
+4. **Finished.** The vet presses Finish once the notes are done.
+5. **Invoiced.** Reception presses Invoice.
+
+No Show and Cancel sit beside them, and a consultation on a posted invoice cannot be cancelled; the invoice is credited instead.
+
+### Clinical notes
+
+The **Clinical Notes** tab holds the presenting complaint and the four SOAP fields: **S, Subjective**, the history and what the owner reports; **O, Objective**, what the examination found; **A, Assessment**, differentials and the working diagnosis; **P, Plan**, treatment, diagnostics and what happens next. A separate diagnosis field is tracked in the chatter, and a follow-up date can be set.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/soap.webp" alt="Clinical Notes tab of a veterinary consultation in Odoo with subjective, objective, assessment and plan" width={1440} height={900} caption="SOAP notes on the consultation." />
+
+### Vitals
+
+The **Vitals** tab records weight, temperature, heart rate, respiration, the body condition score and a pain score. A temperature outside 20 to 50 degrees, or any negative reading, is refused, which catches the reading typed into the wrong box.
+
+### Charges, prescriptions and lab
+
+The **Charges** tab is the bill: product, description, quantity, price, discount and taxes, with the totals worked out. Prescriptions and lab requests made at the visit are on their own tabs, covered in the [prescriptions chapter](/odoo-guides/odoo-veterinary-prescriptions-withdrawal/).
+
+## Finishing and invoicing
+
+**Finish** closes the consultation, files the weight against the patient, and if a follow-up date was set, puts a to-do on the vet for that day so the recheck call is not forgotten. **Invoice** raises the owner's customer invoice from the charges, with the patient's name and diagnosis in the invoice notes, uses the clinic's sales journal if one is set, leaves the invoice in draft for you to post, and moves the consultation to Invoiced.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/consultation-invoiced.webp" alt="Invoiced veterinary consultation in Odoo with patient, owner, vet, room, type and the invoice button" width={1440} height={900} caption="An invoiced consultation." />
+
+The **Discharge** tab holds the home care instructions. **Print Discharge** produces a discharge note with the patient, owner, vet, diagnosis, instructions, follow-up date and the clinic's emergency phone, and **Email the Owner** sends it to the owner's address straight away.
+
+<Callout title="Who can read the notes">The Reception and Nursing role is described in the module as unable to read the confidential clinical notes, but in this version nothing enforces that: the role can open consultations, including the SOAP fields. If that matters to your practice, keep clinical detail out of reception's hands by role until it is fixed.</Callout>
+
+## Revenue
+
+**Reporting, Practice Revenue** pivots invoiced consultations by vet and month with the total amount. It counts consultations only, so boarding and grooming invoices are not in it. It answers the question practice owners ask most, which vet brought in what, without an export.
+
+<Shot src="/odoo-guides/odoo-veterinary-consultations-patient-records/revenue.webp" alt="Practice Revenue pivot in Odoo with invoiced consultation totals by vet and month" width={1440} height={900} caption="Practice Revenue by vet and month." />
+
+Next: [vaccination courses, boosters and reminders](/odoo-guides/odoo-pet-vaccination-reminders/). The [veterinary hub](/odoo-guides/odoo-veterinary-clinic-management/) has the overview and the full PDF.

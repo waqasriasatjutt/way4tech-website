@@ -1,0 +1,140 @@
+---
+title: "Odoo pharmacy management: prescriptions, batch expiry, controlled drugs and insurance claims"
+metaTitle: "Pharmacy Management in Odoo, Step by Step"
+description: "Run a pharmacy on Odoo 19: batches first expiry first out, a safety check against the patient file, a controlled drug register and insurance claims."
+targetQuery: "pharmacy management odoo"
+category: "Industry"
+region: "UAE and GCC"
+summary: "What a retail or clinic pharmacy needs from Odoo, what standard Inventory already covers, and how the Pharmacy Management module handles prescriptions, the dispensing check, controlled drugs, insurance and expiry."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pharmacy-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-pharmacy-management.pdf"
+  pages: 36
+modules:
+  - name: "Pharmacy Management"
+    technical: "w4t_pharmacy_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://pharmacy-demo.way4tech.com/"
+  label: "Pharmacy demo"
+related: ["odoo-clinic-management", "odoo-hospital-ipd-bed-management", "odoo-purchase-inventory-dashboard"]
+linkFrom: ["/solutions/pharmacy/", "/products/w4t-pharmacy-management/", "/modules/inventory/", "/countries/uae/"]
+sources:
+  - label: "Odoo 19 documentation, First Expired, First Out (FEFO)"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/shipping_receiving/removal_strategies/fefo.html"
+  - label: "Odoo 19 documentation, Expiration dates"
+    url: "https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/expiration_dates.html"
+faqs:
+  - q: "Can standard Odoo run a pharmacy?"
+    a: "Standard Odoo Inventory tracks lots with expiration dates and can pick stock first expired, first out. It has no patient file, no prescription, no allergy or interaction check, no controlled drug register and no insurance co-pay split, which is what a pharmacy counter is judged on."
+  - q: "Does the Pharmacy Management module need Odoo Enterprise?"
+    a: "No. It is built for Odoo 19 Community and installs with the standard Inventory and Accounting apps. It also runs on Enterprise."
+  - q: "Does it come with a drug interaction database?"
+    a: "No. The module checks interactions between active molecules from a table you fill in, with four grades from minor to contraindicated. The demo carries a handful of example pairs; a live pharmacy loads the reference its pharmacists already use."
+  - q: "Can a pharmacist override a refused dispense?"
+    a: "No. Allergies, major and contraindicated interactions, pregnancy category D or X, expired batches and missing controlled drug authority refuse the dispense outright. Only warnings, such as a moderate interaction, can be dispensed through, and only with a written reason that is kept with the user's name."
+  - q: "Does it submit e-claims to the insurer?"
+    a: "No. It splits the money at the counter, builds an e-claim reference from your prefix and the payer code, and tracks each claim through submitted, approved, partly approved, rejected and paid. The submission itself still happens on the payer portal."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+A patient hands over a script for co-amoxiclav. The brand on the shelf is new, the pharmacist is covering a busy hour, and the patient's penicillin allergy is written on a card in her purse. Two weeks later a manufacturer recalls batch BA107 and the owner wants to know which patients took it home. At month end the insurer has paid sixty percent of a claim and nobody has told the counter to collect the rest. A pharmacy is judged on exactly these moments: the right box, from a traceable batch, checked against the patient, signed for, and paid for by the right party. This guide shows what that takes in Odoo, what standard Odoo already does, and how our Pharmacy Management module covers the rest.
+
+## What a pharmacy needs from its system
+
+Leave the brochure language aside and a pharmacy needs seven things:
+
+1. **The batch as the unit of stock.** Batch number, expiry, unit cost and branch on every intake, and the batch number on every box that leaves, so a recall or an inspector's question has an answer.
+2. **First expiry, first out.** The box that expires soonest goes first, and a box that will expire halfway through the course does not go at all.
+3. **A patient file the counter can trust.** Allergies recorded against the molecule, not the brand, and the medicines the patient takes every day.
+4. **A check that refuses, not a reminder.** An allergy, a serious interaction or a pregnancy risk has to stop the hand-over, with the reason written down.
+5. **A controlled drug register.** Every narcotic and psychotropic line with the prescriber, both pharmacists and the balance left in the batch.
+6. **The money split at the counter.** Co-pay for the patient, the rest for the insurer at its tariff, and the claim followed until it is paid or refused.
+7. **Expiry in money.** The value on the shelf that will not sell, and a write-off with an approver and a witness when it goes.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Inventory is a good base. With Lots and Serial Numbers and Expiration Dates switched on, a product can be tracked by lot with expiration, best before, removal and alert dates, and the [First Expired, First Out removal strategy](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/shipping_receiving/removal_strategies/fefo.html) picks the lot with the nearest removal date. The [expiration dates documentation](https://www.odoo.com/documentation/19.0/applications/inventory_and_mrp/inventory/product_management/product_tracking/expiration_dates.html) covers the setup. If all you need is a warehouse that ships the oldest stock first, that is enough.
+
+It stops at the warehouse door. There is no patient, no prescription, no prescriber, no concept of a controlled schedule, no allergy or interaction check, no co-pay, no insurer tariff and no claim. A POS sale of a narcotic looks the same as a sale of a toothbrush. That gap is what the module fills.
+
+## The module and what it covers
+
+[Pharmacy Management](https://apps.odoo.com/apps/modules/19.0/w4t_pharmacy_management/) is a single module, USD 299 once per Odoo version, for Odoo 19 Community with Inventory and Accounting. It adds a Pharmacy app with six menus: Counter, Stock, Compliance, Insurance, Reporting and Configuration.
+
+| Area | Standard Odoo Inventory | With Pharmacy Management |
+|---|---|---|
+| Lots with expiry dates | Yes | Yes, every batch backed by a lot |
+| First expiry first out picking | Yes, on transfers | Yes, at the counter, with a minimum shelf life |
+| Patient file with allergies and chronic medication | No | Yes |
+| Prescriptions with validity and part supply | No | Yes |
+| Allergy, interaction, pregnancy and dose checks | No | Yes, refuse or warn |
+| Controlled drug register with witness and batch balance | No | Yes |
+| Insurer co-pay, tariff discount and claims | No | Yes |
+| Expiry value at risk and destruction certificate | No | Yes |
+| Margin on the real batch cost | No | Yes |
+
+The demo runs an invented two-branch pharmacy in Dubai with fifteen medicines, sixteen patients, two insurers and four months of dispensing. One branch holds a controlled drug licence and one does not, so you can see the module refuse a narcotic at the wrong counter.
+
+<Shot src="/odoo-guides/odoo-pharmacy-management/dispense-insured.webp" alt="Pharmacy dispense in Odoo against a prescription, with patient, prescriber, pharmacist, insurance policy, co-pay and a clear safety check" width={1440} height={900} caption="A dispense on insurance: batch picked, check clear, claim raised." />
+
+## How a dispense works
+
+Every medicine that leaves goes out on a **dispense**, either against a prescription or as an over the counter sale. The pharmacist presses **Allocate Batches**, and the module picks stock first expiry first out at that branch, skipping anything expired or with less than the minimum shelf life left. If one batch cannot cover the quantity, the line splits and each part keeps its own batch number, so the label and the register say what the patient actually took home.
+
+Then the **Safety Check**. It reads the dispense against the patient file, the schedules and the shelf, and grades what it finds. An allergy to any molecule in the medicine, a major or contraindicated interaction with anything else on the dispense or the patient's chronic list, a pregnancy category D or X for a pregnant patient, a controlled medicine without a prescription or at a branch without a licence, an expired pharmacist registration: each of these **refuses** the dispense and nothing overrides it. A moderate interaction, a tablet for a young child or a short-dated batch only **warns**, and goes out once somebody writes down why.
+
+<Shot src="/odoo-guides/odoo-pharmacy-management/dispense-refused.webp" alt="Odoo pharmacy dispense marked Refused because the patient is recorded as allergic to amoxicillin, with the safety findings shown on the form" width={1440} height={900} caption="Refused: the allergy is on the molecule, so a different brand does not get past it." />
+
+**Dispense** runs the check once more, takes the stock off the batches, writes the balance left on each batch, updates the prescription, and raises an insurance claim if the patient has a live policy. Labels, a till receipt and the patient's invoice come straight off the record.
+
+## Controlled drugs
+
+A medicine on a narcotic, psychotropic, controlled or precursor schedule cannot go over the counter at all. It needs a validated prescription from a doctor allowed to prescribe controlled medicines, a branch whose controlled drug licence is in date, a pharmacist allowed to sign, and, when the company setting is on, a second pharmacist named as the witness. Every such line lands in the **Controlled Drug Register** with the date, patient, prescriber, batch, both pharmacists and the batch balance afterwards.
+
+<Shot src="/odoo-guides/odoo-pharmacy-management/register.webp" alt="Controlled drug register in Odoo grouped by schedule, narcotics and psychotropics, with quantities and batch balance" width={1440} height={900} caption="The controlled drug register, grouped by schedule." />
+
+## Insurance
+
+Each patient can hold policies with an insurer, member number, co-pay and annual limit. On a dispense against a policy, the insurer's tariff discount comes off every claimable line, the patient pays the co-pay, and the insurer's share becomes a claim. The claims desk submits it, records the approval code and the amount approved, or marks it rejected with a reason from the list Gulf payers use. What the payer settles is written back onto the dispense, and any gap shows there as a **Patient Shortfall** for the counter to collect.
+
+## Expiry, write-offs and purchasing
+
+Batches are banded In Date, Expiring Soon or Expired against a warning window, and the Expiring Soon and Expired Stock lists carry the money, not just the count. Expired or damaged stock goes onto a write-off that only a pharmacy manager can approve, needs a witness when controlled stock is on it, and prints as a **Certificate of Destruction** with every batch number. Reorder levels on each medicine feed a suggested purchase list per branch.
+
+## How to set it up
+
+1. Install Pharmacy Management. Inventory and Accounting come with it.
+2. In **Settings, Pharmacy**, decide the rules: prescriber required for prescription-only medicines, a second pharmacist for controlled drugs, prescription validity, the expiry warning window, the minimum shelf life, and your e-claim prefix.
+3. Create your **branches** with their trade and controlled drug licences, then your **pharmacists** with their registrations, and link each to their Odoo user.
+4. Load **active molecules**, then **medicines** with their molecules, schedule, pregnancy category and reorder levels, then the **interaction** pairs you work from.
+5. Add **insurers** with their co-pay, tariff discount and pre-approval threshold, and **prescribers** you accept scripts from.
+6. Receive opening stock as **batches**, then turn on the scheduled jobs.
+
+<Callout title="Turn the scheduled jobs on">All five jobs (expiry banding, the weekly expiry digest, prescription expiry, the weekly purchase list and the claim chase) ship switched off so nothing runs on an empty database. The expiry banding job in particular has to run daily, or the Expiring Soon list goes stale.</Callout>
+
+## Limitations
+
+These come from reading the module's code, not its listing:
+
+- **No drug database.** Molecules, interactions and medicines are your own data.
+- **No payer integration.** Claims are tracked, not transmitted.
+- **No Inventory moves per dispense.** Each batch is backed by a stock lot for traceability, but quantities live on the pharmacy batch; Inventory on-hand figures are not drawn down by dispensing.
+- **No point of sale.** Dispensing is its own screen and bills through a customer invoice, not the POS app.
+- **Repeats are recorded, not dispensed.** A script's repeat count is stored, but a fully supplied line cannot be dispensed again; enter the script again for a repeat.
+- **A dispense opened from the prescription's Dispense button does not pick up the patient's policy.** Choose the policy on the dispense before checking it.
+
+<WhenLive slug="odoo-pharmacy-batch-expiry-tracking">
+
+## The chapters
+
+Each part of the pharmacy has its own chapter: [batches, expiry and write-offs](/odoo-guides/odoo-pharmacy-batch-expiry-tracking/), [prescriptions, dispensing and the safety check](/odoo-guides/odoo-pharmacy-dispensing-safety-check/), [the controlled drug register](/odoo-guides/odoo-controlled-drug-register/), and [insurance co-pay and claims](/odoo-guides/odoo-pharmacy-insurance-claims/).
+
+</WhenLive>
+
+If the pharmacy sits inside a clinic or a hospital, the [clinic management guide](/odoo-guides/odoo-clinic-management/) and the [hospital bed management guide](/odoo-guides/odoo-hospital-ipd-bed-management/) cover the clinical side, and the [purchase and inventory dashboard guide](/odoo-guides/odoo-purchase-inventory-dashboard/) helps with the buying. The [pharmacy solution page](/solutions/pharmacy/) and the [Pharmacy Management product page](/products/w4t-pharmacy-management/) list what is included. Walk through the [live demo](https://pharmacy-demo.way4tech.com/) or download the full step-by-step PDF below, and if your pharmacy has a setup this guide does not cover, [send a short description](/contact/) and I will say whether it fits.

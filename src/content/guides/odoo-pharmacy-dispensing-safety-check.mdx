@@ -1,0 +1,125 @@
+---
+title: "Pharmacy dispensing in Odoo: prescriptions, allergy and interaction checks, generics and labels"
+metaTitle: "Prescriptions, Dispensing and Safety Checks"
+description: "Dispense against a prescription in Odoo: patient file, allergy and interaction checks that refuse or warn, generic substitution, labels and the invoice."
+targetQuery: "pharmacy dispensing software odoo prescription allergy check"
+category: "Industry"
+region: "UAE and GCC"
+summary: "The patient file, a prescription from draft to fully dispensed, and the dispense itself: batches allocated, every safety rule that refuses or warns, generic swaps, labels, receipt and invoice."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pharmacy-management"
+seriesOrder: 2
+modules:
+  - name: "Pharmacy Management"
+    technical: "w4t_pharmacy_management"
+    note: "USD 299, Odoo 19 Community, needs Inventory and Accounting"
+demo:
+  url: "https://pharmacy-demo.way4tech.com/"
+  label: "Pharmacy demo"
+related: ["odoo-pharmacy-management", "odoo-pharmacy-batch-expiry-tracking", "odoo-controlled-drug-register", "odoo-clinic-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does the allergy check match on the brand or the ingredient?"
+    a: "On the ingredient. An allergy is recorded against an active molecule, and every medicine lists its molecules, so a patient recorded as allergic to amoxicillin is refused co-amoxiclav as well as plain amoxicillin, whatever the brand on the box."
+  - q: "What is the difference between a refusal and a warning?"
+    a: "A refusal stops the dispense and cannot be overridden: an allergy, a major or contraindicated interaction, pregnancy category D or X for a pregnant patient, a missing or expired batch, or a controlled or prescription-only rule broken. A warning, such as a moderate interaction or a tablet for a child under 12, lets the dispense go out once somebody writes why, and the user who acknowledged it is recorded."
+  - q: "Will it swap a brand for a cheaper generic automatically?"
+    a: "Only when asked. Suggest a Generic lists cheaper products with the same molecules, strength and form that are in stock at the branch, with the saving. Swap to Generic makes the swap and keeps the prescribed brand on the line. It never swaps a line the prescriber marked no substitution, or a narrow therapeutic index molecule."
+  - q: "Can one prescription be dispensed in parts?"
+    a: "Yes. Each line shows the quantity authorised, dispensed and outstanding, and the prescription moves to Partly Dispensed until every line is covered. The safety check refuses any supply that would take a line over what the prescriber authorised."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The moment that matters in a pharmacy lasts about thirty seconds: the bag goes across the counter. Before it does, a careful pharmacist has checked the script against the patient, the medicines against each other and the box against the shelf. On a quiet morning that happens in their head. On a Thursday evening with a queue, it is exactly what gets skipped. This chapter shows how the Pharmacy Management module makes those checks part of the record, and what it does when one fails.
+
+## The patient file
+
+A counter sale needs no patient. A prescription does, because every check is a question about this person. The patient form holds the contact the bill goes to, date of birth (age is worked out, and under 12 counts as a child), gender, national ID, home branch, blood group, weight, and two flags that change what may be handed over: **Pregnant** and **Breastfeeding**.
+
+<Shot src="/odoo-guides/odoo-pharmacy-dispensing-safety-check/patient-allergies.webp" alt="Pharmacy patient file in Odoo with date of birth, blood group, weight and an allergy to amoxicillin recorded as severe" width={1440} height={900} caption="The patient file: the allergy is recorded against the molecule." />
+
+Three tabs feed the check:
+
+- **Allergies**, each recorded against an active molecule with a severity (mild, moderate, severe, anaphylaxis), the reaction, and who noted it.
+- **Chronic Medication**, the medicines the patient takes every day, with directions, start and review dates and the prescriber. New items are checked for interactions against these.
+- **Insurance**, the patient's policies, with the live one picked up on a new dispense.
+
+The clinical note is visible to pharmacists only. A counter assistant does not see patient files at all.
+
+## The prescription
+
+A prescription is entered once from the paper: patient, branch, prescriber, the date it was written, the clinic's reference, the diagnosis, and a line per medicine with the quantity authorised, directions, duration and **Generic Substitution Allowed**. A scan of the paper goes on its own tab. **Valid Until** is the written date plus the validity setting, 90 days by default.
+
+<Shot src="/odoo-guides/odoo-pharmacy-dispensing-safety-check/prescription-partial.webp" alt="Partly dispensed prescription in Odoo with quantity authorised, dispensed and outstanding on the line" width={1440} height={900} caption="A prescription partly dispensed: half supplied, half outstanding." />
+
+**Validate** checks it before anyone picks against it: it has lines, it has not expired, the prescriber's licence is in date, and a controlled medicine comes from a prescriber allowed to prescribe one. From there it moves on its own: **Partly Dispensed** after a part supply, **Fully Dispensed** when every line is covered, or **Expired** once Valid Until passes, either by hand or through a nightly job. A script written in error can be cancelled as long as nothing has gone out against it.
+
+<Callout title="Repeats are recorded, not yet dispensed">A prescription can carry a number of repeats, and a controlled one never can. In the current version a fully supplied line cannot be supplied again, because the quantity authorised is already used up and the Dispense button reports everything as handed over. For a repeat supply, enter the script again.</Callout>
+
+## The dispense
+
+A dispense against a prescription carries the patient, the billed contact, the prescriber, the pharmacist who signs, the policy and the items. Each item line has the medicine, the batch, its expiry, quantity, directions, days, unit price, insurer discount and taxes. The margin tab, with batch cost and margin per line, is hidden from counter assistants.
+
+<Shot src="/odoo-guides/odoo-pharmacy-dispensing-safety-check/dispense-draft.webp" alt="Draft dispense in Odoo against a prescription with Allocate Batches, Safety Check, Check Off and Dispense buttons" width={1440} height={900} caption="A draft dispense, before batches are allocated and the check is run." />
+
+The steps are deliberate:
+
+1. **Allocate Batches.** Stock is picked first expiry first out at this branch. A line one batch cannot cover is split, each part with its own batch. The [batches and expiry chapter](/odoo-guides/odoo-pharmacy-batch-expiry-tracking/) covers the rules.
+2. **Safety Check.** Every rule below is run and the findings are written into **Safety Findings** on the record, and into the chatter.
+3. **Check Off** (optional). The check has passed and the bag is ready, but the patient has not collected it.
+4. **Dispense.** The check runs once more. Stock comes off the batches and the balance left on each is stamped on the line. The prescription is updated, and a claim is raised if there is a policy.
+
+## What the check refuses
+
+These stop the dispense, and there is no override:
+
+- No pharmacist named, or a pharmacist whose registration has expired.
+- A prescription-only medicine with no prescriber recorded, when the company setting requires one.
+- A controlled medicine without a validated prescription, at a branch without a controlled licence in date, signed by a pharmacist not authorised for controlled drugs, without a second pharmacist as witness when that setting is on, or from a prescriber not licensed for controlled medicines.
+- An allergy on file to any molecule in the medicine.
+- A **major** or **contraindicated** interaction between anything on this dispense and anything else on it or on the patient's chronic list.
+- Pregnancy category **D** or **X** for a patient recorded as pregnant.
+- A line with no batch, a batch that is not available, an expired batch, or a batch holding less than the line asks for.
+- More than the prescription authorised, counting what has already gone out, or more than the medicine's counter limit on an over the counter sale.
+
+<Shot src="/odoo-guides/odoo-pharmacy-dispensing-safety-check/dispense-refused.webp" alt="Refused dispense in Odoo with the safety finding that the patient is allergic to a molecule in the medicine" width={1440} height={900} caption="Refused for an allergy. Nothing on the refused list can be overridden." />
+
+## What the check only warns about
+
+- A **moderate** or **minor** interaction.
+- A tablet or capsule for a patient under 12, with a prompt to check the paediatric dose and offer a syrup.
+- The same molecule twice on one dispense, which usually means a double dose under two brands.
+- A batch with less shelf life left than the minimum the branch hands out.
+
+A warning does not block the hand-over, but **Dispense** refuses until somebody fills **Warning Acknowledged Because**. The user who acknowledged it is recorded on the dispense, which is the answer to the complaint that arrives six months later asking what the pharmacy knew at the time.
+
+<Shot src="/odoo-guides/odoo-pharmacy-dispensing-safety-check/dispense-warning.webp" alt="Dispensed record in Odoo with a moderate interaction warning acknowledged and the reason written in Warning Acknowledged Because" width={1440} height={900} caption="A warning dispensed through, with the reason and the user recorded." />
+
+**Check the Patient File** is a lighter tool: it asks the patient record about every item and lists allergies, interactions and pregnancy findings without changing anything.
+
+## Generic substitution
+
+**Suggest a Generic** looks for cheaper products with the same molecules, the same strength and the same dosage form that are in stock at this branch in the quantity needed, and lists each swap with what it saves. **Swap to Generic** makes the cheapest swap on every line where it is allowed and keeps the prescribed product in **Prescribed Brand**, so the record says both what was written and what was handed over.
+
+Two things are never swapped: a line the prescriber marked no substitution, and any medicine whose molecule is flagged narrow therapeutic index, where a small change in the product can matter. Warfarin on the demo is one.
+
+## Labels, receipt and invoice
+
+Once a dispense has been checked, **Labels** prints one 70 by 40 mm label per line with the medicine, strength, pack size, directions, batch and expiry, the storage condition, the counselling points from the medicine record, the patient and the branch. **Receipt** prints an 80 mm till receipt with batch numbers, VAT and the split between insurer and patient, and **Email the Receipt** sends it to the billed contact.
+
+<Shot src="/odoo-guides/odoo-pharmacy-dispensing-safety-check/label.webp" alt="Dispensing label printed from Odoo with medicine, directions, batch, expiry, storage, patient and branch" width={1368} height={254} caption="The dispensing label, one per line." />
+
+**Invoice** raises the patient's customer invoice in draft: every item at full value with the batch in its label, and the insurer's share taken off as a single line naming the policy, so the invoice totals what the patient paid. The insurer's share lives on the claim, covered in the [insurance chapter](/odoo-guides/odoo-pharmacy-insurance-claims/).
+
+**Cancel** puts the stock back on the batches, and is refused once the dispense is on a posted invoice or the insurer has settled the claim. A cancelled dispense can be reset to draft and corrected.
+
+<Callout title="Check the policy on a dispense opened from the script">Pressing Dispense on a prescription opens a new dispense with everything outstanding, but it does not fill in the patient's insurance policy. Pick the policy on the dispense before the safety check, or the whole amount falls on the patient and no claim is raised.</Callout>
+
+## Over the counter
+
+A counter sale is the same record with no patient file and no prescription. The patient pays the whole amount, the batch is still allocated first expiry first out, and the check still runs: a prescription-only medicine is refused without a prescriber, a controlled medicine is always refused, and the counter limit on a medicine caps the quantity. A counter assistant sees only the counter sales they served.
+
+The next chapter covers what happens when the medicine is on a controlled schedule: [the controlled drug register](/odoo-guides/odoo-controlled-drug-register/). The [pharmacy management hub](/odoo-guides/odoo-pharmacy-management/) has the overview and the full PDF.

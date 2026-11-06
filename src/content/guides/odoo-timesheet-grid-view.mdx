@@ -1,0 +1,110 @@
+---
+title: "Timesheet grid view in Odoo Community: weekly hours in editable cells, period locks and copy a week"
+metaTitle: "Timesheet Grid and Period Locks"
+description: "Enter timesheets in a weekly grid in Odoo 19 Community: rows by employee and project, editable totals, period locks, copy a week, any model."
+targetQuery: "odoo community timesheet grid view"
+category: "Operations"
+summary: "A spreadsheet style grid for timesheets or any other model: rows you choose, days, weeks or months across, cells that write back through Odoo's normal rules, fixed and rolling locks and a copy wizard."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-productivity-apps"
+seriesOrder: 3
+modules:
+  - name: "Timesheet Grid View"
+    technical: "wt_grid_view"
+    note: "USD 69, Odoo 19 Community, needs only Odoo itself"
+demo:
+  url: "https://productivity-demo.way4tech.com/"
+  label: "Productivity demo"
+related: ["odoo-community-productivity-apps", "odoo-tracked-time-attendance-timesheets", "odoo-community-gantt-chart"]
+linkFrom: ["/products/wt-grid-view/", "/modules/timesheets/"]
+sources: []
+faqs:
+  - q: "Does Odoo Community have a timesheet grid?"
+    a: "No. The grid view used by Timesheets in Odoo Enterprise is an Enterprise feature, and Community lists timesheets one line at a time. The Timesheet Grid View module adds an editable grid to Community and sets up a timesheet grid by employee and project when Timesheets is installed."
+  - q: "What happens when I type over a cell that already has several timesheet lines?"
+    a: "The cell is a total, so the module works out the difference. Depending on the grid's setting it writes the difference on the newest line behind the cell, or adds a balancing line and leaves the others alone. Typing zero clears every line behind the cell."
+  - q: "Can I stop people changing last month's hours?"
+    a: "Yes. A period lock closes everything up to a date, for one grid or all of them. Locked cells are greyed with a padlock and the server refuses a write to them. A rolling lock keeps the last few days open and moves forward every night."
+  - q: "Can the grid be used for something other than timesheets?"
+    a: "Yes. Any model with a date and a stored number will do. The demo also has a planning grid on the module's own entries and a read-only monthly sales grid on confirmed orders."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+On Friday afternoon a designer has five days of hours to enter across three client projects. In Odoo Community that is a list of timesheet lines: open a form, pick the project, pick the task, type the hours, save, fifteen times. What people want is the spreadsheet they used before: themselves and their projects down the side, the days across the top, a number in each cell. Odoo Enterprise has that grid; Community does not. The Timesheet Grid View module adds it, for timesheets and for any other model that has a date and a number.
+
+## The grid
+
+<Shot src="/odoo-guides/odoo-timesheet-grid-view/grid-timesheet.webp" alt="Timesheet grid for the week of 30 October to 5 November with one row per employee and project, hours in each daily cell, totals per row and per day, and the two October days greyed out with a padlock" width={1440} height={900} caption="Grid, Grid, Timesheet Grid: employee and project down the side, days across, October already closed." />
+
+Each grid is listed at the top left. The arrows move one window back or forward and Today returns to the current period; Day, Week and Month change the columns; the printer icon prints the same figures; refresh reads them again. The footer gives the number of rows and the date the grid is closed up to.
+
+Click a cell and type. That is the whole interaction for the person filling it in.
+
+## A cell is a total
+
+What happens next is where grids usually go wrong. A cell adds up every record behind it: three timesheet lines on Tuesday for the same person and project make one cell. Typing into it is a change of the total, and the module has to decide where the difference lands:
+
+| Behind the cell | Typing a new figure |
+|---|---|
+| Nothing | Creates the record it needs, with the row's values, the date and the grid's values on create |
+| One record | Gives that record the difference, so it ends on the figure typed |
+| Several records | Gives the difference to the newest one, or adds a balancing record, as the grid is set |
+| Anything, and you type 0 | Clears every record behind the cell, rather than pushing one negative |
+| A negative figure | Refused, unless the grid allows negatives |
+
+All of it happens on the server, inside Odoo's ordinary create and write. Record rules, required fields, constraints and the chatter all apply, and a person who cannot write a timesheet line cannot write it through the grid either.
+
+## Timesheets out of the box
+
+Install the module after Timesheets and a timesheet grid is made for you: employee and project down the side, days across, hours in the cell, and only lines that have a project. Installed before Timesheets, it still works on its own planning entries, and you can add the timesheet grid by hand.
+
+## Grids on other models
+
+A grid is a configuration record. Name a model, the date field that picks the column, the number that fills the cell and the fields the rows are grouped by, in order. A datetime works as well as a date: its column is the day it falls on in the reader's own timezone.
+
+<Shot src="/odoo-guides/odoo-timesheet-grid-view/grid-config.webp" alt="Grid configuration form for Timesheet Grid with model Analytic Line, date field Date, measure Quantity, daily columns, seven columns, row limit, a filter on project, and editing options" width={1440} height={900} caption="The configuration behind the timesheet grid." />
+
+The other settings decide how editing behaves:
+
+- **Columns and number of columns**: daily, weekly or monthly, and how many.
+- **Filter**: a domain, so only part of the model is on the sheet.
+- **Editable**: untick for a report.
+- **Create missing records**: an empty cell creates the record it needs.
+- **Several records in a cell**: newest record, or a balancing record.
+- **Zero clears the cell** and **allow negative values**.
+- **Decimal places**, and **values on create**, a dictionary added to every record the grid creates.
+
+The [demo](https://productivity-demo.way4tech.com/) has four grids. Besides timesheets there is Resource Planning on the module's own planning entries, used to book next week's hours by person and type of work; Weekly Hours by Project, a read-only roll-up of timesheets by week for the Monday meeting; and Monthly Sales by Account Manager on confirmed sales orders.
+
+<Shot src="/odoo-guides/odoo-timesheet-grid-view/grid-planning.webp" alt="Resource Planning grid with rows for each person and category such as Aisha Malik Build, Callum Byrne Support and Priya Raman Design, and hours booked per day" width={1440} height={900} caption="Resource Planning: hours booked by person and kind of work." />
+
+The planning entries behind that grid are an ordinary model with a list, a form, a pivot and a calendar: description, date, person, category, contact, quantity, unit price and amount. Categories such as Design, Build and Support carry a code and a colour.
+
+## Closing a period
+
+Once payroll has run or the month's invoices have gone out, last month's hours should not move. A period lock closes every column up to a date, for one grid or for all of them.
+
+Locked cells are drawn grey with a padlock, as the October days are in the first screenshot above, and a write to one is refused on the server rather than only hidden in the browser. A **rolling** lock keeps the last few days open and closes everything older by itself: a daily scheduled action moves it forward, Move Forward Now does it at once, and it never reopens a period somebody closed by hand. On the demo, Finance closed October on the timesheet grid, and the planning grid keeps the last fourteen days open.
+
+<Callout title="Locks apply to the grid">
+A lock is checked when a cell is written through the grid or the copy wizard. It is not a general accounting lock on timesheet lines entered elsewhere in Odoo, so keep Timesheets' own access rights in place for people who should not edit old lines from the list.
+</Callout>
+
+## Copying a period
+
+Next week often looks like this week. Copy a Period reads one column and writes it into another, either replacing what is there or adding to it, and can skip empty cells. It writes cell by cell through the same write back, so a closed period still refuses it, and it reports how many cells were written and how many were left alone.
+
+## Printing
+
+The grid sheet prints the rows, columns and totals exactly as the screen shows them, from the grid itself or from the grid's configuration.
+
+## Setting it up
+
+1. Install Timesheets first if you want the timesheet grid made for you, then the module.
+2. Give people Fill In Grids; Configure Grids adds grids, categories and locks.
+3. Add grids for anything else you want to fill in or review by period.
+4. Add a lock once a period is closed, or a rolling lock to keep only recent days open.
+
+The [overview of the productivity modules](/odoo-guides/odoo-community-productivity-apps/) has the rest of the pack, and the [tracked time guide](/odoo-guides/odoo-tracked-time-attendance-timesheets/) covers timesheets suggested from desktop activity. Try the grid on the [demo](https://productivity-demo.way4tech.com/).

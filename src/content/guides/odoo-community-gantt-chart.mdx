@@ -1,0 +1,127 @@
+---
+title: "Gantt chart in Odoo Community: task dependencies, rescheduling, critical path and resource conflicts"
+metaTitle: "Gantt Chart with Dependencies"
+description: "A Gantt chart for Odoo 19 Community: four link types with lag, cascade rescheduling over working days, critical path, resource conflicts, any model."
+targetQuery: "odoo community gantt chart task dependencies"
+category: "Operations"
+summary: "Plans with finish to start and three other link types, dates that move when a task slips, float and the critical path, resource capacity and conflicts, a drag and drop board and a printed planning sheet."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-productivity-apps"
+seriesOrder: 1
+modules:
+  - name: "Gantt View"
+    technical: "wt_gantt_view"
+    note: "USD 199, Odoo 19 Community, needs only Odoo itself"
+demo:
+  url: "https://productivity-demo.way4tech.com/"
+  label: "Productivity demo"
+related: ["odoo-community-productivity-apps", "odoo-project-boards-timeline-workload", "odoo-project-management"]
+linkFrom: ["/products/wt-gantt-view/", "/modules/planning/"]
+sources: []
+faqs:
+  - q: "Which dependency types does the Gantt View module support?"
+    a: "Finish to start, start to start, finish to finish and start to finish, each with a lag in working days. A negative lag is a lead, so a successor can start before its predecessor finishes."
+  - q: "What happens when a task with successors is moved?"
+    a: "With Cascade Moves ticked on the plan, everything that depends on the task moves in one pass, in dependency order, and work on a parallel branch stays where it is. Untick it to move a single task alone. Dragging a bar on the board goes through the same write, so the cascade applies there too."
+  - q: "Can it stop me creating a circular dependency?"
+    a: "Yes. A link that would close a loop is refused when it is saved, and the error lists the tasks that form the circle in order, so you know which link to remove."
+  - q: "Does it schedule Odoo Project tasks?"
+    a: "The scheduling engine, with links, cascade, critical path and conflicts, works on the module's own plans and tasks. A board can also draw any other model with two date fields, such as projects or sales orders, and lets you drag those records, but the engine does not run on them."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A design studio has a website launch fixed for the week before Black Friday. The wireframes slip three days because the client was away, and now the visual design, the theme build, the testing and the go-live all need new dates. In a spreadsheet that is half an hour of retyping and a good chance of missing one. In Odoo Community, Project will hold the tasks and even the dependencies between them, but it will not move a single date for you, and there is no Gantt view to see it on. The Gantt View module adds both: a scheduling engine that moves the dates, and a board that draws them.
+
+## Plans, tasks and the calendar
+
+Everything starts with a plan: the schedule for one project, with its own calendar rules. On the [demo](https://productivity-demo.way4tech.com/) the agency keeps one plan per client: Pennine Outdoor's e-commerce rebuild, Millrace Coffee's packaging, Brookvale Dental's booking site, Harbourline's app prototype and Northlight Theatre's finished campaign.
+
+<Shot src="/odoo-guides/odoo-community-gantt-chart/plan-form.webp" alt="Plan form for Pennine Outdoor e-commerce rebuild with plan start 17 August, plan finish 20 November, span 69 working days, scheduling rules Skip Weekends, Hours per Day 8, Cascade Moves and Nightly Reschedule, and the task list below with resources, dates, durations, progress and float" width={1440} height={900} caption="A confirmed plan: its window, its scheduling rules and its tasks." />
+
+The rules on a plan decide how days are counted:
+
+- **Skip Weekends**: Saturday and Sunday carry no duration, so a two day task that starts on Friday finishes on Tuesday.
+- **Hours per Day**: turns a duration in days into planned hours.
+- **Cascade Moves**: when a task moves, the tasks that depend on it follow.
+- **Nightly Reschedule**: a scheduled action reschedules the plan and redoes its critical path every night, for confirmed plans.
+
+A plan is Draft while you shape it, Confirmed once it is the agreed schedule, and Closed when the work is done. Confirm refuses a plan with no tasks.
+
+### Tasks
+
+A task has a start, a finish and a duration in working days. Type a duration and the finish moves; type a finish and the duration changes. Each task can sit on a resource, the row it is drawn on and the thing conflicts are counted against, and it carries progress and a state: Not Started, In Progress, Done or Cancelled.
+
+Three kinds of task need a word:
+
+- **Milestones** are moments, such as design sign-off. Their finish is their start and they never count as a conflict.
+- **Summary tasks** fold detail under a heading. A summary carries no scheduling rule of its own; links do that.
+- **Pinned tasks** have Auto Schedule turned off, so the engine leaves them where they are. Their successors still follow them.
+
+A task can also be held to a date with a constraint: Start No Earlier Than, for the stock feed that cannot begin before the warehouse system is ready, or Must Start On, for the code freeze the client fixed.
+
+## Dependencies and lag
+
+Links say what waits for what, and there are four kinds:
+
+| Link | The successor | Example on the demo |
+|---|---|---|
+| Finish to start | waits for the predecessor to finish | Wireframes wait for the sitemap |
+| Start to start | starts when the predecessor starts | Copywriting starts with the wireframes, five days in |
+| Finish to finish | finishes when the predecessor finishes | Testing ends two days after the theme build |
+| Start to finish | cannot finish until the predecessor starts | The go-live and the code freeze |
+
+Each link has a lag in working days. A negative lag is a lead: Pennine's visual design starts two days before the wireframes are finished, because the first templates are approved early. A link must join two tasks in the same plan, and the same pair cannot be linked twice.
+
+<Shot src="/odoo-guides/odoo-community-gantt-chart/plan-dependencies.webp" alt="Dependencies tab of the Pennine Outdoor plan listing predecessor and successor tasks with link types Finish to Start and Start to Start and lags of 0, 2, 5 and minus 2 days" width={1440} height={900} caption="The plan's links, with a five day lag and a two day lead." />
+
+If a new link would close a circle, it is refused on save and the message names the tasks in the loop in order.
+
+## Rescheduling and the critical path
+
+**Reschedule** on the plan is a forward pass. Every task that is allowed to move is placed as early as its links and constraints let it, starting from the plan start. Pinned tasks and fixed dates are not moved; if the network cannot honour one, the plan's Last Run note says which task, the date it has and the date it would need. Nothing is moved behind your back.
+
+**Critical Path** is the backward pass. It fills in early and late start and finish on every task and the float: how many working days the task can slip before the plan finishes later. Tasks with no float are ticked Critical and outlined in red on the board, and the plan shows the length of the chain.
+
+Moves cascade in normal use, not only when you press a button. Change a task's dates on the form or drag it on the board and every task that depends on it moves in one pass, in dependency order. To move one task and nothing else, untick Cascade Moves on the plan. To push successors on demand, use Push Successors on the task. To move several tasks by a number of days, select them and use the Shift action, which shows a preview of what will move before it does anything.
+
+## The board
+
+<Shot src="/odoo-guides/odoo-community-gantt-chart/board-week.webp" alt="Gantt board at week scale for weeks 45 to 49 with rows for Aisha Malik, Callum Byrne, the print supplier, Megan Doyle, the photo studio, Priya Raman and Tom Whitcombe, bars coloured by project with progress shading and red outlines on critical tasks" width={1440} height={900} caption="Planning, Board at week scale: rows are resources, bars are coloured by plan." />
+
+The board draws one row per resource, or per whatever field the board is grouped by. The darker part of a bar is its progress and a red outline marks the critical path. The arrows move the window back or forward by its own length, Today brings it back, and Day, Week and Month change the scale. Drag a bar to a new date and the drop goes through the ordinary write, so the cascade and every constraint apply exactly as on the form. Double click a bar to open it.
+
+<Callout title="Two things the board does not draw">
+The link arrows between bars are not drawn; links live on the plan and under Dependencies. Two bars that overlap on the same row are drawn on top of each other, so a row with a double booking can look emptier than it is. The conflict check below is the reliable view of overlaps.
+</Callout>
+
+## Resources and conflicts
+
+Resources are people, equipment or suppliers. Each has a capacity, the number of tasks it can run at once, and hours per day. The demo's print supplier has a capacity of two press slots a day, the photo studio one shoot at a time.
+
+<Shot src="/odoo-guides/odoo-community-gantt-chart/conflicts.webp" alt="Resource conflict list for the Pennine Outdoor plan showing the resource, the from and to dates of the overlap, overlap hours, capacity, number booked, how far over capacity and the tasks involved" width={1440} height={900} caption="Check Conflicts: every window where a resource is booked past its capacity." />
+
+Check Conflicts on a plan or a resource lists every window where the bookings exceed the capacity, with the tasks involved and the hours of overlap. From a conflict you can open the tasks, or open the shift wizard on them to move them out of the way.
+
+## A board on any model
+
+A board is a configuration record. Name a model, the field that starts a bar and the field that ends it (two dates or two datetimes), and optionally the field to group rows by, a progress field, a colour field and a label. Add a filter, a default scale, a window length and a row limit, and choose whether bars can be dragged.
+
+<Shot src="/odoo-guides/odoo-community-gantt-chart/board-timeline.webp" alt="Project Timeline board at month scale with one row per project manager and a bar per client project from its start date to its end date" width={1440} height={900} caption="A second board on standard Odoo projects, from start date to end date." />
+
+The demo has two besides the planning board: Project Timeline on Odoo's projects, one row per project manager, and Delivery Commitments on confirmed sales orders from order date to the promised date, with dragging switched off so it is read only. The rows and the position of every bar are worked out on the server, so the browser only places what it is given.
+
+## The planning sheet
+
+Print, Planning Sheet on a plan gives the schedule as a table with the bars drawn beside it, the critical path in bold, the float on every task and the total length of the chain: the page to take into a client meeting.
+
+## Setting it up
+
+1. Install Gantt View and give planners the Plan Work group; Configure Planning adds resources and boards.
+2. Create resources with their capacity.
+3. Create a plan with its start date and calendar rules, add tasks with durations, then the links.
+4. Press Reschedule, then Critical Path, then Confirm.
+5. Tick Nightly Reschedule on plans you want kept up to date overnight.
+
+The [productivity apps overview](/odoo-guides/odoo-community-productivity-apps/) covers the other seven modules, and the full PDF has every screen and field. To see it with real dates, open the [demo](https://productivity-demo.way4tech.com/) or [ask us](/contact/) to set it up on your own data.

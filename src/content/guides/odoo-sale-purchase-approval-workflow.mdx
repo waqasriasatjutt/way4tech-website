@@ -1,0 +1,103 @@
+---
+title: "Approval workflow for sales orders, purchase orders and invoices in Odoo Community"
+metaTitle: "Sales and Purchase Approval Rules"
+description: "Hold large quotations, purchase orders and credit notes for sign-off in Odoo 19 Community: amount bands, conditions, levels and a to-do per approver."
+targetQuery: "odoo sale order purchase order approval workflow"
+category: "Operations"
+summary: "Rules that pick documents by amount band and condition, levels of named users or groups, skipped below a threshold, confirm and post held until approved, and every step stamped in the chatter."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-productivity-apps"
+seriesOrder: 5
+modules:
+  - name: "Approval Workflow"
+    technical: "wt_approval_workflow"
+    note: "USD 89, Odoo 19 Community, needs Sales, Purchase and Invoicing"
+demo:
+  url: "https://productivity-demo.way4tech.com/"
+  label: "Productivity demo"
+related: ["odoo-community-productivity-apps", "odoo-project-approvals-automation", "odoo-audit-log-import-export-recent-records"]
+linkFrom: ["/products/wt-approval-workflow/", "/modules/sales/", "/modules/purchase/"]
+sources: []
+faqs:
+  - q: "Does Odoo Community have sales order approval?"
+    a: "Not as a rule-based workflow. Purchase has a single setting for a second approval above an amount, and Sales has none. The Approval Workflow module adds rules with amount bands, conditions and several levels to sales orders, purchase orders and invoices."
+  - q: "What happens when a salesperson confirms a quotation that needs approval?"
+    a: "The order stays a quotation and an approval request is created with one step per level that applies. Each approver gets a to-do when their step comes round. When the last step is approved, pressing Confirm goes through."
+  - q: "Can someone change the amount after it was approved?"
+    a: "They can edit the order, but it then has to be approved again. An approval covers the amount it was granted for; if the amount or the matching rule has changed, Confirm cancels the old request and starts a new one."
+  - q: "Does installing the module change how orders are confirmed?"
+    a: "No. Nothing is held until you create a rule, so installing it changes no existing behaviour."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A junior account manager sends a client a 28,000 pound quotation with a discount nobody agreed. A designer orders 5,000 pounds of test hardware on the company account. Neither is fraud; both are the kind of thing a director wants to see before it happens. In Odoo Community, Purchase has one setting for a second approval above an amount and Sales has nothing. The Approval Workflow module holds sales orders, purchase orders and invoices until the right people have signed, chosen by amount and condition, with as many steps as you need.
+
+## Rules
+
+A rule says which documents need sign-off. It names the document type (sales order, purchase order or journal entry, which covers invoices and credit notes), an amount band, and optionally an Odoo domain the document must match. Rules are tried in sequence and the first one that matches owns the document, so a light rule for mid-size quotes and a strict one for large quotes can sit side by side.
+
+<Shot src="/odoo-guides/odoo-sale-purchase-approval-workflow/rules.webp" alt="Approval Rules list with Quotations from 5,000 to 15,000, Quotations over 15,000, Supplier orders over 500 and Credit notes to customers, with the document type, amount band and number of levels" width={1440} height={900} caption="The demo's four rules." />
+
+On the [demo](https://productivity-demo.way4tech.com/) the agency has four:
+
+| Rule | Applies to | Levels |
+|---|---|---|
+| Quotations from 5,000 to 15,000 | Sales orders in that band | Studio manager |
+| Quotations over 15,000 | Sales orders above it | Studio manager, then the finance team, then a director on orders of 25,000 or more |
+| Supplier orders over 500 | Purchase orders above it | Finance team, then a director above 3,000 |
+| Credit notes to customers | Journal entries where the type is customer credit note | A director |
+
+The amount is read from the total by default; another monetary field can be named instead.
+
+## Levels
+
+<Shot src="/odoo-guides/odoo-sale-purchase-approval-workflow/rule-form.webp" alt="Approval rule Quotations over 15,000 for Sales Order with from amount 15,000 and three levels: Studio Manager check by named user Tom Whitcombe, Finance margin check by group Kestrelmoor Finance Team, and Director sign-off by group Kestrelmoor Directors only above 25,000" width={1440} height={900} caption="Three levels in order; the last is skipped on orders under 25,000." />
+
+A level is one step. It is either a list of named users or anybody in a group, and it can have an Only Above amount, so it is skipped on smaller documents: the director only sees the big ones. Levels run in order. With Notify Approvers ticked, each approver gets a to-do activity when their step comes round.
+
+## What the salesperson sees
+
+Nothing changes until a document matches a rule. When it does, Confirm on the quotation, Confirm Order on the purchase order or Post on the invoice does not go through. Instead an approval request is created with one step per level that applies, the document shows that it is waiting, and a notice says it has been sent for sign-off.
+
+<Shot src="/odoo-guides/odoo-sale-purchase-approval-workflow/quotation-pending.webp" alt="Quotation S00016 for Pennine Outdoor Gear Ltd, total 28,860 pounds, still in Quotation state with Approve and Approval Request buttons in the header" width={1440} height={900} caption="S00016, 28,860: Confirm created a request instead of confirming." />
+
+An approver can approve straight from the document, or from the request. Once every step is approved, Confirm goes through as normal. S00013 on the demo is in that position: approved, waiting for the salesperson to confirm it.
+
+## The request
+
+<Shot src="/odoo-guides/odoo-sale-purchase-approval-workflow/request-form.webp" alt="Approval request APR/2026/0012 for S00016 in Waiting Approval with steps Studio Manager check and Finance margin check approved with names and dates, and Director sign-off waiting" width={1440} height={900} caption="APR/2026/0012: two steps approved, waiting on a director." />
+
+The request shows the rule, the document and its amount, the steps with who approved each and when, the step it is waiting on and who can act. Every approval and rejection is stamped in the chatter. Requests, All Requests lists every request, and its Waiting Approval filter shows the open ones with the step and the people each is waiting on.
+
+A request is in one of four states:
+
+- **Waiting Approval**: a step is still open.
+- **Approved**: every step approved.
+- **Rejected**: an approver said no, with a note. Fix the document and press Confirm again, or Send Again on the request, and it goes round from the first step.
+- **Cancelled**: the document changed after approval and a new request replaced it.
+
+<Callout title="An approval covers an amount">
+The decision comes from the request, never from the approval field on the document, so nobody can mark their own order approved by editing it. An approval also covers the document as it stood: if the amount moves or a different rule now applies, Confirm cancels the old request and starts a new one. On the demo, S00022 was approved and then had 20 hours added, so it is waiting again.
+</Callout>
+
+An approver does not need rights to edit sales orders: the approval stamp is written on the document for them, so a finance manager can sign off a quotation without being a salesperson.
+
+## Choosing the bands
+
+Start from the decisions people already make by hand. Most offices have a figure under which nobody asks, a figure above which the manager wants to see it, and a figure where the director wants a say. Those become the bands and the Only Above amounts. Keep the low band generous: a rule that catches every small quotation trains people to approve without reading. Put conditions on the rules that need them, such as one customer group or one sales team, rather than adding steps for everyone. And name groups, not individuals, on any step that should keep moving while someone is on holiday: anyone in the group can approve.
+
+## Purchase orders and invoices
+
+Purchase orders work the same way through Confirm Order. P00010 on the demo, test hardware at 6,240, has Finance's approval and waits for a director; P00008, a print job, was rejected with the note to get a second quote. Invoices are held at Post. The demo's credit note rule holds any customer credit note for a director, whatever the amount, using a condition on the move type.
+
+## Setting it up
+
+1. Install the module; it brings Sales, Purchase and Invoicing.
+2. Create groups for approvers if a step should go to anyone in a team.
+3. Give the people who build rules Configure Approvals.
+4. Create rules, lowest band first, with their levels.
+5. Try a quotation in each band before telling the sales team.
+
+Every approved and rejected document still has its full history in the chatter; to see changes to the orders themselves, the [audit log chapter](/odoo-guides/odoo-audit-log-import-export-recent-records/) covers field by field tracking. The [overview of all eight modules](/odoo-guides/odoo-community-productivity-apps/) has the rest.

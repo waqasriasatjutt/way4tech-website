@@ -1,0 +1,96 @@
+---
+title: "Map view and route planning in Odoo Community: pins for any model, geocoding cache and visiting order"
+metaTitle: "Map View, Geocoding and Routes"
+description: "Put customers, orders or projects on a map in Odoo 19 Community, geocode each address once, and plan a visiting order with legs and arrival times."
+targetQuery: "odoo map view route planning community"
+category: "Operations"
+summary: "Pins for any model, coloured by a field, positioned from a contact's address or from coordinates; geocoding with a cache of every answer; and routes with leg distances, arrival estimates and a printed route sheet."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-productivity-apps"
+seriesOrder: 2
+modules:
+  - name: "Map View"
+    technical: "wt_map_view"
+    note: "USD 89, Odoo 19 Community, uses base_geolocalize"
+demo:
+  url: "https://productivity-demo.way4tech.com/"
+  label: "Productivity demo"
+related: ["odoo-community-productivity-apps", "odoo-community-gantt-chart"]
+linkFrom: ["/products/wt-map-view/", "/modules/field-service/"]
+sources: []
+faqs:
+  - q: "Does the Map View module need Google Maps?"
+    a: "No. Pins are drawn by the module's own renderer on a plain background, with nothing loaded from outside. Geocoding uses the provider set in Odoo through base_geolocalize, OpenStreetMap by default. If you run a tile server you can add a Leaflet build to the module and set a tile URL to get a tiled map."
+  - q: "How often does it geocode an address?"
+    a: "Once. Every answer is cached against the normalised address, including addresses the provider could not find, so the same address is never looked up twice and a bad one is not retried. Editing a contact's address puts it back in the queue."
+  - q: "Are route distances road distances?"
+    a: "No. They are straight-line distances between the pins, which is enough to put calls in a sensible order and estimate the day, but not a road route. The module does not call a routing service."
+  - q: "Can I map a model that is not a contact?"
+    a: "Yes. A map can take its position from a linked contact field, such as the customer on a sales order or project, or from latitude and longitude fields the model already has."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+An account manager has four client reviews to fit into Tuesday and wants to know which are close together. Odoo Community knows every customer's address, and with base_geolocalize it can even store their coordinates, but it has no map to show them on and no way to put a day's calls in order. The Map View module adds the map, makes geocoding cheap enough to leave running, and turns a set of pins into a route.
+
+## Any model on a map
+
+A map is a configuration: a model, where the position comes from, a label and how to colour the pins. One model can have several maps, each with its own filter. On the [demo](https://productivity-demo.way4tech.com/) the agency has four: customers by account manager, quotations and orders by status, live projects, and suppliers.
+
+<Shot src="/odoo-guides/odoo-map-view-route-planning/map-customers.webp" alt="Map of customer companies drawn as purple and teal pins on a plain grid background, with a counter reading 13 located and 3 without coordinates, toolbar buttons Refresh, Fit, Open as List and Plan a Route, and a legend for Megan Doyle and Owen Pritchard" width={1440} height={900} caption="Customers by account manager: purple for Megan, teal for Owen." />
+
+The position comes from one of two places:
+
+- **The address of a linked contact**. For contacts that is their own address; for a sales order it is the customer; for a project, the project's customer.
+- **Latitude and longitude fields** the model already has, for anything that stores its own coordinates.
+
+Pins are one colour or coloured by a field. A colour rule matches a field value, a selection key such as `sale` or the name of a linked record, and gives it a colour and a legend wording. The quotations map is amber for quotations, green for confirmed orders and grey for cancelled ones.
+
+Click a pin and a side panel shows the address and the fields you chose for the pop-up. The toolbar has Refresh and Fit to zoom back to every pin.
+
+<Shot src="/odoo-guides/odoo-map-view-route-planning/map-config.webp" alt="Map configuration form for Customers by account manager with model Contact, coordinates from the address of a linked contact, label field Name, marker colour by field Salesperson, default colour grey, filter for customer companies and record limit 500" width={1440} height={900} caption="The configuration behind the customer map." />
+
+Each configuration also draws a preview on the server, with counts of records located and not located, so the map works in a PDF or on a machine where the browser code cannot run.
+
+<Callout title="No tiles by default">
+The map ships without a tile layer. Pins sit on a plain background drawn by the module, and nothing is loaded from a CDN, so there is no tile subscription to buy and nothing leaves your network. To get a street map underneath, add a Leaflet build to the module's static folder and set a tile URL from a tile server you are allowed to use. Leaflet is not included.
+</Callout>
+
+## Geocoding once per address
+
+Geocoding is the slow, rate limited part. Map View sends an address to Odoo's own geolocation provider the first time and keeps the answer in a cache against the normalised address. Two hundred contacts in one office block are one lookup. An address that comes back empty is cached as not found, which is what stops it being tried on every run.
+
+<Shot src="/odoo-guides/odoo-map-view-route-planning/contacts-to-locate.webp" alt="Contacts To Locate list of contacts with no coordinates yet, including Bluebell Bakery Co and Fellside Brewing Co, with email, phone and country" width={1440} height={900} caption="Geocoding, Contacts To Locate: every contact with no pin that has not already failed." />
+
+The list holds every contact with no usable coordinates whose lookup has not already failed, so it also shows people with no address at all, such as staff users; those are skipped when you locate them. The demo shows the three cases that matter:
+
+- **Bluebell Bakery** was located, then its street was edited. The edit cleared the stored key, so it is back in the list.
+- **Fellside Brewing** was added and never located.
+- **Marlowe Interiors** has a street but no town or postcode. The provider found nothing, so Geocoding Failed is ticked, it drops out of the list and it is not retried until the address changes.
+
+Locate This Address on a contact, or Locate Addresses on a map for everything behind it, goes through the cache and reports how many were located, answered from the cache, not found or skipped. Locating needs the Use Maps group, because each new lookup can go to a metered outside service and contact edit rights are too broad a reason to spend that.
+
+Cached Addresses lists every answer kept, how often it was reused and when; Forget This Answer clears one so the next lookup goes out again. A scheduled action works through the queue 50 contacts a day, and it ships switched off.
+
+## Planning a route
+
+Plan a Route on the map's configuration opens a wizard. Choose the date and driver, where the day starts (the company address, a contact, or typed coordinates), whether to come back, kilometres or miles, the average speed and the minutes at each stop. Limit it to the records you selected, add an extra filter, or have it locate missing addresses first. It shows how many records it found and how many have coordinates before you create the route.
+
+<Shot src="/odoo-guides/odoo-map-view-route-planning/route-done.webp" alt="Route RTE/00001 South Manchester client visits in state Done, starting from the company address, with five stops in visiting order showing leg distance, running total and time after departure, all marked visited" width={1440} height={900} caption="A finished route: stops in order, legs, running total and arrival times." />
+
+The order is worked out with a nearest neighbour walk from the start, then a 2-opt pass that removes the crossings a greedy walk leaves. Each stop gets its leg distance, the running total and the time after departure it should be reached, from the average speed and the stop time. Stops with no coordinates go to the end of the list, and Locate Stops tries to place them.
+
+A route is Draft until it is sequenced and confirmed, then Done when the driver is back; Mark Visited ticks each stop on the way, and Cancel keeps a called-off trip on record. Print Route Sheet gives the driver the start point, each stop with address, leg, running total and arrival, and the leg home.
+
+Distances are great-circle distances between the pins. They put calls in a sensible order and give a fair estimate of the day, but they are not road distances.
+
+## Setting it up
+
+1. Install Map View; it brings base_geolocalize. Check the geolocation provider in Odoo's settings.
+2. Give staff Use Maps, and the people who build maps Configure Maps.
+3. Create a map: model, where the position comes from, label, colours and pop-up fields.
+4. Locate the addresses behind it with Locate Addresses, or switch on the daily job.
+5. Plan routes from the map's configuration.
+
+The [overview of all eight productivity modules](/odoo-guides/odoo-community-productivity-apps/) and the full PDF cover the rest. Try it on the [demo](https://productivity-demo.way4tech.com/), or [ask us](/contact/) to map your own records.

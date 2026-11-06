@@ -1,0 +1,105 @@
+---
+title: "Document management in Odoo Community: folder permissions, versions, upload links and PDF split and merge"
+metaTitle: "Document Folders, Versions and Uploads"
+description: "Document management for Odoo 19 Community: folders with read, write and manage groups, versions with restore, locks, expiry, upload links and PDF tools."
+targetQuery: "odoo community document management system"
+category: "Operations"
+summary: "A folder tree whose permissions hold down to the download link, versions you can restore, locks, expiry dates with a daily check, upload requests for people outside the company, and PDF split and merge."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-productivity-apps"
+seriesOrder: 4
+modules:
+  - name: "Document Management System"
+    technical: "wt_documents_dms"
+    note: "USD 69, Odoo 19 Community, needs Discuss and Portal"
+demo:
+  url: "https://productivity-demo.way4tech.com/"
+  label: "Productivity demo"
+related: ["odoo-community-productivity-apps", "odoo-worker-visa-document-expiry", "odoo-fleet-documents-dispatch-readiness"]
+linkFrom: ["/products/wt-documents-dms/", "/modules/documents/"]
+sources: []
+faqs:
+  - q: "Does Odoo Community have a Documents app?"
+    a: "No. The Documents app with folders is part of Odoo Enterprise. Community keeps files as attachments on records. The Document Management System module adds folders, permissions, versions and upload requests on top of those same attachments."
+  - q: "Can I stop people opening a folder's files through the download link?"
+    a: "Yes. Folder permissions are enforced by record rules on the folder, the documents and the versions, and the stored file points back at its document, so the download URL answers to the same rules as the form. A user outside the folder's groups gets nothing."
+  - q: "Can a customer upload a file without a login?"
+    a: "Yes. An upload request sends them a link with a long random token. They see your instructions and an upload box, and what they send lands in the chosen folder with the chosen tags. The link closes at the deadline, and executable file types are always refused."
+  - q: "What happens to the old file when I upload a new one?"
+    a: "It is kept as a numbered version with who replaced it and why. Restore puts an old version back and moves the file that was live into a new version, so a restore can itself be undone."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A studio keeps three kinds of file: client artwork everybody works on, finance papers only two people should see, and certificates that quietly expire. In Odoo Community each file is an attachment on some record, with no folder, no permission of its own and no history: upload a new version and the old one is gone. The Document Management System module keeps files as Odoo attachments, so the filestore and the download route keep working, and adds what is missing: folders that carry real access rights, versions, locks, expiry and a way to ask outsiders for files.
+
+## Folders and permissions
+
+<Shot src="/odoo-guides/odoo-document-management-folders/folders.webp" alt="Documents Folders kanban with cards for Clients, Finance, People, Studio, Archive, General and Internal and their sub folders, each showing the number of documents" width={1440} height={900} caption="The demo's folder tree: Clients, Finance, People, Studio and Archive." />
+
+Every folder carries three group lists:
+
+- **Read**: who may see the folder and open its documents.
+- **Write**: who may add and change documents. Write includes read.
+- **Manage**: who may configure the folder. Manage includes write.
+
+An empty list means every Documents user. The lists are enforced by global record rules on the folder, its documents and their versions, not by hiding buttons, and the stored file points back at its document, so the download URL answers to the same rules as the form.
+
+<Shot src="/odoo-guides/odoo-document-management-folders/folder-access.webp" alt="Access tab of the Finance folder with read, write and manage groups all set to Kestrelmoor Finance Team" width={1440} height={900} caption="Finance: read, write and manage limited to the finance team." />
+
+A sub folder can inherit its parent's access, so a tree can be secured at the top, and Reapply to Sub Folders pushes a folder's access down. A folder can also break the chain: on the [demo](https://productivity-demo.way4tech.com/), People is closed to the people team but People / Policies has inheritance off and read open to everyone, so the whole studio can read the handbook and only the people team can change it. The Documents administrator group is kept on every restricted folder, so no folder can end up with nobody able to open it.
+
+A folder can set an expiry for new files, counted in days from upload. The Insurance and Certificates folder gives every new file a year. Print, Folder Index lists a folder's documents with tags, owner, state and dates.
+
+## Filing a document
+
+<Shot src="/odoo-guides/odoo-document-management-folders/document-form.webp" alt="Document form for Wireframes, 12 templates in the Pennine Outdoor Gear folder, state Available, tags Artwork and To Review, owner Priya Raman, contact Pennine Outdoor Gear Ltd, with Versions and Copies smart buttons" width={1440} height={900} caption="A document: folder, tags, owner, contact, state and its versions." />
+
+A document is one file plus its folder, tags in categories, an owner, the contact it concerns, a description, a state, an optional expiry date, and an optional link to any record in Odoo, opened with the Linked to button. The states are:
+
+| State | Meaning |
+|---|---|
+| Draft | Work in progress |
+| Available | The copy people should use. Needs a file |
+| Expired | Past its expiry date, set by the daily job |
+| Obsolete | Kept for the record |
+
+A daily scheduled action moves available documents past their expiry date to Expired and notes it in the chatter, and Review, Expiring Soon lists what is close. Documents with the same file checksum are counted on a Copies button, which is how the demo shows the logo pack that was uploaded twice.
+
+Files already attached elsewhere in Odoo, on orders, tasks or emails, can be filed in bulk from the attachment list with File Attachments into a Folder, keeping the original where it is and, if you want, the link back to its record.
+
+## Versions and locks
+
+Upload a new file over a document and the old one becomes a numbered version, with who did it and why. Every version owns its own copy of the file, so history cannot be rewritten by replacing the live one.
+
+<Shot src="/odoo-guides/odoo-document-management-folders/versions.webp" alt="Versions list with numbered earlier copies of documents, the file name, size, who saved it, the reason and the date" width={1440} height={900} caption="Review, Versions: every earlier copy, with who replaced it and why." />
+
+Restore puts an old version back and moves the file that was live into a new version, so a restore can itself be undone.
+
+A document can be locked while somebody works on it. On the demo, the senior designer has locked the UI kit; nobody else can change its file, name, folder, tags or state until she releases it, and a Documents administrator can force a lock open for a colleague on holiday.
+
+## Asking for a file
+
+The file you need is often on a client's laptop. An upload request names what you need, who from, the folder and tags it should land in, instructions, a deadline (a week by default), a size limit (25 MB by default) and the accepted file types. Send Request emails the link.
+
+<Shot src="/odoo-guides/odoo-document-management-folders/upload-request.webp" alt="Upload request DOC/REQ/00001 asking Pennine Outdoor Gear Ltd for a product photography shot list, state Waiting, with the folder, tags, instructions, deadline, size limit, accepted file types, reminder settings and the upload link" width={1440} height={900} caption="A waiting upload request: what was asked for, from whom, where it lands and the link." />
+
+The person opens the link, reads the instructions and uploads. No account, no password, no portal invitation. The file lands in the folder with the tags on the request, the request moves to Received, and the document is listed on it. A daily job sends reminders on waiting requests every few days up to a limit, and closes links whose deadline has passed. New Link replaces the token if a link went to the wrong person.
+
+<Callout title="What is always refused">
+Executable and script file types (exe, bat, js, sh, php and others) are refused whatever the request says, and so are files over the size limit. A link that is past its deadline, received or cancelled shows a closed page instead of the upload box.
+</Callout>
+
+## Splitting and merging PDFs
+
+A scanned batch of practice paperwork arrives as one PDF. Split cuts it into separate documents by page range, written the way you would write them: `1-2,3-4,5` gives three documents. It can also make one document per page, or one document from all the pages listed, and shows what it will create before it does. Merge goes the other way: put several documents in order, add a bookmark at the start of each, and choose whether the originals stay, become obsolete or are deleted. Both read PDFs with the pypdf Python package, so check it is on your server: the official Odoo 19 Docker image ships the older PyPDF2 instead, and without pypdf the wizards cannot count the pages.
+
+## Setting it up
+
+1. Install the module and give staff the Documents User group; Administrator for the people who set up folders and tags.
+2. Build the folder tree from the top, setting groups on the top folders and letting sub folders inherit.
+3. Set an expiry on folders that hold certificates.
+4. Use upload requests instead of email attachments for files you need from outside.
+
+The [productivity apps overview](/odoo-guides/odoo-community-productivity-apps/) covers the other modules. Look around the folders on the [demo](https://productivity-demo.way4tech.com/), or [ask us](/contact/) to set up your tree.

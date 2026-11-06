@@ -1,0 +1,116 @@
+---
+title: "Audit log, recently viewed records and Excel import export in Odoo Community"
+metaTitle: "Audit Log, Recent Records, Import Export"
+description: "Track who changed what, field by field, in Odoo 19 Community, keep recent and pinned records one click away, and import or export Excel by any field."
+targetQuery: "odoo audit log field history"
+category: "Operations"
+summary: "Three small tools: an audit trail of creations, changes and deletions with old and new values, a recent and pinned records panel in the top bar, and saved import and export profiles with upsert, dry runs and scheduled exports."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-community-productivity-apps"
+seriesOrder: 6
+modules:
+  - name: "Audit Log"
+    technical: "wt_audit_log"
+    note: "USD 10, Odoo 19 Community"
+  - name: "Recently Viewed Records"
+    technical: "wt_recent_records"
+    note: "USD 15, Odoo 19 Community"
+  - name: "Excel and CSV Import Export"
+    technical: "wt_import_export"
+    note: "USD 10, Odoo 19 Community"
+demo:
+  url: "https://productivity-demo.way4tech.com/"
+  label: "Productivity demo"
+related: ["odoo-community-productivity-apps", "odoo-sale-purchase-approval-workflow", "import-employees-into-odoo"]
+linkFrom: ["/products/wt-audit-log/", "/products/wt-recent-records/", "/products/wt-import-export/"]
+sources: []
+faqs:
+  - q: "How do I see who changed a field in Odoo?"
+    a: "Standard Odoo shows changes in the chatter only for fields a developer marked as tracked. With the Audit Log module you create a rule for a model, choose the fields, and every creation, change and deletion is logged with the user, the date and the old and new value, searchable across the database."
+  - q: "Can audit log entries be edited or deleted?"
+    a: "They cannot be edited. A daily job deletes entries older than the retention set in Settings, 90 days by default, and setting it to zero keeps them forever."
+  - q: "Can I update existing records from Excel without external IDs?"
+    a: "Yes. An Import Export profile in Update or Upsert mode matches rows to existing records on any field you mark as a match key, such as a product code or an email address. Upsert creates the rows that match nothing."
+  - q: "Can an export be emailed every week?"
+    a: "Yes. Tick Scheduled Export on an export profile, set the interval and choose email delivery with the address. An hourly scheduled action runs any profile whose next run has passed."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Three small problems turn up in every Odoo office. A price or a customer's email changes and nobody can say who did it. People spend the day reopening the same ten records through the menus. And a supplier sends a new rate card in Excel that has to update existing products, not create duplicates. Each has a small module: Audit Log at 10 dollars, Recently Viewed Records at 15 and Excel and CSV Import Export at 10. They are shown together here because each is quick to set up.
+
+## Audit log
+
+Odoo's chatter shows changes to the fields a developer marked as tracked, on that one record. It is not a log you can search: there is no answer to "what did Owen change last week" or "who deleted that contact". Audit Log adds one.
+
+### Choosing what is watched
+
+A rule names a model and whether to log creations, updates and deletions, and lists the fields to track. Leave the fields empty and every stored field is tracked. Two rules come with the module, for users and for security groups, so changes to access rights are logged from the day it is installed.
+
+<Shot src="/odoo-guides/odoo-audit-log-import-export-recent-records/audit-rule.webp" alt="Audit rule Sales order changes on model Sales Order with Log Creation, Log Updates and Log Deletion ticked and tracked fields Status, Salesperson, Customer, Expiration, Customer Reference, Approval and Delivery Date" width={1440} height={900} caption="A rule on sales orders, tracking seven fields." />
+
+On the [demo](https://productivity-demo.way4tech.com/) there are rules on contacts, sales orders, purchase orders, project tasks and the price list, beside the two shipped ones.
+
+### Reading the log
+
+Every entry has the date, the user, the model, the record and the operation, and a line per field changed with the old value and the new one. The log is read only: entries cannot be edited, only reviewed. It has list, pivot and graph views, so "changes by user by month" is one click.
+
+<Shot src="/odoo-guides/odoo-audit-log-import-export-recent-records/audit-overview.webp" alt="Audit Overview dashboard with total entries, entries today and this week, counts of created, updated and deleted, bar charts of most active users and most changed models, and a recent activity list" width={1440} height={900} caption="Audit Log, Overview: who is changing what, at a glance." />
+
+The Overview dashboard gives totals for all time, today and this week, the split between created, updated and deleted, the most active users, the most changed models and the latest entries.
+
+Models without a rule take a fast path, so the module costs nothing where it is not used, and a logging failure never stops the change itself. A daily job deletes entries older than the retention set in Settings, 90 days by default; zero keeps them forever.
+
+## Recently viewed and pinned records
+
+<Shot src="/odoo-guides/odoo-audit-log-import-export-recent-records/recent-panel.webp" alt="Recent and Pinned panel open from a clock icon in the Odoo top bar, with two pinned records at the top, a sales order and a Gantt plan, and below them recently opened records with their model names" width={1440} height={900} caption="The clock icon: pinned records first, then the last ones opened." />
+
+Recently Viewed Records adds a clock icon to the top bar. It lists the records you pinned at the top and the last records you opened below them, newest first, each with its model. Click a line to go straight back; the pin button keeps a record in the list for good. A record is added when you open it in a form, and each user sees only their own.
+
+Settings choose how many records are kept per user, 20 by default, and after how many days unpinned ones are pruned, 30 by default. A daily job does the pruning so the table stays small. The History menu shows the table behind the panel.
+
+## Excel and CSV import and export
+
+Odoo's own import works well for loading new records, but updating existing ones means exporting their external IDs first, and every import starts from scratch. Import Export keeps the work in a profile.
+
+### Profiles
+
+A profile names the direction, the model and the format: Excel, CSV or JSON. The mapping lists the fields with the column header to use in the file, a default for empty cells, and which columns are match keys. Load All Fields fills the mapping with every field, to trim down. An export profile adds a filter, a sort order and a record limit; Run Export builds the file and keeps it on a log entry.
+
+<Shot src="/odoo-guides/odoo-audit-log-import-export-recent-records/import-profile.webp" alt="Import profile Rate card update for Product with CSV format, Upsert mode and a field mapping of Code as match key, Name, Price and Type with a default of service" width={1440} height={900} caption="Upsert by product code: a known code updates, a new one creates." />
+
+An import profile has a mode:
+
+| Mode | Does |
+|---|---|
+| Create | Every row becomes a new record |
+| Update | Rows that match an existing record on the key update it; rows that match nothing are reported |
+| Upsert | Updates when a match is found, creates when not |
+
+Create Missing Links finds or creates the related record named in a cell, such as a tag, instead of failing. Download Template gives a blank file with the mapped headers for somebody to fill in.
+
+### Dry runs and problem rows
+
+Preview processes the file and rolls everything back, then says how many rows would go in and why the others would not. Run Import does it for real. One bad row never stops a run: it is logged with its row number, the message and the row's data, and the rest carry on.
+
+<Shot src="/odoo-guides/odoo-audit-log-import-export-recent-records/import-log.webp" alt="Import run log for Rate card update with result Partial, six rows, five succeeded and one failed, the summary of created and updated rows, and the problem row with its row number, error message and row data" width={1440} height={900} caption="A partial run: the one bad row is kept with its data and the reason." />
+
+Run History lists every run with direction, model, mode, result (Success, Partial or Failed) and row counts.
+
+### Scheduled exports
+
+Tick Scheduled Export on an export profile, set the interval in hours, days, weeks or months and the next run, and choose to store the file in the log or email it. The demo sends payroll a timesheet export every Monday. An hourly scheduled action runs any profile that is due.
+
+<Callout title="Upsert with an empty key">
+In Upsert mode a row whose match key is empty matches nothing, so it is created as a new record. If every row must have a key, mark the column required in your file before importing, or use Update mode, which reports rows that match nothing instead of creating them.
+</Callout>
+
+## Setting them up
+
+1. Install the modules you want; each is independent.
+2. Audit Log: give auditors the Audit Manager group, create rules for the models that matter, set the retention.
+3. Recent Records: nothing to do; adjust the two settings if you like.
+4. Import Export: give the Data Import / Export Manager group to the people who load data, and save a profile per file you receive regularly.
+
+The [approvals chapter](/odoo-guides/odoo-sale-purchase-approval-workflow/) pairs well with the audit log, and the [overview](/odoo-guides/odoo-community-productivity-apps/) covers all eight modules.

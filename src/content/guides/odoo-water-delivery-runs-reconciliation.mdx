@@ -1,0 +1,107 @@
+---
+title: "Water delivery rounds in Odoo: standing orders, load out, deliveries at the door and run reconciliation"
+metaTitle: "Rounds, Daily Runs and Reconciliation"
+description: "Build water delivery runs in Odoo from standing orders, load the truck from a released batch, record each stop and reconcile what came back before closing."
+targetQuery: "water delivery route reconciliation odoo"
+category: "Industry"
+summary: "Drivers, vehicles and rounds, standing orders, building tomorrow's run, the load out and its checks, recording a delivery for cash, coupon, subscription and account customers, missed stops with return visits, and reconciling the truck and the cash in the Water Delivery Management module."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-water-delivery-management"
+seriesOrder: 1
+modules:
+  - name: "Water Delivery Management"
+    technical: "wt_water_delivery"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Invoicing"
+demo:
+  url: "https://waterdelivery-demo.way4tech.com/"
+  label: "Water delivery demo"
+related: ["odoo-water-delivery-management", "odoo-water-bottle-deposits-coupons", "odoo-distribution-routes-beat-plans"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How are daily runs created?"
+    a: "From the standing orders. Build Tomorrow's Run on a round, or the scheduled job for every round with a driver, creates a run with one planned stop per standing order due that day for an active customer, and a load out of the planned bottles plus a 10 percent spare."
+  - q: "What happens if a run does not balance?"
+    a: "Reconcile is refused while loaded, less delivered, less brought back is beyond the tolerance in Settings, which is zero by default. Count the truck again or write the missing containers off against the customers who kept them."
+  - q: "Can a driver deliver to an account that is on hold?"
+    a: "No. Delivered is refused with the hold reason on screen, and accounts on hold are left off newly built runs."
+  - q: "What does marking a stop missed do?"
+    a: "It needs a reason. If a reschedule date is filled in first, the module creates the return visit as a new planned delivery linked to the missed one."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A water round lives or dies on two numbers at the end of the day: how many bottles are missing from the truck, and how much cash is missing from the bag. Neither can be worked out after the fact if nobody counted what went out. This chapter of the [water delivery series](/odoo-guides/odoo-water-delivery-management/) builds a run from the standing orders, loads it, works it stop by stop and reconciles it, using the Water Delivery Management module.
+
+## Rounds, drivers and vehicles
+
+A **round** is a regular run: a patch of the city in the drivers' own words, the plant or depot it runs out of, a regular driver and vehicle, and an ordered list of stops. The round form shows the bottles planned a week, the days covered, and the revenue and bottles lost over the last thirty days.
+
+<Shot src="/odoo-guides/odoo-water-delivery-runs-reconciliation/round.webp" alt="A water delivery round for Al Malqa and Hittin with plant, regular driver and vehicle, area, stop count, bottles planned per week, days covered, 30 day revenue and bottles lost, and the list of standing orders as stops" width={1440} height={900} caption="A round with its stops and thirty day figures." />
+
+Drivers carry a licence expiry; a driver whose licence has expired cannot be sent out. Vehicles carry a **capacity in bottles**, and a load that will not fit is refused. Link each driver to an Odoo user and he sees only his own runs and stops.
+
+## Standing orders
+
+Each customer's standing orders say which weekday, every week or every other week, which container, how many and in what window. **Customers, Standing Orders** lists them all grouped by round.
+
+<Shot src="/odoo-guides/odoo-water-delivery-runs-reconciliation/standing-orders.webp" alt="Standing orders grouped by round, each with customer, stop order, weekday, weekly or fortnightly, container, number of bottles and delivery window" width={1440} height={900} caption="Standing orders, grouped by round." />
+
+A customer can have one standing order per day and container, and its round must run out of the customer's own plant.
+
+<Callout title="Enter windows in UTC for now">
+The delivery time on a built stop is taken from the window without the company's time zone. In Riyadh a 07:00 window shows as 10:00, so enter windows three hours earlier until the code is adjusted.
+</Callout>
+
+## Building tomorrow's run
+
+**Build Tomorrow's Run** on the round, or the scheduled job "Water: build tomorrow's runs", creates the run: one planned stop per standing order due that day for an active customer, priced from the customer's plan with its volume breaks. Customers on hold or still signing up are left off. The load out is filled in with the planned bottles of each container plus 10%, at least two, for the customer who always wants an extra bottle.
+
+## Load out and leave
+
+On the run, name the **batch** on each load line, correct the counts to what was actually put on the truck, set the odometer and the coupon books handed to the driver, and press **Load Out**. It is refused when nothing is loaded, when the load will not fit on the vehicle, or when a batch has not been released by the lab.
+
+<Shot src="/odoo-guides/odoo-water-delivery-runs-reconciliation/run-loaded.webp" alt="A loaded run waiting to leave, with round, driver, vehicle and date, and the load out tab showing containers, the released batch and bottles loaded" width={1440} height={900} caption="A run loaded and waiting on the ramp." />
+
+**Leave** puts the run, driver and vehicle on the road and stamps the time. One driver can only have one open run per shift. **Print Run Sheet** gives the driver his stops on paper.
+
+## At the door
+
+Each stop is a delivery with a line per container: delivered, empties back, batch, price and tax. The driver fills in coupons taken, deposit charged or refunded, cash collected and who signed, then presses **Delivered**. How it settles depends on how the customer pays:
+
+| Pays by | What Delivered does |
+|---|---|
+| Cash at the door | Cash due is the water plus deposit; the difference from cash collected shows as a variance |
+| Coupon book | Coupons are taken off the books for that container, oldest first; their value is shown |
+| Subscription | Bottles come off the month's allowance, past it they count as overage |
+| On account | Only the deposit changes hands; the water goes on the monthly invoice |
+
+<Shot src="/odoo-guides/odoo-water-delivery-runs-reconciliation/delivery-coupon.webp" alt="A delivered stop for a pharmacy paying by coupon book: six 5 litre bottles from a named batch delivered and six empties collected, signed for at the counter, on the Olaya Business District run" width={1440} height={900} caption="A coupon stop: bottles out, empties back, batch named." />
+
+Before anything moves, Delivered checks the account is not on hold or closed, that every water line names a released batch, that the customer will not exceed the container limit, that the deposit covers what they will hold, and that the coupons or allowance add up. Only then does it write the ledger, redeem the coupons and use the allowance. A driver cannot edit a coupon book or the ledger himself; both are changed behind the button.
+
+### Missed stops
+
+A stop that did not happen needs a reason: Nobody In, No Access to the Building, Customer Refused, No Empties to Exchange, Account on Stop, Vehicle Problem, Road or Weather, or Other. Fill in a reschedule date first and **Missed** builds the return visit as a new planned stop. **Back to Planned** on the original cancels that return visit so the same water is not delivered twice. **Operations, Missed Deliveries** groups every miss by reason.
+
+<Shot src="/odoo-guides/odoo-water-delivery-runs-reconciliation/missed-list.webp" alt="Missed deliveries grouped by reason such as Nobody In, No Access to the Building, No Empties to Exchange and Customer Refused, with customer, round, date and driver" width={1440} height={900} caption="Missed stops grouped by reason." />
+
+## Back at the plant
+
+**Back at the Plant** is refused while any stop is still planned. Type the full containers brought back on each load line and the cash counted. The run then shows:
+
+- **Loaded, delivered, brought back** and the **variance** between them
+- **Empties collected** and **coupons collected**
+- **Revenue**, **cash expected**, **cash counted** and the **cash variance**
+- **Deposits taken**, net of refunds
+
+**Check the Count** shows whether the run balances without changing anything. **Reconcile** is refused while the variance is beyond the tolerance in Settings, zero by default: count the truck again, or write the bottles off against the customers who kept them. **Operations, Runs to Reconcile** lists every run that is back but not yet closed.
+
+<Shot src="/odoo-guides/odoo-water-delivery-runs-reconciliation/run-unbalanced.webp" alt="A run back at the plant marked Does Not Balance, with 44 bottles loaded, 38 delivered, 4 brought back and a variance of 2" width={1440} height={900} caption="Two bottles nobody can point at." />
+
+<Callout title="Cash short does not block the close">
+A run with less cash counted than expected can still be reconciled if the bottles balance. Use the Cash Short filter on the runs and the deliveries to follow it up with the driver.
+</Callout>
+
+A run that has delivered to anyone cannot be cancelled, only reconciled. The run pivot adds up revenue, variance and bottles delivered by round and week, and each driver's form shows the bottles lost on his closed runs over ninety days.

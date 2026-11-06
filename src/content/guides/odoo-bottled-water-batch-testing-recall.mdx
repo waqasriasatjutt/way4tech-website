@@ -1,0 +1,99 @@
+---
+title: "Bottled water batch testing and recalls in Odoo: test log, release, quarantine, recall list and coolers"
+metaTitle: "Batch Testing, Recalls and Dispensers"
+description: "Record bottled water batches in Odoo, test pH, TDS, turbidity, chlorine and coliform, release only clean batches, trace them and run recalls and coolers."
+targetQuery: "bottled water batch testing odoo"
+category: "Industry"
+summary: "Production batches, the water quality test log and its limits, release only on a clean log, tracing a batch to every delivery, quarantine and the recall list, the certificate of analysis, and dispenser rentals with sanitisation visits in the Water Delivery Management module."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-water-delivery-management"
+seriesOrder: 3
+modules:
+  - name: "Water Delivery Management"
+    technical: "wt_water_delivery"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Invoicing"
+demo:
+  url: "https://waterdelivery-demo.way4tech.com/"
+  label: "Water delivery demo"
+related: ["odoo-water-delivery-management", "odoo-water-delivery-runs-reconciliation", "odoo-cafm-facility-maintenance"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Which tests are added to a batch?"
+    a: "Send for Testing adds pH, total dissolved solids, turbidity, residual chlorine and total coliform with their limits. Conductivity, hardness, nitrate, fluoride, plate count and dissolved ozone can be added by hand. The routine lines start at their lower limit, so type the real readings before release."
+  - q: "How does a recall work?"
+    a: "Every delivery line names the batch its bottles came from. Quarantine a batch with a reason and the chatter lists how many bottles are already out and with which customers, and Recall List opens their deliveries."
+  - q: "Can a batch be rejected after bottles have gone out?"
+    a: "No. Once any bottle from it has been delivered, quarantine the batch and work the recall list instead."
+  - q: "Does the module bill dispenser rentals?"
+    a: "Yes. A monthly job raises one invoice per customer for the rental fees and skips customers whose subscription includes the cooler. The rental lines carry no product and no tax, so VAT has to be added."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+An inspector standing in a customer's kitchen points at a bottle and asks which batch it came from, what it was tested for and who released it. A distributor that keeps its test results in a lab notebook and its deliveries in an invoicing system cannot answer, and cannot say who else has the same water when a batch goes wrong. This chapter of the [water delivery series](/odoo-guides/odoo-water-delivery-management/) covers production batches, the test log, recalls and, because they are the other thing a distributor lends out, dispensers.
+
+## Production batches
+
+Every fill is a batch under **Quality, Production Batches**: the plant (a depot cannot fill), the container, the production date and shift, the line operator, the **source** (Borehole, Municipal Mains, Spring, Reverse Osmosis or Blended) with detail such as which borehole, and the bottles produced. The expiry date follows from the container's shelf life.
+
+<Shot src="/odoo-guides/odoo-bottled-water-batch-testing-recall/batches.webp" alt="Production batches list with batch code, plant, container, filled date, expiry, source, bottles produced, delivered and remaining, tests and status from Filled and Under Test to Released, Quarantined, Rejected and Sold Out" width={1440} height={900} caption="Batches at every stage, from filled to sold out." />
+
+A batch can never have more bottles delivered against it than it produced, which catches a wrong batch number on a delivery.
+
+## The test log
+
+**Send for Testing** adds the five routine tests with their limits:
+
+| Test | Unit | Limits used |
+|---|---|---|
+| pH | pH | 6.5 to 8.5 |
+| Total Dissolved Solids | mg/l | 30 to 500 |
+| Turbidity | NTU | 0 to 1.0 |
+| Residual Chlorine | mg/l | 0 to 0.5 |
+| Total Coliform | cfu/100ml | 0 |
+
+Conductivity, hardness, nitrate, fluoride, plate count and dissolved ozone can be added with their own limits. Each line records the method, the sample, the reading, who tested and when, and shows Pass or Fail against the limits. **Quality, Water Quality Log** lists every reading grouped by parameter. The limits are the module's defaults; set them to your own national standard and licence.
+
+<Shot src="/odoo-guides/odoo-bottled-water-batch-testing-recall/batch-released.webp" alt="A released batch with its fill details and the test log tab listing pH, total dissolved solids, turbidity, residual chlorine and coliform readings with method, sample, limits and a pass result for each" width={1440} height={900} caption="A released batch and its passed test log." />
+
+<Callout title="Type every real reading">
+The routine lines are created with the reading at the lower limit, which counts as a pass. A batch could be released on those placeholder values, so make reading entry part of the release routine.
+</Callout>
+
+## Release
+
+**Release** lets the batch onto the trucks and records who released it and when. With **Release Only on a Clean Test Log** on, the default, a batch with a failed test or no tests is refused. When the product is tracked by lot, release also creates the matching stock lot. From then on Load Out and every delivery check that the named batch is released.
+
+**Where It Went** on the batch lists every delivery line and load line that carried it.
+
+## Quarantine and recall
+
+When something is wrong, write the reason and press **Quarantine**. The chatter records how many bottles are already out and with which customers, and **Recall List** opens every delivery that carried the batch, so the swap round can be built from it.
+
+<Shot src="/odoo-guides/odoo-bottled-water-batch-testing-recall/batch-recall.webp" alt="A quarantined batch with the quarantine reason and the chatter message listing the number of bottles already delivered and the customers who received them" width={1440} height={900} caption="A quarantined batch and who already has it." />
+
+**Reject** is only allowed while no bottle has been delivered; after that, quarantine and recall. **Sold Out** marks a released batch as finished, and the job "Water: pull batches past their shelf life" quarantines released stock past its expiry.
+
+The **Certificate of Analysis** prints the batch, the plant and its bottling licence, and every test with its limits and result.
+
+<Shot src="/odoo-guides/odoo-bottled-water-batch-testing-recall/coa.webp" alt="A printed certificate of analysis for one batch with the plant, licence number, production details and a table of tests with reading, limits and result" width={1440} height={900} caption="The certificate of analysis for one batch." />
+
+## Dispensers and coolers
+
+A cooler is tracked under **Rentals, Dispensers** by asset tag, serial, model and kind (floor standing, table top, plumbed in, cooler only), with its value, monthly fee and deposit.
+
+| State | How it gets there |
+|---|---|
+| In Stock | New, or Back to Stock after service or collection |
+| Out with a Customer | Install, with the customer set |
+| In for Service | Send for Service |
+| Returned | Collect, or a done collection visit |
+| Scrapped | Scrap, refused while it is in a kitchen |
+
+<Shot src="/odoo-guides/odoo-bottled-water-batch-testing-recall/dispensers.webp" alt="Dispenser rentals list with asset tag, serial, model, kind, customer, monthly fee, next service date and status for units in stock, out on rental, in for service, returned and scrapped" width={1440} height={900} caption="Coolers in every state." />
+
+Installing a unit starts its sanitisation cycle, ninety days by default. **Rentals, Sanitisation Due** lists units whose date has come, and the job "Water: raise dispenser sanitisation visits" books a visit for each. A service visit records the kind (installation, sanitisation, repair, inspection, collection), the technician or the driver who did it while swapping bottles, hours, cost, parts and findings. **Done** moves the unit's last service date; a repair cannot be closed without findings.
+
+The job "Water: bill dispenser rentals" raises one invoice a month per customer for the fees, and skips customers whose subscription includes the cooler. Two gaps to know about: the rental lines carry no product or tax, so VAT is added by hand, and a visit marked chargeable is not invoiced by the module.

@@ -1,0 +1,98 @@
+---
+title: "Water bottle deposits, coupon books and subscriptions in Odoo: the container ledger and the liabilities it sizes"
+metaTitle: "Bottle Deposits, Coupons and Subscriptions"
+description: "Track returnable water bottles per customer in Odoo with a ledger and deposits, sell coupon books, run monthly subscriptions and bill account customers."
+targetQuery: "water bottle deposit coupon odoo"
+category: "Industry"
+summary: "The container ledger and its six kinds of line, deposits held, required and short, write offs and the statement, coupon books from sale to expiry, subscriptions with allowance and overage, and monthly billing for account customers in the Water Delivery Management module."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-water-delivery-management"
+seriesOrder: 2
+modules:
+  - name: "Water Delivery Management"
+    technical: "wt_water_delivery"
+    note: "USD 199, Odoo 19 Community, needs Inventory and Invoicing"
+demo:
+  url: "https://waterdelivery-demo.way4tech.com/"
+  label: "Water delivery demo"
+related: ["odoo-water-delivery-management", "odoo-water-delivery-runs-reconciliation", "odoo-rental-pickup-return-deposits"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What is the deposit shortfall?"
+    a: "The containers a customer holds times the deposit per container, less the deposit actually held. It is the value of containers out with no money behind them, and with the deposit setting on, a delivery that would leave the customer short is refused."
+  - q: "Are coupon books invoiced when sold or when used?"
+    a: "When sold. Invoice on the book raises one invoice for all its coupons, and a delivery paid by coupon cannot be invoiced again, so the water is never billed twice."
+  - q: "What happens when a subscriber uses up the allowance?"
+    a: "Further bottles in the month are counted as overage and billed at the overage price with the next monthly invoice. If the plan has no overage price, a delivery past the allowance is refused."
+  - q: "Can an account be closed while the customer still has bottles?"
+    a: "No. Close is refused while the customer holds containers or has unredeemed coupons. Collect the empties or write them off on the ledger first."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A bottled water business carries two liabilities most owners never size: the deposits it holds against bottles that will one day come back, and the coupons it has sold for water it has not yet delivered. It also carries an asset it cannot see, the containers in customers' kitchens. This chapter of the [water delivery series](/odoo-guides/odoo-water-delivery-management/) shows how the Water Delivery Management module keeps all three on a ledger, and how each way of paying is billed.
+
+## The container ledger
+
+Every container that moves writes one line on the customer's ledger, and nothing else in the module keeps the count. Deliveries write their own lines; you write the rest.
+
+| Line | Means |
+|---|---|
+| Opening Balance | Containers already with the customer when the account came onto the system |
+| Delivered | Full containers left at a stop |
+| Empties Collected | Empties taken back at a stop |
+| Written Off | Containers the customer cannot produce |
+| Count Adjustment | A correction after a physical count |
+| Deposit Only | Money moved with no container, such as a deposit top up |
+
+<Shot src="/odoo-guides/odoo-water-bottle-deposits-coupons/ledger.webp" alt="The container ledger listing movements by date with customer, container, quantities out and back, net, deposit movement, the delivery and round, and the running balance after each line" width={1440} height={900} caption="One line per movement, with the running balance." />
+
+The account's **Container Ledger** tab shows the same lines for one customer, and **Print Statement** gives the customer the ledger with its running balance, for the one who argues about the count. Lines from one stop print in the order they were written, so the balance never jumps about on the page.
+
+## Deposits
+
+Each container type carries a **deposit**. On the account three figures follow from the ledger:
+
+- **Deposit required**: containers held times the deposit per container
+- **Deposit held**: what was actually taken, less refunds
+- **Deposit shortfall**: the difference, the containers out with nothing behind them
+
+<Shot src="/odoo-guides/odoo-water-bottle-deposits-coupons/shortfall.webp" alt="A restaurant account with containers out, container limit, deposit held, deposit required and a 60 SAR shortfall" width={1440} height={900} caption="Three bottles found at a count, never covered by a deposit." />
+
+With **Hold a Deposit on Every Container** on in Settings, which is the default, a delivery that would leave the customer short is refused until the driver takes the difference or collects empties. Each account also has a **container limit**; the round stops leaving bottles at a customer already holding too many. The job "Water: chase uncovered container deposits" emails every active customer with a shortfall.
+
+When a customer cannot produce bottles at a count, write them off with a **Written Off** line: the containers as Back and the deposit consumed as a negative movement. **Reporting, Container Losses** then shows which accounts lose bottles, and **Deposit Liability** sums the deposits held per customer.
+
+<Callout title="Deposits stay in the module">
+Taking or refunding a deposit does not post a journal entry. Give your accountant the Deposit Liability report to book the figure.
+</Callout>
+
+## Coupon books
+
+A coupon book is sold for one container at the customer's plan coupon price, one coupon per bottle. **Sell** makes it live and sets the expiry from the months in Settings, twelve by default. A book sold off the truck records its run. **Invoice** bills the whole book up front.
+
+<Shot src="/odoo-guides/odoo-water-bottle-deposits-coupons/coupon-book.webp" alt="A live coupon book for 18.9 litre bottles with coupons sold, used and remaining, the coupon price, the unredeemed value, sale and expiry dates, who sold it and the invoice" width={1440} height={900} caption="A live book with its unredeemed value." />
+
+At the door the coupons are taken off the customer's books for that container, oldest first, and the book becomes Fully Redeemed when the last one goes. The job "Water: expire coupon books" writes once to customers whose book runs out within thirty days and expires books past their date, noting the value left on them. **Cancel** is refused once a coupon has been used or the book is on a posted invoice. The coupon book pivot sizes the whole unredeemed liability.
+
+## Subscriptions
+
+A subscription plan covers one container: bottles a month, a monthly price, an overage price, whether a cooler is included and a minimum term. On the customer's subscription the prices are copied from the plan and then left alone, so editing the plan does not move a negotiated price. One subscription can be live per customer.
+
+<Shot src="/odoo-guides/odoo-water-bottle-deposits-coupons/subscription.webp" alt="An active water subscription on the Home 8 plan with eight bottles a month, monthly and overage prices, the current period, bottles used, past the allowance and left, and the next invoice date" width={1440} height={900} caption="A subscription part way through its month." />
+
+Deliveries eat the allowance; bottles past it count as overage. On a plan with no overage price the round stops at the allowance and the driver sells the extra bottle for cash. **Suspend** pauses a subscription and **Start** resumes it; **End** closes it, and **Cancel** is refused once bottles have been delivered. The job "Water: bill and roll subscriptions" invoices each subscription whose period has ended, the monthly price plus overage, and starts the next period.
+
+## Account customers
+
+Offices, schools and hotels on account pay nothing at the door except the deposit. The job "Water: monthly invoices for account customers" takes last month's delivered stops for each of them and puts them on one invoice, one line per container per stop with the delivery number and date, then emails the monthly statement.
+
+<Shot src="/odoo-guides/odoo-water-bottle-deposits-coupons/account-invoice.webp" alt="A monthly customer invoice for a hotel account for October 2026 with one line per delivery naming the container, quantity, delivery number and date, and 15 percent VAT" width={1440} height={900} caption="One invoice for an account's month of deliveries." />
+
+**Invoice** on a single delivery bills a cash stop by hand, and refuses coupon and subscription stops, because that water was paid for before it came off the truck. Every billing job ships switched off; turn them on once the rate cards are right.
+
+## Closing an account
+
+**Close** is refused while the customer holds containers or has unredeemed coupons, because both are money between you. Collect the empties and refund the deposit with a ledger line, or write the bottles off, end the subscription, then close. A closed account cannot be reopened; open a fresh one so the old ledger stays as it was.

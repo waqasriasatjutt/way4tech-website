@@ -1,0 +1,141 @@
+---
+title: "Bottled water delivery in Odoo: container ledger, deposits, coupons, subscriptions, rounds and batch testing"
+metaTitle: "Water Delivery Management in Odoo"
+description: "Run a bottled water business in Odoo 19: a ledger for every returnable bottle, deposits, coupon books, subscriptions, rounds that balance and batch tests."
+targetQuery: "water delivery management Odoo"
+category: "Industry"
+summary: "What a bottled water distributor has to track that plain sales and inventory do not, and how to run one in Odoo 19 Community: the container ledger and deposits, coupons and subscriptions, standing orders and daily runs, batch testing and recalls, and dispenser rentals."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-water-delivery-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-water-delivery-management.pdf"
+  pages: 31
+modules:
+  - name: "Water Delivery Management"
+    technical: "wt_water_delivery"
+    note: "USD 199, runs on Odoo 19 Community, needs Inventory and Invoicing"
+demo:
+  url: "https://waterdelivery-demo.way4tech.com/"
+  label: "Water delivery demo"
+related: ["odoo-distribution-routes-beat-plans", "odoo-van-sales", "odoo-delivery-cash-collection-credit", "odoo-rental-pickup-return-deposits"]
+linkFrom: ["/industries/water-delivery/", "/modules/wt_water_delivery/", "/products/wt-water-delivery/", "/countries/saudi-arabia/"]
+sources: []
+faqs:
+  - q: "Can Odoo track returnable water bottles and deposits?"
+    a: "Not as standard: Odoo Inventory tracks stock you own in your warehouse, not containers on loan in customers' kitchens. The Water Delivery Management module adds a container ledger per customer with deposits held, deposits required and the shortfall between them."
+  - q: "Does the module support coupon books and monthly subscriptions?"
+    a: "Yes. Coupon books are sold and invoiced in advance and redeemed one coupon per bottle at the door, oldest book first. Subscriptions carry a monthly bottle allowance, an overage price and a billing job that invoices the month and starts the next."
+  - q: "What stops a driver losing bottles off the truck?"
+    a: "Each run is loaded with a counted number of containers and reconciled on return: loaded, less delivered, less brought back. If that is not zero, beyond the tolerance you set, the run cannot be reconciled until somebody explains it."
+  - q: "Can a batch of water go out without being tested?"
+    a: "Not while Release Only on a Clean Test Log is switched on, which is the default. A batch with a failed or missing test cannot be released, and a truck cannot be loaded or a delivery recorded against a batch that is not released."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+A water distributor counts its bottles once a year and finds four hundred missing. Some are in customers' store rooms with no deposit behind them, some cracked on the truck, some went to a kiosk that closed. Nobody can say which, because the business recorded what it sold and not what it lent. Meanwhile the coupon books sold last winter are a liability nobody has sized, and the health inspector wants to know which batch the bottle in a customer's kitchen came from. This guide covers what a bottled water business has to track and how to run one on Odoo 19 with our Water Delivery Management module.
+
+## What a water business has to track
+
+A water business looks like a delivery company, but its real asset is the returnable container. Every full bottle that leaves the truck is yours, sitting in somebody else's kitchen, and every one should have a deposit behind it.
+
+| What | Why it matters |
+|---|---|
+| Containers out, per customer | The asset you cannot see, and the number that turns into write offs |
+| Deposit held against them | Money you owe back, and the cover for bottles that never return |
+| Coupons sold and not redeemed | Water paid for and not yet delivered: a liability |
+| Standing orders | Which customers are due which day, so the run builds itself |
+| What went out on the truck and what came back | Bottles walk off trucks; the run has to balance |
+| Cash expected against cash counted | Per run and per driver |
+| Batch and test log | What an inspector asks first, and what a recall needs |
+| Coolers on rental | A monthly fee and a sanitisation cycle |
+
+## What standard Odoo does and does not cover
+
+Standard Odoo has no water delivery app. People try:
+
+- **Sales and Inventory.** Good for selling cartons, but stock in Inventory is stock in your warehouse. A bottle in a customer's kitchen is not modelled, so neither is its deposit.
+- **Subscriptions (Enterprise).** Recurring invoices, but no bottle allowance consumed by deliveries and no coupons.
+- **Van sales or distribution modules.** Routes and cash collection, but no returnable container ledger. See the [van sales guide](/odoo-guides/odoo-van-sales/) if cartons are all you deliver.
+
+Odoo gives you the parts underneath: customers, Invoicing with VAT, lot numbers in Inventory, and the chatter for an audit trail. The module builds the water business on top.
+
+## The module
+
+[Water Delivery Management](https://apps.odoo.com/apps/modules/19.0/wt_water_delivery) (USD 199) runs on Odoo 19 Community and needs Inventory and Invoicing, both part of Community. It adds one app, **Water**, with six menus:
+
+| Menu | Screens |
+|---|---|
+| Operations | Deliveries, Daily Runs, Runs to Reconcile, Missed Deliveries |
+| Customers | Accounts, Standing Orders, Container Ledger, Coupon Books, Subscriptions |
+| Rentals | Dispensers, Sanitisation Due, Service Visits |
+| Quality | Production Batches, Water Quality Log |
+| Reporting | Revenue by Round, Deposit Liability, Container Losses |
+| Configuration | Settings, Plants and Depots, Rounds, Container Types, Price Plans, Subscription Plans, Drivers, Vehicles |
+
+Four roles split the work: **Driver** (own runs and stops, no pricing, no ledger edits), **Water Quality Officer** (the test log and batches), **Dispatcher** (rounds, runs, reconciliation and accounts) and **Water Delivery Manager** (everything). The records that carry money, runs, deliveries, batches, coupon books and subscriptions, only change status through their buttons, so no check can be skipped by editing a field.
+
+<Shot src="/odoo-guides/odoo-water-delivery-management/runs-list.webp" alt="Daily runs list showing run numbers prefixed by round code, date, round, driver, vehicle, stops done and missed, bottles loaded and delivered, variance, revenue and cash, with statuses from Planned and Loaded to On the Road and Reconciled" width={1440} height={900} caption="Daily runs from planned to reconciled." />
+
+## How a day works
+
+1. **Build the runs.** Each round's standing orders say which customers are due which day. A button or the nightly job builds tomorrow's run with one planned stop per customer, priced from the customer's plan.
+2. **Load out.** Count the containers onto the truck and name the released batch for each. Load Out refuses a load that will not fit on the vehicle or a batch the lab has not released.
+3. **Deliver.** At each stop the driver records bottles left, empties back, coupons taken, deposit charged, cash collected and who signed. The delivery moves the customer's ledger, redeems coupons and uses up the subscription allowance.
+4. **Miss with a reason.** A missed stop needs a reason, and a reschedule date builds the return visit.
+5. **Reconcile.** Back at the plant, loaded less delivered less brought back has to be zero, within your tolerance, before the run closes.
+6. **Bill.** Coupon books are invoiced when sold, subscriptions at the end of each period, account customers once a month from their deliveries.
+
+<Shot src="/odoo-guides/odoo-water-delivery-management/run-unbalanced.webp" alt="A daily run back at the plant with a red Does Not Balance ribbon: 44 bottles of 18.9 litres loaded from a named batch, 38 delivered, 4 brought back and a variance of 2, with departure and return times and odometer readings" width={1440} height={900} caption="A run two bottles short: Reconcile refuses until it is explained." />
+
+### The container ledger
+
+Every movement writes a line: opening balance, delivered, empties collected, written off, count adjustment or deposit only. The running balance is what the customer holds. Deposit required is the containers held times the deposit; when it is more than the deposit held, the account shows a shortfall, and a delivery that would leave the customer short is refused unless the driver takes the difference.
+
+<Shot src="/odoo-guides/odoo-water-delivery-management/customer-shortfall.webp" alt="A restaurant water account on cash at the door with containers out, container limit, deposit held, deposit required and a deposit shortfall of 60 SAR after three bottles were found at a count with no deposit taken" width={1440} height={900} caption="Containers out with no deposit behind them." />
+
+### Coupons and subscriptions
+
+Coupon books are sold in advance at the plan's coupon price, invoiced up front, and redeemed one coupon per bottle at the door, oldest book first. A driver has no rights to edit a book. Subscriptions carry a monthly allowance and an overage price; with no overage price, the round stops at the allowance.
+
+### Quality and recalls
+
+Every fill is a batch with its source, shift and operator, sent for testing with pH, dissolved solids, turbidity, chlorine and coliform. A batch with a failed or missing test cannot be released. Every delivery line names its batch, so quarantining a batch lists every customer who already has it.
+
+<Shot src="/odoo-guides/odoo-water-delivery-management/batch-recall.webp" alt="A quarantined production batch of 18.9 litre bottles with its fill date, source, bottles produced and delivered, the quarantine reason describing high turbidity on a retained sample, and the chatter listing the customers who already have bottles from it" width={1440} height={900} caption="A quarantined batch and the customers who have it." />
+
+### Dispensers
+
+Coolers are tracked from stock to rental, service, collection and scrap. Installing one starts the sanitisation cycle, a job raises the visit when it is due, and a monthly job bills the rental, skipping customers whose subscription includes the cooler.
+
+## Limitations
+
+These come from reading the module's code, and we would rather you know them before you buy:
+
+- **No portal, ordering page or separate driver app.** Drivers use Odoo in a phone browser and see only their own runs and stops.
+- **No stock moves.** Plants name a warehouse and a released batch can create a stock lot, but deliveries do not move stock in Inventory.
+- **Deposits are not posted to the accounts.** The Deposit Liability report gives the figure; booking it is for your accountant.
+- **Delivery times ignore the time zone.** Times built from the standing order windows are stored as if in UTC, so in Riyadh a 07:00 window shows as 10:00.
+- **Rental invoices carry no tax.** Dispenser rental lines have no product, so VAT has to be added by hand.
+- **Chargeable service visits are not invoiced.** The flag is recorded only.
+- **Routine test lines start at a passing value.** Sending a batch for testing fills each reading with its lower limit; enter the real readings before release.
+- **Every scheduled job ships switched off,** from building runs to billing, until you turn them on.
+
+## The full guide
+
+The PDF guide on this page covers every screen with a screenshot for each step: the trade in five minutes, setup from zero, every workflow, the printed documents, a fifteen minute walk-through and common questions. The [live demo](https://waterdelivery-demo.way4tech.com/) runs an invented Riyadh bottler with a plant, a depot, four rounds and three months of history; [ask us for a login](/contact/) or see the [demo directory](/demos/).
+
+<WhenLive slug="odoo-water-delivery-runs-reconciliation">
+
+## The chapters
+
+Three chapters take the work in turn: [rounds, daily runs and reconciliation](/odoo-guides/odoo-water-delivery-runs-reconciliation/), [the container ledger, deposits, coupons and subscriptions](/odoo-guides/odoo-water-bottle-deposits-coupons/), and [batch testing, recalls and dispensers](/odoo-guides/odoo-bottled-water-batch-testing-recall/).
+
+</WhenLive>
+
+## Where to go from here
+
+For route planning and cash collection on a wider distribution operation see the [distribution routes guide](/odoo-guides/odoo-distribution-routes-beat-plans/) and the [delivery cash collection guide](/odoo-guides/odoo-delivery-cash-collection-credit/). The industry overview is on the [water delivery page](/industries/water-delivery/), and if you want your rounds set up from your own customer list and container count, [get in touch](/contact/).

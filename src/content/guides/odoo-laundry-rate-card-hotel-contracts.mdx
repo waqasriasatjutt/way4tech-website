@@ -1,0 +1,103 @@
+---
+title: "Laundry pricing and hotel contracts in Odoo: rate card, per kilo, express surcharge and monthly invoices"
+metaTitle: "Rate Card, Hotel Contracts and Invoicing"
+description: "Price a laundry in Odoo per piece, per kilo or per square metre, add express surcharges, give hotels their own rates and bill them one invoice a month."
+targetQuery: "laundry pricing hotel contract odoo"
+category: "Industry"
+summary: "Services and their charge basis, the rate card of counter prices and contract rates, branch turnaround and express surcharge, discount and deposit, account contracts, and the per order and consolidated monthly invoice in the Laundry Management module."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-laundry-management"
+seriesOrder: 2
+modules:
+  - name: "Laundry Management"
+    technical: "wt_laundry_management"
+    note: "USD 199, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://laundry-demo.way4tech.com/"
+  label: "Laundry demo"
+related: ["odoo-laundry-management", "odoo-laundry-garment-tagging-plant-board", "odoo-hotel-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the module decide the price of a line?"
+    a: "It looks for the account's agreed rate for that service and garment first, then the counter price on the rate card, then the service's base price. The price is filled in when the line is added and can be changed by hand."
+  - q: "How is the express surcharge charged?"
+    a: "Each branch has an express surcharge percentage. Tick Express on an order and the surcharge is added on top of the lines, and the promised time moves to the branch's express turnaround. On the invoice it appears as its own line."
+  - q: "Which orders go on the monthly invoice?"
+    a: "For each contract billed Consolidated Monthly, the scheduled job takes orders taken in during the previous calendar month that are Ready or Collected and not yet invoiced, and puts them on one invoice labelled with the contract and the month."
+  - q: "Is the discount on a contract applied automatically?"
+    a: "Not in the current version. The contract's discount field is stored but not applied to orders. Put the discount into the contract's agreed rates, or into the Discount field on each order."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A laundry's price list is never one price per item. A shirt dry cleaned costs more than a shirt washed and ironed, a silk blouse more than a cotton one, a bag of mixed washing is sold by the kilo, curtains by the square metre, and the hotel down the road pays a third of the counter price for a bedsheet because it sends three hundred a week. Then there is express work, a deposit at the counter and a discount for a regular. This chapter of the [laundry management series](/odoo-guides/odoo-laundry-management/) sets all of that up in the Laundry Management module and follows it through to the invoice.
+
+## Services and how they charge
+
+A service is what is done to a piece. Each one has a charge basis, a base price and a product, under **Configuration, Services**.
+
+<Shot src="/odoo-guides/odoo-laundry-rate-card-hotel-contracts/services.webp" alt="Laundry services list with Dry Clean, Wash and Iron, Press Only, Wash and Fold by Kilo, Household Linen, Curtain and Rug Cleaning and Leather and Suede Care, each with a code, charge basis, base price in AED and hours it normally takes" width={1440} height={900} caption="Seven services, each with its own charge basis." />
+
+| Charge basis | The line is worked out as | Example on the demo |
+|---|---|---|
+| Per Piece | Quantity times price | Dry Clean, shirt, AED 12 |
+| Per Kilo | Weight on the scales times price, or quantity times the garment's typical weight if nothing was weighed | Wash and Fold, AED 14 a kilo |
+| Per Square Metre | Quantity times price | Curtains AED 18, rugs AED 30 |
+| Flat Fee | One unit, whatever the quantity | A fixed charge |
+
+The **product** on each service is what appears on the invoice, and it decides the income account and the tax. On the demo every service carries the 5% UAE VAT through its product.
+
+<Callout title="Type square metres into the quantity">
+In the current version a Per Square Metre line is calculated exactly like a per piece line, quantity times price. Measure the curtain or rug, put the square metres in Quantity, and write the panel count or the size in Instructions.
+</Callout>
+
+## The rate card
+
+**Configuration, Rate Card** holds one price per service and garment type. A line with no contract is the counter price; a line with a contract is that account's agreed rate. There can only be one counter price for a given service and garment, so nobody ends up with two prices for a shirt.
+
+<Shot src="/odoo-guides/odoo-laundry-rate-card-hotel-contracts/rate-card.webp" alt="The laundry rate card listing services against garment types with a price in AED, some lines with no contract as counter prices and others tied to a hotel, clinic or corporate contract" width={1440} height={900} caption="Counter prices and contract rates on one list." />
+
+When a line is added to an order, the price is looked up in a fixed order: the account's agreed rate for that service and garment, then the counter price, then the service's base price. Garment types under **Configuration, Garment Types** carry a category, the typical weight used for per kilo lines, and a standing care note such as "never wet clean".
+
+## Turnaround and express
+
+Each branch has a **standard turnaround** and an **express turnaround** in hours and an **express surcharge** as a percentage. The demo's plant promises 48 hours, or 8 hours express at 50% extra. The counters that send work to the plant promise 72 and 24 hours at 40%.
+
+<Shot src="/odoo-guides/odoo-laundry-rate-card-hotel-contracts/branch-turnaround.webp" alt="A laundry branch form showing kind Shop and Plant, address, phone, email, billing journal, standard turnaround 48 hours, express turnaround 8 hours and express surcharge 50 percent" width={1440} height={900} caption="Turnaround and express surcharge are set per branch." />
+
+Ticking **Express** on an order moves the promised time to the express turnaround and adds the surcharge on top of the lines. The branch's **billing journal** is the sales journal its invoices go to, which is how a chain keeps each branch's takings apart.
+
+## Weight, discount and deposit
+
+For a per kilo service, put the bag on the scales and type the weight on the line. The subtotal is weight times the price per kilo.
+
+<Shot src="/odoo-guides/odoo-laundry-rate-card-hotel-contracts/per-kilo-order.webp" alt="A collected order with a wash and fold by kilo line priced from the weight on the scales, with the totals below" width={1440} height={900} caption="A per kilo line priced from the weight." />
+
+Below the lines the order adds up: express surcharge, untaxed amount, tax and total. A **Discount** percentage applies to the whole order and brings up a field for the reason, so a discount is never given without one on record. A **Deposit** taken at the counter comes off the total to give the amount due, and it cannot be more than the order.
+
+## Account contracts
+
+A hotel, clinic, office, restaurant or household on a regular wash gets a contract under **Accounts, Contracts**. It names the customer, the branch that serves them, the kind of account, start and end dates and payment terms. Its **Agreed Rates** tab is a rate card of its own.
+
+<Shot src="/odoo-guides/odoo-laundry-rate-card-hotel-contracts/hotel-contract.webp" alt="A hotel contract billed consolidated monthly with 30 day payment terms and agreed rates of 6 AED per bedsheet, 2 per pillowcase, 32 per duvet cover, 3 per towel and 10 per tablecloth" width={1440} height={900} caption="The hotel pays AED 6 for a bedsheet; a walk-in pays 15." />
+
+When the customer on an order has an active contract, the order's Account fills in and every line is priced from the agreed rates. An order can only carry a contract that belongs to its own customer.
+
+<Callout title="Two things the contract does not do yet">
+The contract's discount percentage is stored but not applied to orders, and its end date is not checked when an order is taken in. Put discounts into the agreed rates, and archive a contract when it ends.
+</Callout>
+
+## Invoicing
+
+**Billing** on the contract is either Invoice Each Order or Consolidated Monthly. Walk-in customers have no contract and are invoiced one order at a time.
+
+- **One order.** On a Ready or Collected order press **Invoice**. A customer invoice is created with one line per order line, naming the service, garment, quantity and order number, plus a line for any express surcharge. The order becomes Invoiced. The invoice starts as a draft; confirm it and register the payment in Invoicing as usual.
+- **One invoice a month.** The scheduled action "Laundry: monthly contract invoices" runs daily. For each monthly contract it takes the previous calendar month's orders that are Ready or Collected and not yet invoiced, and puts them on one invoice labelled with the contract and the month.
+
+<Shot src="/odoo-guides/odoo-laundry-rate-card-hotel-contracts/monthly-invoice.webp" alt="A consolidated monthly customer invoice for a hotel for October 2026, with one line per service and garment for every order in the month, each naming its order number, and the 5 percent VAT and total" width={1440} height={900} caption="One invoice for the hotel's whole month, each line naming its order." />
+
+The job ships switched off, so turn it on once the rate cards are right. It only looks at the previous month: an order from two months back that was never billed is not picked up, and has to be invoiced by hand from the order.
+
+The money then lives in standard Odoo Invoicing: payments, follow ups and the aged receivables report all work as normal. To see the takings per branch and month without opening the accounts, use **Reporting, Revenue and Turnaround**, covered in the [series overview](/odoo-guides/odoo-laundry-management/).

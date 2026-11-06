@@ -1,0 +1,117 @@
+---
+title: "Plant hire rate cards and availability in Odoo: cheapest rate wins, no double booking"
+metaTitle: "Rate Cards, Availability and Booking"
+description: "Set up plant hire rate cards in Odoo with day, week and four week rates, customer and season cards, then book machines with no double booking."
+targetQuery: "plant hire rate card weekly rate software"
+category: "Industry"
+region: "UK and worldwide"
+summary: "Counter, single unit, customer and season rate cards, how a hire length is priced the cheapest way the card allows, and how availability is checked across hires and workshop bookings before a machine is reserved."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-equipment-rental-management"
+seriesOrder: 1
+modules:
+  - name: "Equipment Rental Management"
+    technical: "wt_equipment_rental"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://equipmentrental-demo.way4tech.com/"
+  label: "Plant hire demo"
+related: ["odoo-equipment-rental-management", "odoo-equipment-hire-off-hire-damage-deposits", "odoo-rental-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the module price a five day hire when the card has a weekly rate?"
+    a: "It counts the hire in hours, rounds up to whole days, then works out the cheapest way to make those days from the day, week and four week rates on the card. On a card at 110 a day and 330 a week, five days costs 330, and the line says Priced As 1 x week."
+  - q: "Is a monthly rate a calendar month?"
+    a: "No. The four weekly rate covers 28 days, as the plant hire trade quotes it, so February is not cheaper than March. Thirty days is priced as four weeks and two days, or whatever mix is cheaper on that card."
+  - q: "Can one customer have their own prices?"
+    a: "Yes. A rate card can name a customer, and that customer's card is used before the counter rate for every unit in the category. A card can also name a single unit, for a newer or older machine priced on its own, and a unit card wins over a category card."
+  - q: "What stops the same machine being promised to two customers?"
+    a: "Reserving a hire checks every unit over the whole period. If another reserved or live hire, or a planned workshop job, holds the unit for any part of that window, the reservation is refused and the message names the contract that holds it. Quotations do not hold machines, so the second quote to be reserved is the one refused."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most of the margin in plant hire is won or lost on the phone. The customer asks for a breaker for "a few days", the desk quotes the day rate times five, and the yard down the road quotes the week. Or the desk quotes a machine that is already promised to someone else from Tuesday, and finds out when the lorry turns up to an empty bay. This chapter of the [equipment rental management series](/odoo-guides/odoo-equipment-rental-management/) covers the two things that stop both: rate cards that price a period the way the trade does, and availability that is checked across the whole period before anything is promised.
+
+## Four kinds of rate card
+
+Rate cards live under Rentals, Configuration, Rate Cards, and the list opens grouped by category. Every card belongs to a category and carries any of an hourly, a daily, a weekly and a four weekly rate. It needs at least one of daily, weekly or four weekly, because an hourly rate alone cannot price a week. On top of that, a card can narrow itself down:
+
+| Card | Set | Use it for |
+|---|---|---|
+| Counter rate | category only | the price anyone walking in pays |
+| Single unit | This Unit Only | an older machine priced below the rest, or a brand new one above |
+| Customer | Customer | a groundworks contractor who negotiated a season rate |
+| Season | Valid From and Valid To | next year's card, or a winter rate, ready in advance |
+
+<Shot src="/odoo-guides/odoo-plant-hire-rate-cards-availability/rate-cards.webp" alt="Rate Cards list in Odoo grouped by category: Mini and Midi Excavators with four cards, Site Dumpers two, Telehandlers one, Access Platforms three, and one each for breakers, generators, compressors, tippers and lifting accessories, with daily, weekly and four weekly rates in pounds, minimum days and deposits" width={1440} height={900} caption="The demo's cards, grouped by category. The list can be edited in place." />
+
+A card can also override the category's allowance per day, its overuse rate and its deposit, and the depot's delivery and collection charges. The demo's telehandler card does that: a telehandler needs the low loader, so transport is priced at 120 each way on the card rather than the depot's standard 65.
+
+<Shot src="/odoo-guides/odoo-plant-hire-rate-cards-availability/customer-card.webp" alt="Rate card form for Brookfield Groundworks agreed season rate on Mini and Midi Excavators: customer Brookfield Groundworks Ltd, daily rate 95, weekly 285, four weekly 850, minimum one day, 9 hours included per day, overuse 10 an hour, deposit 150, and a note about reviewing before the autumn" width={1440} height={900} caption="A negotiated card: lower rates, a longer day and a smaller deposit for one customer." />
+
+### Which card the module picks
+
+When a unit goes on a hire, the module looks for a card in date for that unit's category in this order, and takes the first it finds:
+
+1. this unit and this customer;
+2. this unit, any customer;
+3. this category and this customer;
+4. the category counter rate.
+
+Two cards at the same level are separated by their sequence, lowest first. Validity is tested on the day the line starts, so a quote for December picks up the winter access card and a quote for March 2027 picks up the 2027 excavator card, with nobody changing anything on the day. The desk can still choose a different card on the line.
+
+## How a period becomes a price
+
+The module counts the hire in hours, from hand-over to return once those happen and from the planned dates before. It rounds up to whole days and never charges less than the card's **Minimum Hire** days. Then it finds the cheapest way to make up that many days from the day, week and four week blocks on the card, and writes the answer on the line as **Priced As**.
+
+| Hire, on a card at 110 a day, 330 a week, 990 four weekly | Day rate only | Charged |
+|---|---|---|
+| 3 days | 330 | 330 (3 x day) |
+| 5 days | 550 | 330 (1 x week) |
+| 10 days | 1,100 | 660 (2 x week) |
+| 30 days | 3,300 | 1,210 (1 x 4 weeks, 2 x day) |
+
+The four weekly block is 28 days, because that is what the trade means by a month. The hourly rate is only used for a hire of 24 hours or less on a card whose minimum is one day, and only if it comes out under the day. On the demo, breakers carry 8 an hour against 28 a day, so a three hour job is 24.
+
+<Shot src="/odoo-guides/odoo-plant-hire-rate-cards-availability/quotation.webp" alt="Quotation LEI/HC/2026/00432 for Brookfield Groundworks Ltd from 10 to 17 November, with customer order number PO-22305, site contact and phone, Leicester Depot, a Reserve and Free Units button, and one unit line on the Brookfield card charged 7 days, Priced As 1 x week, 285, with hire, delivery and untaxed totals" width={1440} height={900} caption="A quotation on the customer's card: seven days priced as one week." />
+
+The hire charge on a line can be typed over for an agreed price, and the taxes are taken from the hire product when the unit is added and then kept, so the total on the agreement is the total on the invoice.
+
+## Availability
+
+A machine is held over a window when anything in that window is a hire line that is **Reserved** or **On Hire**, or a workshop job that is **Planned** or **In the Workshop**. Retired and quarantined machines are never free. Three screens answer "have you got one":
+
+- **Fleet, Availability** shows the units that are available or reserved, grouped by category: the quick look at what is in the yard.
+- **Free Units** on a quotation or reservation opens every unit at that depot free for the whole period of the hire.
+- **Check Availability** on a unit, or on several selected in the fleet list, says whether they are free for the next fourteen days and names the ones that are held.
+
+<Shot src="/odoo-guides/odoo-plant-hire-rate-cards-availability/free-units.webp" alt="Free Units result for a hire from 10 to 17 November, a board grouped by status with five Available units including a micro excavator, a telehandler, two breakers and a lever hoist, one In the Workshop, six On Hire and one Reserved, each with its meter and certificate badge" width={1440} height={900} caption="Free Units on a quotation: what this depot can send for the whole period." />
+
+### Reserving refuses, it does not warn
+
+Pressing **Reserve** checks every line. A unit that is retired or quarantined is refused, a unit another reserved or live hire holds for any part of the period is refused, and a unit booked into the workshop over the period is refused. Each message names the unit and the contract or job that holds it. Only when every line passes do the lines and machines go to Reserved, and the customer gets the Hire Confirmed email if they have an address on file.
+
+The same check runs the other way in the workshop: a service cannot be booked over a live hire, and two workshop jobs cannot overlap on one machine.
+
+<Callout title="Quotations do not hold machines">
+Two quotations can name the same unit for the same week. Whichever is reserved first gets it, and the second is refused at Reserve. If you need to hold a machine for a customer who has not confirmed, reserve the hire and cancel it later; cancelling a reserved hire frees the units straight away.
+</Callout>
+
+### The status only moves with the buttons
+
+The Hires board groups hires by status, from Quotation through Reserved, On Hire and Off-Hired to Invoiced. Dragging a card between columns is refused: the status of a hire can only be changed by Reserve, Hand Over, Off-Hire, Invoice and Cancel, because a drag would skip the availability check, the hand-over sheet, the meters and the damage assessment. A hire can also only be created as a quotation.
+
+<Shot src="/odoo-guides/odoo-plant-hire-rate-cards-availability/hires-board.webp" alt="Hires board grouped by status with columns Reserved, Quotation and On Hire, each card showing the hire number, customer, number of units, depot, total and how many days until due back, with Deposit held tags on hires that are out" width={1440} height={900} caption="The Hires board. The status moves only with the buttons on the hire." />
+
+## Setting it up for your yard
+
+1. Create each category with its meter, allowance and deposit (see the [hub](/odoo-guides/odoo-equipment-rental-management/) for the settings).
+2. Add a counter card per category, with day, week and four week rates and a minimum.
+3. Add unit cards for any machine priced off the counter, and customer cards for your account customers.
+4. Before the season changes, add next season's cards with a Valid From date. The old card keeps quoting until then.
+5. Use the filters on Rate Cards, Counter Rates, Customer Rates, Single Unit and In Date, to check what is live.
+
+The next chapter follows a reserved hire out of the gate and back: [hand-over, off-hire, damage and deposits](/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/).

@@ -1,0 +1,118 @@
+---
+title: "Coworking memberships and billing in Odoo: plans, company accounts and the monthly run"
+metaTitle: "Memberships, Accounts and Monthly Billing"
+description: "Set up coworking plans with credits and allowances in Odoo, bill companies for their people, sell add-ons and day passes, and raise one invoice per payer."
+targetQuery: "coworking membership billing monthly invoice"
+category: "Industry"
+region: "UK and worldwide"
+summary: "Membership plans and what comes with them, company accounts with credit limits, members and their term and notice, add-ons and day passes, and the monthly billing run that gathers the month and raises one invoice per payer."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-coworking-space-management"
+seriesOrder: 2
+modules:
+  - name: "Coworking Space Management"
+    technical: "wt_coworking_space"
+    note: "USD 249, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://coworking-demo.way4tech.com/"
+  label: "Coworking demo"
+related: ["odoo-coworking-space-management", "odoo-coworking-meeting-room-booking", "odoo-gym-membership-billing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What goes on the monthly coworking invoice?"
+    a: "The billing run gathers plan fees for active members, printing over the allowance, room time the credits did not cover, late cancellation and no show charges, day passes put on a company account, and running monthly add-ons and unbilled one off add-ons. It raises one invoice per payer."
+  - q: "Can a member leave before their minimum term?"
+    a: "No. End Membership is refused before the plan's minimum term is up from the start date, and sooner than the notice period allows from today. It is also refused while the member is still checked in to the building."
+  - q: "What does a credit limit on a company account do?"
+    a: "When the account's outstanding invoices are over its credit limit, confirming a booking for any of its members is refused until the balance is cleared or the limit is raised. The limit is visible to space managers only."
+  - q: "Is the billing run automatic?"
+    a: "It can be. A scheduled job, switched off when the module is installed, runs daily and on the company's billing day creates the run for last month across every building, gathers it and raises the invoices as drafts. You can also create and run it by hand."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A coworking space bills the same people every month, and still gets it wrong: the plan fee is right but the room overage is forgotten, the parking is on a separate invoice, the company with five desks gets five bills, and the printing nobody counted is simply lost. This chapter of the [coworking space management series](/odoo-guides/odoo-coworking-space-management/) sets up what members buy and who pays for it, and then shows the monthly run that puts it all on one invoice per payer.
+
+## Plans
+
+Configuration, Membership Plans. A plan has a **type** (hot desk, part time, dedicated desk, private office, virtual office), a **monthly fee** and the product it is invoiced under, and what comes with it:
+
+| On a plan | What it does |
+|---|---|
+| Meeting Room Credits (h) | hours of meeting room and booth time a month, spent before any money |
+| Credit Overage Rate | the hourly price once the credits are gone |
+| Printing Allowance, Extra Page Rate | pages a month, and the price of each page over |
+| Guest Day Passes | free day passes a month for the member's guests |
+| Access Hours | business hours or 24/7, enforced at check-in and in the diary |
+| Valid At | the buildings the plan is sold at, empty for all |
+| Minimum Term, Notice Period | months before a member can leave, days of notice |
+
+<Shot src="/odoo-guides/odoo-coworking-membership-billing/plan.webp" alt="Membership plan Dedicated Desk: monthly fee 325, 8 hours of meeting room credits with 16 an hour overage, 300 pages printing at 0.08 a page over, two guest passes, 24/7 access, minimum term 3 months and 30 days notice" width={1440} height={900} caption="A plan: the fee and everything that comes with it." />
+
+<Callout title="Extended access hours">
+Access hours has a third choice, Extended, but the current version treats it the same as business hours, because no extended hours are defined on a building. Use business or 24/7.
+</Callout>
+
+## Company accounts
+
+Membership, Company Accounts (coordinators and managers). An account names the company it is billed to, the home building, an account manager, the billing contact and email, payment terms, a customer reference for the invoice, and a **credit limit** that only managers see. When an account's outstanding invoices are over the limit, bookings for its members are refused until the balance comes down.
+
+<Shot src="/odoo-guides/odoo-coworking-membership-billing/account.webp" alt="Company account Pixelbarn Studio at Northlight Ancoats with billed to Pixelbarn Studio Ltd, account manager, billing email, customer reference PB-WORKSPACE, credit limit, members, two parking spaces and three lockers as add-ons, invoices and amount outstanding" width={1440} height={900} caption="A company account: several people, their add-ons and one invoice a month." />
+
+**Suspend** on an account suspends every active membership under it, and **Close** is refused while any membership is still open, so the last invoice is right.
+
+<Callout title="The monthly value on an account">
+In the current version the Monthly Value on an account, and the monthly recurring revenue on a building, count each plan's fee once however many members are on it, so they read low when several people share a plan. The plan's own MRR and the invoices from the billing run are right.
+</Callout>
+
+## Members
+
+Membership, Members holds one record per person per building: the plan, the company account if there is one (and so who it is billed to), start, end and notice dates, the **access card number** and **emergency contact** (coordinators and managers only), the desk or office let to them, and this month's credits used and remaining, pages printed and guest passes used.
+
+<Shot src="/odoo-guides/odoo-coworking-membership-billing/members.webp" alt="Members board in Odoo showing active members of Northlight Workspace as cards with their membership number, building, plan and company account" width={1440} height={900} caption="Active members, with filters for Leaving, 24/7 Access and Pays Their Own Way." />
+
+The rules a membership follows:
+
+- one draft, active or suspended membership per person per building;
+- a plan can only be used at the buildings it is valid at;
+- **End Membership** is refused while the member is in the building, before the minimum term is up, or sooner than the notice allows; ending it frees their desk;
+- a suspended member cannot book or badge in.
+
+Pages printed are typed on the member, or added through the module's register print method by an integration; the module does not talk to a print server.
+
+## Add-ons and day passes
+
+**Add-on Services** are sold on top of a plan: parking, lockers, mail handling, catering, a setup fee. Each is billed **monthly**, **one off** or **per unit**. An add-on can be marked as needing an identity check, which stops a registered office address starting before the identity of the business is checked (see the [virtual office chapter](/odoo-guides/odoo-virtual-office-registered-address-mail/)).
+
+**Day passes** cover everybody else: a walk-in paying by card or cash at the desk, a member's guest coming off the plan's guest passes, or a company's visitor put on the account. Only passes on an account reach the monthly invoice.
+
+<Shot src="/odoo-guides/odoo-coworking-membership-billing/day-passes.webp" alt="Day Passes list for Northlight with visitors, the member they are a guest of, the building, date, payment card, cash, account or guest pass, amount and state sold, used, cancelled or draft" width={1440} height={900} caption="Day passes: walk-ins, guests and visitors on a company account." />
+
+## The monthly billing run
+
+Billing, Billing Runs. A run covers a period, for one building or all of them. **Gather the Month** collects:
+
+| Line | From |
+|---|---|
+| Plan | the fee of every member active when the run is gathered |
+| Print overage | pages over the allowance at the extra page rate |
+| Credit overage or booking | member bookings in the period, confirmed, used or finished and not yet invoiced, with something left after credits |
+| Penalty | late cancellations and no shows |
+| Day pass | passes put on a company account |
+| Add-on | running monthly add-ons not yet billed to the period end, and one off add-ons not yet billed |
+
+**Raise Invoices** creates one draft invoice per payer, stamps each booking and day pass with its invoice, moves each add-on's billed-to date on, and resets the printing and guest pass counters of members whose fee was billed. A run that has been invoiced cannot be gathered again, and two open runs for the same period and building are refused.
+
+<Shot src="/odoo-guides/odoo-coworking-membership-billing/billing-run.webp" alt="Billing run BR/2026/003 for October 2026, invoiced, with the number of lines, payers and totals, and the lines listing plan fees, credit overage, print overage, add-ons and penalties by payer" width={1440} height={900} caption="October gathered and invoiced: one invoice for each payer." />
+
+The scheduled job **monthly billing run**, switched off when installed, does this on its own on the company's billing day for the month that has just ended.
+
+<Callout title="Two things the run leaves out">
+The plan fee is taken from members who are active on the day the run is gathered, so run the month before ending or suspending memberships. And bookings with no member, such as a visitor hiring a room, and per unit add-ons such as catering, are not picked up by the run; invoice those by hand.
+</Callout>
+
+**Reporting, Revenue Analysis** then splits the invoiced lines by kind, month, building or payer, so you can see what share of the money is membership, rooms, add-ons and day passes.
+
+The last chapter covers the address side of the business: [virtual offices, registered addresses and the post](/odoo-guides/odoo-virtual-office-registered-address-mail/).

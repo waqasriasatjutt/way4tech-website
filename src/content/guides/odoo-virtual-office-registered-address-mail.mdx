@@ -1,0 +1,106 @@
+---
+title: "Virtual office and registered address services in Odoo: identity checks and the mail log"
+metaTitle: "Registered Addresses and the Post"
+description: "Run virtual office and registered address services in Odoo: identity checked before an address goes live, expiry checks, and every letter logged."
+targetQuery: "registered office address service software mail log"
+category: "Industry"
+region: "UK and worldwide"
+summary: "Registered office, trading address, mail forwarding and mail holding services, the identity gate before an address goes live, suspension when a document expires, and the post logged from arrival to collection, forwarding or return."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-coworking-space-management"
+seriesOrder: 3
+modules:
+  - name: "Coworking Space Management"
+    technical: "wt_coworking_space"
+    note: "USD 249, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://coworking-demo.way4tech.com/"
+  label: "Coworking demo"
+related: ["odoo-coworking-space-management", "odoo-coworking-membership-billing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a registered office address go live before the identity check?"
+    a: "No, while the company setting Check Identity for Address Services is on, which is the default. Activate is refused until a space manager has recorded the identity document seen, its reference and a current expiry, and the add-on for the address cannot start either."
+  - q: "What happens when the identity document on an address service expires?"
+    a: "A daily job, switched off when the module is installed, suspends any live registered or trading address whose document has expired and posts a note saying why. Thirty days before expiry it posts a warning and emails the Identity Document Expiring template to the customer."
+  - q: "How is the post recorded?"
+    a: "Each letter or parcel is logged against the address service with the received date, sender, kind, whether it is official correspondence and a tracking reference. It is then marked as notified, collected with the name of who collected it, forwarded to the forwarding address, or returned to sender, and it can only leave the building once."
+  - q: "Does the module file anything with Companies House?"
+    a: "No. It records who is using the address, the exact legal name and company number, the identity document seen, who checked it and when, and every item of post, which is what an operator needs to be able to show. Filings stay with you."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A virtual office looks like the easiest money in a coworking space: a monthly fee for an address and a pigeonhole. It is also the part with a legal duty behind it. In most countries an operator that lets a business use its address as a registered office or trading address has to know who that business is, check identity before the service starts, keep it in date, and be able to show what happened to every letter, and on court papers and tax letters that record is the whole service. This chapter of the [coworking space management series](/odoo-guides/odoo-coworking-space-management/) shows how the module handles it.
+
+## Four kinds of address service
+
+**Virtual Office, Registered Addresses** (coordinators and managers) lists every service. A service belongs to a company account or to a member, sits at one building, and has a **type**:
+
+| Type | Use |
+|---|---|
+| Registered address | the official address of a company on the public register |
+| Trading address | the address a business trades from and prints on its letters |
+| Mail forwarding | post sent on to another address at a set frequency |
+| Mail holding | post kept for collection |
+
+For a registered or trading address the **exact legal name** of the entity using it is required, with its company number, because that is what goes on the register you keep. Forwarding services carry the forwarding address and a frequency: daily, weekly or on request.
+
+<Shot src="/odoo-guides/odoo-virtual-office-registered-address-mail/addresses.webp" alt="Registered Addresses list at Northlight Ancoats showing services for Pixelbarn Studio Ltd, Halden Bloom Ltd, Marrowby Consulting Ltd and others with the service type, account or member, post waiting, identity check Verified, Not Checked or Document Expired, and the state Active, Waiting on Identity, Suspended or Terminated" width={1440} height={900} caption="Every address service, its identity state and what is waiting in the post." />
+
+## The identity gate
+
+Each service has an identity block: the **document type** (passport, national ID, driving licence or company certificate), its reference and expiry, and who checked it and when. The flow:
+
+1. **Ask for Identity** moves a new service to Waiting on Identity.
+2. The document is seen. Its type, reference and expiry are typed in.
+3. A **space manager** presses **Identity Checked**, which records them and today's date. It is refused without a document and reference, or when the document has already expired. Nobody else can write the checked-by or checked-on fields, even by editing the record.
+4. **Activate** puts the service live. While the company setting **Check Identity for Address Services** is on (the default), it is refused unless the identity is checked against a current document.
+
+<Shot src="/odoo-guides/odoo-virtual-office-registered-address-mail/live-service.webp" alt="Registered office address service RA/2026/0010 for Halden Bloom Ltd, company number 15873312, at Northlight Ancoats, identity verified against a passport expiring in 2031, checked on 6 November, state Active, with the post tab" width={1440} height={900} caption="A live registered office: who uses it and what was checked." />
+
+The same gate sits on the add-on that bills the service. An add-on such as Registered Office Address can be marked as needing an identity check, and then it cannot start for anybody without a live address service whose identity has been checked.
+
+<Callout title="An expired document stops the service">
+The daily job identity documents on address services, switched off when installed, suspends any live registered or trading address whose document has expired, with a note in the chatter. Thirty days before expiry it posts a warning and emails the customer. A suspended service needs a new document checked before it is activated again.
+</Callout>
+
+<Shot src="/odoo-guides/odoo-virtual-office-registered-address-mail/suspended.webp" alt="Trading address service for Gorse and Gable Design with a red Identity Expired ribbon, driving licence expired on 1 November, state Suspended, forwarding weekly to an example address, and the chatter note that the address service is suspended until a current document is seen" width={1440} height={900} caption="Suspended on an expired document until a current one is seen." />
+
+**Suspend** pauses a live service by hand. **Terminate** ends it with today's date, and is refused while any post for it is still in the building.
+
+## The post
+
+**Front Desk, Post** opens on what is still here. Each item is logged against its service, with the received date and time, the sender, the **kind** (letter, parcel, legal, tax or bank), **statutory** for official correspondence such as court papers and tax letters, a tracking reference for parcels, and the days it has been waiting. Filters: Still Here, Official Correspondence, Member Not Told Yet.
+
+<Shot src="/odoo-guides/odoo-virtual-office-registered-address-mail/post.webp" alt="Post list showing items still in the building, with received date, the address service, who it is billed to, sender such as Companies House or HM Revenue and Customs, kind Legal or Court Papers, Tax Authority, Parcel or Bank, official correspondence ticked, days waiting and state Received or Member Told" width={1440} height={900} caption="What is waiting at reception, with official post flagged." />
+
+| Button | Does | Needs |
+|---|---|---|
+| Tell the Member | sends the Post Waiting email and stamps the time | a live service |
+| Collected | records the hand-over and the time | the name of who collected it |
+| Forwarded | records it as sent on | a forwarding address on the service |
+| Return to Sender | records it as returned | nothing |
+
+A letter can only leave the building once: collected, forwarded and returned items cannot be handled again.
+
+<Shot src="/odoo-guides/odoo-virtual-office-registered-address-mail/collected.webp" alt="Mail item that has been collected, showing the service, sender, kind, received date, the date the member was told, the handled date and the name of the person who collected it" width={1440} height={900} caption="A collected item: who took it and when, which is the record that matters." />
+
+## Setting up a virtual office, step by step
+
+1. **Plan.** Create a Virtual Office plan with its monthly fee, any meeting room credits, and Valid At set to the buildings that sell it. On the demo it is 45 a month with two hours of meeting room time, Ancoats only.
+2. **Add-ons.** Create Registered Office Address and Mail Handling as monthly add-on services, and tick Needs Identity Checks on the registered office one.
+3. **Member or account.** Sign the customer up as a member on the plan, or under a company account if a company pays.
+4. **Address service.** Create the service for that member or account, choose the type, and for a registered or trading address type the exact legal name and company number.
+5. **Identity.** Ask for Identity, record the document seen, and have a space manager press Identity Checked.
+6. **Go live.** Activate the service, then Start the add-on. Both are refused until step 5 is done.
+7. **Every day.** Log the post as it arrives, tell the member, and record each item collected, forwarded or returned.
+8. **Every month.** The billing run picks up the plan fee and the running add-ons for the month and puts them on one invoice per payer.
+
+On the demo, open Virtual Office, Registered Addresses and compare a live service, one Waiting on Identity that cannot be activated yet, and one suspended because its document ran out. Then open Front Desk, Post with the Official Correspondence filter to see the letters that matter most.
+
+## What it does not do
+
+The module files nothing with Companies House or any regulator, does no electronic identity verification, and does not scan the post. It keeps the record an operator has to be able to produce: who uses the address, what document was seen, who checked it and when, and what happened to every item. Billing for the address and the mail handling goes through add-ons on the monthly run, covered in [memberships, company accounts and the monthly billing run](/odoo-guides/odoo-coworking-membership-billing/).

@@ -1,0 +1,114 @@
+---
+title: "Meeting room and desk booking in Odoo for coworking: clash checks, credits and no shows"
+metaTitle: "Meeting Room Booking, Credits, No Shows"
+description: "Book meeting rooms, booths and hot desks in Odoo with clash and seat checks, plan credits spent first, approval for event spaces and charged no shows."
+targetQuery: "coworking meeting room booking software credits"
+category: "Industry"
+region: "UK and worldwide"
+summary: "Spaces with seats, rates and turnarounds, the checks a booking must pass, how plan credits and the overage rate price a booking, manager approval, late cancellation and no show charges, and the live head count at the front desk."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-coworking-space-management"
+seriesOrder: 1
+modules:
+  - name: "Coworking Space Management"
+    technical: "wt_coworking_space"
+    note: "USD 249, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://coworking-demo.way4tech.com/"
+  label: "Coworking demo"
+related: ["odoo-coworking-space-management", "odoo-coworking-membership-billing", "odoo-appointment-booking"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How do meeting room credits work in the module?"
+    a: "Each plan includes a number of meeting room hours a month. When a member confirms an hourly booking of a meeting room or phone booth, their remaining credits are applied first, up to the length of the booking, and the rest is charged at the plan's credit overage rate, or the room's hourly rate if the plan has none."
+  - q: "Can a hot desk be booked by more than one person?"
+    a: "Yes. A hot desk bank is one space with as many seats as it has chairs. Bookings overlap freely until the people booked in the window reach the seats, and the next booking is refused with the number of seats left."
+  - q: "What happens when a member cancels late or does not turn up?"
+    a: "Cancelling inside the free window, four hours by default, charges the late cancellation percentage of the booking, 50% by default, and the credits stay spent. Marking a started booking as a no show charges the no show percentage, 100% by default. Both go on the next monthly invoice as penalty lines."
+  - q: "Can some rooms need a manager to approve the booking?"
+    a: "Yes. Tick Requires Approval on the space and a booking confirmed by anyone who is not a space manager goes to Waiting Approval instead. Only a space manager can approve it, and nobody else can set it to confirmed by other means."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A meeting room is the most argued over thing in a coworking space. Two teams want it at ten, one of them booked it on the wall calendar, and the member who has used three times their included hours thinks it is all free. This chapter of the [coworking space management series](/odoo-guides/odoo-coworking-space-management/) sets up spaces with seats and rates, then follows a booking through the checks, the credits, approval, cancellation and the front desk.
+
+## Spaces
+
+Configuration, Spaces holds every seat and every room. A space has a **kind**: hot desk, dedicated desk, private office, meeting room, phone booth or event space. It has a **capacity** in seats, an **hourly** and a **daily rate**, the hours from which the day rate applies (**Day Rate From**, 6 by default), a **minimum** and **maximum booking**, a **turnaround** in minutes kept between bookings so the room can be reset, the product it is invoiced under, and its **amenities**.
+
+<Shot src="/odoo-guides/odoo-coworking-meeting-room-booking/room.webp" alt="Space form for the Spinner Room at Northlight Ancoats, a meeting room on the ground floor with 8 seats, hourly rate 30 and daily rate 180, a 15 minute turnaround, amenities video conferencing, wall screen, whiteboard, catering allowed and step free access, and its bookings and utilisation over 30 days" width={1440} height={900} caption="A meeting room: seats, rates, turnaround and amenities." />
+
+Three things change how a space is booked:
+
+- A **hot desk bank** is one space with many seats. Bookings overlap until the seats are full.
+- A **dedicated desk or private office** let to a member (Assigned To) leaves the open diary. Nobody else can book it, and it still counts in the capacity.
+- **Requires Approval** sends bookings to a manager. It suits an event space, where a weekend booking means somebody has to open the building.
+
+Rates, limits, the turnaround and the approval flag can only be changed by a space manager; the module refuses the change from hosts and coordinators even though they can edit the space otherwise. A space can be **taken out of service** with a note the desk can read out, and put **back in service** later.
+
+## The booking and its checks
+
+Front Desk, Bookings opens as a calendar, with list, board, pivot and graph views. A booking has the space, the member, who it is booked for and billed to, from and to, the number of people and a setup note. When it is saved and confirmed, it must pass these checks:
+
+| Check | Refused when |
+|---|---|
+| Clash | a room, booth, office or event space is already booked in the window, counting the turnaround either side |
+| Seats | a hot desk bank would go past its seats in the window |
+| People | more people than the space seats |
+| Length | shorter than the minimum or longer than the maximum booking |
+| Book ahead | further ahead than the diary is open, 60 days by default |
+| Space | out of service, retired, or let to another member |
+| Opening hours | outside the building's hours, or at a closed weekend, unless the member is on a 24/7 plan |
+| Member | not active |
+| Account | the company account is over its credit limit |
+
+<Shot src="/odoo-guides/odoo-coworking-meeting-room-booking/booking.webp" alt="Confirmed booking form in Odoo for a meeting room at Northlight with the member, booked for and billed to, from and to times, number of people, rate basis hourly, credits applied, chargeable hours, price and totals, and buttons Check In, No Show, Find Another Room, Print Confirmation and Cancel" width={1440} height={900} caption="A confirmed booking with the credits it used and what is left to pay." />
+
+When the room a member wants is taken, **Find Another Room** lists up to eight spaces of the same kind in the building with enough seats that are free for the window.
+
+## Credits, overage and the day rate
+
+Credits are what make a plan worth buying, and they are where the money leaks if nobody counts them. The module counts them:
+
+1. A booking as long as the space's Day Rate From or longer is charged at the **daily rate** per day. Anything shorter is **hourly**.
+2. On an hourly booking of a meeting room or phone booth, the member's **remaining credits** for the month are applied first, up to the length of the booking.
+3. The rest is charged at the plan's **credit overage rate**, or the room's hourly rate if the plan has none.
+
+On the demo, a Hot Desk plan includes 4 hours a month at 18 an hour after that; a Private Office seat includes 10 hours at 15. The booking form shows **Credits Left**, a one line reminder of where the member stands.
+
+<Callout title="Credits and next month's bookings">
+Credits are counted per calendar month by each booking's start date, but when a booking is confirmed the module draws on what is left in the current month. A booking confirmed now for next month uses this month's remainder, so check the credits on bookings made across a month end.
+</Callout>
+
+## Approval
+
+When a space requires approval and the person confirming is not a space manager, Confirm puts the booking in **Waiting Approval** with a note in the chatter. Confirming it again does nothing, and setting the status to confirmed by any other route is refused. A space manager opens Front Desk, Waiting Approval and presses **Approve**, which draws the credits and records who approved it.
+
+<Shot src="/odoo-guides/odoo-coworking-meeting-room-booking/approval.webp" alt="Booking in Waiting Approval for The Engine House event space on a Saturday for 45 people, with the setup note about opening the building at 09:00 and an Approve button for the space manager" width={1440} height={900} caption="A Saturday launch in the event space, waiting for a manager." />
+
+## Cancellations and no shows
+
+| When | What happens |
+|---|---|
+| Cancelled before the free window (4 hours by default) | nothing charged, credits back |
+| Cancelled inside the window | late cancellation charge (50% of the untaxed amount), credits stay spent |
+| Nobody turned up | No Show, once the start has passed, charges 100% by default |
+| Checked in or finished | cannot be cancelled; close it as finished |
+| Already invoiced | cannot be cancelled; credit the invoice |
+
+The charge and its reason sit on the booking and go onto the next monthly invoice as a penalty line. The filter **Charged for Not Turning Up** lists them.
+
+<Shot src="/odoo-guides/odoo-coworking-meeting-room-booking/late-cancel.webp" alt="Cancelled booking with a late cancellation charge, showing the cancelled time, the charge raised and the reason Late Cancellation" width={1440} height={900} caption="A late cancellation: the room sat empty, so half of it is charged." />
+
+## The front desk
+
+**Check In** on a booking marks it in use and opens a visit for the member; **Finished** closes both. Members also badge in and out on their own record, and **Front Desk, On Site Now** lists every open visit grouped by building, which is the live head count and the fire roll call. A business hours member cannot badge in while the building is closed. An hourly job closes any visit left open for 12 hours and marks it as closed by the job, so the morning count is right.
+
+<Shot src="/odoo-guides/odoo-coworking-meeting-room-booking/on-site.webp" alt="On Site Now list grouped by building, showing members at Northlight Ancoats and Northlight Wellington Place with their check in time and method card or app" width={1440} height={900} caption="Who is in each building right now." />
+
+There is no door or badge reader integration in the module: the card number is stored on the member and visits are recorded in Odoo. A job that ships switched off, **remind tomorrow's bookings**, emails a reminder for bookings in the next 24 hours.
+
+The money side, plans, company accounts and the monthly invoice, is in the next chapter: [memberships, company accounts and the monthly billing run](/odoo-guides/odoo-coworking-membership-billing/).

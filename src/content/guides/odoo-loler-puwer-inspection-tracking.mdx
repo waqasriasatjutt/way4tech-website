@@ -1,0 +1,110 @@
+---
+title: "LOLER, PUWER and PAT examinations in Odoo: certificates, quarantine and the hire workshop"
+metaTitle: "Workshop and LOLER Examinations"
+description: "Track LOLER, PUWER, PAT and pressure system examinations per machine in Odoo, block hire on a lapsed certificate and run services by the hour meter."
+targetQuery: "LOLER inspection tracking software hire fleet"
+category: "Industry"
+region: "UK"
+summary: "Statutory examinations recorded against each machine with their certificate, result and expiry, the certificate watch that quarantines lapsed kit, and the workshop jobs that take a machine out of availability for services and repairs."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-equipment-rental-management"
+seriesOrder: 3
+modules:
+  - name: "Equipment Rental Management"
+    technical: "wt_equipment_rental"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://equipmentrental-demo.way4tech.com/"
+  label: "Plant hire demo"
+related: ["odoo-equipment-rental-management", "odoo-equipment-hire-off-hire-damage-deposits", "odoo-ppm-planned-maintenance"]
+linkFrom: []
+sources:
+  - label: "HSE, Thorough examination of lifting equipment (LOLER)"
+    url: "https://www.hse.gov.uk/work-equipment-machinery/thorough-examinations-lifting-equipment.htm"
+faqs:
+  - q: "How often must lifting equipment be examined under LOLER?"
+    a: "HSE gives the intervals as at least every 6 months for lifting equipment and accessories used to lift people, every 6 months for all lifting accessories, and every 12 months for other lifting equipment, unless a written examination scheme sets different intervals."
+  - q: "What happens in Odoo when an examination fails?"
+    a: "Recording a Fail result marks the examination Failed and quarantines the machine at once, so it cannot be reserved. It stays quarantined until a passed examination is on file and someone presses Back on the Hire List."
+  - q: "Will the system stop a machine with an expired certificate going out?"
+    a: "Yes, while the company setting Block Hire on an Expired Certificate is on, which is the default. The hand-over is refused for any machine in a category that needs an examination and has no current certificate."
+  - q: "Can services be scheduled by hours run rather than by date?"
+    a: "Yes. Each category has a service interval in meter units, each machine a Service Due At reading, and a nightly job opens a service job for every machine whose meter has reached that point. Finishing the service sets the next point from the interval."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A scissor lift that goes out two days past its six month thorough examination is the kind of mistake that ends up in front of an inspector, and the hire company is the one that hired it out. The examination itself is done by an engineer or a third party examiner; what the yard has to get right is knowing, every morning, which machines are current, which are due and which must not leave. This chapter of the [equipment rental management series](/odoo-guides/odoo-equipment-rental-management/) covers that, and the workshop jobs that sit between hires.
+
+## The intervals
+
+For lifting equipment HSE sets the [thorough examination intervals](https://www.hse.gov.uk/work-equipment-machinery/thorough-examinations-lifting-equipment.htm) as at least every 6 months for equipment and accessories used to lift people, every 6 months for all lifting accessories, and every 12 months for other lifting equipment, unless a written examination scheme says otherwise. General work equipment is inspected under PUWER, portable electrical tools get a portable appliance test, and compressors and receivers are examined as pressure systems.
+
+The module holds the scheme on each **category**, with how many months a certificate lasts:
+
+| Scheme in the module | Expiry worked out as |
+|---|---|
+| LOLER Thorough Examination, 6 months | 6 months from the date examined |
+| LOLER Thorough Examination, 12 months | 12 months |
+| PUWER Inspection, Portable Appliance Test, Pressure System Examination, Other | the category's Certificate Valid (months) |
+
+The expiry can be shortened by hand when an examiner is not happy with a machine.
+
+## Recording an examination
+
+**Workshop, Examinations** lists every examination with the unit, scheme, certificate number, examining body, dates, days left, result and status. Book one with the unit, whose category's scheme fills in, the **examining body**, the **examiner** and the date. When the report comes back, fill the **result**, the **certificate number**, the **defects**, where the signed report is filed and the cost, then press **Record the Result**.
+
+<Shot src="/odoo-guides/odoo-loler-puwer-inspection-tracking/examination.webp" alt="Examination EX/2026/00002 for LEI/AS00001 1.5t Mini Excavator under PUWER Inspection, certificate KPH/2026/03014, inspected 16 October, expires 16 October 2027, 345 days left, report filed in the compliance drive, examining body Charnwood Test and Tag, examiner L. Brennan, cost 95, result Pass, status Current" width={1440} height={900} caption="A current certificate, with where the signed report is filed." />
+
+| Result | What Record the Result does |
+|---|---|
+| Pass | Needs the certificate number. The examination becomes Current and the previous current one of the same scheme becomes Superseded. |
+| Pass with Remedial Action | The same, and the defects must be written down. |
+| Fail | Marked Failed, and the machine is quarantined at once. |
+
+The current certificate cannot be cancelled: record the replacement instead. A machine shows its certificate as **Current**, **Due Soon** (inside the warning window, 30 days by default), **Expired**, **Never Examined**, or Not Required for categories without a scheme.
+
+<Shot src="/odoo-guides/odoo-loler-puwer-inspection-tracking/examinations.webp" alt="Examinations list showing a booked LOLER examination for a 17m telehandler, a failed portable appliance test on an old 110V breaker in red, and current PUWER, LOLER and PAT certificates on excavators, breakers, scissor lifts, slings and dumpers with days left and results" width={1440} height={900} caption="Every examination on the fleet, with the failed one in red." />
+
+## The Certificates screen and the nightly watch
+
+**Workshop, Certificates** lists the machines whose certificate is due soon, expired or never examined, grouped by state. It is the list to ring the examiner from.
+
+<Shot src="/odoo-guides/odoo-loler-puwer-inspection-tracking/certificates.webp" alt="Certificates screen grouped by certificate state: Due Soon with four units, Expired with two, Never Examined with two, showing meter, utilisation and hire revenue totals" width={1440} height={900} caption="What to book the examiner for: due soon, expired and never examined." />
+
+The scheduled job **Rental: watch inspection certificates** runs every night once it is switched on (it ships off, because it sends email). It:
+
+1. marks certificates past their expiry as Expired;
+2. quarantines every machine standing in the yard or reserved with no current certificate;
+3. for each machine inside the warning window, schedules a reminder for the depot manager and sends the Examination Certificate Expiring email.
+
+A machine already out with a customer is left on site and goes to quarantine when it is off-hired. And at hand-over, with the block setting on, a machine without a current certificate is refused whatever the nightly job has done.
+
+<Callout title="Getting a quarantined machine back">
+Back on the Hire List on the machine is refused while the certificate is missing or expired. Record the new examination first, then press it. On the demo, the new 17m telehandler waits in quarantine with its first thorough examination booked.
+</Callout>
+
+## The workshop
+
+**Workshop, Jobs** opens a board of open jobs by status: Planned, In the Workshop, Finished, Cancelled. A job has the machine, the type (scheduled service, repair, damage repair, inspection preparation, function test), the window **Off the Fleet** to **Back on the Fleet**, the fitter, the meter at service, the reported fault, the work done, parts and labour cost and the downtime.
+
+<Shot src="/odoo-guides/odoo-loler-puwer-inspection-tracking/jobs.webp" alt="Workshop jobs board with three Planned jobs, an inspection preparation for a micro excavator, a cable repair on the failed breaker and a scheduled service on a telehandler raised by its meter, and one repair In the Workshop on a 1.8t mini excavator, each with the fitter and when it is due" width={1440} height={900} caption="The workshop board: planned work, and what is in the bay today." />
+
+- **Take It In** moves the job and the machine to In the Workshop. It is refused while the machine is on hire.
+- **Finished** needs the work done and, on a metered machine, the meter reading. It carries the reading to the machine, sets the next service point on a service, and puts the machine back to Available, or Quarantined if it has no current certificate.
+- **Cancel** and **Reopen** do what they say; a finished job cannot be cancelled.
+
+A planned job holds the machine for its window, so the desk cannot reserve it over the service, and a job cannot be booked over a live hire.
+
+### Services by the meter
+
+Each category has a service interval in meter units, 500 hours on an excavator, 15,000 km on a tipper, and each machine a **Service Due At** reading. When the meter reaches it, the machine shows **Service Due** and the nightly job **Rental: raise services that have fallen due** opens a one day service job. Finishing a service sets the next point at the reading plus the interval.
+
+<Callout title="A known fault in the service job">
+In the current version the service job also looks at machines that are on hire, tries to book the workshop over the live hire, and stops with an error, so no services are raised that night. Until it is fixed, book the service when such a machine comes back, or move its Service Due At point.
+</Callout>
+
+Fitters see only the jobs where they are the fitter; the hire desk and the manager see every job. The **Record Card** on a machine prints its details, meter, hires, utilisation, examinations and workshop history on one page, which is what an insurer or an inspector asks for.
+
+For the rest of the series, go back to the [equipment rental management hub](/odoo-guides/odoo-equipment-rental-management/).

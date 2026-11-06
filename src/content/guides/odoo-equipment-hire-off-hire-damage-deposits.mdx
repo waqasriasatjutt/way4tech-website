@@ -1,0 +1,120 @@
+---
+title: "Off-hire in Odoo: meter readings, overuse charges, late returns, damage and deposits"
+metaTitle: "Hand-over, Off-hire, Damage and Deposits"
+description: "Hand machines over and take them back in Odoo: meter out and in, overuse past the daily allowance, late return penalties, damage, deposits and the invoice."
+targetQuery: "off hire meter reading overuse charge equipment hire"
+category: "Industry"
+region: "UK and worldwide"
+summary: "The hand-over sheet, the off-hire with meters and condition, how overuse and the late penalty are worked out, assessing or waiving damage, invoicing the hire and settling the deposit in full or in part."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-equipment-rental-management"
+seriesOrder: 2
+modules:
+  - name: "Equipment Rental Management"
+    technical: "wt_equipment_rental"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://equipmentrental-demo.way4tech.com/"
+  label: "Plant hire demo"
+related: ["odoo-equipment-rental-management", "odoo-plant-hire-rate-cards-availability", "odoo-rental-pickup-return-deposits"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is overuse on a hired machine worked out?"
+    a: "The allowance is the hours or kilometres included per day on the rate card, or the category if the card leaves it at zero, times the days charged. The meter in minus the meter out, less that allowance, is the overuse, charged at the card's overuse rate or an override typed on the hire line."
+  - q: "When does a return count as late?"
+    a: "When the machine is back more than the grace hours after the agreed return, four hours by default. The hours past that are rounded up to whole days, and the penalty is those days times the daily rate of every unit on the hire times the late return percentage, 25% by default."
+  - q: "Can the yard charge more for damage than the repair costs?"
+    a: "No. The amount charged to the customer can never be more than the repair cost on the damage report, and fair wear and tear is cleared by unticking Chargeable or waiving the report with a reason."
+  - q: "Does settling the deposit post a refund in accounting?"
+    a: "No. The deposit is an amount and a status on the hire: Held from hand-over, then Returned in Full or Partly Retained. Taking and returning the money is done the way your yard does it now."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every dispute a hire yard has with a customer comes down to three questions: what state was the machine in when it left, how hard did they work it, and when did it really come back. If the hand-over sheet is a tick in a box and the meter reading lives on a driver's phone, the yard loses each of those arguments. This chapter of the [equipment rental management series](/odoo-guides/odoo-equipment-rental-management/) follows a reserved hire through hand-over, off-hire, damage and the invoice, and shows where each figure comes from.
+
+## Hand-over
+
+A reserved hire has a **Hand Over** button. Before it works, every line needs a **Condition Out** (new, good, fair, worn or damaged) and, on a machine with a meter, a **Meter Out** reading, which is filled from the machine when it is added to the hire, so usually it only needs checking. The **Hand-over Note** on each line is where every mark, missing key and worn tooth goes: it is the document any damage charge later stands on.
+
+With the company setting **Block Hire on an Expired Certificate** switched on, which is the default, a machine that needs a statutory examination and has no current certificate cannot be handed over at all.
+
+Hand Over then:
+
+- moves the hire and every line to **On Hire** and stamps the time;
+- moves each machine to On Hire and sets its meter from the reading out;
+- marks the deposit **Held** with today's date, if the hire has one.
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/on-hire.webp" alt="Hire LEI/HC/2026/00416 for Orchard Lane Homes on hire, handed over on 5 November and due back on 8 November, with Off-Hire, Hire Agreement and Cancel buttons and one dumper on the units tab priced 3 x day at 225, with the chatter recording reserved and handed over" width={1440} height={900} caption="A hire on site: the off-hire button, the agreement print and the unit priced on its card." />
+
+The **Hire Agreement** prints on A4 with the hirer, order number, site contact and address, the period, each machine with asset number, serial, Priced As, meter and condition out and the hand-over note, the charges with VAT, the deposit, the transport note, the depot's conditions of hire and two signature boxes.
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/hire-agreement.webp" alt="Printed hire agreement for Kestrel Plant and Tool Hire with the hirer, site contact, depot, on hire and due back dates, one 1t hi-tip dumper line with serial, Priced As 3 x day, meter out, condition Good and the hand-over note, then hire, delivery and collection, tax, total and deposit held, the conditions of hire and signature lines" width={1100} height={1400} caption="The hire agreement, ready to sign on the yard ramp." />
+
+## Due back and overdue
+
+**Hire Desk, Due Back** lists every machine out, grouped by the day it is due. An overdue hire is red in the list and carries a red ribbon on the form. **Days Late** counts the hours past the agreed return, takes off the grace hours from the settings (four by default, so a lorry in traffic is not a penalty), and rounds up to whole days.
+
+The **late return penalty** is days late, times the daily rate on the card of every unit on the hire, times the penalty percentage (25% by default). Two days late on a 110 a day excavator at 25% is 55. It is added to the hire as its own amount and its own invoice line.
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/overdue.webp" alt="Overdue hire NOT/HC/2026/00399 for Mercia Events and Staging with a red Overdue ribbon, due back 1 November, days late 5, a planned activity Overdue hire for the depot manager, and totals including a late return penalty" width={1440} height={900} caption="An overdue hire: the ribbon, the days late and the reminder for the depot manager." />
+
+The scheduled job **Rental: chase overdue hires** schedules that reminder, posts a note and emails the customer every night. It ships switched off, because it writes to customers.
+
+<Callout title="Days late on a hire still out">
+For a machine still on site, days late is a stored figure that moves when the hire is edited or the overdue job runs. If the desk relies on the Overdue filter, switch the job on.
+</Callout>
+
+## Off-hire
+
+**Off-Hire** needs a **Meter In** on every metered machine and a **Condition In** on every line, with a **Return Note** if there is something to say. A meter cannot run backwards: a reading in below the reading out is refused. Off-hire then stamps the return, counts the hire to the real return time, and sends each machine to the depot's yard location as:
+
+- **Available**, if it came back in one piece;
+- **In the Workshop**, if it came back damaged;
+- **Quarantined**, if its examination certificate lapsed while it was out.
+
+### Overuse
+
+Each line works out the allowance as the hours or kilometres included per day (from the rate card, or the category if the card has none) times the days charged. Meter in minus meter out, less the allowance, is **Over the Allowance**, charged at the card's overuse rate, or at an **Overuse Rate Override** typed on the line for a hire agreed differently.
+
+| Excavator, 8 hours a day, 12 an hour overuse | |
+|---|---|
+| Days charged | 5 |
+| Included | 40 hours |
+| Meter out and in | 2,210.0 and 2,264.0, so 54 hours |
+| Over the allowance | 14 hours |
+| Overuse | 168 |
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/hire-line.webp" alt="Hire line for a 3.5t dropside on NOT/HC/2026/00402: rate card tippers and vans counter rate, 198 hours, 9 days charged, priced 1 x week 2 x day, meter out 40,851.6 and in 42,674.1 km, 1,822.5 used, 1,350 included, 472.5 over at 0.35, overuse 165.38, hire charge 470 and unit revenue 635.38" width={1440} height={900} caption="One machine on one hire: the meters, the allowance and the overuse charge." />
+
+**Fleet, Hire Lines** with the filter **Over the Allowance** is the list of hires where a site worked a machine harder than it paid for. The **Off-Hire Note** prints the return with the meters, allowance, overuse, condition in, damage found, all the amounts and the deposit.
+
+## Damage
+
+Damage is reported against the hire line, so the report shows the **Condition at Hand-over** and the hand-over note beside the new description. A report has a severity (cosmetic, minor, major, write off), a photo and where the full set of photographs is filed, the **repair cost**, **Chargeable**, and the amount **Charged to Customer**, which can never be more than the repair.
+
+- **Assess** needs the condition in on the line, a repair cost, and a charge if it is chargeable. An assessed charge is on the hire total.
+- **Waive** needs a reason, and sets the charge to zero. Once a charge is on an invoice it cannot be waived; credit the invoice instead.
+- **Raise Workshop Job** puts the machine into the workshop as a damage repair linked to the report.
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/damage.webp" alt="Damage report DM/2026/0036 on hire NOT/HC/2026/00372 for an 8t midi excavator, severity cosmetic, condition at hand-over Good, photographs filed in the yard photos folder, description of scraped paintwork and a cracked work light lens, repair cost 120, chargeable, charged to customer 95, status Assessed" width={1440} height={900} caption="A damage report, assessed against what the hand-over sheet said." />
+
+While any report on a hire is still **Reported**, unassessed, the hire cannot be invoiced and its deposit cannot be settled, so a charge is never left off.
+
+## Invoice and deposit
+
+**Hire Desk, To Invoice** lists hires that are back and not billed. **Invoice** raises one draft Odoo customer invoice in the depot's journal, with the customer order number as the reference, and a line for each machine with how it was priced, an overuse line for each machine that went over, one line for delivery and collection, one per damage charge and one for the late penalty. The hire moves to Invoiced and the damage to Charged. Post it and take payment like any other Odoo invoice.
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/invoice.webp" alt="Posted customer invoice INV/2026/00373 to Castlegate Construction Ltd with reference PO-22185, lines for a 5t midi excavator 1 x week 330, delivery and collection 140, damage to the unit 84 and a late return of 2 days 55, each at 20% VAT, total 730.80" width={1440} height={900} caption="The invoice: hire, transport, damage and late return, each on its own line." />
+
+**Settle Deposit** appears once the hire is off-hired or invoiced. To keep part, fill **Retained** and the **Reason for Retention** first: a retention without a reason is refused and can never be more than the deposit. The deposit becomes **Returned in Full** or **Partly Retained**, and the chatter records what went back and what was kept.
+
+<Shot src="/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/deposit.webp" alt="Deposit tab of hire NOT/HC/2026/00395: deposit 250 taken on 24 October, state Partly Retained, 42 retained with the reason held against the damage repair, 208 returned on 30 October" width={1440} height={900} caption="A deposit settled with part kept back, and the reason on the record." />
+
+<Callout title="What the deposit is, and is not">
+The deposit is an amount and a status on the hire. It does not post a payment or a refund in accounting. Also, in the current version a hire that is off-hired but not yet invoiced can be cancelled, and the Settle Deposit button is then hidden, so settle the deposit before cancelling such a hire.
+</Callout>
+
+The machines that came back damaged or due a service now go to the workshop, which is the subject of the last chapter: [the workshop and LOLER, PUWER and PAT examinations](/odoo-guides/odoo-loler-puwer-inspection-tracking/).

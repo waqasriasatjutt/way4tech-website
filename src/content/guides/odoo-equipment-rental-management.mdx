@@ -1,0 +1,126 @@
+---
+title: "Equipment rental management in Odoo: plant, tool and machinery hire unit by unit"
+metaTitle: "Equipment Rental Management in Odoo"
+description: "Run plant and tool hire on Odoo 19 Community: one record per machine, rate cards, hour meters, damage, deposits and LOLER certificates."
+targetQuery: "equipment rental management odoo"
+category: "Industry"
+region: "UK and worldwide"
+summary: "What a plant, tool or machinery hire yard needs that stock-based rental does not give it, and how to run the whole loop in Odoo 19 Community: rate cards, availability, hand-over, off-hire meters, damage, deposits, the workshop and statutory examinations."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-equipment-rental-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-equipment-rental-management.pdf"
+  pages: 59
+modules:
+  - name: "Equipment Rental Management"
+    technical: "wt_equipment_rental"
+    note: "USD 249, runs on Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://equipmentrental-demo.way4tech.com/"
+  label: "Plant hire demo"
+related: ["odoo-rental-management", "odoo-rental-pickup-return-deposits", "odoo-ppm-planned-maintenance", "odoo-asset-register-facility-management"]
+linkFrom: ["/products/wt-equipment-rental/", "/industries/equipment-rental/", "/solutions/equipment-rental/", "/modules/wt_equipment_rental/", "/modules/rental/"]
+sources:
+  - label: "HSE, Thorough examination of lifting equipment (LOLER)"
+    url: "https://www.hse.gov.uk/work-equipment-machinery/thorough-examinations-lifting-equipment.htm"
+  - label: "HSE, Provision and Use of Work Equipment Regulations 1998 (PUWER)"
+    url: "https://www.hse.gov.uk/work-equipment-machinery/puwer.htm"
+faqs:
+  - q: "Is this the same as the Odoo Rental app?"
+    a: "No. The Odoo Rental app is part of Enterprise and rents products from stock. Equipment Rental Management runs on Community and keeps each machine as its own unit with a serial number, an hour or kilometre meter, its own certificates, workshop history and earnings."
+  - q: "How is this different from Way4Tech Rental Management?"
+    a: "Rental Management is for renting out stock items, such as bikes or party kit, with online booking on the website. Equipment Rental Management is for plant, tool and machinery hire, where every machine is tracked on its own, billed on its meter as well as the calendar, and examined before it goes out."
+  - q: "Can a machine be booked twice?"
+    a: "No. Reserving a unit that another reserved or live hire already holds over the same window is refused, and so is reserving it over a booked workshop job. The message names the customer and the contract that holds the machine."
+  - q: "Does it stop a machine with an expired LOLER certificate going out?"
+    a: "Yes, by default. With the setting Block Hire on an Expired Certificate switched on, the hand-over is refused for any unit that needs an examination and has no current certificate. A nightly job, switched off when installed, also quarantines such units in the yard."
+  - q: "Can customers book online?"
+    a: "Not with this module. There is no portal or website booking; the hire desk takes every booking in the back office. If you need online booking for stock items, see the rental management guide."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+A customer rings on Thursday for a three tonne excavator on Monday. The desk looks at a whiteboard, says yes, and on Monday morning the lorry driver finds the machine in the workshop with its tracks off. Another one came back last week having done eighty hours on a five day hire and was billed as five days. A boom lift went out on Friday with its six month examination two days out of date, and nobody noticed until the site agent asked for the certificate. A hire yard loses money in exactly these three places: availability, the meter and the paperwork. This guide is about plant, tool and machinery hire, where every machine is tracked on its own, and how to run it in Odoo with our Equipment Rental Management module.
+
+If you rent out a stock of identical items from a shop or a website, bikes, party kit or tools by the box, that is a different job and a different product, covered in the [Odoo rental management guide](/odoo-guides/odoo-rental-management/). This one is for the yard where the 2.7 tonne excavator with 3,900 hours on it is not the same thing as the one with 1,600.
+
+## What a hire yard needs
+
+Plant hire has its own habits, and software built for selling things gets most of them wrong:
+
+- **A machine is a unit, not a quantity.** Each has a serial number, a meter, a service history, a certificate and a condition. Two "identical" excavators are two records.
+- **A week is cheaper than five days.** Rate cards carry daily, weekly and four weekly rates, and the trade sells a month as four weeks, 28 days. Five days on a card at 110 a day and 330 a week is 330, not 550.
+- **The meter is part of the price.** A day's hire includes, say, eight hours. A site that runs the machine for two shifts pays overuse per hour past the allowance. Vans work the same way in kilometres.
+- **The hand-over sheet settles every argument.** The condition written down when the machine left is what any damage charge stands on.
+- **A deposit is held while the machine is out** and given back after off-hire, in full or with part kept against damage, with a reason.
+- **Lifting and pressure kit must be examined.** In the UK, lifting equipment falls under [LOLER](https://www.hse.gov.uk/work-equipment-machinery/thorough-examinations-lifting-equipment.htm): equipment for lifting people and lifting accessories such as slings are thoroughly examined at least every six months, other lifting equipment at least every twelve. General work equipment falls under [PUWER](https://www.hse.gov.uk/work-equipment-machinery/puwer.htm). A machine whose examination has lapsed must not go out.
+
+## What standard Odoo does
+
+Odoo's Rental app is part of Enterprise, so it is not on Community at all. Where it is available, it rents products from stock: you can rent three of a product, with serial numbers if you track them, but it has no hour meter, no allowance or overuse, no statutory examination and no workshop that takes a machine out of availability. People on Community usually try:
+
+- **Sales orders with a rental product.** Fine for invoicing, no idea whether the machine is free next week.
+- **The Maintenance app.** Good for repairs, but it does not know the machine is on a customer's site.
+- **A spreadsheet beside it all.** Which is where the double booking and the missed certificate come from.
+
+Odoo does give you the parts underneath: contacts for customers, Invoicing for the bill and VAT, Inventory locations for the yards, and the chatter as an audit trail on every record.
+
+## The module
+
+[Equipment Rental Management](https://apps.odoo.com/apps/modules/19.0/wt_equipment_rental) (USD 249) runs on Odoo 19 Community and installs Inventory and Invoicing, both part of Community. It adds one app, Rentals, with five menus: Hire Desk, Fleet, Workshop, Reporting and Configuration. Three roles decide who sees what: a **Fitter** works their own workshop jobs and records examinations, the **Hire Desk** quotes, books, hands over, takes back and invoices, and the **Rental Manager** also sees depots, rate cards, what each machine cost and the reports.
+
+<Shot src="/odoo-guides/odoo-equipment-rental-management/fleet-board.webp" alt="Fleet board in Odoo grouped by status: Available, In the Workshop, On Hire, Quarantined and Reserved columns, each card showing an asset number such as LEI/AS00001, the machine name, category, serial, meter reading, utilisation and certificate badges such as Examination due and Certificate expired" width={1440} height={900} caption="The fleet board on the demo: every machine by status, with its meter and certificate." />
+
+### The loop, step by step
+
+1. **Set up the yard.** Configuration, Settings: the default deposit (15%), the late return penalty (25% of the daily rate per day), the grace hours before a return counts as late (4), how many days ahead to warn on certificates (30) and whether to block hire on an expired certificate (on).
+2. **Depots and categories.** Each depot has a code that prefixes its asset and hire numbers, a yard location, a billing journal and standard delivery and collection charges. Each category sets the meter type, the allowance per day, the overuse rate, the service interval, the deposit and the examination scheme.
+3. **Rate cards.** A counter card per category, a card for one older or newer unit, a negotiated card for one customer, and season cards with valid from and to dates.
+4. **The fleet.** One record per machine: serial, make, model, registration, purchase date and value, meter and service point.
+5. **Quote and reserve.** A hire is a quotation with units, dates, a site and a customer order number. Reserve checks every unit over the whole period, refuses a double booking and holds the machines.
+6. **Hand over.** Condition and meter out on every unit, the deposit marked held, the hire agreement printed.
+7. **Off-hire.** Meter and condition in. Overuse and lateness are worked out, and each machine goes back to the yard, to the workshop if damaged, or to quarantine if its certificate lapsed while it was out.
+8. **Damage.** Report it against the hire line, assess it against the hand-over condition, or waive it with a reason.
+9. **Invoice and settle the deposit.** One Odoo invoice with hire, overuse, transport, damage and late penalty lines, then the deposit returned in full or partly retained.
+10. **Workshop and examinations.** Services raised by the meter, repairs from damage, examinations recorded with their certificate number, and the certificate watch quarantining what has lapsed.
+
+<Shot src="/odoo-guides/odoo-equipment-rental-management/hire-form.webp" alt="A hire contract NOT/HC/2026/00414 for Brookfield Groundworks Ltd on hire from 3 November, with customer order number PO-22242, site contact and phone, Nottingham Depot, and a units tab listing two machines with their rate card, dates, charged days, Priced As 3 x day and 1 x week and the hire charge" width={1440} height={900} caption="A hire on hire: the units, the card each one was priced on, and how the period was made up." />
+
+### What the fleet is earning
+
+Reporting, Utilisation and Revenue shows days on hire against days owned and the hire revenue per category and depot, and Reporting, Earning Nothing lists the machines with no billed revenue yet. A rental manager also sees what each machine cost and how much of that it has paid back.
+
+<Shot src="/odoo-guides/odoo-equipment-rental-management/utilisation.webp" alt="Utilisation and Revenue pivot with categories such as Mini and Midi Excavators, Telehandlers and Access Platforms down the side and Leicester Depot and Nottingham Depot across, showing hire revenue in pounds, days on hire and utilisation" width={1440} height={900} caption="Hire revenue and days on hire by category and depot." />
+
+## The demo
+
+The [plant hire demo](https://equipmentrental-demo.way4tech.com/) runs Kestrel Plant & Tool Hire Ltd, an invented hire company with depots in Leicester and Nottingham, 33 machines from micro excavators and telehandlers to breakers and chain slings, twelve customers and five months of hires at every stage: quotations, reservations, machines on site, two overdue, off-hired, invoiced and paid, with damage reports, workshop jobs and examinations current, due, expired and failed. Prices are in pounds with 20% VAT. Ask us for a login, or see all our [live demos](/demos/).
+
+## Limitations
+
+We would rather you read these before you buy:
+
+<Callout title="What the module does not do">
+- **No online booking or customer portal.** The hire desk takes every booking.
+- **No stock moves.** The yard location on a unit is a label for where it stands; no transfers are made.
+- **The deposit is a figure and a status,** not a payment or refund in accounting. You take and return the money as you do now.
+- **It files nothing with an examiner or insurer.** It holds the certificates, dates and report references they ask for.
+- **The service due job stops on a machine that is on hire.** In the current version, if a unit already out with a customer reaches its service point, the nightly job tries to book the workshop over the live hire, fails, and raises no service jobs that night. Book those services by hand when the machine comes back.
+- **Utilisation in the pivot is summed, not averaged,** so read it per unit.
+- **Two nightly jobs ship switched off:** the certificate watch and the overdue chase, because they send email. Switch them on when you are ready.
+</Callout>
+
+<WhenLive slug="odoo-plant-hire-rate-cards-availability">
+
+## The chapters
+
+The rest of the series takes each part of the loop in turn: [rate cards and availability](/odoo-guides/odoo-plant-hire-rate-cards-availability/), [hand-over, off-hire, damage and deposits](/odoo-guides/odoo-equipment-hire-off-hire-damage-deposits/), and [the workshop and LOLER, PUWER and PAT examinations](/odoo-guides/odoo-loler-puwer-inspection-tracking/).
+
+</WhenLive>
+
+## Where to go from here
+
+Yards that also look after buildings or fixed plant will find planned maintenance in the [PPM guide](/odoo-guides/odoo-ppm-planned-maintenance/). For the product page and pricing see [Equipment Rental Management](/products/wt-equipment-rental/), and the [equipment rental industry page](/industries/equipment-rental/) for how we set a yard up. If you want it loaded from your own fleet list and rate cards, [get in touch](/contact/).

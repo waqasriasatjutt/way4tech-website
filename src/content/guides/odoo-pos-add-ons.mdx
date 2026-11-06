@@ -1,0 +1,147 @@
+---
+title: "Odoo 19 Community POS add-ons for a cafe or shop: printers, delivery drivers, table booking, price checker, barcode and stock aging"
+metaTitle: "Odoo POS and Retail Add-ons, Step by Step"
+description: "Six add-ons that fill the gaps in Odoo 19 Community POS and Inventory: printers without an IoT Box, drivers, table booking, barcode scanning, stock aging."
+targetQuery: "odoo community pos add-ons"
+category: "Industry"
+summary: "What standard Odoo 19 Community does at the till and in the stockroom, what it leaves out, and six add-ons that cover the rest: a hardware bridge, delivery drivers, website table booking, a price checker kiosk, barcode scanning and a stock aging report."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-add-ons"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-pos-add-ons.pdf"
+  pages: 72
+modules:
+  - name: "WT POS Hardware Bridge"
+    technical: "wt_pos_bridge"
+    note: "USD 129, Odoo 19 Community, needs Point of Sale and the free Windows agent"
+  - name: "POS Delivery"
+    technical: "wt_odoo_pos_delivery"
+    note: "USD 60, Odoo 19 Community, needs Point of Sale"
+  - name: "Restaurant Table Reservation"
+    technical: "wt_pos_table_reservation"
+    note: "USD 49, Odoo 19 Community, needs Point of Sale and Website"
+  - name: "Barcode Price Checker Kiosk"
+    technical: "wt_barcode_scanner_offline"
+    note: "USD 15, Odoo 19 Community, needs Inventory"
+  - name: "Barcode Scanning for Inventory"
+    technical: "wt_barcode_warehouse"
+    note: "USD 149, Odoo 19 Community, needs Inventory"
+  - name: "Stock Aging Report"
+    technical: "wt_stock_aging"
+    note: "USD 25, Odoo 19 Community, needs Inventory"
+demo:
+  url: "https://pos-demo.way4tech.com/"
+  label: "POS add-ons demo"
+related: ["odoo-restaurant-pos-setup", "odoo-pos-dashboard", "odoo-pos-kitchen-display-screen", "odoo-restaurant-cashier-day-close", "odoo-purchase-inventory-dashboard"]
+linkFrom: ["/modules/pos/", "/modules/inventory/", "/modules/barcode/", "/industries/restaurant-fnb/", "/industries/retail-stores/"]
+sources: []
+faqs:
+  - q: "Do these add-ons need Odoo Enterprise?"
+    a: "No. All six run on Odoo 19 Community. Each one is bought and installed on its own, and none of them depends on another, so a shop can take the barcode add-on without the table booking one."
+  - q: "Can Odoo Community POS print to a USB receipt printer?"
+    a: "Not on its own. Community reaches hardware through an IoT Box or an Epson ePOS printer on the network. The WT POS Hardware Bridge add-on prints to USB, serial and network ESC/POS printers, opens the cash drawer, reads a serial scale and drives a pole display through a free Windows agent on the till PC."
+  - q: "How does the till know which driver took a delivery?"
+    a: "With POS Delivery, the cashier presses Delivery on the order, which adds the delivery fee line, then picks a driver on the payment screen. The till can refuse to take payment until a driver is chosen, and the driver's name, phone, vehicle and plate print on the receipt."
+  - q: "Does the price checker need the internet?"
+    a: "Only to load the catalogue the first time and to refresh it. After that it looks barcodes up in the browser's own storage, so it keeps working when the Wi-Fi drops, and syncs again when it comes back."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+A cafe opens on Odoo 19 Community and finds the till works well, then runs into the edges in the first week. The receipt printer is plugged into the PC by USB and the till cannot see it without an IoT Box. A rider leaves with three orders and nobody can say later which ones. A regular rings to book a table for ten on Sunday and the host has a paper diary. A customer at the retail shelf asks how much the decaf is. The stock count goes in twice because the handset lost signal and somebody pressed send again. And there is a cage of hampers from last winter that nobody has looked at. This guide covers what standard Odoo does in each of those places, what it does not, and the six add-ons I built to close the gaps, with every screen shown on a live demo.
+
+## What standard Odoo 19 Community already does
+
+Point of Sale in Community is a complete till. It handles product categories, pricelists, cash and card payment methods, sessions with an opening float and a closing count, refunds, invoices from the till and the accounting entries when a session is closed. The Restaurant option adds floors, tables, guests per table, courses and preparation printers. Inventory receives, delivers and moves stock between locations, tracks lots and serial numbers, and lets you count stock by entering quantities on a list.
+
+What is missing is mostly at the boundary between the software and the real world: the hardware on the counter, the person on the motorbike, the guest who has not arrived yet, the shelf where the barcode is, and time. The add-ons below each take one of those.
+
+| Gap in Community | Add-on | Price |
+|---|---|---|
+| Printers, drawer, scale and pole display need an IoT Box or an Epson ePOS printer | WT POS Hardware Bridge | USD 129 |
+| No record of who delivered an order | POS Delivery | USD 60 |
+| A floor plan, but no booking book or website booking | Restaurant Table Reservation | USD 49 |
+| No self-service price lookup on the shop floor | Barcode Price Checker Kiosk | USD 15 |
+| No barcode app for receiving, picking and counts | Barcode Scanning for Inventory | USD 149 |
+| Shows how much stock you hold, never how long | Stock Aging Report | USD 25 |
+
+<Shot src="/odoo-guides/odoo-pos-add-ons/home.webp" alt="The Odoo 19 app menu on the demo showing Discuss, Offline Scanner, Dashboards, Point of Sale, Invoicing, Barcode, Reservations, Website and Inventory" width={1440} height={900} caption="On one database: Reservations, Barcode and Offline Scanner are new apps, the bridge and the drivers sit in Point of Sale, the aging report in Inventory." />
+
+## The demo business
+
+The live demo is Ember and Oak Coffee Co., an invented cafe on Brunswick Street in Fitzroy, Melbourne, with a retail pantry next door that sells its beans, brewing gear and gift hampers. Prices are in Australian dollars with 10% GST. It has two tills, Cafe Counter with a floor plan and Pantry Shop for retail, about 3,800 orders over a hundred days, five drivers, a dining room with four zones and three sittings, a stockroom with six locations and lot tracked coffee from a weekly roast. Everything on it, company and people alike, is made up.
+
+## Printers and the cash drawer without an IoT Box
+
+The bridge is a small free Windows program that runs on each till PC. The till in the browser sends the receipt to it on the same computer, and it prints to the USB, serial or network ESC/POS printer as an image, so any language and logo print the same. It also opens the drawer on cash payments, reads a serial scale and shows the last line and total on a 2x20 pole display. Kitchen and bar tickets go to named printers in the agent, and back-office PDFs such as invoices can print silently to a Windows printer instead of downloading. A four step checklist in Odoo shows whether each till PC has the agent, is paired, has found its devices and has printed its first receipt.
+
+<WhenLive slug="odoo-pos-printer-without-iot-box">
+
+The setup, pairing and the fallback when the agent is down are in the chapter on [printing from Odoo Community POS without an IoT Box](/odoo-guides/odoo-pos-printer-without-iot-box/).
+
+</WhenLive>
+
+## Delivery orders and drivers at the till
+
+POS Delivery adds drivers with their phone, vehicle type and plate, and decides which tills each driver works. At the till the cashier presses **Delivery** on the order, which marks it as a delivery and adds the fee product you chose, here 6.50 plus GST.
+
+<Shot src="/odoo-guides/odoo-pos-add-ons/ui-delivery-on.webp" alt="Cafe Counter till with a latte, long black, big breakfast and banana bread, the Delivery button highlighted and a Delivery Fee line of 7.15 added to the order" width={1440} height={900} caption="Delivery switched on: the fee line is added, and pressing it again takes it off." />
+
+On the payment screen a **Select Driver** button opens a list of the till's active drivers that can be searched by name, phone or plate. With Require Driver Before Payment turned on, the order cannot be validated without one.
+
+<Shot src="/odoo-guides/odoo-pos-add-ons/ui-driver-popup.webp" alt="Select Delivery Driver dialog listing Kofi Ashdown with a car and plate EOK-118, Priya Lomas on a bicycle and Tom Ridgeway on a motorcycle with plate 1AB-2CD, each with a phone number" width={1440} height={900} caption="The drivers this till offers, with phone, plate and vehicle." />
+
+The receipt ends with a Delivery Details block: rider, phone, vehicle and plate. In the back office each driver has an Orders count and a Total Sales figure, and a Driver Summary PDF lists their order history.
+
+<Shot src="/odoo-guides/odoo-pos-add-ons/ui-receipt.webp" alt="Payment Successful screen with the receipt on the right listing the items, the delivery fee, GST and card payment, and a Delivery Details section naming the rider Priya Lomas, her phone and her bicycle" width={1440} height={900} caption="The driver on the receipt, so the kitchen and the customer both know who is coming." />
+
+<Callout title="What it does not do">
+There is no map, no live tracking and no cash collection per rider. The add-on records who took the order, prints them on the receipt and totals their orders and sales. The back-office order form does not show the driver field, so use the driver's Orders button for the list.
+</Callout>
+
+## Table booking on your own website
+
+The reservation add-on adds a booking book to Point of Sale. You describe the dining room as zones and tables, with seats, a smallest party and whether a table can be pushed together with others, and you set up sittings such as breakfast, lunch and a Friday supper club with their own hours, slot spacing, time held, turnaround and a cap on covers per slot. A booking engine picks the smallest table that fits, combines tables for a large party inside one zone, and refuses a table held twice whatever route the booking came by. Guests book on public pages of your Odoo website, receive confirmation and reminder emails, and can give the table back from a private link.
+
+<WhenLive slug="odoo-website-table-booking-pos">
+
+The setup, the host's day and the website pages are in the chapter on [website table booking for an Odoo restaurant](/odoo-guides/odoo-website-table-booking-pos/).
+
+</WhenLive>
+
+## A price checker on the shop floor
+
+The kiosk is a full screen page for a tablet or a touchscreen on a wall. A customer scans a barcode with any USB or Bluetooth scanner that types like a keyboard, and sees the product name, internal reference, barcode and price in large type, then the screen returns to scan after a few seconds. The page loads every active saleable product into the browser's own storage the first time it opens, so lookups are instant and keep working offline. When a product is not in that cache it is looked up on the server and added.
+
+<Shot src="/odoo-guides/odoo-pos-add-ons/kiosk-found.webp" alt="Full screen price checker kiosk showing House Blend Beans 250g with reference EO-0028, its barcode and a price of 16.00 dollars, with a countdown returning to the scan screen" width={1280} height={800} caption="One scan: name, code and price, then back to the scan screen." />
+
+<Callout title="Price, not stock">
+The listing mentions live stock. The data the page loads includes the quantity on hand, but this version shows the price only. The page also needs a signed in staff user, so the tablet stays logged in as an internal account.
+</Callout>
+
+## Barcode scanning in the stockroom
+
+The barcode add-on gives Community a handset screen for receipts, deliveries, internal transfers and stock counts. Each scan carries a reference made on the handset, so a request resent after a dropped connection lands on the first one and does nothing. Counts are records that can be handed from one shift to the next, reviewed, and applied to stock exactly once by a manager.
+
+<WhenLive slug="odoo-barcode-scanning-inventory-community">
+
+Scanning transfers, lots, the operation type rules and the count workflow are in the chapter on [barcode scanning for Odoo Community inventory](/odoo-guides/odoo-barcode-scanning-inventory-community/).
+
+</WhenLive>
+
+## How long stock has been sitting there
+
+The aging report puts every stock line in a bucket by how long it has been in its location, classes every product as fast, normal, slow or dead by its last outgoing movement, and puts a carrying cost on the slow money. It runs as a filtered report with a pivot, a graph, a CSV export and a PDF, takes a snapshot on the first of each month, emails a weekly digest, and can write off dead stock as scrap in one go.
+
+<WhenLive slug="odoo-stock-aging-report">
+
+Buckets, classes, the write-off and the snapshots are in the chapter on [the stock aging report in Odoo](/odoo-guides/odoo-stock-aging-report/).
+
+</WhenLive>
+
+## Which ones you need
+
+A cafe with a counter PC and a USB printer usually starts with the bridge, then delivery if it sends orders out and table booking if it takes reservations. A retail shop starts with barcode scanning and the price checker, and adds stock aging once it has a few months of history. They all live happily on one database, as on the demo. The full PDF guide covers all six in 72 pages, with a settings table, every workflow step by step, a 15 minute demo script and a menu map.

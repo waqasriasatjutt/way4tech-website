@@ -1,0 +1,103 @@
+---
+title: "Stock aging report in Odoo 19: aging buckets, carrying cost, slow and dead stock, write-offs and monthly snapshots"
+metaTitle: "Stock Aging, Dead Stock and Carrying Cost"
+description: "See how long stock has sat in Odoo 19: aging buckets, carrying cost, fast to dead classes, a PDF, monthly snapshots and a one step write-off of dead stock."
+targetQuery: "odoo stock aging report"
+category: "Industry"
+summary: "How the Stock Aging Report add-on buckets every stock line by age, classes products as fast, normal, slow or dead by their last sale, prices the money held up, writes off dead stock and keeps a monthly trend."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-add-ons"
+seriesOrder: 4
+modules:
+  - name: "Stock Aging Report"
+    technical: "wt_stock_aging"
+    note: "USD 25, Odoo 19 Community, needs Inventory"
+demo:
+  url: "https://pos-demo.way4tech.com/"
+  label: "POS add-ons demo"
+related: ["odoo-pos-add-ons", "odoo-barcode-scanning-inventory-community", "odoo-purchase-inventory-dashboard"]
+linkFrom: ["/modules/inventory/"]
+sources: []
+faqs:
+  - q: "Does Odoo have a stock aging report?"
+    a: "Not as such. Standard Odoo shows the quantity and value on hand and the incoming date of each stock record, but has no aging buckets, no slow or dead classification and no carrying cost. The add-on builds those from the same stock records."
+  - q: "What is the difference between age and class?"
+    a: "Age is per stock record, the days since it came into its location, and decides the bucket. Class is per product, the days since its last outgoing movement, and decides fast, normal, slow or dead. A product can hold old stock and still be a fast mover if it sold last week."
+  - q: "How is the carrying cost worked out?"
+    a: "In the report, each line's value times the annual carrying cost percentage times its age in days over 365, so it is what holding that stock has cost so far. Monthly snapshots store the simpler figure of total value times the percentage."
+  - q: "Does the write-off post an accounting entry?"
+    a: "It creates and validates a stock scrap for each selected line. Whether a journal entry follows depends on how your product categories are valued, exactly as for a scrap made by hand."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every shop has a corner of stock that has not moved. On the demo it is a cage of gift hampers from last winter and a box of 2024 edition cold brew bottles, together worth more than 1,700 dollars at cost, and nobody had looked at them since spring. Odoo will tell you exactly how many you hold and what they are worth. It will not tell you how long they have been there, whether anything like them still sells, or what holding them is costing. The Stock Aging Report add-on answers those three questions from the stock records Odoo already keeps.
+
+## Age and class
+
+The add-on keeps two separate ideas, and the difference matters.
+
+**Age** belongs to a stock record: the number of days since that quantity came into its location, from the record's incoming date. It decides the **bucket**. On the demo the buckets are 0-30, 31-60, 61-90, 91-180, 181-365 and 365+ days, and you can set your own boundaries.
+
+**Class** belongs to a product: the number of days since its last outgoing movement. Within 30 days it is a **Fast Mover**. Up to the slow threshold it is **Normal**, up to the dead threshold **Slow**, and beyond that **Dead**. A product with stock that has never gone out is Slow, and one with no stock is No Stock. A daily job refreshes every product's class.
+
+So an apron received in January can sit in the 181-365 bucket and still be a Fast Mover, because one sold last week. And a hamper that has not sold for over a year is Dead whatever bucket it is in.
+
+## Settings
+
+The settings live in Odoo's Settings: the bucket boundaries, the annual carrying cost percentage (the demo uses 22%; rules of thumb run from about 18 to 25% for capital, storage, insurance and obsolescence), the slow and dead thresholds (60 and 365 days on the demo), whether stock is valued at cost or at sales price, and the weekly digest with its recipients.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/cfg-stock.webp" alt="Settings searched for aging showing the Stock Aging Pro block: aging buckets 30,60,90,180,365, annual carrying cost 22%, slow 60 and dead 365 days, valuation at cost, and the weekly email digest ticked with one recipient" width={1440} height={900} caption="The aging settings. Search Settings for aging to find them." />
+
+<Callout title="Where to find the settings">
+In this release the block is drawn under General Settings rather than under Inventory. Type aging into the Settings search box and it comes straight up.
+</Callout>
+
+## Running the report
+
+**Inventory, Reporting, Aging Analysis, Run Report.** You can narrow by warehouse, location, product category, vendor or product, set a minimum age, keep only slow and dead, only dead, or everything except fast, keep only lot tracked lines, or include lines with no value. The buckets, the carrying percentage and the valuation come from Settings and can be changed for one run.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/aging-wizard.webp" alt="Stock Aging Report dialog with scope filters for warehouses, locations, product categories, vendors and products, and aging settings for buckets, carrying cost 22%, valuation at cost, minimum age, classification and lot only options" width={1440} height={900} caption="Run Report: scope on the left, the aging settings for this run on the right." />
+
+Press **Run**. The demo shows 55 lines, 1,466 units and 14,182.10 at cost, with a carrying cost of 1,078.89.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/aging-run.webp" alt="Stock Aging Report after Run with 55 lines, total quantity 1,466, total value 14,182.10 and carrying cost 1,078.89, and buttons Open Pivot/Graph, Export CSV, Print PDF and Write Off Dead Stock" width={1440} height={900} caption="The totals, and what you can do next." />
+
+The carrying cost on each line is its value times the carrying percentage times its age over 365 days: what that stock has cost to hold so far. A line of beans received last week costs almost nothing; a line of hampers held for a year and a half costs about a third of its value.
+
+**Open Pivot/Graph** shows the lines with product, warehouse, location, lot, quantity, value, age, bucket, class and carrying cost, oldest first. **Export CSV** gives the same lines as a file, and **Print PDF** a landscape report with the totals, the value per bucket with its share, and the top aged lines.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/aging-lines.webp" alt="Aging lines list sorted oldest first: the 2024 cold brew bottles at 739 days, two 2025 hampers at 571 and 533 days marked dead in red, then aprons, mugs, caramel spread and a hand grinder in the 181-365 day bucket" width={1440} height={900} caption="Oldest first: three dead lines at the top." />
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/aging-pivot.webp" alt="Pivot of aging lines with buckets as rows and classes as columns, showing value, quantity and carrying cost for dead stock, fast movers, normal and slow movers" width={1440} height={900} caption="The same lines as a pivot of bucket by class." />
+
+## Writing off dead stock
+
+**Write Off Dead Stock** opens with every dead line ticked. Untick what you want to keep, give a reason, tick the confirmation and press Create Scrap Entries. The add-on creates and validates one scrap per product, location and lot, and leaves a note on each product with the quantity, location, age and value.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/aging-writeoff.webp" alt="Write Off Dead Stock dialog with a warning that each line creates a stock scrap, a reason field, a confirmation tick box, and three selected lines: the cold brew bottles and two 2025 hampers with quantity, value and age" width={1440} height={900} caption="Three dead lines ready to scrap. On the demo they are left in place for the next visitor." />
+
+## The trend: monthly snapshots and the digest
+
+On the first of each month a scheduled job stores a snapshot: total quantity and value, the carrying cost, the value in each class and in each bucket, and the 50 oldest lines. The graph shows whether the slow money is going down. Every seven days another job emails the manager a digest with the totals and the class breakdown.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/snapshots-graph.webp" alt="Aging Snapshots graph of total value from August to November 2026, rising from about 11,000 to 14,000" width={1440} height={900} caption="Four monthly snapshots on the demo." />
+
+The class also shows where people already look. The product form gains Aging Class, Last Outgoing Movement and Days Since Last Sale, the product list gains Slow Movers, Dead Stock, Fast Movers and No Stock filters and a group by class, and stock records gain filters for age over 30, 90, 180 and 365 days.
+
+<Shot src="/odoo-guides/odoo-stock-aging-report/product-dead.webp" alt="Product form for Glass Cold Brew Bottle 2024 Edition with an Aging section showing the Dead Stock badge, last outgoing movement 21 February 2025 and 623 days since the last sale" width={1440} height={900} caption="On the product: Dead Stock, last sold in February 2025." />
+
+## A monthly routine that works
+
+1. Run the report for slow and dead stock only, at cost.
+2. Sort by carrying cost, not by age. A small line held for two years can cost less than a big line held for four months.
+3. For each dead line decide: mark down, bundle, return to the supplier, or write off. The Write Off button handles the last one.
+4. For slow lines, check the reorder rules and the next purchase order before buying more of the same.
+5. Look at the snapshot graph the next month. The dead and slow values should fall; if total value rises with them, purchasing is buying faster than the shelf sells.
+
+The report reads the stock records as they are when you run it, so it can be run at any time of the month without waiting for the snapshot.
+
+<Callout title="Things to know in this release">
+A stock count that finds no difference still writes a movement that the class job treats as outgoing, so counting a dead line moves it back to Fast until the next real check. The weekly digest stores a snapshot row each time it runs, alongside the monthly ones. The PDF has a bucket table rather than a chart, and lists buckets in text order (0-30, 181-365, 31-60 and so on). The age columns are added to a stock list that the Odoo 19 menus do not open; use the age filters instead.
+</Callout>

@@ -1,0 +1,96 @@
+---
+title: "Barcode scanning for Odoo 19 Community inventory: receiving, picking, moves and stock counts on a handset"
+metaTitle: "Barcode Scanning for Receipts and Counts"
+description: "Scan receipts, deliveries, moves and stock counts in Odoo 19 Community on any handset or USB scanner, with lot rules, blind counts and no double bookings."
+targetQuery: "odoo community barcode scanner inventory"
+category: "Industry"
+summary: "How the Barcode Scanning for Inventory add-on turns a phone or handset into a scanner for Odoo 19 Community: what a barcode resolves to, the operation type rules, lots and serials, validating with a backorder, the scan ledger and stock counts applied once."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-add-ons"
+seriesOrder: 3
+modules:
+  - name: "Barcode Scanning for Inventory"
+    technical: "wt_barcode_warehouse"
+    note: "USD 149, Odoo 19 Community, needs Inventory and Barcodes"
+demo:
+  url: "https://pos-demo.way4tech.com/"
+  label: "POS add-ons demo"
+related: ["odoo-pos-add-ons", "odoo-stock-aging-report", "jewellery-stock-count-by-weight-odoo", "odoo-purchase-inventory-dashboard"]
+linkFrom: ["/modules/barcode/"]
+sources: []
+faqs:
+  - q: "Does Odoo 19 Community have a barcode app?"
+    a: "No. Barcode is an Enterprise app. Community can store barcodes on products and locations and read them with the barcode nomenclature, but has no scanning screen for transfers or counts. This add-on adds one."
+  - q: "What stops a resent scan from adding stock twice?"
+    a: "Every command carries a reference made on the handset before it is sent. The references are held behind a unique database index, so a repeat lands on the earlier row, does nothing, and gets the first answer back, whether it comes a second or a day later."
+  - q: "Can a warehouse operator change stock with a count?"
+    a: "No. Operators count. Applying a count to stock needs the Manage Counts group, which also carries the Inventory administrator rights Odoo asks for when stock is adjusted."
+  - q: "Does it work with a cheap USB scanner?"
+    a: "Yes. Any scanner that types like a keyboard works. The scan screen keeps a hidden field focused, so nobody has to tap a box before scanning."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A scanner in a stockroom is not a browser on a desk. It loses signal behind the racking, the operator presses send again, and the first request, which looked lost, arrives after all. Anything that adds a quantity when it arrives will add it twice, and that is how a stockroom ends up with a count nobody can explain. Odoo 19 Community has no barcode app at all, so most small warehouses type quantities into the transfer by hand. The Barcode Scanning for Inventory add-on gives Community a handset screen for receipts, deliveries, internal moves and counts, built around that one problem.
+
+## Every scan carries its own reference
+
+Each command the handset sends, a pick, a quantity correction, a count, has a reference generated on the device before it goes. The server keeps those references behind a unique index. A repeat lands on its own earlier row, does nothing, and the answer the first request got is handed back. Scans queue on the handset and go in a batch, and a batch is applied in one transaction: it lands whole or not at all.
+
+## What a barcode means
+
+One server call turns a barcode into a typed answer, narrowest first: a transfer, a location, a package, a product or its packaging, then a lot. The company barcode nomenclature is read first, so weight embedded and aliased barcodes are read the way the warehouse has already set them up. A lot number is only ever matched against the product that was just scanned, because lot numbers repeat between products and guessing is how the wrong item gets booked. The screen draws what the server sends, so the same rules apply to any front end.
+
+## Scanning a transfer
+
+Open **Barcode, Scan**. The list shows the transfers ready to work; scan a transfer's reference or tap one.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/scan-phone-queue.webp" alt="Scan a transfer screen on a phone listing receipts FTZ/IN/00032 to 00036 from the suppliers, internal transfers for shelf and bean wall top ups and wholesale delivery orders" width={780} height={1688} caption="Barcode, Scan on a phone: the transfers ready to work." />
+
+Each line shows the product, its barcode, the demand, what is booked and where from or to. Scanning a product adds to its line; scanning a lot or serial books against it.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/scan-phone-picking.webp" alt="Receipt FTZ/IN/00034 from a ceramics supplier to the shop floor with three lines, pour over dripper, French press and milk frothing jug, each 0 of the demand scanned" width={780} height={1688} caption="A receipt from the ceramics supplier, nothing scanned yet." />
+
+Scans join a queue at the foot of the screen and **Send** posts them together. **Validate** finishes the transfer and creates a backorder for anything short; **Validate, no backorder** closes it. Deciding up front means the handset never stops to ask.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/scan-phone-scanned.webp" alt="The same receipt with one pour over dripper scan waiting in the queue at the bottom, a Send 1 button and Validate and Validate, no backorder buttons" width={780} height={1688} caption="One scan queued, ready to send." />
+
+## The rules live on the operation type
+
+Two settings on each operation type decide what a scan may do, so every handset gets the same answer:
+
+| Setting | Off | On |
+|---|---|---|
+| Allow Over-picking | A scan that would go past the demand is refused, saying by how much | The booked quantity may pass the demand |
+| Allow Unplanned Products | Only products on the transfer can be scanned | A new move is raised for an unplanned product |
+
+Lots and serials follow Odoo's own Create New and Use Existing settings on the type: an unknown lot is created only where the type allows it, and refused with a plain sentence where it does not. A serial number is one unit and cannot be scanned twice onto one transfer. A scanned source or destination is checked against the transfer, so stock cannot be booked out of a shelf that never held it.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/ptype-out.webp" alt="Delivery Orders operation type with the Barcode Scanning section showing Allow Over-picking and Allow Unplanned Products both unticked" width={1440} height={900} caption="Delivery Orders on the demo: no over-picking, no unplanned products." />
+
+Every command is kept in **Barcode, Reporting, Scan Commands** for managers, with its reference, barcode, transfer or count, product, quantity, outcome and operator. On the demo, eight bags were scanned against a wholesale order for six on a type that does not allow over-picking. The scan was refused with the reason kept, and the next scan of six went through.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/scanlog-rejected.webp" alt="Scan command record with action pick, product House Blend Beans 1kg, its lot, quantity 8, state Rejected, and a message that the delivery asks for 6 and over-picking is off for that operation type" width={1440} height={900} caption="A refused scan, kept in the ledger with its reason." />
+
+A weekly job clears references older than 180 days, keeping any for a transfer or count still open. On the transfer form a Scan button opens it in the scanner, a Scans count opens its ledger, and the transfer search gains a Scanned filter.
+
+## Stock counts that survive a shift change
+
+A count is a record with states: Draft, Counting, Review, Applied and Cancelled. Pick a location, whether its sub-locations are included, a responsible person and whether it is a **blind count**, which keeps the figure on record off the handset so the counter cannot simply agree with it. Operators see their own counts and unclaimed ones; managers see all. A count can be put down at the end of a shift and picked up by somebody else.
+
+**Freeze for Review** stops the counting and reads stock again, so the reviewer looks at today's figures rather than the ones from when the first shift opened each line. Each line shows counted, on record and the difference, green when over and red when short.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/count-review.webp" alt="Count COUNT/2026/0003 in Review for the roastery bench, responsible Sam, with lot by lot lines of coffee beans showing counted, on record and difference, three lines over or short" width={1440} height={900} caption="A count in review, lot by lot." />
+
+**Apply to Stock** shows how many lines go up, go down and agree, and the net difference, then writes each counted figure onto its stock record and posts the adjustment. A line already applied is never written again, so a second press of the button changes nothing.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/count-apply.webp" alt="Apply Count dialog for COUNT/2026/0003 with 12 lines to apply, 2 going up, 1 going down, 9 agreeing and a net difference of 1, and an Apply to Stock button" width={1440} height={900} caption="Apply to Stock: once, by a manager." />
+
+**Count Differences** under Reporting lists every line that disagrees with stock, with filters for short, over and not applied yet, and a pivot. Each count prints as a **Count Sheet** with lots, on record, counted, difference and signature lines.
+
+<Shot src="/odoo-guides/odoo-barcode-scanning-inventory-community/diffs.webp" alt="Count Differences list with lines from two counts, coffee bean lots on the roastery bench and Keep Cups and an apron on the shop floor, showing counted, on record and difference" width={1440} height={900} caption="Count Differences across counts." />
+
+<Callout title="Limits">
+Counting never invents a lot number: a lot that is not in the system is refused on a count and is a question for a manager. Packaging and package barcodes are read, but there is no label printing in this add-on. The screen works in any browser; there is no separate app to install.
+</Callout>

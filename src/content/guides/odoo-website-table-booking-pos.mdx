@@ -1,0 +1,111 @@
+---
+title: "Website table booking for an Odoo restaurant: zones, sittings, combined tables, kitchen pacing and the host's day"
+metaTitle: "Website Table Booking and the Host's Day"
+description: "Take table bookings on your Odoo 19 website: zones and tables, sittings with covers per slot, combined tables, reminders, no shows and a today view."
+targetQuery: "odoo website table booking restaurant community"
+category: "Industry"
+summary: "How the Restaurant Table Reservation add-on describes a dining room, sets up sittings with their own pacing rules, picks and combines tables, and runs the host's day and the guest's booking pages on an Odoo 19 Community website."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-add-ons"
+seriesOrder: 2
+modules:
+  - name: "Restaurant Table Reservation"
+    technical: "wt_pos_table_reservation"
+    note: "USD 49, Odoo 19 Community, needs Point of Sale and Website"
+demo:
+  url: "https://pos-demo.way4tech.com/reservation"
+  label: "Booking pages on the demo"
+related: ["odoo-pos-add-ons", "odoo-restaurant-reservations-waitlist", "odoo-restaurant-pos-setup"]
+linkFrom: ["/industries/restaurant-fnb/"]
+sources: []
+faqs:
+  - q: "Can two guests book the last table at the same time?"
+    a: "No. While a booking is written the sitting is held, so the second request waits and then sees the table is gone. On top of that the database refuses any table held by two live bookings at overlapping times, whether the booking came from the website, the host, an import or a script."
+  - q: "How does it seat a party bigger than any table?"
+    a: "If the sitting allows combining, the engine looks for a set of tables inside one zone that together seat the party, up to the sitting's limit of tables per booking, and takes the set that wastes the fewest seats. It never splits a party between two zones."
+  - q: "Can the kitchen limit how many people arrive at once?"
+    a: "Yes. Each sitting has a Covers per Slot figure. Once that many guests are due in one slot, the slot is shown as full even if tables are free, so the kitchen is paced rather than the room."
+  - q: "Does the guest need an account to cancel?"
+    a: "No. The confirmation email carries a private link to the guest's booking page, where they can give the table back until the time of the booking. After that it is a phone call."
+  - q: "Are no shows marked automatically?"
+    a: "Only if the sitting has a No Show After value. A job runs every 15 minutes and marks pending or confirmed bookings that have not been seated in that time. It only looks back two days, so turning it on never rewrites old history."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Odoo's Restaurant option knows your floor plan and which tables have an order on them right now. It does not know who is coming at eight. For that most restaurants still keep a diary or pay for a booking platform that takes a fee per cover and keeps the guest list. The Restaurant Table Reservation add-on puts the book inside Odoo 19 Community, with booking pages on your own website, and with an engine that understands why a table for six should not go to a couple at seven on a Friday.
+
+## The dining room: zones and tables
+
+**Zones** are parts of the room: a main floor, a courtyard, a private room, a bar. Each zone has a location type, indoor, outdoor, private or bar, which the guest sees, and can be tied to the till that rings up its bills. Zones matter to the engine because it will only ever push tables together inside one zone; nobody wants half the party on the terrace.
+
+**Tables** have three numbers that drive the booking engine:
+
+- **Seats** is what it books against. A party is never put on fewer seats than it has guests.
+- **Smallest Party** keeps a big table away from a small party while a smaller table is free. It is a preference, not a ban: the table is still used rather than turning the booking away.
+- **Can Be Combined** lets the table be pushed together with others. Turn it off for a booth, the bar stools or a fixed banquette.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/tables.webp" alt="Tables list with each table's zone, seats, smallest party, shape and can be combined flag across Main Floor, Courtyard, The Loft and Window Bar, 68 seats in total" width={1440} height={900} caption="Sixteen tables in four zones on the demo." />
+
+<Callout title="Known issue">
+In this release the kanban view of Tables shows an error, because its card reads the combine flag without loading it. The list and form views work.
+</Callout>
+
+## Sittings: when you take bookings and on what rules
+
+A sitting is a service with its own rules. On the demo there are three: Breakfast from 7:00, Lunch from 11:30, and a Friday Supper Club on Friday and Saturday nights. Each sitting has:
+
+| Rule | What it controls |
+|---|---|
+| Days, Serving, Timezone | When it runs, read in the restaurant's own timezone so a booking made from abroad lands at the right time |
+| Slot Every | How far apart the times offered are |
+| Table Held, Turnaround | How long the party has the table, and the clearing time before the next party |
+| Covers per Slot | The most guests arriving in one slot. This paces the kitchen |
+| Party Size, Combine Tables, Tables per Booking | Who can book, and whether a big party may use several tables |
+| Notice, Book Ahead | How close to now and how far ahead guests can book |
+| Confirm Automatically | Website bookings land confirmed, or pending for a call back |
+| Phone Required, Remind Before, No Show After | The form, the reminder email and the automatic no show |
+| Zones, Website text, Published | Where it seats, what the guest reads, whether it shows online |
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/sitting-form.webp" alt="Lunch sitting form: serving 11:30 to 15:30 in Australia/Melbourne, slot every 30 minutes, table held 1 hour 15, turnaround 15 minutes, open every day, parties of 1 to 10, combine tables on with up to 3 per booking, 24 covers per slot, 2 hours notice, 45 days ahead, confirmed automatically, phone required, reminder 24 hours before, no show after 20 minutes" width={1440} height={900} caption="Lunch: all the booking rules live on the sitting." />
+
+The last time offered is the closing time less the time held, so a lunch that closes at 15:30 with tables held for 75 minutes offers 14:00 as its last slot. The Supper Club on the demo is different on purpose: two hours held, 16 covers a slot, not confirmed automatically because the restaurant calls every booking back, and no automatic no shows.
+
+## How a table is chosen
+
+For a party at a time, the engine finds every table in the sitting's zones that is free for the whole time held plus turnaround. It takes the smallest single table that fits, respecting the smallest party setting. If none fits and combining is allowed, it tries sets of tables inside one zone and takes the set that wastes the fewest seats, up to the tables per booking. Then it adds the covers already arriving in that slot and checks them against the kitchen cap. The same check runs for the website, the host's availability screen and a booking keyed in by hand, and every booking is checked again by the database so no table is held twice.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/res-combined.webp" alt="Confirmed booking RES/00892 for a party of 10 at lunch on 27 November, seated on Main Floor tables M3 and M6 with a seat capacity of 10, booked through the website" width={1440} height={900} caption="Ten people at lunch on M3 and M6, pushed together on the Main Floor." />
+
+## The host's day
+
+**Reservations, Today** opens on the day's bookings that still hold a table, in the order they are due. Each booking has buttons along the top: **Confirm**, **Seat Party** (which stamps the time they sat down), **Find Tables**, **Resend Confirmation**, **No Show** and **Cancel**, which asks for a reason and whether to email the guest. A cancelled booking can be reopened. Every change is kept in the chatter.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/res-today.webp" alt="Today list of bookings with time, reference, guest, party size, tables, sitting, phone and state, confirmed breakfast bookings first and seated supper club parties shown in green" width={1440} height={900} caption="Today: who is due, on which tables, and who is already seated." />
+
+When the phone rings, **Check Availability** answers it without leaving the dialog. Pick the sitting, the date and the party size and every slot is shown free or taken, with the number of free slots and the next free one. Fill in the guest, pick the time, and the booking is taken.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/availability-slot.webp" alt="Check Availability dialog for Breakfast on 6 November for a party of 6, showing slots from 07:00 to 10:30 with one taken, 7 free slots, the next free slot, and fields to take the booking for a guest" width={1440} height={900} caption="Check Availability for six at breakfast, and the booking fields under it." />
+
+The book can be read as a list with filters such as Still to Come, Holding a Table, No Shows, Booked Online, No Table Yet and Six or More, as kanban cards, a calendar, a pivot of covers by day and sitting, or a graph. A printed **Service Sheet** for the pass lists the time, guest, covers, tables, phone, requests and state of the bookings you select.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/res-calendar.webp" alt="Reservations calendar in week view for 8 to 14 November with breakfast, lunch and supper club bookings across each day, coloured by state" width={1440} height={900} caption="The week in the calendar." />
+
+Two scheduled jobs run in the background. One sends reminder emails every hour to bookings inside their sitting's reminder window, once each. The other marks no shows every 15 minutes for sittings that set a grace period.
+
+## The guest's side
+
+Guests book at `/reservation` on your Odoo website, linked as Book a Table in the menu. They pick a sitting, then a date from a strip of the coming days and a party size, and only the times actually free for that party are offered.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/web-times.webp" alt="Website page for Lunch, serving 11:30 to 15:30 with the table held for 1 hour 15, a party size of 4, a date strip from Sunday 8 to Saturday 21 November and free times from 11:30 to 14:00" width={1440} height={1010} caption="Free times for four on Sunday." />
+
+The details form asks for name, email, phone, occasion and requests. When the guest presses Book the table, the engine runs the whole check again before anything is written, so a page left open for an hour cannot take a table somebody else booked. The pages are plain server pages with a form post, which work on any phone.
+
+<Shot src="/odoo-guides/odoo-website-table-booking-pos/web-form.webp" alt="Almost there page for lunch for 4 on Sunday 8 November at 12:30 with name, email, phone, occasion and requests fields and a Book the table button" width={1440} height={1187} caption="The details form. On the shared demo, please stop here." />
+
+The confirmation email carries the booking reference and a private link to a page where the guest can see the booking and give the table back until the time it is due. If a slot cannot be taken the guest is told why in plain words: the restaurant is closed then, it is too close to now, too far ahead, the party should call, the kitchen is full at that time, or every table is taken.
+
+<Callout title="What it does not do">
+There is no waitlist, deposit or prepayment, and the booking is not turned into a till order by itself. The booking and the till share the zones, and the till form shows a Bookings today count, but the host still seats the party on the floor plan in Point of Sale.
+</Callout>

@@ -1,0 +1,114 @@
+---
+title: "Odoo Community POS receipt printer without an IoT Box: USB and network printers, cash drawer, scale and pole display"
+metaTitle: "Printers and Drawer Without an IoT Box"
+description: "Print Odoo 19 Community POS receipts to USB, serial or network ESC/POS printers, open the drawer and read a scale through a free Windows agent, no IoT Box."
+targetQuery: "odoo community pos printer without iot box"
+category: "Industry"
+summary: "How the WT POS Hardware Bridge agent connects an Odoo 19 Community till to its receipt and kitchen printers, cash drawer, scale and pole display, the four step setup checklist, pairing, silent printing of back-office PDFs and what happens when the agent is down."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-pos-add-ons"
+seriesOrder: 1
+modules:
+  - name: "WT POS Hardware Bridge"
+    technical: "wt_pos_bridge"
+    note: "USD 129, Odoo 19 Community, needs Point of Sale and the free Windows agent"
+demo:
+  url: "https://pos-demo.way4tech.com/"
+  label: "POS add-ons demo"
+related: ["odoo-pos-add-ons", "odoo-restaurant-pos-setup", "odoo-pos-kitchen-display-screen"]
+linkFrom: ["/posbridge/"]
+sources: []
+faqs:
+  - q: "Why does Odoo Community POS not see my USB receipt printer?"
+    a: "A browser cannot talk to a USB or serial device on its own, and Odoo Community only reaches POS hardware through an IoT Box or an Epson ePOS printer on the network. The bridge add-on fills that gap with a Windows agent on the till PC that the browser can reach at 127.0.0.1."
+  - q: "Does the bridge work on a Mac, Linux or a tablet till?"
+    a: "No. The agent is a Windows program. On any other device the till still works, and with the fallback option on it prints receipts through the browser print dialog."
+  - q: "Can kitchen tickets go to a different printer?"
+    a: "Yes. Add a preparation printer of type Use a printer on WT POS Bridge and give the printer name exactly as it is set up in the agent, such as kitchen or bar. Choose the product categories it prints as you would for any preparation printer."
+  - q: "Can invoices print without the download dialog?"
+    a: "Yes. Each user can turn on silent printing in their Preferences and name a Windows printer. PDF reports from the back office then go straight to that printer through the agent on their own PC."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The till runs in a browser, and a browser is not allowed to talk to a USB port. That is the whole reason Odoo sells an IoT Box: something on the counter has to sit between the web page and the printer. In Community without one, the only hardware the till can drive directly is an Epson printer with ePOS on the network. For a cafe that already owns a USB thermal printer with a cash drawer cabled to it, that means buying new hardware or printing from the browser dialog for every ticket. The WT POS Hardware Bridge add-on takes another route: a small free Windows program on each till PC does the talking, and the till sends it the work.
+
+## How it fits together
+
+The browser running the till sends each job to the agent at `http://127.0.0.1:8171`, on the same computer. Odoo itself never connects to the PC. The address on the till must be 127.0.0.1, localhost or [::1] with a port between 1024 and 65535, and anything else is refused when you save, because the agent only listens on the computer it runs on.
+
+What the agent does with each job:
+
+- **Receipts** are printed as an image in ESC/POS on USB, serial or network printers, so any script and the logo print exactly as on screen.
+- **Cash drawer** opens on cash payments and on cash in or out, through the receipt printer or its own port.
+- **Scale**: weighed products read the weight from a serial scale.
+- **Pole display**: the last line and the total on a 2x20 customer display.
+- **Kitchen and bar printers** take preparation tickets by name.
+- **Back-office PDFs** print silently to a Windows printer for users who turn that on.
+
+The till also gets the cash drawer and scale switched on in its data when the bridge provides them, so those standard Odoo buttons work without an IoT Box.
+
+## Turning it on for a till
+
+Point of Sale, Configuration, Settings, then Connected Devices. Pick the till at the top of the page and switch on **WT POS Bridge**. The options are the agent address, whether receipts go through the bridge and under which printer name ("receipt" means the receipt printer chosen in the agent), the cash drawer, the scale, the pole display, and **Browser print when the bridge is down**.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/cfg-pos.webp" alt="Point of Sale settings for Cafe Counter with the WT POS Bridge block switched on, the agent address http://127.0.0.1:8171, receipt printer, cash drawer, customer pole display and browser fallback ticked, and a progress line reading 4 of 4 steps done on CAFE-FRONT-01 with agent 1.1.0" width={1440} height={900} caption="The bridge block in POS Settings, with the setup progress reported from the till PC." />
+
+Under the switches is a progress line that the setup checklist fills in from the till PC: how many of the four steps are done, the computer name, the agent version, when it was last seen, and the devices it found. On the demo, Cafe Counter shows 4 of 4 on CAFE-FRONT-01 and Pantry Shop has not been set up.
+
+## The four step checklist
+
+Open Point of Sale, Configuration, **WT POS Bridge setup** on the till PC itself (managers only), or the Setup checklist and pairing link in Settings. Each step ticks itself from what the agent answers, and Check again asks once more.
+
+1. **Install the agent.** A download button for the Windows installer. It needs no admin rights and starts from the Start menu.
+2. **Pair this computer.** Ties the agent to this Odoo.
+3. **Devices found.** The agent finds receipt printers, COM ports and a scale by itself, and network printers on port 9100.
+4. **First receipt printed.** Print a test or sell something.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/bridge-setup.webp" alt="WT POS Bridge setup page for Cafe Counter listing four steps: install the agent with a Download WT POS Bridge for Windows button, pair this computer, devices found and first receipt printed, with a Check again link" width={1440} height={900} caption="The checklist, opened on the computer that will run the till." />
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/lst-agent-setup-find.webp" alt="WT POS Bridge 1.1.0 setup window, step 1 of 3, Looking for your devices, checking Windows printers, COM ports and network printers on port 9100" width={682} height={559} caption="The agent's own setup looks for printers, ports and a scale." />
+
+Pairing works through a six digit code. The agent only accepts it after the person at the PC clicks Allow, and only from the Odoo that asked, so a pairing cannot be pushed onto a till from somewhere else.
+
+In the agent's settings you name the printers. The till refers to them by those names: `receipt` for receipts, `kitchen` or `bar` for preparation printers.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/lst-agent-settings-printers.webp" alt="WT POS Bridge settings window, Printers tab, listing a receipt printer on the Windows spooler and a kitchen printer, both 80 mm, with buttons to add, edit, remove and test print" width={762} height={599} caption="Printer names in the agent, used by the till and the preparation printers." />
+
+## In the till
+
+With the bridge on, a printer icon sits in the top bar of the till: green when the agent answered, red when it did not. Clicking it opens the bridge dialog. When the agent is missing it says so, offers the download, and warns that Chrome or Edge may ask to allow access to other apps and services on the device. With the agent running the same dialog pairs and runs test prints.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/ui-bridge-dialog.webp" alt="Cafe Counter floor plan with the WT POS Bridge dialog open saying the agent is not running on this computer, with a Download WT POS Bridge for Windows button and a note about allowing access in Chrome or Edge" width={1440} height={900} caption="The bridge dialog when no agent is running. On the shared demo this is what every visitor sees." />
+
+## Kitchen and bar printers
+
+Add a preparation printer, choose **Use a printer on WT POS Bridge** as the type, and give the bridge printer name exactly as it is in the agent. Pick the product categories it prints as for any Odoo preparation printer and attach it to the till.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/printer-form.webp" alt="Preparation printer form named Kitchen Pass with printer type Use a printer on WT POS Bridge selected, bridge printer name kitchen, and printed product categories Breakfast and Lunch" width={1440} height={900} caption="Kitchen Pass prints breakfast and lunch tickets through the agent." />
+
+## When the agent is not there
+
+The till never stops because of a printer. A kitchen ticket that cannot go out shows Printing failed with the printer's name and two choices, Continue and Retry. A receipt falls back to the browser print dialog when the fallback option is on.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/ui-dialog-1.webp" alt="Printing failed dialog in the till: Kitchen Pass, this computer is not paired with WT POS Bridge, click the printer icon at the top of the POS, with Continue and Retry buttons" width={1440} height={900} caption="A failed kitchen print names the printer and says where to click." />
+
+## Silent printing from the back office
+
+Each user can open their Preferences and turn on **Silent printing through WT POS Bridge**, with an optional Windows printer name. Invoices, delivery slips and other PDF reports then go straight to that printer through the agent on their own PC instead of downloading. **Pair this computer** opens the same pairing screen as the till.
+
+<Shot src="/odoo-guides/odoo-pos-printer-without-iot-box/prefs.webp" alt="Change My Preferences dialog for the demo user with a WT POS Bridge section and the Silent printing through WT POS Bridge checkbox" width={1440} height={900} caption="Silent printing is a per user preference." />
+
+<Callout title="Limits">
+The agent runs on Windows only. A Mac, a Linux PC or a tablet till cannot use it and prints through the browser instead. Each till PC needs its own agent and its own pairing. The agent is a separate free download from way4tech.com/posbridge; the Odoo add-on is what you buy.
+</Callout>
+
+## Setting up a counter, in order
+
+1. Install the add-on and switch on WT POS Bridge for the till in Settings.
+2. On the till PC, open WT POS Bridge setup and download the agent.
+3. Let the agent find the devices, name the receipt and kitchen printers.
+4. Pair the computer with the code, then print a test receipt.
+5. Add preparation printers of the bridge type for the kitchen and the bar.
+6. Turn on silent printing for the back-office users who print invoices.

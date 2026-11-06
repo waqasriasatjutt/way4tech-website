@@ -1,0 +1,142 @@
+---
+title: "Workforce structure and vacancies in Odoo 19: team sizes, spans of control and a hiring pipeline"
+metaTitle: "Workforce Structure and Vacancies"
+description: "Count your org chart in Odoo 19 Community: total team sizes, management levels, wide spans, staff with no manager, then fill the gaps with vacancies."
+targetQuery: "odoo workforce structure span of control headcount"
+category: "Payroll and HR"
+summary: "The numbers behind the org chart, and the pipeline that fills its gaps: total team per manager, management levels, wide and narrow spans, people with no manager and circular reporting lines, then vacancies, candidates, scored interviews and offers that become employee records."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-hrms"
+seriesOrder: 13
+modules:
+  - name: "WT HRMS Workforce Structure"
+    technical: "wt_hrms_workforce_structure"
+    note: "USD 25, team sizes, levels, spans and the missing manager list"
+  - name: "WT HRMS Recruitment"
+    technical: "wt_hrms_recruitment"
+    note: "USD 39, vacancies, candidate board, interview scorecards, offers"
+related: ["odoo-recruitment-job-offer-online-acceptance", "odoo-hr-implementation-plan", "import-employees-into-odoo"]
+linkFrom: ["/modules/hr/"]
+faqs:
+  - q: "Does Odoo Community have an org chart?"
+    a: "Yes. The org chart module is part of Odoo 19 Community and installs with Employees, so you get a chart on the employee form and a full company chart. What it does not do is count: there is no total team size, no management level and no list of people without a manager. Workforce Structure adds those as stored fields you can sort, group and export."
+  - q: "What is span of control in Odoo?"
+    a: "The number of people who report to a manager directly. Workforce Structure stores it as Direct Reports on every employee and adds two filters for the ends that need a conversation: more than eight direct reports, and exactly one."
+  - q: "Why does an employee with no manager matter?"
+    a: "Every WT HRMS approval chain that starts at the direct manager walks the reporting line. A person with no manager has nobody at that step, so their requests wait for HR. The Employees With No Manager menu lists them."
+  - q: "Can a reporting line loop in Odoo?"
+    a: "Standard Odoo puts no guard on it: a director can be given their own analyst as manager and it saves. With Workforce Structure installed that save is refused with a message naming the employee. Loops that existed before the module was installed are listed under Circular Reporting Lines."
+  - q: "Which recruitment module should I use?"
+    a: "Use WT HRMS Recruitment for an internal pipeline with scored interviews and an offer that creates the employee. Use Odoo's own Recruitment app with Recruitment Plus if you want a public careers page and an offer the candidate accepts online. Both run on Odoo 19 Community."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Every reorganisation starts with the same questions. How many people does each director actually run, counting every level below them? How many layers deep has the company grown? Which supervisor has fourteen people reporting straight to them, and which manager has one? Who joined last year and was never given a manager at all? Odoo draws the org chart, but these numbers usually get rebuilt in a spreadsheet every time somebody asks, and the spreadsheet is wrong by the following month.
+
+This chapter covers two WT HRMS modules that sit under the **Employees** app rather than the WT HRMS menu. **Workforce Structure** counts the reporting line. **WT HRMS Recruitment** runs the vacancies that fill the gaps it shows. The screens are from the facility management demo, a fictional company called Meridian Facilities Management LLC in Dubai. A few employee rows on that database are blurred in the screenshots.
+
+## Part 1: Workforce Structure
+
+### What it adds
+
+Odoo 19 Community already has an org chart: the `hr_org_chart` module installs with Employees and draws one on every employee form. The only structural number it holds is the list of people who report to someone directly. Workforce Structure adds six stored fields to every employee:
+
+| Field | What it means |
+|---|---|
+| Direct Reports | People who report to this employee directly |
+| Total Team | Everybody below them, at every level |
+| Level | How many managers sit between them and the top; 0 is somebody with no manager |
+| Manages People | Ticked when anybody reports to them |
+| No Manager Set | Nobody is recorded as their manager |
+| Reporting Line Loops | Following their managers upwards comes back to them |
+
+Because they are stored, you can sort, filter, group and export on them like any other field. Everything is under **Employees, Workforce Structure**, which only HR managers see.
+
+### Structure and Team Sizes
+
+The main list opens with the biggest team first, which is the order anybody opening a workforce report wants. Each row shows the job title, department, manager, level, direct reports and total team. Rows with no manager are amber, rows inside a loop red, and a manager with more than eight direct reports is highlighted.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/structure-list.webp" alt="Workforce Structure list in Odoo sorted by total team, with the facilities director at level 0 and a team of 18, the operations manager at level 1 with 4 direct reports and 15 in total, and supervisors at level 2" width={1440} height={900} caption="Structure and Team Sizes: the director runs 18 people through 3 direct reports." />
+
+The demo shows why total team matters. The facilities director has three direct reports, so a plain org chart reads "3". Counting every level, the director runs 18 people. The operations manager under them has 4 direct reports and a total team of 15.
+
+The search filters are the questions a reorganisation asks:
+
+- **More Than 8 Direct Reports** and **Only One Direct Report**: the two ends of the span of control that need a look.
+- **Managers** and **Individual Contributors**.
+- **Four Or More Levels Down**: where the company has grown tall.
+- **No Manager Set** and **Reporting Line Loops**.
+- Group by **Management Level**, **Department** or **Manager**.
+
+### Headcount by department and level
+
+Switch the view to pivot to get departments down the side and levels across the top, with a headcount in each cell. The bar graph shows the same thing as headcount per level, split by department.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/structure-pivot.webp" alt="Workforce Structure pivot in Odoo with departments as rows and management levels 0 to 3 as columns, counting employees in each, for a total of 24" width={1440} height={610} caption="Departments against management levels. MEP Maintenance has one supervisor at level 2 and six technicians at level 3." />
+
+### On the employee form
+
+Every employee form gets **Level** and **Direct Reports** under the Manager field, and a manager gets a **Total Team** smart button at the top. Clicking it opens a list of everybody in their branch, at every level, not only the people who report to them directly.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/employee-total-team.webp" alt="Employee form in Odoo for a demo operations manager with Level 1 and Direct Reports 4 under the manager field and a Total Team 15 smart button at the top" width={1440} height={900} caption="Level and Direct Reports sit under the manager; Total Team opens the whole branch." />
+
+### The two lists to keep empty
+
+**Employees With No Manager** lists everybody without one. In a company of any size that is rarely only the chief executive, and it matters: every approval chain that starts at the direct manager has nobody to send that person's requests to, so they wait for HR. Check this list after every import and every leaver.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/no-manager.webp" alt="Employees With No Manager list in Odoo with the facilities director at the top and five more rows blurred" width={1440} height={415} caption="Six employees with no manager. Only the top person should be here." />
+
+**Circular Reporting Lines** lists people whose chain of managers comes back to them. Standard Odoo lets this save: give a director their own analyst as manager and nothing stops it, after which the chart has no top and approval chains go round in circles. With the module installed, that save is refused with "That makes the reporting line circular" and the employee's name. The list exists for loops that were already in the database before the module was installed. On the demo it is empty, as it should be.
+
+## Part 2: Vacancies and the hiring pipeline
+
+The structure report shows the gaps; vacancies fill them. **WT HRMS Recruitment** is a self-contained hiring pipeline: vacancies, candidates on a board, scored interviews, and offers that turn into employee records. It is separate from Odoo's own Recruitment app and does not change it.
+
+<Callout title="The demo has no recruitment records yet">The module is installed on the facility demo but nobody has raised a vacancy there, so the screens below show Odoo's sample view and blank forms. What they describe comes from the module itself.</Callout>
+
+### Stages and roles
+
+**Employees, Recruitment, Configuration, Stages** holds the columns of the candidate board. Six ship with the module: Applied, Screening, Interviewing, Offer, Hired and Rejected. Each stage has an **Outcome**, In Progress, Hired or Rejected, which is what the counts read, so renaming "Hired" never breaks the numbers. A company can have only one Hired and one Rejected stage. **Needs an Interview First** is ticked on Offer: a candidate cannot be moved there until an interview has been completed and scored.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/stages.webp" alt="Recruitment Stages list in Odoo with Applied, Screening, Interviewing and Offer as In Progress, Hired and Rejected as outcomes, Offer needing an interview first, Hired and Rejected folded" width={1440} height={412} caption="The six stages. Offer needs a scored interview; Hired and Rejected are folded on the board." />
+
+The module has two roles under the user's access rights: **Interviewer**, who can read vacancies and candidates and fill in interview scorecards, and **Recruiter**, who runs everything. The user who installs it gets Recruiter.
+
+### Vacancies
+
+**Recruitment, Vacancies, New** opens a vacancy: job title, department, hiring manager (the person the new starter will report to), recruiter, number of **Openings**, **Target Start Date**, salary band, job description and requirements. The vacancy counts its own applications, candidates in progress and positions filled.
+
+It moves from **Draft** to **Recruiting** with Start Recruiting, can be put **On Hold** and resumed, and ends as **Closed** or **Cancelled**. A closed vacancy cannot be reopened; duplicate it to hire for the role again so the first round's history stays intact. A vacancy still open after its target date is flagged, and **Past Target Date** is a search filter.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/vacancy-form.webp" alt="New vacancy form in Odoo with job title, department, hiring manager, recruiter, openings, filled, remaining, opened date, target start date, salary band and tabs for job description, requirements and candidates" width={1440} height={900} caption="A blank vacancy: who hires, how many, by when, and the salary band." />
+
+### Candidates and interviews
+
+The candidate board has a column per stage, every column shown even when empty so the first card can be dragged anywhere. A candidate has contact details, the vacancy, a source (direct, referral, LinkedIn, agency, job board, other), expected salary, notice period and the days they have been in the pipeline. The same email cannot apply twice to one vacancy. The **Waiting Over 30 Days** filter finds the candidates nobody is moving.
+
+<Shot src="/odoo-guides/odoo-workforce-structure-vacancies/candidate-board.webp" alt="Candidate board in Odoo with columns Applied, Screening, Interviewing and Offer, showing faded sample cards and a message to log the first candidate" width={1440} height={651} caption="The candidate board, shown here with Odoo's faded sample cards because the demo has no candidates yet." />
+
+**Schedule Interview** on a candidate opens an interview: type (phone screen, technical, HR, hiring manager, panel, final), interviewer, time, duration and room or call link. An interviewer cannot be booked into two interviews that overlap. After the conversation the interviewer fills the scorecard: a score from 1 (strong no) to 5 (strong yes), a recommendation (advance, hold or reject), strengths, concerns and notes. **Mark Completed** is refused until the score and the recommendation are in. The candidate's **Average Score** is the mean of their completed, scored interviews. Interviews also have a calendar view.
+
+### Offers and the hire
+
+**Make an Offer** on the candidate opens an offer with the expected salary filled in beside the **Offered Salary**, so the gap is visible before it goes out. Add the proposed start date and a **Valid Until** date. An offer goes **Draft**, **Approved** (the approver and date are recorded), **Sent**, then **Accepted** or **Declined**; it can be **Withdrawn** at any point before an answer. A daily job marks approved or sent offers past their valid until date as **Expired**. A candidate can have only one live offer at a time.
+
+**Accepted** asks for confirmation, then creates the employee record from the candidate and moves the candidate to the Hired stage. The **Employee** smart button on the offer opens the new record.
+
+<Callout title="What the new employee record holds">The accepted offer creates the employee with the candidate's name, email and phone as work contacts, the vacancy's department, its hiring manager as manager and the job title. The offered salary and the start date stay on the offer: they are not copied to the employee or a contract, so enter them when you set up the contract. The module also sends no emails to candidates and has no careers page. For those, use Odoo's Recruitment app as in the [recruitment and job offers chapter](/odoo-guides/odoo-recruitment-job-offer-online-acceptance/).</Callout>
+
+**Recruitment, Reporting, Hiring Funnel** shows candidates by stage and source as a graph, pivot or list: how many sit at each stage, and which channels the hires came from.
+
+<Callout title="Install it with HRMS Core">The listing says the module installs on its own. In this version it also adds a Recruitment entry under the WT HRMS menu, which exists only when HRMS Core is installed, so install HRMS Core (free) first. Its real menu is under Employees, Recruitment.</Callout>
+
+## Putting the two together
+
+1. After loading employees, open **Employees With No Manager** and give everyone except the top person a manager.
+2. Read **Structure and Team Sizes** with the wide span filter on, and the pivot by department and level. That is the structure as it really is.
+3. For every gap you decide to fill, raise a vacancy with its hiring manager and target date.
+4. When the offer is accepted, the new employee arrives with the right manager, so the structure report and the approval chains are right from day one.
+
+For loading the company in the first place, see [importing employees into Odoo](/odoo-guides/import-employees-into-odoo/). For a new joiner's first weeks after the offer, see [onboarding and offboarding](/odoo-guides/odoo-employee-onboarding-offboarding/).

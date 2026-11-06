@@ -1,0 +1,91 @@
+---
+title: "Laundry pickup and delivery in Odoo: drivers, collection jobs, routes and proof at the door"
+metaTitle: "Pickup and Delivery Routes for a Laundry"
+description: "Run laundry collection and delivery in Odoo: drivers who see only their own runs, jobs with time windows, routes per shift, signed drops and failed stops."
+targetQuery: "laundry pickup and delivery odoo"
+category: "Industry"
+summary: "Drivers, collection and delivery jobs, routes per shift, sending a run out and closing it, proof at the door, failed stops and rescheduling, and the printed route sheet in the Laundry Management module."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-laundry-management"
+seriesOrder: 3
+modules:
+  - name: "Laundry Management"
+    technical: "wt_laundry_management"
+    note: "USD 199, Odoo 19 Community, needs Invoicing"
+demo:
+  url: "https://laundry-demo.way4tech.com/"
+  label: "Laundry demo"
+related: ["odoo-laundry-management", "odoo-laundry-garment-tagging-plant-board", "odoo-distribution-routes-beat-plans"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a driver see other drivers' stops?"
+    a: "No. A driver linked to an Odoo user, with the Driver role, can read only the routes and jobs whose driver is linked to his own user. Counter staff and managers see every route and job."
+  - q: "Can a delivery be marked done without a signature?"
+    a: "No. A delivery job cannot be completed until Signed For By is filled in. Collections have no such check, but the piece count recorded at the door is what you will be held to."
+  - q: "What happens to stops when a route is cancelled?"
+    a: "Any stop still requested or on the route goes back to Requested with no route, ready to be put on another run."
+  - q: "Does ticking Deliver to the Customer on an order book the van?"
+    a: "No. It records that the order goes back by van and fills in the address. The delivery job itself is created under Collection, Collections and Deliveries."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+For a hotel, an office or a busy household, the laundry is the van that turns up. A missed collection means a hotel short of linen tomorrow; a delivery left in a lobby without a name is a claim waiting to happen. This chapter of the [laundry management series](/odoo-guides/odoo-laundry-management/) sets up drivers, books collection and delivery jobs, builds a run for each shift and closes it with proof at the door, using the Laundry Management module.
+
+## Drivers
+
+Under **Laundry, Collection, Drivers** each driver has a phone, the branch he is based at, a vehicle and plate, a licence expiry date, a status (Available, On the Road or Off Duty) and a count of today's stops.
+
+<Shot src="/odoo-guides/odoo-laundry-pickup-delivery-routes/drivers.webp" alt="Laundry drivers list with three drivers showing phone, base branch, vehicle, plate, licence expiry, number of stops today and status Available, On the Road or Off Duty" width={1440} height={900} caption="Drivers with their vehicles and today's stops." />
+
+Link a driver to an **Odoo User** with the Driver role and he signs in to see his own routes and jobs and nothing else: no orders, no prices, no other driver's runs. The status changes by itself: On the Road when his route is sent out, Available when it closes.
+
+<Callout title="The licence date is a reminder only">
+Nothing stops a driver with an expired licence going out on a route. Keep an eye on the date in the list.
+</Callout>
+
+## Jobs: one stop each
+
+A job is one stop. Under **Collection, Collections and Deliveries**, press New and pick the customer: address, phone and account contract fill in. Choose **Collection** or **Delivery**, the scheduled date, the time window (From and To, in hours), the stop order and the number of pieces. A new job is **Requested**. A window that ends before it starts is refused.
+
+<Shot src="/odoo-guides/odoo-laundry-pickup-delivery-routes/jobs.webp" alt="Collections and deliveries list with job numbers, collection or delivery, customer, address, scheduled time, route, driver, pieces and status from Requested to Completed, Not Completed and Cancelled" width={1440} height={900} caption="Every collection and delivery, with its route and status." />
+
+The list filters by Not On a Route, Today, Failed, Collections and Deliveries, and groups by type, route, status or date. The first of those, Not On a Route, is the dispatcher's to do list.
+
+## Routes: a run per shift
+
+A route is one driver's run for a shift. Under **Collection, Routes**, create one with the branch, driver, date and shift (Morning, Afternoon or Evening) and add the stops. The route counts its stops, the ones done, and the pieces.
+
+**Send Out** puts every requested stop On a Route and the driver On the Road. It is refused on a route with no stops. From then on each stop in the route's list has a tick to complete it and a cross to fail it, so the dispatcher can follow the run from one screen.
+
+<Shot src="/odoo-guides/odoo-laundry-pickup-delivery-routes/route-on-the-road.webp" alt="A route on the road for the morning shift with branch, driver and date, a stop count of 5, 2 done and 262 pieces, and the stops listed with hotel linen collection completed, a household collection on the route and a delivery completed" width={1440} height={900} caption="The morning run on the road, stop by stop." />
+
+**Route Sheet** prints the run for the van: route, driver, vehicle, date and shift, then each stop with customer and phone, address, window, type, pieces and a box for the signature.
+
+<Shot src="/odoo-guides/odoo-laundry-pickup-delivery-routes/route-sheet.webp" alt="A printed laundry route sheet with the company logo and address, route number, driver, vehicle and plate, date, shift and number of stops, and a table of five stops with customer, phone, address, time window, collection or delivery, pieces and signature columns, and a note" width={1440} height={900} caption="The route sheet the driver takes in the van." />
+
+## Proof at the door
+
+A delivery cannot be completed until **Signed For By** is filled in: the customer, the housekeeper, building security, whoever took it. Completing it stamps the time, and every Ready order on the job's Orders tab is handed over at the same moment, so the order becomes Collected without anyone touching it at the counter.
+
+<Shot src="/odoo-guides/odoo-laundry-pickup-delivery-routes/delivery-signed.webp" alt="A completed delivery job with the customer, address and window, the route and driver, pieces, completed time and Signed For By filled in" width={1440} height={900} caption="A delivery signed for at the door." />
+
+A collection has no signature check, but count the pieces in front of the customer and write the number on the job. That is the count the claim will be argued over if one comes.
+
+<Callout title="Linking jobs to orders">
+The job's Orders tab shows the orders it collected or delivered, but there is no button on the order or the job to link them, and ticking Deliver to the Customer on an order does not create a job. On the demo the links were set when the data was loaded. If you need it from the screen, it is a small addition.
+</Callout>
+
+## Stops that did not happen
+
+When nobody is in, set the **failure reason** (Nobody In, Refused, Wrong Address, No Access, Vehicle Problem or Other) and press **Could Not Complete**. The button refuses without a reason, because a failed stop with no reason teaches you nothing. **Reschedule** takes the job off its route and puts it back to Requested, ready for another run. **Cancel** closes a job that is no longer needed, for example when the customer dropped the bag at the counter instead.
+
+<Shot src="/odoo-guides/odoo-laundry-pickup-delivery-routes/failed-stop.webp" alt="A delivery job marked Not Completed with the failure reason recorded, on a completed route" width={1440} height={900} caption="A failed stop with its reason." />
+
+## Closing the run
+
+**Close the Run** is refused while any stop is still requested or on the route; every stop has to be completed or failed first. Once it closes, the route is Completed and the driver is Available again. Cancelling a route instead sends its open stops back to Requested with no route.
+
+At the end of the day the Routes list, grouped by driver or date, shows how many stops each run had and how many were done. The failed filter on the jobs list shows which addresses keep missing, which is usually a window that does not suit the customer rather than a driver problem.

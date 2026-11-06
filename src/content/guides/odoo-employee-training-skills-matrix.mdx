@@ -1,0 +1,140 @@
+---
+title: "Employee training and a skills matrix in Odoo 19 Community: programmes, seats, approvals and skills awarded"
+metaTitle: "Training Programmes and Skills Matrix"
+description: "Run training in Odoo 19 Community: a skills catalogue, levels per employee, programmes with seats and cost, approvals, and skills awarded on completion."
+targetQuery: "odoo employee training skills matrix"
+category: "Payroll and HR"
+summary: "Who can do what, and how they got there: a skills catalogue, a level per employee, training programmes with trainer, dates, seats and cost, requests that go through approval, and a completion step that writes the skills onto every person who attended."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-hrms"
+seriesOrder: 10
+pdf:
+  url: "/downloads/guides/odoo-hrms-add-ons.pdf"
+  pages: 36
+modules:
+  - name: "Employee Training Management"
+    technical: "wt_hrms_training"
+    note: "USD 25, skills, programmes and approved training requests"
+  - name: "HRMS Core"
+    technical: "wt_hrms_core"
+    note: "Free, required, the approval engine and My Space"
+related: ["odoo-employee-onboarding-offboarding", "odoo-employee-self-service", "odoo-leave-management"]
+linkFrom: ["/products/wt-hrms-training/"]
+faqs:
+  - q: "Does Odoo Community have a skills matrix?"
+    a: "Odoo 19 Community has a Skills tab on the employee form and, on some databases, a Learning menu for certifications. It has no training programmes with seats and approvals. The Training module adds its own skills catalogue, a level per employee, programmes, requests and a completion step that updates the skills."
+  - q: "How are skill levels set?"
+    a: "Four levels: Beginner, Intermediate, Advanced and Expert, each with a date assessed. HR sets them on the Skills tab of the employee form, or the system sets them when a programme that teaches the skill is completed. Employees can read their own levels but cannot change them."
+  - q: "What stops a course being overbooked?"
+    a: "Max Participants on the programme. Once that many requests are approved, the next approval is refused with a message, the programme shows a full warning, and the limit cannot be lowered below the number already approved. Zero means no limit."
+  - q: "What happens to people who did not turn up?"
+    a: "Untick Attended on their line in the programme's Participants tab before you complete it. Completion only awards skills to approved participants still marked as attended."
+  - q: "Can the employee ask for a course themselves?"
+    a: "Yes. Training is one of the request types in My Space. The employee picks a programme that is still in draft or scheduled, gives a reason and submits it. It then goes through the training approval chain like any other request."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Training is where companies spend money with the least record of what they got for it. A course is booked by email, three people go, one more turns up who was never approved, and six months later a manager staffing a project has no idea who actually learned Python. The invoice is in accounts, the attendance sheet is in a drawer, and the skills live in people's heads.
+
+The **Employee Training Management** module for WT HRMS keeps that whole loop in Odoo 19 Community: a catalogue of skills, the level each person holds, training programmes with a trainer, dates, seats and cost, requests that go through approval, and a completion step that writes the skills onto everyone who attended. This chapter goes through it in the order you would set it up. The screens are from the HRMS demo, a fictional company called Meridian Group.
+
+The full printable guide for this chapter and the other WT HRMS add-ons (work from home, travel, service requests, rewards and disciplinary, workforce structure and the HRMS recruitment module) is in the download box on this page. The core HRMS guide stays on the [series overview](/odoo-guides/odoo-hrms/).
+
+## What standard Odoo gives you and what this adds
+
+Odoo 19 Community already lets you list skills against an employee, and some databases show a **Learning** menu under Employees for certifications. What it does not do is run training as a process: no programme with a seat limit, no request from the employee, no approval, no attendance, and nothing that changes a person's skills when a course ends.
+
+The module adds four records, all under the **WT HRMS** app:
+
+| Record | Where | What it holds |
+|---|---|---|
+| Skill | Configuration, Skills | The catalogue: name and category |
+| Employee skill | Skills tab on the employee | One skill, one level, the date assessed |
+| Training programme | Growth, Training, Programs | Trainer, dates, location, seats, cost, skills taught |
+| Training request | Growth, Training, Training Requests | One person asking for one programme, with approval |
+
+It is USD 25 on its own and needs only the free HRMS Core, and it is also part of the [WT HRMS Suite](/odoo-guides/odoo-hrms/).
+
+## Step 1: Build the skills catalogue
+
+**WT HRMS, Configuration, Skills** is the list everyone picks from. Each skill has a name and a category: Technical, Soft Skills, Language, Certification or Other. The module ships ten to start with, Python, JavaScript, SQL, Odoo Development, Project Management, Leadership, Communication, English, Arabic and PMP Certification, which suits a software office.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/skills-catalogue.webp" alt="Skills list in WT HRMS on Odoo 19 with ten skills such as PMP Certification, Arabic, English, Communication, Leadership, JavaScript, Python and SQL, each with a category" width={1440} height={572} caption="The ten skills that ship with the module, grouped by category." />
+
+For a factory, a clinic or a workshop, replace them with your own: forklift licence, first aid, welding, a language, a safety induction. Untick **Active** on a skill you no longer use instead of deleting it, so the people who hold it keep their history. Keep the catalogue short enough that two people would put the same skill under the same name.
+
+## Step 2: Record what people already know
+
+Open an employee and go to the **Skills** tab. Each line is a skill, a level and the date it was assessed. The four levels are **Beginner**, **Intermediate**, **Advanced** and **Expert**. Add a line per skill; an employee can hold each skill once, so to change a level, edit the existing line rather than adding another.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/employee-skills-tab.webp" alt="Employee form in Odoo for a demo HVAC technician on the Skills tab, with columns for skill, level and date assessed and an Add a line link, contact details blurred" width={1440} height={665} caption="The Skills tab on an employee who has no skills recorded yet: skill, level and date assessed, one line each." />
+
+The date assessed matters more than it looks. A rating from three years ago is a guess, and the date tells a manager how far to trust it. Employees can read their own skills but cannot edit them: only HR officers and managers can, so nobody marks themselves an expert.
+
+<Callout title="Two skills tabs on one form">If Odoo's own Skills app (`hr_skills`) is installed too, as it is on the demo, the employee form has Odoo's skills section and this module's Skills tab, and they are separate lists. Pick one. This module's list is the one that training completion updates.</Callout>
+
+## Step 3: Set up a training programme
+
+**WT HRMS, Growth, Training, Programs, New**. A programme is one course on one set of dates. Fill in:
+
+- **Name**, **Trainer** (a name, which can be an outside company) and **Location**.
+- **Date From** and **Date To**. The end cannot be before the start.
+- **Max Participants**. Zero means no limit.
+- **Cost** in the company currency, for the whole programme.
+- **Skills Taught** and **Level Awarded**: the skills the course gives and the level it brings people up to.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/programme-form.webp" alt="Training programme Odoo Development Bootcamp in Odoo with trainer, location, five days in August, six seats, cost 1,200, skills taught Odoo Development and Python at Advanced level, and four participants with an Attended column" width={1440} height={850} caption="A programme with six seats, two skills taught at Advanced, and the requests already raised for it." />
+
+A programme moves through **Draft**, **Scheduled**, **In Progress** and **Completed**, or **Cancelled**. **Schedule** needs a start date. While it is a draft or scheduled, employees can ask for a place; once it is in progress, completed or cancelled, it no longer appears in the request form.
+
+The programme list shows the trainer, dates, approved participants, the limit and seats left. Add the optional cost column and the list totals it, which is the quickest way to see what a quarter of training costs.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/programme-list.webp" alt="Training Programs list in Odoo with programmes such as Advanced Excel for Finance Team, Leadership Fundamentals for New Managers and Business English Communication Workshop, with trainer, dates, participants, maximum and seats remaining" width={1440} height={385} caption="Programmes with their trainer, dates and seats." />
+
+## Step 4: Requests and approval
+
+A place on a programme is asked for with a **training request**. The employee raises it from My Space or **Growth, Training, Training Requests, New**: pick the programme, write why, and **Submit**. The form shows the programme's status and dates so nobody asks for a course that already happened.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/training-request.webp" alt="Training request TR/2026/0002 in Odoo in draft for the Odoo Development Bootcamp, showing the programme state and dates and a Submit button" width={1440} height={548} caption="A training request before submission. The programme's dates and state come from the programme." />
+
+The request then goes through the approval chain for training, set under **Configuration, Approval Chains**, like work from home or overtime. Line managers decide from **My Space, To Approve**. Three rules hold throughout:
+
+- **One live request per person per programme.** A second one is refused and names the first.
+- **No requests for a closed programme.** Submitting for a completed or cancelled programme is refused.
+- **Seats are enforced at approval.** When the approved count reaches the limit, the next approval is refused with "Training program ... is full", and the programme form shows a warning. The limit cannot be set lower than the number already approved.
+
+Grouping the requests list by programme gives a quick view of who is booked on what. Each employee's form also has a **Training Requests** tab with their own history.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/requests-by-programme.webp" alt="Training Requests list in Odoo grouped by programme, showing Advanced Excel for Finance Team, Leadership Fundamentals for New Managers and Business English Communication Workshop with the employees who asked for each" width={1440} height={585} caption="Requests grouped by programme: who asked for which course." />
+
+## Step 5: Run it and complete it
+
+When the course starts, click **Start** on the programme. After the last day, open the **Participants** tab: every request is listed with an **Attended** tick, on by default. Untick anybody who did not turn up.
+
+Then click **Complete**. Odoo asks you to confirm, and then for every approved participant still marked as attended:
+
+- a skill they did not have is added at the level awarded, dated today;
+- a skill they had at a lower level is raised to the level awarded;
+- a skill they already hold at that level or higher is left alone.
+
+The programme's chatter records how many skill lines were created or raised across how many people. That is the skills matrix keeping itself current: nobody has to remember to update the employee records after a course.
+
+<Shot src="/odoo-guides/odoo-employee-training-skills-matrix/programme-completed.webp" alt="Completed training programme Working at Height in Odoo on the facility management demo, with trainer, location, two days in October, twelve seats, cost 3,500 AED and the chatter showing it moved from draft to scheduled, in progress and completed" width={1440} height={835} caption="A completed programme on the facility demo. Its fields are locked and the chatter shows each step it went through." />
+
+<Callout title="Completed means closed">A completed or cancelled programme is locked: its trainer, dates, seats, cost and skills become read only. **Cancel** also cancels every live request on it and posts a note in each one, so the employees see why. Only a scheduled or cancelled programme can be reset to draft.</Callout>
+
+## Reading the matrix
+
+The module has no single grid screen of people against skills. What it does give you is the data in a form you can group: the Skills tab on each employee, the programme list with its cost total, and the training requests grouped by employee, programme or status. For a people-by-skills grid, export the employee skill lines to a spreadsheet, or use the Skills Inventory report of Odoo's own Skills app if you use that list instead.
+
+## Setting it up for your company
+
+1. Replace the demo skills with your own catalogue.
+2. Load the current levels for each person on their Skills tab, with a real date assessed.
+3. Add a training approval chain, usually the direct manager then HR.
+4. Create the first programme with a seat limit and the skills it teaches, schedule it, and let people request places.
+5. After the course, untick the no-shows and click Complete.
+
+Training requests sit in My Space beside leave, overtime and expenses; the [self service chapter](/odoo-guides/odoo-employee-self-service/) shows that screen. For the other request types in the same engine, see [work from home, travel and service requests](/odoo-guides/odoo-work-from-home-travel-service-requests/).

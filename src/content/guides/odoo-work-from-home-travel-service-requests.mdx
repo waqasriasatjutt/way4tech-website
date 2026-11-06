@@ -1,0 +1,133 @@
+---
+title: "Work from home, business travel and service requests in Odoo 19 Community"
+metaTitle: "Work From Home, Travel and Service Requests"
+description: "Run work from home days, business trips and internal IT, admin and facilities tickets in Odoo 19 Community, each with approvals and a record per employee."
+targetQuery: "odoo work from home request travel request approval"
+category: "Payroll and HR"
+summary: "Three request types every office asks for: work from home days counted on the employee's calendar, business trips with an advance, hotel and visa flags, and an internal service desk with SLA deadlines, all approved through the same chain as the rest of WT HRMS."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-hrms"
+seriesOrder: 11
+modules:
+  - name: "Work From Home Request"
+    technical: "wt_hrms_wfh"
+    note: "USD 15, full and half day requests counted in working days"
+  - name: "Employee Travel Request"
+    technical: "wt_hrms_travel"
+    note: "USD 20, trips with advance, hotel and visa flags"
+  - name: "Employee Service Request"
+    technical: "wt_hrms_service_requests"
+    note: "USD 20, internal desk with SLA deadlines and breach alerts"
+related: ["odoo-employee-self-service", "odoo-leave-management", "odoo-attendance-shifts-overtime"]
+linkFrom: ["/products/wt-hrms-wfh/", "/products/wt-hrms-travel/", "/products/wt-hrms-service-requests/"]
+faqs:
+  - q: "Should work from home be a leave type in Odoo?"
+    a: "It works badly as one. A day at home is a working day, so booking it as time off eats into leave balances and shows the person as absent. The Work From Home module keeps it as its own request with its own approval and history, and leave balances are left alone."
+  - q: "Can an employee ask for half a day at home?"
+    a: "Yes. A half day request covers one date and must say which half, morning or afternoon. A morning and an afternoon on the same date can both be requested; any other overlap with a live request is refused with the other request named."
+  - q: "Does approving a travel request pay the advance?"
+    a: "No. The request records whether an advance is needed and how much, and refuses an advance above the estimated cost. Paying it is a separate step: raise it as a salary advance or pay it from accounting."
+  - q: "Who works on a service request?"
+    a: "The category says which department handles it. A new request goes to that department's manager unless someone is picked by hand. Marking it resolved needs HR officer rights and a written resolution, so the person handling tickets should hold the Employees Officer role."
+  - q: "What happens when a service request misses its SLA?"
+    a: "A scheduled job runs every thirty minutes. The first time it finds a request past its deadline it posts a note on the request and gives the assignee a To Do activity. It does that once per breach, not on every run."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most of what staff ask HR for is not leave. Somebody needs to work from home on Thursday because the plumber is coming. A sales manager is flying to Riyadh for three days and wants cash for the hotel. A new hire still has no laptop. In a small company these go by WhatsApp, and a month later nobody can say who was at home on which day, which trips were agreed, or why the laptop took two weeks.
+
+This chapter covers three small WT HRMS modules that turn those asks into records: **Work From Home**, **Travel** and **Service Requests**. All three use the approval engine described in the [leave chapter](/odoo-guides/odoo-leave-management/), appear in My Space for the employee and in To Approve for the manager, and keep a tab of history on the employee record. The screens come from the HRMS demo, a fictional company called Meridian Group.
+
+## How the three requests behave
+
+Each request is a record with a number (`WFH/2026/0001`, `TRV/2026/0001`, `SR/2026/0001`), a status and a chatter. The status runs Draft, Submitted, Under Review when a chain has more than one step, then Approved, Rejected or Cancelled. Once submitted, the employee can no longer change the dates or the details, so what the manager approved is what stays on file.
+
+Who decides comes from **Configuration, Approval Chains**. One chain per request type names the steps: the direct manager, the manager's manager, the department head, a named user or a group. If no chain exists for a type, the request waits for any HR manager; nobody can approve their own request. The demo has chains for loans, expenses and overtime but none for these three, so its requests wait for HR.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/approval-chains.webp" alt="Approval Chains list in WT HRMS on Odoo 19 with one chain per request type such as loans, expenses, overtime, resignations, salary advances and shift swaps" width={1440} height={420} caption="Approval chains: one per request type. Add one for work from home, travel and service requests if line managers should decide them." />
+
+A line manager does not need any HR role to approve. The requester's manager, that manager's manager and the head of their department can all read the request, and whoever the current step names decides it from **My Space, To Approve** with an Approve or Reject button on each line. The Approve and Reject buttons on the form itself are only shown to HR managers.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/my-space-decisions.webp" alt="Waiting for your decision block in WT HRMS My Space with time off, work from home, travel and service requests, each line with the employee, the request number, the date and Approve and Reject buttons" width={1440} height={760} caption="My Space for an approver: work from home, travel and service requests waiting next to time off, each with Approve and Reject." />
+
+## Work from home requests
+
+Remote days look harmless until payroll or a client asks who was where. Recording them as leave is the usual workaround and the wrong one: a home day is a working day, so it should not use up a leave balance or show the person as absent.
+
+**Raising one.** From My Space, or **WT HRMS, Time, Work From Home, New**:
+
+1. Pick the employee (staff see only themselves) and the type, **Full Day** or **Half Day**.
+2. For a half day, choose **Which Half**: Morning or Afternoon. A half day covers a single date.
+3. Set **Date From** and **Date To**, write the reason, and click **Submit**.
+
+**Working Days** fills itself in. It counts working days on the employee's own working schedule, or the company's if the person has none, so a request from Thursday to Monday on a five day week reads 3, not 5. A half day always counts as 0.5.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/wfh-half-day.webp" alt="Work from home request WFH/2026/0013 in Odoo, submitted, half day on the morning of 16 September, 0.5 working days, with a reason about building maintenance" width={1440} height={516} caption="A submitted half day request: morning only, 0.5 working days." />
+
+Three checks run on save. The end date cannot be before the start. A half day must name its half and cover one date. And an employee cannot have two live requests for the same days: the one exception is a morning and an afternoon on the same date, which together make a full day asked for in two parts. Rejected and cancelled requests do not count, so a refused request never blocks its replacement.
+
+The list shows every request with the total of working days at the bottom, approved rows in green and rejected in red. Filter by **Pending** to see what is waiting, or group by employee to see who works from home most.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/wfh-list.webp" alt="Work From Home Requests list in Odoo with request numbers, employees, dates, full or half day, working days and status, approved rows in green and rejected in red" width={1440} height={756} caption="All work from home requests, with the working days added up." />
+
+Every employee form gets a **Work From Home** tab listing that person's requests, so HR can answer "how often" without building a report.
+
+<Callout title="What it does not do">Approved home days are not written into attendance or the time off calendar. The in-app help text says they show there, but the module does not do that in this version. If attendance must reflect home days, people still check in through the systray or kiosk from home.</Callout>
+
+## Business travel requests
+
+A trip touches more people than a day at home: the manager who agrees it, finance for the cash advance, whoever books hotels, and the person who chases visas. One request with a flag for each of them saves the four emails.
+
+**Raising one.** **WT HRMS, Requests, Travel, New**:
+
+1. Choose the employee, type the **Destination**, and pick the **Travel Mode**: Air, Road, Rail or Sea.
+2. Set the dates. **Days** counts them inclusive, so 21 to 24 September is 4 days.
+3. Enter the **Estimated Cost** in the company currency.
+4. Tick **Advance Required** and enter the **Advance Amount** if cash is needed up front. Tick **Hotel Required** and **Visa Required** as needed.
+5. Write the **Purpose**, which is required, and **Submit**.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/travel-request.webp" alt="Travel request TRV/2026/0003 in Odoo for a four day road trip to Riyadh with estimated cost 1,500, advance required of 800, hotel and visa required, and the purpose of vendor negotiation" width={1440} height={588} caption="A submitted trip with an advance, hotel and visa all needed." />
+
+The form refuses the mistakes that usually surface at month end. An advance flagged with no amount, a negative advance, or an advance larger than the estimated cost of the trip are all stopped on save. So is a second live trip for the same person on overlapping dates; the message names the other destination so the employee knows which request to cancel.
+
+The travel list shows destination, dates, mode, cost and status, and groups by employee, mode or status. The **Travel** tab on the employee form is that person's trip history.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/travel-list.webp" alt="Travel Requests list in Odoo with destinations such as Dubai, Riyadh, London, Singapore and Istanbul, travel mode, estimated cost and status" width={1440} height={612} caption="Trips across the company, approved in green and rejected in red." />
+
+<Callout title="The advance is a figure, not a payment">Approving a trip does not pay or book anything. The in-app help says approval releases the advance; the code only records the amount. Pay it as a [salary advance](/odoo-guides/run-payroll-odoo-community/) so it is recovered through payroll, or from accounting, and claim the real costs afterwards as an expense.</Callout>
+
+## The internal service desk
+
+IT, admin and facilities requests need a different shape from leave. They are not about the employee's own time; they are work for another team, and what matters is whether that team answered in time.
+
+**Categories first.** **WT HRMS, Configuration, Service Categories** holds one line per kind of request with a short code, the department that handles it, and the SLA in hours. The demo has six, from Access and Security at 4 hours to Facilities at 48.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/service-categories.webp" alt="Service Categories list in Odoo with Access and Security, Computer service, Facilities, HR Admin, IT Support and Payroll Query, each with a code, the handling department and SLA hours" width={1440} height={412} caption="Service categories: who handles each kind of request and how many hours they have." />
+
+**Raising a request.** **WT HRMS, Requests, Service Requests, New**. The employee defaults to you. Pick the category, the priority (Low, Medium, High or Urgent), a subject and a description, then **Submit**. If nobody is chosen in **Assigned To**, the request goes to the manager of the department that handles the category.
+
+**The clock.** The SLA deadline is the moment the request was created plus the category's hours. The status badge reads **On Track**, **At Risk** in the last fifth of the window, **SLA Breached** once the deadline passes, and **SLA Met** if it was resolved in time. A red banner across the form says when a request is past its deadline.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/service-request-breached.webp" alt="Service request SR/2026/0008 in Odoo, urgent, badge access to the server room revoked in error, with a red banner saying the request is past its SLA deadline, a 4 hour SLA and an SLA Breached badge" width={1440} height={620} caption="An urgent request past its 4 hour SLA: the red banner and the badge both say so." />
+
+Every thirty minutes a scheduled job brings every open request up to the clock. The first time a request crosses its deadline, the job posts "SLA breached" in its chatter with the hours and the deadline, and gives the assignee a To Do activity. It flags each breach once.
+
+**Closing it.** The person handling the request writes what was done on the **Resolution** tab and clicks **Mark Resolved**. Without a resolution note the button refuses. If the employee says it is not fixed, **Reopen** puts it back to Submitted, and the original deadline still applies: reopening does not restart the clock. An HR manager can **Reject** a request instead, and the requester can **Cancel** one that is still a draft or submitted.
+
+<Shot src="/odoo-guides/odoo-work-from-home-travel-service-requests/service-request-list.webp" alt="Service Requests list in Odoo filtered on open requests, showing request number, employee, category, priority, subject, assignee, SLA deadline and a red SLA Breached badge" width={1440} height={495} caption="The desk opens on open requests. Breached rows are red, at risk rows amber." />
+
+The list opens on **Open** requests. Use **Assigned to Me** for your own queue, **SLA Breached** and **At Risk** for the ones to chase, and group by SLA or assignee to see where the backlog sits.
+
+<Callout title="Give the handler HR officer rights">Mark Resolved is shown only to users with Employees Officer rights, and the access rules let the requester and the requester's own managers see a request, not the handling department. In this version the person who works the tickets, an IT lead for example, needs the Employees Officer role to see and close them. Plan the roles before go-live.</Callout>
+
+## Setting the three up
+
+1. Install the modules from the Odoo Apps Store, or install the [WT HRMS Suite](/odoo-guides/odoo-hrms/), which includes all three.
+2. Under **Configuration, Approval Chains**, add a chain for each of Work From Home, Travel and Service Request. Direct manager then HR is the usual pattern.
+3. Make sure every employee has a manager and a working schedule. The manager drives the approvals and the schedule drives the working days count.
+4. Replace the demo service categories with your own, each with its handling department and an honest number of hours.
+5. Give the person who handles tickets the Employees Officer role.
+
+For the employee's side of all this, the buttons in My Space and how a manager sees the team, see [employee self service](/odoo-guides/odoo-employee-self-service/). Training requests use the same engine and are covered in [training programmes and the skills matrix](/odoo-guides/odoo-employee-training-skills-matrix/).

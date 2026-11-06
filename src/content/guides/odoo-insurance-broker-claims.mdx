@@ -1,0 +1,101 @@
+---
+title: "Insurance claims tracking for brokers in Odoo: notification, reserve, adjuster and settlement"
+metaTitle: "Claims from Notification to Settlement"
+description: "Track insurance claims as a broker in Odoo: late notice flags, reserves, loss adjusters, settlement net of excess, repudiation and the client's loss ratio."
+targetQuery: "insurance claims tracking odoo broker"
+category: "Industry"
+summary: "The claim in Insurance Broker Management: notification and the gap to the loss, the seven states and the button for each, reserve, excess and net paid, repudiation with the wording relied on, the chase job, and how claims feed the loss ratio."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-insurance-broker-management"
+seriesOrder: 3
+modules:
+  - name: "Insurance Broker Management"
+    technical: "wt_insurance_broker"
+    note: "USD 299, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://insurance-demo.way4tech.com/"
+  label: "Insurance Broker demo"
+related: ["odoo-insurance-broker-management", "odoo-insurance-policy-renewals-endorsements", "odoo-insurance-commission-reconciliation"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the module spot a late notified claim?"
+    a: "Every claim records the date of loss and the date the client told the broker. The gap between them is counted, and anything over thirty days is flagged Late Notification and can be filtered on, because that is the point where most wordings give the carrier grounds to argue."
+  - q: "Can a claim be settled for more than the sum insured?"
+    a: "No. A settlement above the policy's sum insured is refused. The loss must also fall inside the period of cover, and the notification date cannot be before the loss."
+  - q: "How do claims affect the client's renewal?"
+    a: "Settled claims are added up against the premium placed for the client to give a loss ratio, which sets a suggested risk grade. The renewal hint on each policy mentions the claims this term, and a renewal enquiry starts with the claims on the expiring policy written into the claims experience."
+  - q: "Does it chase the carrier automatically?"
+    a: "A daily job, once switched on, finds open claims with no update within the chase interval (14 days by default), leaves a to do for the handler and queues an update email to the client. It does not email the carrier."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+When something goes wrong for a client, the broker becomes their advocate with the carrier. The work is mostly dates and follow up: when the loss happened, when the client told you, when the carrier acknowledged it, who the adjuster is, what the carrier agreed and when it paid. Lose track of any of them and the claim stalls, or worse, the carrier argues late notification. Every claim the module settles also goes into the loss ratio the market will ask for at renewal. This chapter covers claims in Insurance Broker Management.
+
+## The claims desk
+
+Claims, **Claims** opens on open claims. The filters are Mine, Notified Late, Settled, Repudiated and No Update in 14 Days, and the list groups by status, cause, carrier, class, risk type, client or date of loss. The kanban view puts each claim in a column by state, and tags a late notification or an appointed adjuster on the card.
+
+<Shot src="/odoo-guides/odoo-insurance-broker-claims/claims-kanban.webp" alt="Claims kanban filtered on open claims, with columns Acknowledged, Agreed, Under Investigation and Notified, each card showing the claim number, client, policy, cause and amount, one tagged late notification" width={1440} height={900} caption="Open claims by stage, with the late notification tag." />
+
+| State | Button | What it needs |
+|---|---|---|
+| Notified | creating the claim | the policy, dates, cause and circumstances |
+| Acknowledged | Carrier Acknowledged | a policy that went on risk |
+| Under Investigation | Under Investigation | a loss adjuster on the claim |
+| Agreed | Settlement Agreed | the agreed figure, no more than the sum insured |
+| Settled | Settled | an agreed claim |
+| Repudiated | Repudiated | the wording the carrier relies on |
+| Withdrawn | Withdrawn | the reason; a settled claim cannot be withdrawn |
+
+## Notify
+
+Press **New**, or Claims on the policy. Pick the policy, the handler, the **Date of Loss**, the date the client **Notified** you, the cause (fire, theft, escape of water, storm and flood, collision, third party liability, illness or injury, other), the circumstances and where it happened. Put the expected cost in **Reserve**: it is the figure the carrier holds against the account and the one that comes back at renewal. The excess is copied from the policy.
+
+Three rules apply at once. The loss must fall inside the period of cover of that policy (if it does not, check whether it belongs on the expiring one). The client cannot have notified before the loss happened. And the policy's chatter gets a line saying a claim was notified, with the cause and the date.
+
+<Shot src="/odoo-guides/odoo-insurance-broker-claims/notified.webp" alt="Claim in the Notified state: a slip in a public area, third party liability, with the policy, client, carrier, dates of loss and notification, reserve of 22,000 pounds and the excess" width={1440} height={900} caption="A newly notified liability claim with its reserve." />
+
+The gap between loss and notification is counted on every claim. Over thirty days it is flagged **Late Notification**, because that is the point where most wordings give the carrier grounds to argue. On the demo, a burst pipe in a flat between tenancies was reported thirty eight days after it happened and carries the flag.
+
+<Shot src="/odoo-guides/odoo-insurance-broker-claims/late-notification.webp" alt="Agreed claim for escape of water in an empty flat, notified 38 days after the loss and flagged as late notification, with the adjuster and the agreed settlement" width={1440} height={900} caption="Notified 38 days after the loss: flagged late." />
+
+## Acknowledge, investigate, agree
+
+When the carrier confirms it has the claim, enter **Carrier's Claim Number** and press **Carrier Acknowledged**. The date is stamped, and so is the last chase date. A claim on a policy that never went on risk is refused here: there is no cover to claim against.
+
+On anything of size the carrier appoints a **Loss Adjuster**, and from then on everything goes through them. Pick the adjuster (an ordinary contact), add their reference and press **Under Investigation**. The appointed date is filled in if you left it empty. The button is refused without an adjuster: record who at the carrier is handling it if there is no adjuster.
+
+When a figure is agreed, put it in **Settlement** and press **Settlement Agreed**. A settlement above the policy's sum insured is refused.
+
+<Shot src="/odoo-guides/odoo-insurance-broker-claims/investigating.webp" alt="Claim under investigation for escape of water from a failed hose, with the loss adjuster Pellham Rowe Loss Adjusters, their reference and the appointed date, the carrier claim number and the reserve" width={1440} height={900} caption="Under investigation, with the adjuster appointed." />
+
+## Settle
+
+When the money is paid, press **Settled**. The settled date is stamped, the reserve drops to zero, and **Net Paid** is the settlement less the excess: what actually reached the client. The policy's paid total and open claims update, and so do the client's claims paid and loss ratio.
+
+<Shot src="/odoo-guides/odoo-insurance-broker-claims/settled.webp" alt="Settled fire claim CLM/2026/00001 for Halberd Joinery: fire in the finishing shop put out by sprinklers, settlement 46,200 pounds, excess 2,000, net paid 44,200, reserve zero, with the acknowledged, agreed and settled dates" width={1440} height={900} caption="Settled: 46,200 agreed, 44,200 net of the excess." />
+
+## Repudiated or withdrawn
+
+When the carrier declines the claim, write the wording it relies on, in full, in **Repudiation Reason**, and press **Repudiated**. The client is entitled to see it, and the file needs it if there is a complaint. The settlement and the reserve go to zero and the claim is closed. A settled, withdrawn or repudiated claim cannot be repudiated again: reopening a closed claim is a conversation with the carrier, not a button.
+
+<Shot src="/odoo-guides/odoo-insurance-broker-claims/repudiated.webp" alt="Repudiated claim for stock spoilage after a power cut, with the repudiation reason quoting the general exclusion for failure of the public supply off the premises" width={1440} height={900} caption="Repudiated, with the exclusion the carrier relied on." />
+
+If the client drops the claim, write why and press **Withdrawn**. A settled claim cannot be withdrawn.
+
+## Keeping the client told
+
+The **chase open claims** job looks at every open claim (notified, acknowledged, under investigation or agreed). If the last chase date, or the notification date where there is none, is older than the **Chase Claims After** setting, 14 days by default, it stamps today, leaves a to do for the handler to chase the carrier, and queues the Claim Update email to the client.
+
+<Callout title="Two things to know about chasing">
+The chase job ships switched off; switch it on under Settings, Technical, Scheduled Actions in developer mode. And the No Update in 14 Days filter on the claims list is fixed at fourteen days, so it does not follow the setting if you change it.
+</Callout>
+
+## Claims and the market
+
+Every settled claim counts against the client. The client record adds up claims paid against premium placed for the **loss ratio**, and suggests a **risk grade**: High at a loss ratio of 80 per cent or four claims, Elevated at 50 per cent or two claims, Low with no claims, Standard otherwise. A handler who knows something the figures do not can overrule it. On the policy, the **Renewal Hint** mentions the claims this term, and pressing Renew writes the claims on the expiring policy into the renewal enquiry's claims experience, so the market sees the same story the office does.
+
+Reporting, **Claims Experience** is a pivot of settlements and reserves by class and cause. The policy side of renewals is in the [policies, endorsements and renewals chapter](/odoo-guides/odoo-insurance-policy-renewals-endorsements/).

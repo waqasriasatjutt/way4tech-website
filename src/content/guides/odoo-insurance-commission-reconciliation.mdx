@@ -1,0 +1,107 @@
+---
+title: "Insurance commission tracking in Odoo: commission terms, carrier statements, short payments and clawbacks"
+metaTitle: "Commission Terms and Reconciliation"
+description: "Track broker commission in Odoo: rates per carrier and class, expected entries per placement, statement matching, short pays, disputes and clawbacks."
+targetQuery: "insurance commission tracking odoo"
+category: "Industry"
+summary: "Commission in Insurance Broker Management: terms per carrier and class with renewal rates, net or gross basis and flat fees, the entries every placement, endorsement and cancellation books, reconciling statements with a tolerance, disputes, write offs, invoicing a carrier and the reports."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-insurance-broker-management"
+seriesOrder: 4
+modules:
+  - name: "Insurance Broker Management"
+    technical: "wt_insurance_broker"
+    note: "USD 299, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://insurance-demo.way4tech.com/"
+  label: "Insurance Broker demo"
+related: ["odoo-insurance-broker-management", "odoo-insurance-market-quotes-placement", "odoo-insurance-policy-renewals-endorsements"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a carrier pay a different commission rate on renewals?"
+    a: "Yes. Each commission term has a new business rate and a renewal rate. A policy that renews an earlier one, or a market quote on a renewal enquiry, picks up the renewal rate; leave it at zero to pay the new business rate on renewals too."
+  - q: "What counts as a short payment?"
+    a: "When you reconcile a receipt, the amount received is compared with the amount expected. If the difference is within the Short Payment Tolerance in Settings, 1 per cent by default, the entry is Received in Full; outside it the entry is Short Paid and the shortfall is written in its chatter."
+  - q: "Is commission clawed back when a policy is cancelled?"
+    a: "Yes. Cancelling a live policy books a negative commission entry for the commission on the returned premium, and an endorsement that reduces cover does the same through its own entry."
+  - q: "Does reconciling commission post anything in Accounting?"
+    a: "No. Reconciling marks the entry received. The only accounting document the module raises is a commission invoice to the carrier, for carriers that pay against an invoice; its payment is registered in Accounting as usual."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Commission is a broker's income, and it arrives on the carrier's timetable, in the carrier's arithmetic. A statement lands with forty lines on it, three of them short, one for a policy the office never placed with that carrier, and nobody can say what was due without rebuilding it from the placements. Insurance Broker Management books what each placement should bring in the moment it goes on risk, so a statement is checked against a list rather than a memory. This chapter covers commission from the terms to the reports.
+
+## Commission terms
+
+Configuration, **Commission Terms** holds one row per carrier and class of business:
+
+| Field | What it does |
+|---|---|
+| Commission type | Percentage of Premium, or Flat Amount per Policy |
+| Basis | Net Premium (almost every carrier) or Premium Including Tax |
+| New Business (%) | paid on a risk placed for the first time |
+| Renewal (%) | paid when the same risk renews; zero means the new business rate |
+| Flat Commission | the fee per policy, for scheme business |
+| From / To | the dates the term is in force |
+
+A policy picks the term **in force on its inception date**, not today's. Terms are renegotiated, so when a rate changes, close the old term with an end date and open a new one from the next day: two terms for the same carrier and class covering the same day are refused, because nobody could then say why one policy paid twelve and a half per cent and the next fifteen. A percentage term with no rate is refused too.
+
+<Shot src="/odoo-guides/odoo-insurance-commission-reconciliation/terms.webp" alt="Commission Terms list with one row per carrier and class: Quillmere, Larchway, Corviston and Brantholme against motor fleet, private motor, commercial property, combined liability, marine cargo, private medical, term life and professional indemnity, with type, basis, new business and renewal rates and dates" width={1440} height={900} caption="Commission terms per carrier and class." />
+
+On the demo, Quillmere's property term paid 17.5 per cent until 31 December 2025, and a new term pays 18.5 per cent on new business and 16 per cent on renewals from 1 January 2026. Larchway quotes marine on the gross figure, and Corviston pays a flat 250 per medical scheme because the premium moves with the membership.
+
+The market quote on an enquiry shows the rate and the commission amount from the term, so the commission the client is told about on placement matches what the carrier will pay. The rate, basis and flat fee carry onto the policy when the quote is taken.
+
+## Where the entries come from
+
+| Kind | Booked when | Amount |
+|---|---|---|
+| New Business | a policy goes on risk | the commission earned, expected after the carrier's settlement days |
+| Renewal | a renewal policy goes on risk | the same, at the renewal rate |
+| Endorsement | an endorsement that adds premium is applied | the commission on the pro rata premium |
+| Return of Commission | a reduction is applied, or a live policy is cancelled | a negative amount, the clawback |
+| Profit Share | by hand | what a profit commission agreement pays |
+
+The expected date is inception plus the carrier's **Pays Commission In** days (30, 45 and 60 on the demo carriers). Commission, **Commission Receivable** opens on Not Yet Received; the other filters are Overdue, Short Paid, Disputed and Clawbacks, and the list groups by carrier, class, status, type, account executive or expected date.
+
+<Shot src="/odoo-guides/odoo-insurance-commission-reconciliation/receivable.webp" alt="Commission Receivable list with entries per carrier and policy, kind, expected date, expected amount, received amount, variance and status" width={1440} height={900} caption="Commission receivable: one line per thing a carrier owes." />
+
+## Reconcile a statement
+
+For each line on the carrier's statement, open the entry, fill **Carrier Statement** (which statement it came on, so the reconciliation can be rebuilt in six months), the date received and the amount, and press **Reconcile Receipt**. The tick on a list row does the same.
+
+- Within the **Short Payment Tolerance** (1 per cent by default) the entry becomes **Received in Full**.
+- Outside it, the entry becomes **Short Paid** and the chatter records the shortfall in money and per cent.
+
+A received amount without a date is refused, and so is a date more than a year before the money was due. On the policy, Commission Expected, Received and Variance add up the entries, and the policy list's **Commission Short** filter finds every policy with a negative variance.
+
+<Shot src="/odoo-guides/odoo-insurance-commission-reconciliation/short-paid.webp" alt="Commission entry in the Short Paid state for a Larchway policy, with the carrier statement reference, the expected and received amounts, a variance of minus 7 per cent and the chatter line recording the shortfall" width={1440} height={900} caption="Short paid by 7 per cent, flagged rather than absorbed." />
+
+## Dispute, write off, reopen
+
+**Dispute** marks an entry as being argued with the carrier; write what is disputed and what was said in the notes first, or it is refused. **Write Off** closes an entry that will not be paid, again with the reason in the notes, and a written off entry drops out of the policy's expected commission. **Reopen** puts a disputed, short paid, received or written off entry back to Expected. Write Off and Reopen are both refused once the entry has a **posted** invoice: credit the invoice first, otherwise the ledger and the commission report disagree.
+
+## Invoice the carrier
+
+Some carriers pay against the broker's invoice rather than their own statement. **Invoice the Carrier** raises a draft customer invoice to the carrier's **Accounting Contact** for the expected amount, using the **Commission Product** (and its taxes) and the **Commission Journal** from Settings, and moves the entry to Invoiced. Post and send it in Accounting as usual. When the money arrives, reconcile the entry; if the amount differs from the invoice, the chatter says so.
+
+<Shot src="/odoo-guides/odoo-insurance-commission-reconciliation/invoice.webp" alt="Posted customer invoice COMM/2026/00003 to Larchway Insurance in the Commission Income journal, one line reading Commission on LW/2026/00015, Private Motor, for 93.60 pounds with no tax" width={1440} height={900} caption="A commission invoice to a carrier, an ordinary Odoo invoice." />
+
+A carrier with no accounting contact cannot be invoiced, and a return of commission cannot go out on an invoice; that is a credit note, raised in Accounting.
+
+## Overdue commission
+
+Every night the **flag commission not received** job marks each entry still Expected or Invoiced, with a positive amount and an expected date in the past, as **Overdue**, and posts a note on the carrier saying how many entries and how much. **Days Late** counts on each entry. The carrier form shows the commission earned and still outstanding, and its stat buttons open the carrier's policies and commission.
+
+<Callout title="What it does not do">
+Reconciling a receipt only marks the entry. Nothing is posted in Accounting except the commission invoice, and there is no import of carrier statement files: each line is entered against its entry.
+</Callout>
+
+## Reports
+
+Reporting, **Commission Analysis** is a pivot of expected, received and variance by class and carrier; a carrier with a persistent negative variance is a conversation to have. **The Book** shows premium and commission earned by class and carrier. Select entries in the receivable list and print the **Commission Reconciliation** for the carrier: entry, carrier, policy, due date, expected, received, variance and status.
+
+<Shot src="/odoo-guides/odoo-insurance-commission-reconciliation/analysis.webp" alt="Commission Analysis pivot with classes of business down the side and carriers across the top, showing expected, received and variance amounts" width={1440} height={900} caption="Commission Analysis: expected against received by class and carrier." />

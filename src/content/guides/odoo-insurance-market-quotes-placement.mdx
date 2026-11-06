@@ -1,0 +1,125 @@
+---
+title: "Insurance quote comparison in Odoo: one enquiry, several carriers, and the reason the client chose"
+metaTitle: "Enquiries, Market Quotes and Placement"
+description: "Capture an insurance risk once in Odoo, send it to several carriers, compare premium, tax, excess and commission side by side, and place the chosen quote."
+targetQuery: "insurance quote comparison odoo broker"
+category: "Industry"
+summary: "The enquiry in Insurance Broker Management: the risk questions per class, a line per carrier with premium, tax and commission, declines with reasons, the checks before terms are presented, and winning, losing or letting terms expire."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-insurance-broker-management"
+seriesOrder: 1
+modules:
+  - name: "Insurance Broker Management"
+    technical: "wt_insurance_broker"
+    note: "USD 299, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://insurance-demo.way4tech.com/"
+  label: "Insurance Broker demo"
+related: ["odoo-insurance-broker-management", "odoo-insurance-policy-renewals-endorsements", "odoo-insurance-commission-reconciliation"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can I record a carrier that declined to quote?"
+    a: "Yes. Set the carrier's line on the enquiry to Declined and write the reason the underwriter gave; a decline without a reason is refused. The decline stays on the enquiry and prints on the market comparison, so next year you know who not to ask."
+  - q: "What stops terms being presented before the file is complete?"
+    a: "Present to the Client checks that at least one carrier has quoted, that the claims experience is written down where the class of business requires it, and that a survey is recorded where the class needs one at that sum insured. Client Accepted runs the same checks again."
+  - q: "Does the module stop us binding above our binder limit?"
+    a: "Yes. On a carrier marked as a binding authority with a Bind Up To limit, a market quote on a risk with a larger sum insured is refused, with a message that the risk has to be referred to the underwriter."
+  - q: "What happens to quotes nobody accepted?"
+    a: "Every enquiry has a Quote Holds Until date, thirty days after the enquiry by default. A nightly job moves any enquiry still open past that date to Expired and notes it in the chatter. Back to Enquiry reopens it if the client comes back."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The sale in broking is made on the enquiry. The client describes the risk once, the account executive sends it to the carriers that write that class, the answers come back at different times on different terms, and the recommendation has to stand up if anyone asks later why the client is paying more than the cheapest quote. In Insurance Broker Management the enquiry is a single record that holds all of it: the risk, a line per carrier, the declines, the quote taken and the reason. This chapter walks it from the first phone call to the policy.
+
+## The six states
+
+| State | Reached by | Means |
+|---|---|---|
+| Enquiry | creating it | the risk is being captured |
+| In the Market | Approach the Market | the carriers on the record have it |
+| Presented | Present to the Client | the comparison is in front of the client |
+| Won | Client Accepted | a policy has been raised from the quote taken |
+| Lost | Mark Lost | the business went elsewhere, with the reason |
+| Expired | the nightly job | the terms ran out before anybody took them |
+
+New Business, Enquiries opens on Still Working. The other filters are Waiting on the Market, Won, Lost to Another Broker, Renewal Enquiries and Terms Expiring This Week, and the kanban view is the new business pipeline by state.
+
+<Shot src="/odoo-guides/odoo-insurance-market-quotes-placement/enquiries.webp" alt="Enquiries list filtered on Still Working showing eight enquiries with enquiry date, client, class of business, account executive, sum insured, number of quotes, best premium, quote holds until date and a state of Enquiry, In the Market or Presented" width={1440} height={900} caption="Enquiries still being worked, with the best quote and the date the terms hold until." />
+
+## Capture the risk once
+
+Press **New** and pick the client, the account executive and the **Class of Business**. The class does more than label the enquiry:
+
+- it fills the term (usually 12 months) and offers its standard excess;
+- it refuses a sum insured below its minimum, so a small contents risk cannot be placed on a commercial property wording;
+- it decides whether the claims history is required and whether a survey is needed above a threshold;
+- its category decides which risk questions appear.
+
+On **The Risk** tab, property and liability ask for the risk address (which is not always the correspondence address), the occupancy, the construction, the turnover and the number of employees. Motor asks for the registration, make and model, the vehicle value, the main driver's date of birth and years licensed. Marine asks for the vessel, the voyage and the cargo. Life asks for the date of birth of the life assured and whether they smoke. Every class has a **Claims Experience** block (claims in five years and the story) and a **Survey** block.
+
+<Shot src="/odoo-guides/odoo-insurance-market-quotes-placement/motor-risk.webp" alt="Enquiry for Quarrystone Plant Hire Ltd, motor fleet class, sum insured 750,000 pounds, showing the client and cover wanted groups and the Risk tab with the vehicle questions for the fleet and the claims experience" width={1440} height={900} caption="A motor fleet enquiry: the risk tab asks motor questions." />
+
+Two date rules apply. **Cover Wanted From** cannot be earlier than the enquiry date, because backdating cover is a decision for an underwriter, not a data entry slip. **Quote Holds Until** fills in at thirty days after the enquiry and can be moved.
+
+## Go to the market
+
+On **The Market** tab, add a line for each carrier you are approaching. A carrier appears once per enquiry. Two checks run as you add them:
+
+- a carrier with a **Classes Written** list that does not include this class is refused;
+- a carrier where the office holds a **binding authority** with a limit refuses a risk whose sum insured is above it, because that one has to go to the underwriter.
+
+Press **Approach the Market**. The enquiry moves to In the Market and the chatter records how many carriers it went to. As answers come back, set each line to **Quoted** with its premium, or **Declined** with the underwriter's reason. A line can wait as **Awaiting Terms**.
+
+<Shot src="/odoo-guides/odoo-insurance-market-quotes-placement/in-the-market.webp" alt="Market tab of enquiry QUO/2026/00046 for Glasshouse Lane Bakery, combined liability, with Quillmere quoted at 1,320 plus tax, Larchway still awaiting terms, and Corviston quoted at 1,410 with wide cover" width={1440} height={900} caption="Answers coming back: two quoted, one still awaited." />
+
+Each line works out its own numbers:
+
+| Column | Where it comes from |
+|---|---|
+| Premium Tax | the premium times the class rate, or the class's Odoo tax record where it has one; zero on an exempt class such as marine or life |
+| Total Payable | premium plus premium tax |
+| Commission % and basis | the carrier's commission term for this class in force on the enquiry date, at the renewal rate on a renewal enquiry |
+| Commission | the flat fee, or the rate on the net premium, or on the total where the basis is gross |
+
+Hidden columns hold the carrier's reference, the terms and subjectivities (what cover is conditional on), the exclusions and the date the carrier's quote holds until. **Cover Level** (basic, standard, wide) is there because it is the usual reason a client buys the dearer quote.
+
+<Callout title="Read the lines, not the total">
+The Market tab's Total Payable column has a sum underneath it, which adds every carrier's quote together. On a comparison that figure means nothing. The Best figure at the top of the enquiry is the cheapest quoted total.
+</Callout>
+
+## Present to the client
+
+When enough terms are in, press **Present to the Client**. It refuses unless three things are true:
+
+1. at least one carrier has quoted;
+2. the claims experience is written down, if the class requires it;
+3. a survey is recorded, if the class requires one at this sum insured (commercial property on the demo needs one above a million).
+
+When it goes through, the enquiry is Presented and a **Demands and Needs Statement** disclosure is written onto the client's compliance file with the number of quotes presented. **Print Comparison** prints the Market Comparison: every carrier approached with its cover level, excess, premium, tax, total and terms, the declines with their reasons, and the recommendation.
+
+<Shot src="/odoo-guides/odoo-insurance-market-quotes-placement/market-comparison.webp" alt="Printed market comparison for enquiry QUO/2026/00050 with the client, class, cover start, sum insured and the date terms hold until, then a table of carriers with cover level, excess, premium, tax and total" width={1440} height={667} caption="The Market Comparison printed for the client." />
+
+## The client accepts
+
+On The Market tab, press the tick at the end of the line the client chose. Only a quoted line can be taken. Then fill **Where It Landed**: the basis (lowest premium, wider cover, claims service, only carrier with capacity, existing relationship, only terms received in time) and the reason in full. If the client is ever asked why they paid more than the cheapest quote, that is the answer.
+
+<Shot src="/odoo-guides/odoo-insurance-market-quotes-placement/won.webp" alt="Won enquiry QUO/2026/00003 for Fenmoor Cold Storage, commercial property: Quillmere quoted at 14,750, Larchway declined, Corviston quoted at 16,667.50, and Where It Landed showing Corviston taken on the basis Only Carrier With Capacity, with the policy CS/2026/00003 raised" width={1440} height={900} caption="Won on the dearer quote, with the decline kept on file." />
+
+Press **Client Accepted**. The three presenting checks run again, so going straight from the market to a placement cannot step round the survey or the claims history, and the quote taken, the basis and the reason are all required. A draft policy is then raised from the chosen line, carrying the carrier, premium, tax rate, excess, commission rate and basis, and the enquiry becomes Won. A **How We Are Paid** disclosure with the commission amount goes onto the client's file at the same moment. A won enquiry cannot be reopened: two records saying different things about one risk is worse than one.
+
+The policy itself, putting it on risk and what follows, is in the [policies, endorsements and renewals chapter](/odoo-guides/odoo-insurance-policy-renewals-endorsements/).
+
+## Lost, and expired
+
+When the business goes elsewhere, pick the **Lost Reason** and press **Mark Lost**. The reasons are beaten on price, cover not wide enough, lost to another broker, client went quiet, client withdrew the enquiry, and every carrier declined. Lost to another broker needs the broker's name in **Placed With**; six of those against one competitor in a quarter is worth knowing. If the lost enquiry was a renewal, the expiring policy is marked Lost (to another broker) or Lapsed (any other reason) at the same time.
+
+<Shot src="/odoo-guides/odoo-insurance-market-quotes-placement/lost.webp" alt="Lost enquiry for Copperbeech Nursery School, commercial property, with the lost reason Lost to Another Broker and the competing broker named in Placed With" width={1440} height={900} caption="Lost to another broker, with the broker named." />
+
+An enquiry nobody acts on does not sit there looking live. Every night the expire stale quotations job moves any enquiry still in Enquiry, In the Market or Presented, whose Quote Holds Until date has passed, to **Expired**, with a note in the chatter. **Back to Enquiry** reopens a lost or expired enquiry when the client comes back.
+
+## Reporting on new business
+
+Reporting, **Conversion** is a pivot of closed enquiries (won, lost and expired) by class and outcome, with the best premium and the sum insured. Put the lost reason across the top to see whether the office is losing on price, on cover or to other brokers.

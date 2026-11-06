@@ -1,0 +1,113 @@
+---
+title: "Insurance policy administration in Odoo: on risk, instalments, endorsements, renewals and cancellation"
+metaTitle: "Policies, Endorsements and Renewals"
+description: "Put a policy on risk in Odoo, collect premium by instalment, pro rate mid term endorsements, work renewals and cancel with a return premium."
+targetQuery: "insurance policy renewal management odoo"
+category: "Industry"
+summary: "The policy in Insurance Broker Management: premium tax and commission, Put On Risk and the disclosure check, instalment plans and overdue payments, endorsements pro rated to the day, the renewal job and how each expiry ends, and cancellation."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-insurance-broker-management"
+seriesOrder: 2
+modules:
+  - name: "Insurance Broker Management"
+    technical: "wt_insurance_broker"
+    note: "USD 299, Odoo 19 Community, installs Invoicing"
+demo:
+  url: "https://insurance-demo.way4tech.com/"
+  label: "Insurance Broker demo"
+related: ["odoo-insurance-broker-management", "odoo-insurance-market-quotes-placement", "odoo-insurance-commission-reconciliation"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the module work out the premium for a mid term change?"
+    a: "You enter what the change would cost for a whole year. The endorsement multiplies it by the days left to run divided by the days in the term, then works out the premium tax and the commission on that figure the same way the policy does. A reduction gives a negative figure: a return premium and a commission clawback."
+  - q: "Who can approve an endorsement?"
+    a: "Only a user with the Insurance Manager role. The Underwriter Agreed button is shown only to managers, the action checks the role again, and the status cannot be typed into Agreed or created already agreed."
+  - q: "Does the renewal pipeline run on its own?"
+    a: "Only once it is switched on. The renewal pipeline is a daily scheduled action that ships switched off. When it runs, every policy on risk that expires inside the renewal window, 60 days by default, is flagged, the client is sent a renewal invitation, a renewal notice is written onto their file and the account executive gets a to do."
+  - q: "How is the return premium worked out on a cancellation?"
+    a: "The premium and the premium tax are pro rated over the days left from today to expiry. Unpaid instalments are cancelled and a negative commission entry claws back the commission on the returned premium. No credit note is raised in Accounting."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A policy is not finished when the client accepts the quote. It has to go on risk with the right disclosures on file, the premium has to be collected, the cover will change mid term, and in twelve months it either renews, lapses or goes to another broker. This chapter covers the life of a policy in Insurance Broker Management, from the draft raised off a won enquiry to the renewal that replaces it.
+
+## The policy record
+
+Winning an enquiry raises a **Draft** policy carrying the client, the carrier, the class, the sum insured, the excess from the quote taken, the premium, the tax rate and the commission rate and basis. The policy number starts with the carrier's code, so LW/2026/00001 is a Larchway policy. The expiry is worked out from the inception and the term. The **Regulatory Reference** is built from the class's regulatory code, the inception year and the policy sequence, so a return can be run off the book. The second line under the number holds the carrier's own policy number, which is the one every claim call starts with.
+
+<Shot src="/odoo-guides/odoo-insurance-policy-renewals-endorsements/policy.webp" alt="Policy LW/2026/00001 for Halberd Joinery with Larchway Insurance, commercial property, On Risk, showing the risk group, the period of cover with 65 days to expiry, the premium group with 12 per cent premium tax and the commission group at 20 per cent on the net premium" width={1440} height={900} caption="The policy: premium, tax and commission kept apart." />
+
+| Figure | How it is worked out |
+|---|---|
+| Premium Tax | premium times the class rate, or through the class's Odoo tax record |
+| Total Payable | premium plus premium tax |
+| Commission Earned | the flat fee if the term pays one, otherwise the rate on the net premium, or on the total where the basis is gross |
+| Commission rate | the carrier's term in force on the inception date, at the renewal rate if the policy renews an earlier one |
+| Expected, Received, Variance | the commission entries on the policy, what came in, and the difference |
+
+## Put on risk and issue documents
+
+Press **Put On Risk**. A policy with no premium is refused. With **Disclosures Before Cover** on in Settings (it is by default), the client's file must also show a demands and needs statement and how the firm is paid. Presenting and accepting the enquiry write both, so in practice the check stops a policy typed in by hand without the paperwork. Going on risk then builds the instalment schedule if there is none, books a commission entry expected after the carrier's settlement days, and if the policy renews an earlier one, closes that one as Renewed and Retained.
+
+**Issue Documents** writes two disclosures, Policy Documents Issued and Cancellation Rights, and queues the Policy Documents Issued email to the client if the contact has an email address. **Print Schedule** prints the policy schedule: the policy and carrier numbers, the insured, the carrier and its authorisation number, the class and wording, the period, the regulatory reference, the cover, the premium with the tax shown separately, the instalments, any mid term changes, and what was sent to the client and when.
+
+## Premium collection
+
+The **Instalment Plan** is Single Premium, Half Yearly, Quarterly or Monthly. The schedule splits the total payable evenly, puts any rounding remainder on the first instalment, and spreads the due dates from inception. Instalments must fall inside the term and add up to the total to the penny. Rebuild Instalments recreates the schedule from the plan, and is refused once anything has been paid.
+
+<Shot src="/odoo-guides/odoo-insurance-policy-renewals-endorsements/instalments.webp" alt="Instalments tab of policy QM/2026/00004 for Quarrystone Plant Hire, monthly plan, twelve instalments, the first of 1,613.77 and the rest 1,613.73, three paid by BACS, October overdue, with amount paid and amount outstanding" width={1440} height={900} caption="A monthly schedule: rounding on the first line, October overdue." />
+
+The tick on an instalment line marks it collected, with the payment reference. A collected line cannot be deleted. Every night a job marks unpaid instalments past their due date as **Overdue** on policies that are on risk, and Policies, **Premium Collection** lists every instalment in the office with Outstanding, Overdue and Due This Month filters. When the money stops, **Lapse** puts the policy into Lapsed and cancels its unpaid instalments.
+
+<Callout title="Collected is a status, not a payment">
+Marking an instalment collected does not raise an invoice to the client or post a payment in Accounting. The module tracks the premium on the policy; the only accounting document it raises is the commission invoice to a carrier.
+</Callout>
+
+## Endorsements
+
+A client adds a machine, replaces a van or moves out of a warehouse. Policies, **Endorsements**, New: pick the policy, the effective date (inside the term), the kind of change (increase in cover, reduction in cover, item added, item removed, change of address, change of vehicle, correction to the record, other), a description, the new sum insured, and the **Full Term Difference**, which is what the change would cost for a whole year. An increase must carry a positive difference and a reduction a negative one; the other way round is refused as a typing mistake.
+
+The endorsement works out the rest:
+
+- **Pro rata premium:** the full term difference times the remaining days, divided by the days in the term;
+- **Tax:** on the pro rata premium, the same way as the policy;
+- **Commission:** the policy's rate on the pro rata premium, on the same net or gross basis.
+
+<Shot src="/odoo-guides/odoo-insurance-policy-renewals-endorsements/endorsement.webp" alt="Endorsement END/2026/0001 on policy LW/2026/00001, increase in cover, applied, with the old and new sum insured, a full term difference of 1,200, 125 days remaining of 365, the pro rata premium, the tax, the total and the commission on the change" width={1440} height={900} caption="An increase in cover, pro rated over the 125 days left." />
+
+The workflow is **Send to the Underwriter**, then **Underwriter Agreed**, then **Apply to the Policy**, or **Refused** with what the underwriter said. Agreeing changes the premium on a live policy and books commission, so it is a manager's button and the status cannot be set by hand. Applying writes the new sum insured and the extra premium onto the policy, books a commission entry for the change (a clawback for a reduction), and notes it on the policy. Apply is refused if the policy came off risk in the meantime, because that would bill the client for cover they no longer have.
+
+<Callout title="The schedule does not move">
+Applying an endorsement changes the policy premium but does not add, change or remove any instalment. After a change with money in it, the instalments no longer add up to the policy total, and the difference has to be collected or refunded outside the schedule.
+</Callout>
+
+## Renewals
+
+The **renewal pipeline** is a daily job. It looks at every policy on risk; anything expiring inside the renewal window (60 days unless you change it) is flagged **Renewal Due**, and each one not yet worked becomes **Invitation Sent**: a Renewal Notice disclosure is written, the Renewal Invitation email is queued to the client, and the account executive gets a to do due fourteen days before expiry. Policies, **Renewals** lists the flagged policies grouped by outcome, and each one carries a **Renewal Hint**: the claims this term, a loss ratio of 50 per cent or more, overdue instalments, or Clean record.
+
+<Shot src="/odoo-guides/odoo-insurance-policy-renewals-endorsements/renewal-due.webp" alt="Policy CS/2026/00003 for Fenmoor Cold Storage with Corviston, expiring 10 December 2026, Renewal tab showing renewal status Invitation Sent, renewal due ticked and the hint one claim this term, with a to do for the account executive in the chatter" width={1440} height={900} caption="Coming up for renewal: invitation sent, hint, and a to do waiting." />
+
+<Callout title="Switch it on first">
+The renewal pipeline ships switched off. Until it is switched on under Settings, Technical, Scheduled Actions (in developer mode), nothing is flagged and the Renewals menu is empty.
+</Callout>
+
+**Renew** on a policy on risk or just expired raises a renewal enquiry for the same client, class, sum insured, excess and term, with cover from the expiry date, the claims on the expiring policy written into the claims experience, and a link back. Work it like any enquiry. When the new policy goes on risk, the old one becomes **Renewed**, its outcome **Retained**, and Renewed As points at the new one, which earns the carrier's renewal rate of commission where the term has one.
+
+When a policy does not renew, **Renewal Lapsed** records that the client let it go, and **Lost at Renewal** that it went elsewhere (write the renewal note first: who took it and on what terms). Marking the renewal enquiry Lost does the same. If nobody does anything, the nightly run off job expires the policy after its expiry date and an unworked renewal becomes Lapsed. Retained, Lapsed and Lost are what each carrier's **retention rate** is worked out from.
+
+<Shot src="/odoo-guides/odoo-insurance-policy-renewals-endorsements/renewed.webp" alt="Expired policy QM/2026/00032 for Fenmoor Cold Storage in the Renewed state, Renewed As QM/2026/00033, with renewal status Retained, hint Clean record and the renewal note" width={1440} height={900} caption="Retained: the old policy points to its renewal." />
+
+## Cancellation
+
+**Cancel** works on a draft or a live policy and needs a **Cancellation Reason**: client cancelled, premium not paid, insured interest sold, carrier cancelled or duplicate cover. It is refused while the policy has an open claim, because the client would be left with a loss and no cover. On a live policy it cancels from today, sets the **Return Premium** to the premium and tax for the days left, cancels unpaid instalments and books a clawback of the commission on the returned premium.
+
+<Shot src="/odoo-guides/odoo-insurance-policy-renewals-endorsements/cancelled.webp" alt="Cancelled policy LW/2026/00040 for Ferngill Veterinary Group, Renewal tab showing the cancellation group with reason Insured Interest Sold, the cancellation date and a return premium of 2,158.87" width={1440} height={900} caption="Cancelled with the interest sold: the return premium worked out to the day." />
+
+<Callout title="The cancellation reason is hard to reach">
+In this version the Cancellation group on the Renewal tab only appears once a reason is already set, so on a live policy the reason cannot be picked from the form and Cancel stops asking for one. Until that is fixed, the reason has to be set another way, for example by an administrator through an import. The return premium is a figure on the policy; no credit note is raised in Accounting.
+</Callout>
+
+Claims on a policy are covered in the [claims chapter](/odoo-guides/odoo-insurance-broker-claims/), and what happens to the commission entries in the [commission chapter](/odoo-guides/odoo-insurance-commission-reconciliation/).

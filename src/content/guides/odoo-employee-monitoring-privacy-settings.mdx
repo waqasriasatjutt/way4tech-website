@@ -1,0 +1,116 @@
+---
+title: "Privacy and settings for employee activity tracking in Odoo"
+metaTitle: "Work Tracker Privacy and Settings"
+description: "Every WT Work Tracker setting in Odoo 19 with its default: consent, window titles, screenshots, working hours, retention and deletion requests."
+targetQuery: "odoo employee monitoring privacy consent settings"
+category: "Payroll and HR"
+summary: "Who sees what, the consent gate, window titles on or off, screenshots, working hours modes, private mode, retention and the nightly clean-ups, deletion requests, and every other setting with its default and limits."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-employee-work-tracker"
+seriesOrder: 5
+modules:
+  - name: "WT Work Tracker"
+    technical: "wt_work_tracker"
+    note: "USD 199, every setting on this page"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Work Tracker demo"
+related: ["odoo-employee-work-tracker", "odoo-work-tracker-windows-agent-setup", "odoo-employee-self-service"]
+linkFrom: ["/modules/hr/"]
+sources: []
+faqs:
+  - q: "Does the work tracker require employee consent?"
+    a: "By default, yes. With Consent before tracking on, Odoo refuses segments and screenshots from a device until its employee has accepted the consent text in the agent. Start, lock and quit events are still recorded."
+  - q: "Can I stop window titles leaving the PC?"
+    a: "Yes. Turn off Store window titles and the agent stops sending them. Only rules on the application name then classify time."
+  - q: "How long is tracking data kept?"
+    a: "Segments 90 days and screenshots 14 days by default, deleted every night. Zero keeps them. Daily summaries are never deleted by retention. Sync log rows are kept 30 days."
+  - q: "Can an employee delete their own data?"
+    a: "Not directly. Ask HR to delete this day on My Activity, and Request deletion on segments or days, create a to-do for the employee's HR responsible, who decides and deletes."
+  - q: "Can tracking stop outside working hours?"
+    a: "Yes. Set Working hours to Pause outside working hours and the agent captures nothing outside the employee's schedule. Mark mode captures that time but counts it for nothing."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Measuring work at a PC is legal in most countries only when it is explained, limited to what is needed and kept for a limited time. Labour and data protection rules differ, and this page is not legal advice: check them where your staff work before you switch anything on. What the module gives you is the controls to set it up in a way you can defend: a consent gate, a choice about window titles, screenshots off unless you need them, tracking that follows working hours, retention periods and a route for employees to ask for deletion. This chapter goes through each, then every other setting on the page.
+
+## Who sees what
+
+A **User** reads only their own segments, days, devices and screenshots. That is enforced by record rules on every list, so even a list with no filter shows nobody else's rows. A **Manager** reads everyone in their companies. The page a manager opens about an employee is the same page the employee sees about themselves, and the page says so at the bottom.
+
+Nothing a User does can create, change or delete activity; only a paired agent writes it, and segments are read only for everybody. The single change a User can make to a device is to unpair it, and that only goes one way.
+
+## Consent before tracking
+
+On by default. The agent shows the consent text at pairing and again at every start until the employee accepts. Until then Odoo refuses segments and screenshots from that device, while start, quit and lock events are still recorded so the gaps are visible. Accepting stamps the time on the device; declining clears it, so a later acceptance counts as new consent.
+
+<Shot src="/odoo-guides/odoo-employee-monitoring-privacy-settings/privacy-settings.webp" alt="Work Tracker Privacy settings in Odoo with Store window titles, Consent before tracking, Screenshots with interval, scale, blur and all monitors, Retention for segments and screenshots and the consent text" width={1600} height={1000} caption="Settings > Work Tracker > Privacy. Pictured on a test database; Settings is administrator only." />
+
+The **consent text** ships with a plain default: what is recorded, what is not, that screenshots happen only if the company turns them on and are blurred first, that tracking can be paused, what the data is used for, who sees it and that it is deleted after the retention period. Edit it to name your company, your reasons and who to contact. The agent shows it as plain text. The employee form's Tracker tab shows **Consent recorded**, **Consent not recorded** or **No device paired**, and Devices has a **Consent not recorded** filter.
+
+## Window titles
+
+Titles carry the most personal detail a tracker sees: document names, mail subjects, the person in a chat. **Store window titles** is on by default because title rules do much of the classifying (YouTube in Chrome is a title, not an application). Turn it off and the agent stops sending titles, so they never leave the PC; only application rules then classify time, now and on any later re-apply. The agent's own log on the PC records titles only at debug level and is never sent anywhere.
+
+## Screenshots
+
+Off by default. When on: every 10 minutes (1 to 1,440), scaled to 0.25 (0.1 to 1), **Blur screenshots** on, and **All monitors** off, so only the main monitor is captured. Scaling and blurring happen inside the agent before the image leaves memory. Screenshots are visible only to the employee and tracker managers, and are kept 14 days by default.
+
+<Shot src="/odoo-guides/odoo-employee-monitoring-privacy-settings/screenshots-off.webp" alt="Screenshots menu in the Odoo work tracker showing No screenshots and the message that screenshots are off by default and are scaled and blurred by the agent" width={1440} height={900} caption="The live demo with screenshots off." />
+
+## Working hours, pause and private mode
+
+**Working hours** decides what happens outside each employee's schedule, which the agent receives for the next seven days from the employee's working schedule in Odoo:
+
+| Mode | Effect |
+|---|---|
+| Track whenever the agent runs | The default. Everything counts |
+| Pause outside working hours | Nothing is captured outside the schedule |
+| Track, but mark time outside working hours | Captured, shown hatched on the timeline, counted for nothing |
+
+An employee form can override the company choice for one person. An employee without a working schedule is tracked whenever the agent runs.
+
+The employee can always **Pause** from the tray, or choose **Private mode**, a pause that ends on its own after the minutes you set (30 by default, 1 to 1,440). Nothing is captured while paused, in private mode, with the screen locked or the PC asleep, and every one of those is recorded as an event.
+
+<Shot src="/odoo-guides/odoo-employee-monitoring-privacy-settings/events.webp" alt="Events list in the Odoo work tracker with quit, task changed, unlock and lock events for demo employees and their devices" width={1440} height={520} caption="Configuration > Events: every start, lock, unlock, quit and task change, so gaps are explained." />
+
+## Retention
+
+| Scheduled action | Runs | Deletes |
+|---|---|---|
+| Delete old segments | Every night | Segments older than Keep segments (days), default 90 |
+| Delete old screenshots | Every night | Screenshots older than Keep screenshots (days), default 14 |
+| Delete old sync logs | Every night | Sync log rows older than 30 days |
+
+A value of zero keeps everything. **Daily summaries are never deleted by retention**: they are the summary, so a year of Team figures survives after the segments behind them are gone. Rebuilding an old range never empties a day whose segments have been deleted.
+
+## Deletion requests
+
+**Ask HR to delete this day** at the bottom of My Activity, and **Request deletion** on selected segments or days, create a to-do on the employee record, *Tracker data deletion requested*, for the employee's HR responsible, or for every tracker manager when there is none. It names the days or the span of segments. The decision and the deletion stay with HR.
+
+<Callout title="Archiving an employee">Archiving an employee revokes every active device of theirs at once, with a note on each. Their data stays until retention removes it, or until HR deletes it on request.</Callout>
+
+## The other settings
+
+<Shot src="/odoo-guides/odoo-employee-monitoring-privacy-settings/getting-started.webp" alt="Work Tracker Getting started and Agent settings in Odoo with the agent download link, invite and device steps marked Done, the pairing code prefix and sampling, private mode, task and idle prompt settings" width={1600} height={1000} caption="Getting started and Agent. Each Getting started step ticks itself off." />
+
+| Setting | Default | Limits and notes |
+|---|---|---|
+| Agent download URL | way4tech.com/tracker/download | Blank falls back to the default |
+| Pairing code prefix | From the server address | Three to eight capitals or digits |
+| Sample every (seconds) | 5 | 2 to 60 |
+| Sync every (seconds) | 60 | 15 to 3,600 |
+| Idle after (seconds) | 180 | 30 to 3,600 |
+| Ask which task | Off | "Still on this task?" after the first activity of the day and long breaks |
+| Ask about idle time after (minutes) | 0 (never) | Kept time goes to the category Away, kept |
+| Minimum agent version | 1.0.0 | Older agents are flagged as outdated |
+| Agent update URL | way4tech.com/tracker/latest.json | https, and only hosts on the agent's built-in list |
+| Default category | Neutral | For segments no rule matches |
+| Weekly digest | Off | Monday mail with last week per employee to the recipients you pick |
+| Timesheet rounding (minutes) | 15 | Timesheets bridge, 1 to 240 |
+
+Every setting reaches the PCs by itself. A counter on the company moves with each change, and a device that fetched an older version fetches settings again on its next sync. Values outside their limits are refused with a message that names the limit.
+
+The **weekly digest** goes out on Mondays with the previous Monday to Sunday: one row per employee, most active first, with days tracked, active hours, effort, focus sessions and the top three applications, plus a Gap column when the Attendance bridge is installed. The [desktop agent setup](/odoo-guides/odoo-work-tracker-windows-agent-setup/) chapter covers the invite and pairing settings in use.

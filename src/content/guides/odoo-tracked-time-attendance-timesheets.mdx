@@ -1,0 +1,101 @@
+---
+title: "Attendance and timesheets from tracked time in Odoo"
+metaTitle: "Attendance and Timesheets from Tracking"
+description: "Compare Odoo 19 attendance with tracked PC time, find the gap, and turn a tracked day into rounded timesheet lines per task that are never created twice."
+targetQuery: "odoo timesheets from tracked time attendance gap"
+category: "Payroll and HR"
+summary: "The daily summary behind every report, the gap between attendance and active time with its filters, and Suggest timesheets: one rounded line per task on the project's analytic account."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-employee-work-tracker"
+seriesOrder: 3
+modules:
+  - name: "WT Work Tracker"
+    technical: "wt_work_tracker"
+    note: "USD 199, the daily summaries and Team views"
+  - name: "WT Work Tracker: Attendance"
+    technical: "wt_work_tracker_attendance"
+    note: "Free, installs itself with Attendances"
+  - name: "WT Work Tracker: Timesheets"
+    technical: "wt_work_tracker_timesheet"
+    note: "Free, installs itself with Timesheets and the Project bridge"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Work Tracker demo"
+related: ["odoo-employee-work-tracker", "odoo-attendance-shifts-overtime", "odoo-time-tracking-project-tasks"]
+linkFrom: ["/modules/timesheets/", "/modules/attendance/"]
+sources: []
+faqs:
+  - q: "What is the attendance gap?"
+    a: "Attendance minus active PC time for the day, never below zero. It is time the employee was clocked in but the PC was not in use: meetings, calls, site visits, breaks. A filter finds days with a gap over an hour."
+  - q: "Does the tracker create timesheets automatically?"
+    a: "No. A Work Tracker manager presses Suggest timesheets on a day or a selection of days. Odoo then creates one line per task, rounded to the company step, and employees confirm or edit them in Timesheets as usual."
+  - q: "Are suggested hours raw time or weighted effort?"
+    a: "Weighted effort. An hour on a task in a neutral category, weight 0.5, suggests half an hour. Set the category weights with that in mind."
+  - q: "What if I press Suggest timesheets twice?"
+    a: "Nothing is duplicated. Each task line remembers its timesheet, and only lines without one are created. A task line with a timesheet is kept through every rebuild."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Two of the most common numbers in an HR system are also the least trusted. Attendance says someone was in from nine to six, but not what they did. Timesheets say six hours went to a client project, but they were typed on Friday afternoon from memory. Tracked PC time sits between the two. Put it next to attendance and you see the time that was clocked but not spent at the desk. Use it to draft the timesheet and the Friday guesswork goes away. This chapter covers both, starting with the daily summary they are built from.
+
+## The daily summary
+
+Every report reads one row per employee per day. Open **Work Tracker > Team > Days** (managers) and open any row.
+
+<Shot src="/odoo-guides/odoo-tracked-time-attendance-timesheets/day-form.webp" alt="Daily summary form in the Odoo work tracker for one demo employee with time, effort and attendance sections and buttons Rebuild from segments, Request deletion and Suggest timesheets" width={1440} height={540} caption="One day: time, effort, attendance and the Tasks tab, with Suggest timesheets in the header." />
+
+| Figure | What it is |
+|---|---|
+| Active | Seconds not idle and not outside working hours |
+| Idle | Seconds with no input past the idle limit (180 seconds by default) |
+| Productive, neutral, distracting | Active time split by the kind of its category |
+| Effort | Seconds times category weight, added up, in hours |
+| Focus sessions | Runs of 25 minutes or more of uninterrupted work |
+| First and last activity | Start of the first and end of the last active stretch |
+
+A scheduled action rebuilds the days that changed every hour, so today's row can trail the raw segments by up to an hour. **Rebuild from segments** on a day does it on the spot. Daily rows are never deleted by retention, so a year of figures survives after its segments are gone.
+
+**Team > Days** opens on the last seven days grouped by date, with list, kanban, graph and pivot views. **Team > Today** shows today's cards, and before the first rollup of the day says *Nobody tracked yet today*.
+
+<Shot src="/odoo-guides/odoo-tracked-time-attendance-timesheets/days-pivot.webp" alt="Pivot of daily summaries in the Odoo work tracker with demo employees down and days across, showing active hours, effort, attendance and gap" width={1440} height={410} caption="The Days pivot: employees down, days across, any measure." />
+
+Filters pick the days worth a look: **With focus sessions**, **Over an hour distracting**, and with the bridges **Gap over 1 hour**, **No attendance** and **Timesheets suggested**.
+
+## Attendance next to tracked time
+
+When **Attendances** is installed the Attendance bridge installs itself. Each day then carries the worked hours of the attendances that started on the employee's day, in their timezone. An attendance still open has no hours yet. The **gap** is attendance minus active time, never below zero.
+
+<Shot src="/odoo-guides/odoo-tracked-time-attendance-timesheets/attendance-gap.webp" alt="Team Days list in the Odoo work tracker filtered on Gap over 1 hour showing one demo employee with 5:55 active, 7:55 attendance and a 2:00 gap" width={1600} height={238} caption="Gap over 1 hour: clocked in 7:55, active 5:55, two hours not at the PC. Pictured on a test database." />
+
+The gap is not a charge against anyone. Meetings in a room, phone calls, a site visit and lunch all live there. What it does well is show a pattern: one person whose gap is always three hours, or a team whose gap doubled after a reorganisation. The figures appear on the Team list, kanban and pivot, as Attendance and Gap tiles on My Activity, as columns and tiles in Work History, and as a Gap column in the Monday digest mail.
+
+**No attendance** finds the opposite: activity on a day with no attendance at all, usually someone who forgot to check in.
+
+<Callout title="Keeping away time as work">If Ask about idle time is set above zero in Settings, the agent asks after a long idle stretch whether it was work away from the PC. Keep turns those idle segments into active time in the category Away, kept, weight 0.5, and rebuilds the day. The gap shrinks by that amount.</Callout>
+
+## Suggested timesheets
+
+With **Timesheets** and the Project bridge installed, the Timesheets bridge installs itself and puts a **Suggest timesheets** button on every day, and the same action in the Days list for many days at once.
+
+<Shot src="/odoo-guides/odoo-tracked-time-attendance-timesheets/suggested-timesheets.webp" alt="Daily summary in the Odoo work tracker with a Tasks tab listing two tasks of a project with time, effort and the timesheet line created for each, and a Timesheets smart button" width={1600} height={1000} caption="A day after Suggest timesheets: each task line points at its timesheet. Pictured on a test database." />
+
+What it does:
+
+1. For each task line on the day that has no timesheet yet, it creates one timesheet line named *WT Tracker:* plus the task name, for the employee and date, on the task's project.
+2. The hours are the task's **effort hours**, rounded to **Timesheet rounding (minutes)** in Settings, 15 by default and anything from 1 to 240. A line that rounds to zero is not suggested.
+3. A task whose project does not take timesheets, or has no analytic account, is skipped.
+4. A notice says how many lines were suggested and how many skipped.
+
+Only a Work Tracker manager can suggest. That is on purpose: an employee who could do it would be writing their own timesheet from data they might have shaped. Employees then confirm or edit the lines in Timesheets like any other line; the tracker never validates them.
+
+A line is never suggested twice. Each task line remembers the timesheet made from it, and a task line that has a timesheet is kept through every rebuild, at zero if its segments are gone, so the timesheet never points at nothing. The day gets a **Timesheets** smart button, Team > Tasks effort a **Not on a timesheet** filter, and Work History a Timesheet column with a total.
+
+<Callout title="Effort hours, not raw hours">The suggested figure is weighted. A day of neutral work on a task suggests half its time. If your team bills meeting time to clients, give meetings a productive category or a higher weight before you suggest, or edit the lines.</Callout>
+
+## Where the tasks come from
+
+Suggestions need segments that carry a task: from the tray's Working on menu, from a rule that reads a task number in the window title, or from Working on this in Odoo. The next chapter, [Project and Project Pro](/odoo-guides/odoo-time-tracking-project-tasks/), covers all three. Without tasks the day has no task lines and Suggest timesheets has nothing to create.
+
+On the live [demo](https://facility-demo.way4tech.com/) the tracked people have no attendances and no task on their segments, so the Attendance, Gap and timesheet figures read zero there; the pictures above come from a test database with the same demo people. The [attendance, shifts and overtime guide](/odoo-guides/odoo-attendance-shifts-overtime/) covers the attendance side itself.

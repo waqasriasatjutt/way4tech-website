@@ -1,0 +1,124 @@
+---
+title: "Install and pair the WT Tracker Windows agent with Odoo"
+metaTitle: "Desktop Agent: Install and Pair"
+description: "Step by step: invite an employee from Odoo 19, install the WT Tracker Windows agent without admin rights, pair it, accept consent and use the tray."
+targetQuery: "odoo time tracker desktop agent windows"
+category: "Payroll and HR"
+summary: "From the Invite button on the employee form to a green tray icon: the installer, the invite link, typed pairing codes, consent, the tray menu, updates and silent installs for IT."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-employee-work-tracker"
+seriesOrder: 1
+modules:
+  - name: "WT Work Tracker"
+    technical: "wt_work_tracker"
+    note: "USD 199, the Odoo side of the agent"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Work Tracker demo"
+related: ["odoo-employee-work-tracker", "odoo-employee-monitoring-privacy-settings", "odoo-employee-self-service"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Does installing the agent need administrator rights?"
+    a: "No. The installer puts the agent under the signed-in user's own program folder, adds a Start Menu entry and registers it to start at sign-in, so no administrator prompt appears."
+  - q: "What if the invite link does not open?"
+    a: "Start the agent, choose Pair with Odoo from the tray icon and type the code from the invite. If the code's prefix is not in Way4Tech's published table, the window also asks for your company's Odoo address."
+  - q: "How long does a pairing code last?"
+    a: "A code sent in an invite lasts seven days, and an open invite code with at least a day left is reused. A code made with Generate pairing code lasts 24 hours. Every code works once."
+  - q: "Can IT install it silently on many PCs?"
+    a: "Yes. Run the installer with /VERYSILENT, then run the agent once with --pair and the code, plus --url when the prefix is not in the published table."
+  - q: "What happens when an employee leaves?"
+    a: "Archiving the employee in Odoo revokes their active devices at once. The agent's next call is refused and its icon turns red. Uninstalling from Windows removes the program and, if the user agrees, the local data and token."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A tracker that takes an afternoon of IT work per PC never gets rolled out. The WT Tracker agent is built so that an employee can connect their own PC in about two minutes from a single mail, with no administrator prompt and nothing to type. This chapter follows that path from the Odoo side and the Windows side, then covers the fallbacks: a code read out on the phone, a PC that was already paired somewhere else, and silent installs for an IT team.
+
+## Before you invite anyone
+
+The agent signs in to Odoo as the employee's own user. So every person you want to track needs an Odoo user linked on their employee form. If you select five employees and one has no user, Invite refuses the whole batch and names the person, rather than quietly skipping them. When a Manager invites somebody who does not yet have the Work Tracker User level, Odoo grants it on the spot.
+
+Check two settings first, under Work Tracker > Configuration > Settings:
+
+- **Agent download link.** The default, https://way4tech.com/tracker/download, always points at the latest signed installer. Keep it unless you host a copy yourself. A blank value falls back to the default, so an invite never goes out without a link.
+- **Pairing code prefix.** The first part of every code. Odoo derives it from your server's address the first time it needs one, for example ACMETRAD from erp.acme-trading.com, and you may change it to three to eight capitals or digits.
+
+## Step 1: send the invite
+
+Open the employee, go to the **Tracker** tab and press **Invite**. Odoo reuses an open code with at least a day left, or makes a new one valid for seven days. It mails the invite to the work email and posts a note in the employee's chatter with the code and its expiry. To invite several people at once, tick them in the employee list and choose **Actions > Invite to Work Tracker**.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/invite-window.webp" alt="Tracker invite window in Odoo after pressing Invite, showing one invite sent by mail, the wttracker pair link, the pairing code and a Copy for WhatsApp message with three steps to connect the PC" width={1600} height={1000} caption="After Invite: the link, the code and a ready message to paste into WhatsApp. Pictured on a test database." />
+
+The window that opens shows the link, the code and a **Copy for WhatsApp** text with the same three steps as the mail. For a single employee it also shows a QR code of the link. If the employee has no work email, the window says so and the message is what you send them instead.
+
+The mail, titled *Connect your work tracker at* your company, tells the employee to install the agent, open the link on the PC they work on, and type the code if the link does not open. It ends with a plain list of what is recorded and what is not.
+
+## Step 2: install the agent
+
+The download is a single installer of about 17 MB. It installs for the signed-in Windows user under their own AppData folder, which is why no administrator prompt appears. Click Next, then Finish.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/installer.webp" alt="WT Tracker setup wizard on Windows at the Select Destination Location step, installing into the user's local programs folder" width={798} height={615} caption="The per-user installer. The folder path is blurred." />
+
+Setup adds a Start Menu entry, registers the agent to start whenever the user signs in to Windows, registers the `wttracker://` link type for that user, and starts the agent. If Windows SmartScreen says it does not recognise the app, choose More info, then Run anyway.
+
+## Step 3: open the invite link
+
+Back in the mail, the employee clicks the link. Windows hands it to the agent, which first asks *Connect this computer to* your Odoo address. That question is deliberate: a link is easy to forward, and only your own company's link should be accepted. If the agent is already running, the link is passed to the running copy over a private channel and no second agent starts.
+
+A PC that is already paired with a different Odoo refuses a new link and says so. Unpair from the agent's Settings first, then open the link again.
+
+## Step 4: consent
+
+With **Consent before tracking** on, which is the default, the agent shows the company's consent text and records nothing until the employee presses **Accept**.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/consent.webp" alt="WT Tracker consent dialog on Windows naming the employee and the Odoo address, with the consent text explaining what is recorded, and Not now and Accept buttons" width={649} height={545} caption="The consent dialog. Not now keeps the agent paused, with Review consent in the tray menu." />
+
+Accepting is recorded on the device in Odoo with a timestamp and a note. **Not now** leaves the agent paused with an amber icon; the tray menu gets a Review consent item that reopens the text. Until consent is recorded, Odoo refuses segments and screenshots from that device, while start, lock and quit events are still kept. A toast then says *Paired as* the employee's name, *Tracking has started*, and the tray icon turns green.
+
+## The fallback: typing a code
+
+When the link cannot be used, for example on a PC where the mail is not open, generate a code instead. **Generate pairing code** on the employee's Tracker tab makes a code valid for 24 hours and shows the instructions to read out: the code, when it expires, the Odoo address and the download link. Codes use an alphabet without 0, O, 1 and I, so they survive being read over the phone.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/pairing-code.webp" alt="Pair WT Tracker with Odoo dialog asking for the pairing code, showing which Odoo address the code will connect to" width={459} height={257} caption="The pairing window, opened by a left click on the tray icon while the agent is not paired." />
+
+The agent looks the code's prefix up in a table Way4Tech publishes. When the prefix is listed, the window shows which Odoo it will connect to. When it is not, the window also asks for the company's Odoo address. After twenty failed attempts from one address within fifteen minutes, Odoo asks that address to wait, which stops anyone guessing codes.
+
+<Callout title="One code, one PC">A code works once. After pairing, the code shows as Used under Configuration > Pairing codes, with the device it paired. An employee with a laptop and a desktop needs a code for each, and Odoo merges their overlapping time so an hour on two PCs counts as one.</Callout>
+
+## The tray, day to day
+
+The icon is green while tracking, grey when paused, amber in private mode or while waiting for consent, and red when the agent is not paired or cannot reach the server. Hovering shows the state, the current task and today's total. A left click opens My Activity in the browser.
+
+The right-click menu has the status line, **Working on**, **Pause tracking** or **Resume tracking**, **Private mode** (30 minutes by default, set in Odoo), **Open my dashboard**, **Sync now**, **Settings**, **Check for updates** and **Quit**. Pause and private mode survive a restart.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/tray-tasks.webp" alt="WT Tracker tray menu with the Working on submenu open, listing No task, Recent, a project group, Other and Search task" width={575} height={262} caption="Working on, with the Project bridge: no task, recent, one group per project and a search." />
+
+**Settings** in the tray shows the Odoo address, the employee, the status, the version and a **Start WT Tracker when I sign in to Windows** box, with an **Unpair this device** button that tells Odoo and forgets the token.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/agent-settings.webp" alt="WT Tracker settings window on Windows showing the Odoo address, employee, tracking status, version, start at sign-in checkbox and Unpair this device button" width={485} height={317} caption="The agent's own settings window. The local folder path is blurred." />
+
+## What Odoo sees of the device
+
+Each paired PC is a record under Configuration > Devices. The form groups who it belongs to, the agent (Windows version, agent version flagged when older than your minimum, the pairing code, whether it came from an invite), what it is doing now (tracking, current task, queue size, oldest unsent row) and its last contact.
+
+<Shot src="/odoo-guides/odoo-work-tracker-windows-agent-setup/device-form.webp" alt="Device form in the Odoo work tracker for a demo laptop with employee, Windows user, consent recorded, agent version, pairing code, tracking state, queue size and last seen, and a Tracker device silent activity in the chatter" width={1440} height={720} caption="A device on the demo, with the silent device to-do the fifteen-minute check created." />
+
+**Revoke** cuts a PC off: its next call is refused, the icon turns red and a toast tells the employee. Archiving an employee revokes all their devices automatically.
+
+## Updates and the local queue
+
+Once a day, and whenever Odoo demands a newer minimum version, the agent checks way4tech.com for a new release, downloads it, checks its SHA-256 and an Ed25519 signature, and installs it silently while nothing is syncing. An update address set in Odoo is accepted only over https and only for hosts on the agent's built-in list, so a compromised server cannot push its own installer.
+
+Rows wait in a local queue capped at 100 MB. A Wi-Fi drop, a server restart or a laptop closed overnight loses nothing: the agent retries with a back-off from five seconds to ten minutes. The device token sits in Windows Credential Manager, or encrypted for the user when that is unavailable, and Odoo keeps only its hash.
+
+## For IT: silent installs
+
+```
+WT-Tracker-Setup-1.1.3.exe /VERYSILENT
+"%LOCALAPPDATA%\Programs\WTTracker\WTTracker.exe" --pair ACME-7K3M-92QA --url https://erp.example.com
+"%LOCALAPPDATA%\Programs\WTTracker\WTTracker.exe"
+```
+
+The `--url` part is optional when the prefix is in the published table. Other switches include `--version`, `--quit` (stop cleanly with a final sync), `--unpair`, `--forget` (local only) and `--wipe-local-data`. Running a newer installer over an older one keeps the settings, queue and pairing. Uninstall stops the agent first and only removes the local data if the user says yes.

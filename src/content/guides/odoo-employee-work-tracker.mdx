@@ -1,0 +1,144 @@
+---
+title: "Odoo employee work tracker: see where the hours go, without keystrokes"
+metaTitle: "Odoo Employee Work Tracker: Overview"
+description: "Track work time in Odoo 19 with a Windows agent: apps and window titles to categories, effort, focus, tasks, timesheets and the attendance gap."
+targetQuery: "odoo employee work tracker"
+category: "Payroll and HR"
+summary: "WT Work Tracker for Odoo 19: a small Windows agent records which application is in front and whether the PC is in use, and Odoo turns it into effort, tasks, suggested timesheets and the gap against attendance. Never keystrokes."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-employee-work-tracker"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-employee-work-tracker.pdf"
+  pages: 45
+modules:
+  - name: "WT Work Tracker"
+    technical: "wt_work_tracker"
+    note: "USD 199, needs only Employees, Odoo 19 Community or Enterprise"
+  - name: "WT Work Tracker: Project"
+    technical: "wt_work_tracker_project"
+    note: "Free, installs itself when Project is present"
+  - name: "WT Work Tracker: Project Pro"
+    technical: "wt_work_tracker_project_pro"
+    note: "Free, installs itself with the Project bridge and Project Pro"
+  - name: "WT Work Tracker: Timesheets"
+    technical: "wt_work_tracker_timesheet"
+    note: "Free, installs itself with the Project bridge and Timesheets"
+  - name: "WT Work Tracker: Attendance"
+    technical: "wt_work_tracker_attendance"
+    note: "Free, installs itself when Attendances is present"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Work Tracker demo"
+related: ["odoo-hrms", "odoo-attendance-shifts-overtime", "odoo-employee-self-service", "odoo-project-management"]
+linkFrom: ["/modules/hr/", "/modules/timesheets/", "/modules/attendance/", "/modules/project/"]
+sources: []
+faqs:
+  - q: "Does the Odoo work tracker record keystrokes or screen content?"
+    a: "No. The agent records the name of the application in front, its window title, whether the PC is idle and a count of one-second checks that saw keyboard or mouse input. It never records what was typed, the clipboard, files or the screen. Screenshots exist only if the company turns them on, and the agent scales and blurs them on the PC before sending."
+  - q: "Which Odoo editions does it work with?"
+    a: "Odoo 19, Community or Enterprise. The core module needs only Employees. The four bridges for Project, Project Pro, Timesheets and Attendances install themselves when those apps are present."
+  - q: "Is there a Mac or Linux agent?"
+    a: "No. The agent is a Windows tray program. It installs per user without administrator rights and updates itself from way4tech.com after checking a signature."
+  - q: "Can a team lead see only their own team?"
+    a: "No. There are two levels: a User sees only their own activity and a Manager sees the whole company. There is no team level, so give the Manager level only to people who should see everyone."
+  - q: "What does it cost?"
+    a: "The core module is USD 199 on the Odoo App Store. The Project, Project Pro, Timesheets and Attendance bridges are free, and the Windows agent is a free download."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Ask a manager of office staff where last week's hours went and you usually get a guess. Timesheets are filled in on Friday from memory, attendance says when people badged in but not what they did, and the project that ran forty hours over budget only shows up when the invoice is short. A work tracker answers the question with data instead of memory. The hard part is doing it in a way your staff will accept, because the same tool that measures focus can easily turn into a camera over someone's shoulder.
+
+WT Work Tracker is built around that tension. A small Windows agent notes which application is in front and whether the PC is in use. Odoo turns that into categories, an effort score, focus sessions, effort per task, suggested timesheet lines and the gap against attendance. It never reads keystrokes, and the page a manager opens about an employee is exactly the page the employee sees about themselves. This guide explains what it does, who it suits, and how to set it up on Odoo 19. I'm Waqas Riasat, an independent Odoo developer in Lahore, and I wrote the module.
+
+## Who this is for
+
+- **Software, design and agency teams** who sell time and need to know which client and which task it went to.
+- **Back offices and support teams** where most work happens at a PC and the manager wants to see whether a day was spent in the ticket system or in a browser tab.
+- **Remote and hybrid teams** where attendance alone says little about the working day.
+- **HR teams** that already run Employees, Attendances and Timesheets in Odoo and want one more figure next to them, not another system.
+
+It is not for shop floors, drivers or field staff, and it is not a way to read someone's messages. If you need that, look elsewhere, and check your local law first.
+
+## What standard Odoo gives you
+
+Odoo 19 has the pieces around this question but not the answer. **Attendances** records check-in and check-out, from a kiosk, a badge or the employee's own button. **Timesheets** lets people book hours to tasks, typed in by hand or started with a timer they have to remember to press. **Project** holds tasks with allocated hours. None of them knows which application was open at 3 pm, whether the PC was in use, or how much of a booked hour was real work. Nothing classifies Excel as work and YouTube as not, and nothing proposes the timesheet for you.
+
+## What the work tracker adds
+
+There are two halves. The **agent** on each Windows PC samples the window in front every five seconds, joins the samples into segments and posts them to your Odoo once a minute, with a local queue so a Wi-Fi drop loses nothing. The **module** in Odoo holds everything else:
+
+1. **Invite and pairing.** One click on the employee form mails a link that pairs the agent without typing anything. A one-time code is the fallback.
+2. **Rules and categories.** Applications and window titles become Productive, Neutral or Distracting, by contains, equals or a regular expression. Eighteen starter rules cover editors, Office, Odoo in a browser, GitHub, Jira, Figma, meetings, video and social sites, games and the lock screen.
+3. **One summary per person per day.** Active, idle, productive, neutral and distracting time, an effort score in weighted hours, focus sessions of 25 minutes or more, and the first and last activity.
+4. **Pages people actually read.** My Activity shows one day hour by hour, Work History lines up weeks, and Team gives the manager a kanban, list, graph and pivot of everyone.
+5. **Privacy controls.** Consent before tracking, window titles on or off, screenshots off by default and blurred when on, retention periods, and a button for the employee to ask HR to delete a day.
+
+<Shot src="/odoo-guides/odoo-employee-work-tracker/my-activity.webp" alt="My Activity page in the Odoo work tracker for one employee on one day, with tiles for active, idle, productive, neutral and distracting time, effort and focus sessions, an hour by hour coloured timeline and time per application" width={1440} height={900} caption="My Activity for the demo's operations manager: 8:05 active, 7.08 hours of effort, lunch showing as idle." />
+
+The **effort score** is the figure that makes this more than a stopwatch. Each category has a weight between 0 and 1: productive counts in full, neutral counts half, distracting counts nothing. Six hours twenty of productive work, an hour and a half of neutral meetings and a quarter hour of distraction is 7.08 hours of effort out of 8:05 active. You set the weights, so a support team can count its chat tool as productive and a developer team can count it as half.
+
+<Shot src="/odoo-guides/odoo-employee-work-tracker/team-days.webp" alt="Team Days list in the Odoo work tracker with one row per employee per day showing active, productive and distracting hours, effort, focus sessions, attendance and gap" width={1440} height={600} caption="Team > Days: one line per person per day, with the attendance and gap columns from the Attendance bridge." />
+
+## The modules and prices
+
+| Module | Price | What it adds |
+|---|---|---|
+| WT Work Tracker (`wt_work_tracker`) | USD 199 | Everything above. Needs only Employees |
+| Work Tracker: Project | Free | Tasks on segments, the tray task list, task numbers from window titles, Working on this, effort per task |
+| Work Tracker: Project Pro | Free | A Tracked (h) column on Project Pro boards and effort on item pages |
+| Work Tracker: Timesheets | Free | Suggested timesheet lines from effort per task, rounded, never twice |
+| Work Tracker: Attendance | Free | Attendance hours next to tracked time, and the gap between them |
+
+The four bridges are set to install themselves. Install Project after the tracker and the Project bridge appears on its own. The Windows agent is a separate free download from way4tech.com; the invite mail links to it.
+
+## How a setup goes
+
+The order that works, and the chapter that covers each step:
+
+1. **Settings.** Keep the defaults to start: sample every 5 seconds, sync every 60, idle after 180, consent required, titles stored, screenshots off, segments kept 90 days. Edit the consent text to name your company and your reasons. See [privacy and settings](/odoo-guides/odoo-employee-monitoring-privacy-settings/).
+2. **Rules.** Read the eighteen starter rules and adjust them for the tools your people use. This is the most useful hour you will spend on the product.
+3. **Invite.** Every tracked employee needs a linked Odoo user, because the agent signs in as that user. Invite one person first, yourself ideally.
+4. **Install the agent.** The [desktop agent setup](/odoo-guides/odoo-work-tracker-windows-agent-setup/) chapter follows the installer, the invite link, consent and the tray menu step by step.
+5. **Read a day.** After an hour, open My Activity and check the classification. Mark what is wrong straight from the segment list. The [activity timeline and screenshots](/odoo-guides/odoo-employee-activity-timeline-screenshots/) chapter covers every screen.
+6. **Connect the rest.** If you run Project, Timesheets or Attendances, read [attendance and timesheets](/odoo-guides/odoo-tracked-time-attendance-timesheets/) and [Project and Project Pro](/odoo-guides/odoo-time-tracking-project-tasks/).
+
+<Shot src="/odoo-guides/odoo-employee-work-tracker/rules.webp" alt="Rules list in the Odoo work tracker with the eighteen starter rules matching window titles and application names to Productive, Neutral or Distracting categories" width={1440} height={680} caption="The starter rules, tried top to bottom. The first match wins, so YouTube in Chrome is distracting before the browser rule calls it productive." />
+
+## Who sees what
+
+There are two levels. A **User** sees their own segments, days, devices and screenshots and nothing else, enforced by record rules on every list. A **Manager** sees the whole company, invites people, pairs and revokes devices, writes rules and suggests timesheets. An Odoo administrator is a Manager automatically and is the only one who opens Settings. Nothing a User does can create or change activity: only a paired agent writes it.
+
+<Callout title="There is no team level">A Manager sees every employee of the company, not just their own department. If team leads should only see their own people, keep them at the User level and have HR share the figures. The module does not split visibility by department.</Callout>
+
+The employee keeps control on their own PC. The tray menu has Pause, a Private mode that ends by itself after 30 minutes (you set the length), Sync now, Settings with an Unpair button, and Quit. Every pause and quit is recorded as an event, so the dashboard shows the gaps honestly rather than hiding them.
+
+<Shot src="/odoo-guides/odoo-employee-work-tracker/tray-menu.webp" alt="WT Tracker tray menu on Windows with the current status, Working on, Pause tracking, Private mode, Open my dashboard, Sync now, Settings, Check for updates and Quit" width={320} height={265} caption="The agent's tray menu. Everything else lives in Odoo." />
+
+## The devices
+
+Every paired PC shows up under Configuration > Devices with its hostname, Windows version, agent version, last contact, the size of its unsent queue and whether consent is recorded. Revoke one and its next call is refused. A check every fifteen minutes flags a device that was tracking and has gone silent for two hours inside working hours, as a to-do for the employee's HR responsible, so a crashed agent or a dead network gets noticed the same afternoon.
+
+<Shot src="/odoo-guides/odoo-employee-work-tracker/devices.webp" alt="Devices list in the Odoo work tracker with four paired Windows laptops, their agent version, last seen time, queue size, consent recorded and active state with a revoke link" width={1440} height={260} caption="Four paired laptops on the demo, all with consent recorded." />
+
+## Limitations
+
+- **Windows only.** There is no Mac, Linux or phone agent.
+- **No web addresses.** The agent reads what a browser puts in its window title, not the URL.
+- **No team-level visibility.** Manager means the whole company.
+- **Effort, not proof.** A tracker measures the PC, not the work. Meetings, calls and thinking away from the screen land in idle time or the attendance gap. The idle prompt lets employees keep that time as work, and you should read the figures with it in mind.
+- **The rollup runs hourly.** Today's summary can be up to an hour behind the raw segments.
+
+## Try it
+
+The [Work Tracker demo](https://facility-demo.way4tech.com/) holds a working week for four demo employees, with their devices, pairing codes, segments and events. The shared demo login is a tracker User with no activity of its own, so ask us for a manager login to see the team screens. The full 45-page PDF guide below walks every screen, setting and scheduled action step by step. The other demos are listed on the [demos page](/demos/).
+
+## The chapters
+
+1. [Desktop agent setup](/odoo-guides/odoo-work-tracker-windows-agent-setup/): invite, install, pair, consent and the tray.
+2. [Activity timeline and screenshots](/odoo-guides/odoo-employee-activity-timeline-screenshots/): My Activity, Work History, segments, rules from the list, screenshots.
+3. [Attendance and timesheets from tracked time](/odoo-guides/odoo-tracked-time-attendance-timesheets/): the daily summary, the gap and suggested timesheets.
+4. [Project and Project Pro hooks](/odoo-guides/odoo-time-tracking-project-tasks/): tasks on segments, Working on this, tracked effort.
+5. [Privacy and settings](/odoo-guides/odoo-employee-monitoring-privacy-settings/): consent, titles, screenshots, retention and every setting.

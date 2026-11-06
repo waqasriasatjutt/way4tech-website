@@ -1,0 +1,101 @@
+---
+title: "Tracked time on Odoo project tasks and Project Pro boards"
+metaTitle: "Project and Project Pro Hooks"
+description: "Put a task on every tracked segment in Odoo 19: the tray task list, task numbers from window titles, Working on this, effort on tasks, projects and boards."
+targetQuery: "odoo automatic time tracking project tasks"
+category: "Payroll and HR"
+summary: "The Project bridge puts a task on tracked time from the tray, a window title rule or a button on the task; the Project Pro bridge shows tracked effort on the board and item pages."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-employee-work-tracker"
+seriesOrder: 4
+modules:
+  - name: "WT Work Tracker"
+    technical: "wt_work_tracker"
+    note: "USD 199, the core the bridges extend"
+  - name: "WT Work Tracker: Project"
+    technical: "wt_work_tracker_project"
+    note: "Free, installs itself with Project"
+  - name: "WT Work Tracker: Project Pro"
+    technical: "wt_work_tracker_project_pro"
+    note: "Free, installs itself with the Project bridge and Project Pro"
+demo:
+  url: "https://facility-demo.way4tech.com/"
+  label: "Work Tracker demo"
+related: ["odoo-employee-work-tracker", "odoo-project-management", "odoo-project-boards-timeline-workload", "odoo-tracked-time-attendance-timesheets"]
+linkFrom: ["/modules/project/"]
+sources: []
+faqs:
+  - q: "Which tasks does the tray offer?"
+    a: "Up to 30 tasks assigned to the employee that are not done or cancelled and not in a folded stage, soonest deadline first. Project's own access rules decide what the employee may see."
+  - q: "Can the tracker read a task number from the window title?"
+    a: "Yes. A rule with Task from title reads the number with a regular expression. The default expects T#123, and the starter Odoo rule reads the number an Odoo task page shows in its tab title. A number only lands on a task the employee is assigned to."
+  - q: "What does Working on this do?"
+    a: "It points your own active tracker devices at the task and posts a note on the task. The tray adopts it on its next sync, within about a minute by default."
+  - q: "Do I need Project Pro?"
+    a: "No. The Project bridge works with standard Odoo Project. The Project Pro bridge only adds the Tracked column and item page effort for teams that use Project Pro boards."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Knowing that someone spent six hours in Visual Studio Code tells you they worked. It does not tell you which client to bill or which feature ran over. For that, every stretch of tracked time needs a task. The Project bridge installs itself as soon as the work tracker and Odoo Project are both present, and gives a segment its task in three ways: the employee picks it in the tray, a rule reads it from the window title, or the employee presses a button on the task in Odoo. The Project Pro bridge then shows the result where Project Pro teams already work.
+
+## Three ways a segment gets a task
+
+| Source | How it works |
+|---|---|
+| The tray | Working on lists the employee's open tasks; the chosen task travels with every segment until changed |
+| A rule | Task from title reads a number out of the window title; Fixed task pins one task on whatever the rule matches |
+| Odoo | Working on this on a task points the employee's own tracker at it |
+
+Every change of task is recorded as a Task changed event, and with this bridge a focus session ends when the task changes, because switching task breaks concentration as much as switching to a video site.
+
+## Picking a task in the tray
+
+With the bridge installed, the agent's **Working on** submenu lists the employee's tasks: **No task (general work)**, **Recent**, one group per project, and **Search task**, a small window where typing filters and Enter picks.
+
+<Shot src="/odoo-guides/odoo-time-tracking-project-tasks/task-search.webp" alt="WT Tracker Working on search window on Windows with a filter box and a list showing No task and a demo task with its project" width={439} height={419} caption="Search task in the tray: type to filter, Enter to pick." />
+
+The list holds up to 30 tasks assigned to the employee, not done or cancelled and not in a folded stage, soonest deadline first. The agent refreshes it every five minutes and when the menu opens. Project's own access rules decide what is offered, and a task id the employee cannot see is dropped from what the agent sends. If the company turns on **Ask which task** in Settings, the agent also asks *Still on* the current task after the first activity of the day and after a break of half an hour or more.
+
+## Reading the task from the window title
+
+Many people already have the task in front of them: an Odoo task open in the browser, a branch or document named after the ticket. A rule with **Task from title** ticked reads the number out of the title with its **Task number expression**, a regular expression with exactly one group.
+
+<Shot src="/odoo-guides/odoo-time-tracking-project-tasks/task-rule.webp" alt="Rule form in the Odoo work tracker for Odoo in a browser, matching window titles containing Odoo to the Productive category, with Task from title ticked and a task number expression" width={1440} height={520} caption="The starter rule Odoo in a browser reads the task number an Odoo task page puts in its tab title." />
+
+The default expression is `\bT#(\d+)\b`, so the employee writes T#123 on purpose. A bare #123 is deliberately not used: GitHub issues, pull requests and phone numbers would hang time on whichever task happened to have that id. The starter Odoo rule uses `Odoo - .* #(\d+)`, and the GitHub and Jira starter rules use the T# form.
+
+A number from a title only lands on a task that exists in the same company and that the employee is assigned to. Anything else leaves the tray's own task in place. A **Fixed task** on a rule pins one task on every segment the rule matches that has no task of its own, useful for a tool that is only ever used for one internal project.
+
+## Working on this, from Odoo
+
+On every task form the header has **Working on this**; the task kanban card menu has it too, and so does the **Now working on** drop-down on My Activity.
+
+<Shot src="/odoo-guides/odoo-time-tracking-project-tasks/working-on-this.webp" alt="Odoo project task form for a demo helpdesk task with the Working on this button in the header, project, board, board status and assignee" width={1440} height={480} caption="Working on this on a task. The tray picks it up on its next sync." />
+
+Pressing it sets the task as current on all of your own active devices and posts a note on the task saying you started tracking it. The next sync answer carries the task and the tray adopts it, so the change reaches the PC within the sync interval, a minute by default. Without a paired device you get *No active tracker device is paired for your user. Install the agent and open your invite link first.*
+
+## Tracked effort on tasks and projects
+
+Once segments carry a task, the task form shows a **Tracked effort** smart button with the weighted hours, opening the task's active segments by date.
+
+<Shot src="/odoo-guides/odoo-time-tracking-project-tasks/tracked-effort.webp" alt="Odoo task form with a Tracked effort smart button showing 18.34 hours and the Working on this button, for a demo task with two assignees" width={1600} height={590} caption="Tracked effort on a task. Pictured on a test database; on the live demo no segment carries a task yet." />
+
+On the project form, managers get a project level **Tracked effort** button, which opens Tasks effort for that project, and a **Tracked vs planned** bar: tracked effort as a share of the tasks' allocated hours. Above 100 means more was tracked than planned; it is capped at 999 so one task with a tiny estimate does not break the bar.
+
+**Work Tracker > Team > Tasks effort** has one line per task, per employee, per day: task, project, time and effort, in pivot, graph and list, This month by default, grouped by task, project or employee. The same lines fill the day form's Tasks tab, Effort per task on My Activity and Tasks in this period on Work History. They are also what the Timesheets bridge turns into timesheet lines, covered in [attendance and timesheets](/odoo-guides/odoo-tracked-time-attendance-timesheets/).
+
+## Project Pro: effort on the board
+
+Teams that plan on Project Pro boards should not have to leave the board to see tracked time. When the Project bridge and Project Pro are both installed, the Project Pro bridge installs itself and adds three things.
+
+- **A Tracked (h) column** on every board, right after the planned hours, shown by default and hideable from the column picker. It is not summed in group totals, because the figure is computed per item rather than stored.
+- **The item dialog** shows Tracked effort (h) next to the allocated hours once the item has tracked segments, and a Working on this button in its row of actions.
+- **The full item page** has the same Tracked effort smart button as a plain task, and Working on this in its header.
+
+<Shot src="/odoo-guides/odoo-time-tracking-project-tasks/project-pro-item.webp" alt="Project Pro full item page in Odoo for a demo helpdesk item with the Working on this button in the header and project, board and board status fields" width={1440} height={480} caption="A Project Pro item page with Working on this. The Tracked effort button appears once segments carry the item." />
+
+Everything else, the tray list, the rules and Tasks effort, comes from the Project bridge, because a Project Pro item is an ordinary Odoo task. The [Project Pro boards guide](/odoo-guides/odoo-project-boards-timeline-workload/) covers the boards themselves.
+
+<Callout title="Tasks need assignees">The tray offers only tasks the employee is assigned to, and a title rule only lands on such a task. If your team works on tasks without being assigned, the tracker will not pick them up. Assign people first, or use a Fixed task on a rule.</Callout>

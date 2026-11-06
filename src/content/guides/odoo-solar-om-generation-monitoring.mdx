@@ -1,0 +1,98 @@
+---
+title: "Solar O&M in Odoo: maintenance contracts, visit schedules, the generation log and underperforming sites"
+metaTitle: "O&M Contracts and the Generation Log"
+description: "Run solar O&M contracts in Odoo: visit calendars, response times, guaranteed PR, completed and missed visits, and monthly generation against the design."
+targetQuery: "solar O&M contract management odoo"
+category: "Industry"
+summary: "After the handover in Solar Project Management: O&M contracts with their own visit calendar, fee, revenue per kWp and guaranteed performance ratio, visits that close with findings, and a monthly generation log that flags sites falling behind the design."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-solar-epc-project-management"
+seriesOrder: 4
+modules:
+  - name: "Solar Project Management"
+    technical: "wt_solar_epc"
+    note: "USD 349, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://solar-demo.way4tech.com/"
+  label: "Solar EPC demo"
+related: ["odoo-solar-epc-project-management", "odoo-solar-grid-connection-commissioning", "odoo-solar-pv-system-design-string-sizing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How are maintenance visits scheduled?"
+    a: "Activating an O&M contract spreads the number of visits per year evenly across the contract term. When cleaning is included, every other visit is a cleaning visit, because those need different kit."
+  - q: "Can a visit be closed without findings?"
+    a: "No. Completed is refused until the findings are written down, and a cleaning visit also needs the number of modules washed. A visit that did not happen is marked Missed with the reason."
+  - q: "How does the module decide a site is underperforming?"
+    a: "Each month's metered kWh is compared with what the design expects for that month. When the variance is worse than the underperformance threshold in Settings, 10 percent by default, the month is flagged and listed under Underperforming Sites until somebody marks it reviewed."
+  - q: "Does it read generation from the inverter automatically?"
+    a: "No. Monthly readings are entered or imported into the generation log. The module does not connect to inverter or monitoring portals."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A solar installer who hands over a system and walks away leaves money on the table and a customer with nobody to call. An operations and maintenance contract pays for scheduled visits, cleaning, string tests and a response time, and usually promises a performance ratio. The promise is only worth something if somebody compares the meter with the design every month. This chapter covers O&M contracts, maintenance visits and the generation log in Solar Project Management.
+
+## The O&M contract
+
+Operations and Maintenance, **O&M Contracts** (Design Engineers and Solar Managers). A contract can only be opened on a handed over job, and two contracts on one site cannot overlap.
+
+| Field | What it is for |
+|---|---|
+| Start and end | The term, in months |
+| Visits per year | How often a crew goes out |
+| Fee and billing | Monthly, quarterly or annually, giving the fee per period |
+| Revenue per kWp | What the book is worth per kilowatt under contract |
+| Response time | Hours to attend a fault |
+| Guaranteed PR | The performance ratio promised, against the PR measured from the generation log |
+| Cleaning, monitoring, spares | What the fee includes |
+
+The figures on the contract are worked out, not typed. The fee per period is the annual fee divided by twelve, four or one for monthly, quarterly or annual billing. Revenue per kWp is the annual fee over the contracted kWp, which is the number to compare across a portfolio: a 30 kWp school and a 400 kWp cold store can carry very different fees and still be priced the same way. The **measured PR** is the average performance ratio of the site's generation lines over the last twelve months, and when it falls below the guaranteed PR the contract is flagged with a **shortfall**. That flag is the conversation to have before the customer has it with you. The contract also counts visits done against visits still scheduled, so a quick look at the list shows which contracts are falling behind on attendance.
+
+<Shot src="/odoo-guides/odoo-solar-om-generation-monitoring/contract.webp" alt="Active O&M contract OMC/2026/0001 for Brackenridge Dairy: 168.3 kWp, 36 month term, four visits a year, 48 hour response, annual fee 1,935 pounds billed annually, revenue 11.50 per kWp, guaranteed PR 74 per cent against a measured 77.41, cleaning and monitoring included" width={1440} height={900} caption="An O&M contract: fee, response time and the performance guarantee." />
+
+**Activate** needs a fee and lays out the visit calendar: the visits per year spread evenly over the term, and with cleaning included, every other one a cleaning visit. **Renew** opens the next term starting the day after this one ends and expires the current one. **Expire** cancels the visits still scheduled. **Cancel** is refused once any visit has been done, so the history stays readable.
+
+<Shot src="/odoo-guides/odoo-solar-om-generation-monitoring/visit-schedule.webp" alt="Visit Schedule tab listing routine and cleaning visits spread across the contract term, with scheduled dates and states Done and Scheduled" width={1440} height={900} caption="The visit calendar laid out on activation." />
+
+## Maintenance visits
+
+Operations and Maintenance, **Maintenance Visits** lists every visit by date. A Site Technician sees the visits of their own crew. On the visit, record the crew, modules cleaned, whether the inverter was checked, connections torqued and a string test done, the PR measured, the **findings** and any action required.
+
+- **Completed** is refused without findings: a visit with no findings cannot be told apart from one that never happened. A cleaning visit also needs the modules washed. An action required becomes a to do on the job.
+- **Missed** needs the reason, because a missed visit on a contract with a performance guarantee is worth explaining.
+- **Put Back on the Schedule** returns a missed or cancelled visit.
+
+<Shot src="/odoo-guides/odoo-solar-om-generation-monitoring/visit-done.webp" alt="Completed maintenance visit with modules cleaned, inverter checked, connections torqued, string test done, measured PR and the findings: array washed, no cracked glass, one string three per cent low from soiling under the parapet" width={1440} height={900} caption="A completed visit closes with what was found." />
+
+A daily job, **maintenance visits coming up**, warns the account manager about visits inside the reminder days (7) and visits gone by, and can email the customer with the Maintenance Visit Due template. It ships switched off; switch it on once outgoing mail is set up.
+
+## The generation log
+
+Operations and Maintenance, **Generation Log**: one line per site per month with the metered kWh, and where available the month's irradiation and any downtime hours. Each line works out:
+
+- **Expected kWh.** With the month's irradiation entered: kWp times irradiation times the design's performance ratio and shading, which is seasonally fair. Without it: the annual estimate pro rated by the days in the month, which flatters summer and punishes winter.
+- **PR** and the **variance** against expected.
+- **Value saved** at the design's import rate.
+- **Underperforming** when the variance is worse than the threshold in Settings (10 percent by default).
+
+<Shot src="/odoo-guides/odoo-solar-om-generation-monitoring/generation-log.webp" alt="Generation Log list with site, month, metered kWh, irradiation, expected kWh, PR, variance and value saved, with two months flagged as underperforming" width={1440} height={900} caption="Metered against expected, every site, every month." />
+
+**Underperforming Sites** (engineers and managers) lists every flagged month nobody has looked at yet. On the demo, Millbeck Business Park dropped to 82 percent of its estimate for two months, with downtime logged. **Reviewed** clears it from the list once somebody has looked.
+
+<Shot src="/odoo-guides/odoo-solar-om-generation-monitoring/underperforming.webp" alt="Underperforming Sites list showing two months for Millbeck Business Park Unit 4 filtered on Not Looked At: August and September, metered 8,853 and 6,922 kWh against 10,795 and 8,440 expected, PR 62 per cent, variance minus 18 per cent" width={1440} height={900} caption="The sites falling behind what they were sold as making." />
+
+A weekly job, **sites generating below estimate**, raises flagged sites with the project manager and can email the customer with the Site Underperforming template. Like the visit reminders it ships switched off.
+
+<Callout title="Readings are entered, not fetched">
+The generation log takes readings typed in or imported each month. There is no connection to inverter or monitoring portals in this version.
+</Callout>
+
+## Why the comparison is honest
+
+Comparing a summer month with a twelfth of the annual estimate makes every site look brilliant in June and broken in December. That is why the log asks for the month's irradiation where you have it: with a measured irradiation figure, expected generation is the system size times that month's sunshine times the design's performance ratio, less shading, so a dull month is judged against a dull month. Where there is no irradiation figure the module falls back to the pro rated estimate, which is good enough to spot a broken site but not a slightly dirty one. Downtime hours and a note on each line record why a month was low, which is the first thing a customer asks when the O&M report lands.
+
+## Maintenance revenue
+
+Reporting, **Maintenance Revenue** is a pivot of the O&M contracts: fees and kWp under contract, the recurring side of the business. The jobs that feed it are covered from the start in the [hub guide](/odoo-guides/odoo-solar-epc-project-management/).

@@ -1,0 +1,100 @@
+---
+title: "Solar grid connection and commissioning in Odoo: net metering applications, string tests, handover and warranties"
+metaTitle: "Grid Connection, Commissioning, Warranties"
+description: "Track solar net metering applications in Odoo, commission every PV string against the design, hand over with a safety certificate and register warranties."
+targetQuery: "solar commissioning and net metering application odoo"
+category: "Industry"
+summary: "Grid applications with export caps and follow up dates, the commissioning test sheet laid out from the design with Voc tolerance and insulation floor from Settings, the handover checks, and the warranty register per component with claims."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-solar-epc-project-management"
+seriesOrder: 3
+modules:
+  - name: "Solar Project Management"
+    technical: "wt_solar_epc"
+    note: "USD 349, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://solar-demo.way4tech.com/"
+  label: "Solar EPC demo"
+related: ["odoo-solar-epc-project-management", "odoo-solar-project-stages-milestone-billing", "odoo-solar-om-generation-monitoring"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the module know when to chase the utility?"
+    a: "Each utility carries the number of days it usually takes to approve. A grid application's follow up date is the date it was lodged plus those days, so the list of applications past their follow up date is the chase list."
+  - q: "What makes a PV string pass commissioning?"
+    a: "The measured open circuit voltage must be within the Voc tolerance of the voltage the design expects (10 percent by default), the insulation resistance must be at or above the floor (1 Mohm by default), and polarity and earth continuity must be confirmed. Both limits are set in Settings."
+  - q: "Can a system be handed over without grid approval?"
+    a: "Not while Grid Approval Before Handover is on in Settings. Hand Over also needs a commissioned job and a passed test with the electrical safety certificate number recorded."
+  - q: "What warranties does the handover create?"
+    a: "One product warranty for each line of the parts list whose product carries warranty years, a performance warranty for the modules where the product has one, and the installer's workmanship warranty, five years by default. The inverter warranty carries the serial number from commissioning."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Two things stand between a finished array and a customer switching it on: the utility's permission to connect, and proof that every string is wired safely. The first is usually the longest wait on the job; the second is the record the customer's insurer asks for first. Then the system is handed over with warranties that run for different terms from different people. This chapter covers grid applications, commissioning, handover and the warranty register in Solar Project Management.
+
+## Utilities
+
+Configuration, **Utilities** holds each network operator or utility the business connects to: whether it offers net metering, the largest system it accepts, the export tariff (which the design's business case uses), the application fee, how many days it usually takes to approve, and whether it inspects before approving. The utility's stat button lists its applications.
+
+## Grid applications
+
+Compliance, **Grid Applications**. One application per request: grid connection, net metering or capacity upgrade.
+
+1. Pick the job and the utility, enter the utility's reference, the meter number (engineers and managers only), the sanctioned load and the **Export Applied For**, and the fee.
+2. **Lodge** it. An application with no export figure is refused, and so is one above the utility's maximum system size. The **follow up** date is the lodging date plus the utility's usual approval days.
+3. **Inspection Booked** records the inspection date.
+4. **Approved** needs the approval number, and where the utility inspects, the inspection first. An approved application ticks Grid Approved on the job.
+
+<Shot src="/odoo-guides/odoo-solar-grid-connection-commissioning/grid-applications.webp" alt="Grid Applications list filtered on With the Utility: three net metering applications to Pennine Vale Networks still submitted, with export applied for, date applied and follow up date, two of them past their follow up date" width={1440} height={900} caption="Applications still with the utility: the chase list." />
+
+When the utility says no, write its reason and press **Refused**. On the demo, Copperfield Retail Terrace was refused because the export was above the local transformer headroom, and the job was lodged again at 30 kW with an export limiter. **Withdraw** takes an application back.
+
+<Shot src="/odoo-guides/odoo-solar-grid-connection-commissioning/refused.webp" alt="Refused net metering application for Copperfield Retail Terrace with the rejection reason: export above the local transformer headroom, utility asks for an export limiter at 30 kW" width={1440} height={900} caption="Refused for transformer headroom, with the reason on file." />
+
+### Keeping the connection moving
+
+The connection is the longest pole on most jobs, so lodge the application the day the design is approved rather than when the crew is booked. The Grid Connection stage of the job will not let it move on until a grid connection approval document is approved on its Documents tab, and the application itself records the fee and whether it has been paid, the inspection date and the approval number. Because every application carries its follow up date, a filter on applications still submitted past that date gives the office its chase list each morning. If the utility caps exports, the cap on the utility record stops an application being lodged above it, which saves a refusal weeks later.
+
+## Commissioning
+
+Compliance, **Commissioning**. Pick the job, the date and the crew, and press **Open Test Sheet**. The sheet is laid out from the approved design: one row per string, each with the open circuit voltage it should read. A design with no strings laid out cannot be tested, because the tester would have nothing to compare against.
+
+On each row, enter the measured Voc and Isc, the insulation resistance, and confirm polarity and earth continuity. A row passes when:
+
+- the measured Voc is within the **Voc Tolerance** of the expected figure (10 percent by default);
+- the insulation is at or above the **Minimum Insulation** (1 Mohm by default);
+- polarity and continuity are confirmed.
+
+A failing row says why. Both limits are in Settings, so the office can follow its own wiring rules without a developer.
+
+<Shot src="/odoo-guides/odoo-solar-grid-connection-commissioning/test-sheet.webp" alt="Passed commissioning test COM/2026/0001 with one row per string giving expected and measured open circuit voltage, short circuit current, insulation in Mohm, polarity and continuity ticked, every row passed" width={1440} height={900} caption="The test sheet: every string against the design." />
+
+The AC side tab takes the AC voltage, frequency, earth resistance, whether the RCD was tested, the inverter serial and the yield on the day of energising. The Certificate tab takes the electrical safety certificate number and date and who certified it. **Pass** is refused while any string has not passed, without the certificate number, or with the AC side unmeasured. **Fail** needs a written failure note so the crew going back knows where to look.
+
+<Shot src="/odoo-guides/odoo-solar-grid-connection-commissioning/failed.webp" alt="Failed commissioning test for Elmcroft Care Home with one string reading 22 per cent low on Voc and another at 0.6 Mohm insulation, and the failure note describing a connector not seated and water in a junction box" width={1440} height={900} caption="A failed test with the reason written down." />
+
+When a test has passed, **Commissioned** on the job moves it to Commissioned. A passed test cannot be reset to draft, and once the job is handed over it cannot be failed either; a fault after handover is a warranty claim. **Print Certificate** prints the commissioning certificate with the readings.
+
+## Handover
+
+**Hand Over** checks three things: the job is commissioned, a passed test carries an electrical safety certificate number, and, with **Grid Approval Before Handover** on, the job has an approved grid application. It then moves the job to Handed Over at the closing stage and registers the warranties. **Print Handover Pack** prints the handover document.
+
+## The warranty register
+
+Compliance, **Warranty Register**. Handover opens:
+
+- a **product** warranty for every parts list line whose product carries warranty years (modules, inverters, mounting, protection, meter), with the quantity and term;
+- a **performance** warranty for the modules where the product has performance warranty years;
+- the installer's **workmanship** warranty, five years by default from Settings.
+
+The inverter warranty carries the serial number from commissioning, because no manufacturer opens a case without one. Each warranty shows its end date, days left and status.
+
+<Shot src="/odoo-guides/odoo-solar-grid-connection-commissioning/warranties.webp" alt="Warranty Register listing product warranties for modules, inverters, mounting, protection and meter, performance warranties for the modules and five year workmanship warranties, with start, end, days left and status" width={1440} height={900} caption="One warranty per component, each with its own term." />
+
+To claim, enter the manufacturer's case reference and press **Log a Claim**. An inverter claim needs the serial; an expired warranty cannot be claimed against. A weekly job refreshes the status of every warranty on handed over jobs and puts a to do on any expiring within 60 days that has no claim, so the customer hears before the cover runs out.
+
+Warranty claims and the commissioning record work together. Because the test sheet is kept against the job, a fault reported in year three can be compared with the voltage and insulation each string showed on the day it was energised, which is usually the quickest way to tell a component failure from a wiring problem.
+
+What happens after handover, maintenance contracts and the generation log, is in the [O&M chapter](/odoo-guides/odoo-solar-om-generation-monitoring/).

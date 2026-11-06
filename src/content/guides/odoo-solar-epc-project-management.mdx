@@ -1,0 +1,119 @@
+---
+title: "Solar EPC project management in Odoo: survey, design, grid connection, commissioning and O&M"
+metaTitle: "Solar EPC Project Management in Odoo"
+description: "Run solar EPC jobs in Odoo 19: site survey, string sizing, yield and payback, milestone billing, grid applications, commissioning, warranties and O&M."
+targetQuery: "solar EPC project management software odoo"
+category: "Industry"
+summary: "How a solar installer runs a job in Odoo with our Solar Project Management module: survey, design with string sizing and payback, the stage gate, milestone billing, grid connection, commissioning, warranties, O&M contracts and the generation log."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-solar-epc-project-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-solar-epc-project-management.pdf"
+  pages: 27
+modules:
+  - name: "Solar Project Management"
+    technical: "wt_solar_epc"
+    note: "USD 349, runs on Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://solar-demo.way4tech.com/"
+  label: "Solar EPC demo"
+related: ["odoo-solar-pv-system-design-string-sizing", "odoo-solar-project-stages-milestone-billing", "odoo-solar-grid-connection-commissioning", "odoo-solar-om-generation-monitoring"]
+linkFrom: ["/industries/solar-epc/", "/solutions/solar-epc/", "/products/wt-solar-epc/"]
+sources: []
+faqs:
+  - q: "Does Odoo have a solar EPC module?"
+    a: "Standard Odoo has Project, Inventory and Invoicing but nothing that knows about strings, yield, net metering or commissioning. Our Solar Project Management module adds a Solar EPC app to Odoo 19 Community that runs a job from the site survey to the monthly meter readings."
+  - q: "Can it size strings against the inverter?"
+    a: "Yes. Size Strings raises the module's open circuit voltage to the coldest cell temperature set in Settings, picks the longest string that stays inside the inverter's maximum DC voltage, spreads the modules over the fewest strings and assigns them to the MPPT inputs, flagging any string over voltage or over current."
+  - q: "How is the payback worked out?"
+    a: "Year by year over the assumed lifetime: the yield falls by the degradation rate, the tariff rises by the escalation rate, the self consumed share is valued at the import rate and the exported share at the utility's export tariff. Payback is the year the running saving passes the price less any incentive."
+  - q: "Does it connect to inverter monitoring portals?"
+    a: "No. Monthly meter readings are entered or imported into the generation log, which compares them with the design and flags any site that falls further behind than the threshold in Settings."
+  - q: "Can a job skip a stage without its paperwork?"
+    a: "Not while the stage gate is on. Each of the nine stages names one document, and a job cannot leave a stage, by button or by dragging the card, until that document is approved. Every stage jumped over is checked too."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+A solar job is sold on one spreadsheet and built from another. The design engineer's string calculation lives on a laptop, the price lives in an email, the grid application lives on the utility's portal, the commissioning readings are on a sheet in the van, and the meter readings that would show whether the site is making what it was sold as making are nowhere at all. When a customer calls in year two because the system feels low, nobody can put the design, the test sheet and the generation side by side. This guide shows how a solar installer or EPC contractor runs the whole job in Odoo 19 with our Solar Project Management module.
+
+## What a solar EPC job involves
+
+An EPC contractor takes a system from an empty roof to a certified, metered installation and often looks after it for years afterwards. The work splits into nine stages, and each one ends with a piece of paper:
+
+| Stage | What happens | What proves it |
+|---|---|---|
+| Survey | Area, obstructions, orientation, tilt, shading, structure, a year of bills | Site survey report |
+| Design | Module and inverter, strings, yield, price | Single line diagram |
+| Permit Application | Building or roof permit where the site needs one | Permit |
+| Grid Connection | Connection or net metering application to the utility | Grid approval |
+| Procurement | Materials bought and called off to site | Supplier purchase order |
+| Installation | The crew builds | Installation photographs |
+| Inspection | Somebody checks it | Inspection report |
+| Commissioning | Every string measured, the system energised | Electrical safety certificate |
+| Handover | Warranties and documents to the customer | Handover certificate |
+
+## What standard Odoo does
+
+Odoo Project can hold the stages and Inventory can move the panels, but neither knows what a string is, what a performance ratio means or why a voltage reading on a cold morning matters. Offices that try to make standard Odoo fit end up with a project per job, a spreadsheet per design and a folder of PDFs per commissioning. What Odoo does give you underneath is what this module builds on: products and the warehouse for components, Invoicing for milestone bills, activities for the to do list and the chatter for the audit trail. The [inventory overview](/modules/inventory/) and [accounting overview](/modules/accounting/) cover what ships.
+
+## How the module fits together
+
+[Solar Project Management](https://apps.odoo.com/apps/modules/19.0/wt_solar_epc) (USD 349) runs on Odoo 19 Community and installs Inventory and Invoicing. It adds one app, **Solar EPC**, with Delivery, Compliance, Operations and Maintenance, Billing, Reporting and Configuration menus.
+
+1. **Configure.** Modules and inverters are ordinary products with a Solar tab carrying their electrical data. Utilities hold the export cap, the export tariff, the application fee and how long they usually take; incentive schemes pay per kWp, as a percentage or a fixed amount within a size range; crews carry their daily capacity and an accreditation that expires.
+2. **Settings.** Default irradiation and performance ratio, degradation, tariff escalation, lifetime and the grid carbon factor for the business case; the coldest cell temperature for string sizing; the Voc tolerance and insulation floor for commissioning; and three switches: structural note required, the stage gate, and grid approval before handover.
+3. **Survey and design.** The survey gives the usable area and a rough system size; the design sizes the strings, works out the yield, builds the parts list, prices the job and walks the payback.
+4. **Contract.** Send Proposal, then Contract Signed against a payment schedule that has to add up to exactly 100 percent. The target handover date comes from the stage durations.
+5. **Build.** Grid application, materials, the daily site diary, then commissioning string by string.
+6. **Hand over and after.** Warranties per component, an O&M contract with its visit calendar, and the monthly generation log against the design.
+
+<Shot src="/odoo-guides/odoo-solar-epc-project-management/projects-board.webp" alt="Solar EPC project board with columns for Survey, Design, Permit Application, Grid Connection, Procurement and Installation, each card showing the job number, customer, system size in kWp, contract value, installation progress and a Late tag on one job" width={1440} height={900} caption="The project board: every job by stage, with size, value and progress." />
+
+### The design carries the sale
+
+The design holds the module and the inverter as real products, so the strings are sized against the inverter's DC window at the coldest morning the site sees, and the yield is stated plainly: system size times irradiation times performance ratio, less the shading measured on the survey. The business case walks every year of the system's life rather than dividing the price by the first year's saving.
+
+<Shot src="/odoo-guides/odoo-solar-epc-project-management/design-yield.webp" alt="Approved system design DES/2026/0001 for Brackenridge Dairy: 168.3 kWp, annual yield 140,722 kWh, specific yield 836 kWh per kWp, bill offset 84 per cent, quoted price 119,710 pounds, incentive 10,098, net investment 109,612, annual saving 26,174 and payback 3.92 years" width={1440} height={900} caption="Yield and the business case on an approved design." />
+
+### Commissioning that means something
+
+The commissioning test sheet is laid out from the approved design, one row per string with the voltage it should read. A string passes when the measured open circuit voltage is within the tolerance in Settings, the insulation is above the floor, and polarity and earth continuity are confirmed. Nothing is handed over until every string has passed and the safety certificate number is recorded.
+
+<Shot src="/odoo-guides/odoo-solar-epc-project-management/commissioning.webp" alt="Passed commissioning test with one row per string showing expected and measured open circuit voltage, short circuit current, insulation resistance, polarity and continuity, all passed" width={1440} height={900} caption="Every string measured against what the design said." />
+
+### After the handover
+
+Hand Over opens a warranty for each component on the parts list, a performance warranty for the modules and the installer's own workmanship cover. An O&M contract lays out its visits across the term, and a monthly generation line per site compares the meter with the design, flagging any site that falls further behind than the threshold.
+
+<Shot src="/odoo-guides/odoo-solar-epc-project-management/generation.webp" alt="Generation log with one line per site and month showing metered kWh, irradiation, expected kWh, performance ratio, variance and an underperforming flag on two months" width={1440} height={900} caption="The generation log: metered against expected, month by month." />
+
+### Who sees what
+
+Three roles keep the money where it belongs. A **Site Technician** sees the jobs, daily reports, maintenance visits and commissioning tests of their own crew and builds from the array, the strings and the parts list, without contract values, costs or prices. A **Design Engineer** sees every job, designs and prices them, runs the payment schedule and the O&M contracts. A **Solar Manager** also sees margins, project costs and reporting, and owns the configuration.
+
+## Limitations
+
+We would rather you read these before you buy:
+
+- **No drawing or shading model.** Area, obstructions and shading loss come from the survey; layout drawings and shading studies are filed as documents.
+- **No monitoring connection.** Meter readings are entered or imported; the module does not read inverter or monitoring portals.
+- **Applications are recorded, not filed.** The grid application holds the dates, fee and approval number; lodging it with the utility is still done on the utility's own portal.
+- **Call Off Materials fails in this version.** The button that creates the delivery to site stops with an error on Odoo 19, so the delivery is created in Inventory by hand until the fix ships.
+- **No customer portal, no battery sizing.** Customers do not log in, and a battery can go on the parts list by hand but is not sized by the design.
+- **Two mail jobs ship switched off.** Maintenance visit reminders and the underperforming site review are scheduled actions to switch on once outgoing mail is set up.
+
+<WhenLive slug="odoo-solar-pv-system-design-string-sizing">
+
+## The chapters
+
+Each part of the job has its own chapter: [survey, string sizing, yield and payback](/odoo-guides/odoo-solar-pv-system-design-string-sizing/), [stages, the stage gate, milestone billing and the site diary](/odoo-guides/odoo-solar-project-stages-milestone-billing/), [grid connection, commissioning, handover and warranties](/odoo-guides/odoo-solar-grid-connection-commissioning/), and [O&M contracts and the generation log](/odoo-guides/odoo-solar-om-generation-monitoring/).
+
+</WhenLive>
+
+## Where to go from here
+
+The full step by step PDF guide, with a screenshot for every step, a fifteen minute demo script and a menu map, is linked at the top of this page. The live demo runs an invented installer in Preston with ten jobs at every stage and up to ten months of meter readings, and the [demos page](/demos/) lists it with the others. For the industry overview see [solar EPC](/industries/solar-epc/), and if you want your component list, stages and utility rules set up and your team trained, [get in touch](/contact/).

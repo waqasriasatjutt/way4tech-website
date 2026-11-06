@@ -1,0 +1,105 @@
+---
+title: "Solar PV system design in Odoo: site survey, string sizing, yield, parts list and payback"
+metaTitle: "Survey, String Sizing, Yield and Payback"
+description: "Survey a roof in Odoo, size PV strings against the inverter at the coldest morning, work out yield and payback year by year, and build the parts list."
+targetQuery: "solar pv string sizing and payback calculation odoo"
+category: "Industry"
+summary: "The survey and the system design in Solar Project Management: usable area and rough size, the bills, the structural sign off, string sizing against the inverter's DC window, the yield formula, the parts list and price, the payback walk and revisions."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-solar-epc-project-management"
+seriesOrder: 1
+modules:
+  - name: "Solar Project Management"
+    technical: "wt_solar_epc"
+    note: "USD 349, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://solar-demo.way4tech.com/"
+  label: "Solar EPC demo"
+related: ["odoo-solar-epc-project-management", "odoo-solar-project-stages-milestone-billing", "odoo-solar-grid-connection-commissioning"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Why are strings sized at the coldest temperature?"
+    a: "A module's open circuit voltage rises as the cells get colder. The design raises the datasheet Voc to the coldest cell temperature set in Settings (minus 5 degrees by default) using the module's temperature coefficient, so no string exceeds the inverter's maximum DC voltage on a frosty morning."
+  - q: "How does the module estimate annual yield?"
+    a: "System size in kWp times the irradiation in kWh per square metre a year times the performance ratio, less the shading loss measured on the survey. There is no weather model; the figures are stated plainly so a customer can check them."
+  - q: "Does rebuilding the parts list wipe lines I added?"
+    a: "No. Rebuild Parts List replaces only the generated lines: modules, inverters, one mounting set per module, DC cable, one protection set per inverter and the meter. Lines added by hand are left alone."
+  - q: "Can an approved design be changed?"
+    a: "Not directly. New Revision copies it as the next revision in draft and supersedes the approved one once the new revision is approved. Approving a design also sets the job's contract value from its quoted price."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The design is where a solar job is won or lost. A customer compares the price per watt peak with the quote next door, reads the payback, and decides. If the strings were sized on the datasheet voltage instead of the cold morning voltage, the inverter trips in January. If the payback was a flat divide, the customer's own spreadsheet will catch it. In Solar Project Management the survey and the design are two records on the job that do this arithmetic the same way every time. This chapter walks both.
+
+## The site survey
+
+Delivery, **Site Surveys**. A survey belongs to a job and records three things.
+
+**The roof.** Mounting (roof, ground, carport or facade), roof type (reinforced concrete, metal sheet, tiled pitch, flat membrane, asbestos sheet, ground screw or ballasted), the **area** and the percentage taken by **obstructions**. The survey works out the usable area and the rough size it fits, using the area per kWp in Settings (6.5 square metres by default). Orientation is 0 to 360 degrees, tilt 0 to 90, and the measured shading loss a percentage.
+
+**The bills.** Annual consumption, peak demand, the **import rate**, single or three phase supply, the meter number and the cable run to the panel. Without the consumption and the tariff there is no honest savings figure.
+
+**The structure.** Structure Signed Off, the engineer and a structural note. With Structural Note Required on in Settings, **Sign Off** is refused without the note.
+
+<Shot src="/odoo-guides/odoo-solar-pv-system-design-string-sizing/survey.webp" alt="Completed site survey SUR/2026/0001 for Brackenridge Dairy: roof mounted on reinforced concrete, 1,250 square metres with 12 per cent obstructions, 1,100 usable, fits about 169 kWp, orientation 172 degrees, tilt 10, shading loss 2 per cent, three phase supply, 168,000 kWh a year at 0.24 pounds" width={1440} height={900} caption="The survey: usable area and the size it fits." />
+
+**Design From This** on a signed off survey opens a new design with the shading, import tariff and cable run filled in from it.
+
+## Module, inverter and the array
+
+On the design, pick the module and the module count, the inverter and the inverter count. Both are products whose Solar tab carries the electrical data: watt peak, Voc, Vmp, Isc, the Voc temperature coefficient and the area for a module; AC kW, maximum DC voltage, MPPT inputs and maximum current per input for an inverter. The design shows:
+
+| Figure | Worked out as |
+|---|---|
+| System Size (kWp) | module count times module watt peak |
+| AC capacity (kW) | inverter count times inverter kW |
+| DC/AC ratio | kWp over AC capacity |
+| Array area | module count times module area |
+| Area fits | array area no more than the survey's usable area |
+
+A design whose array does not fit the usable area cannot be approved.
+
+## Size Strings
+
+Press **Size Strings**. The module's Voc is raised to the **coldest cell temperature** in Settings using its temperature coefficient. The longest string that stays under the inverter's maximum DC voltage at that voltage is taken, the fewest strings that hold every module are laid out, the modules are spread evenly so no string is a stub, and the strings are assigned across the MPPT inputs of all the inverters.
+
+<Shot src="/odoo-guides/odoo-solar-pv-system-design-string-sizing/array.webp" alt="Array tab of design DES/2026/0001: 306 modules of 550 Wp, three 50 kW inverters, 150 kW AC, DC/AC ratio 1.12, array area 789 square metres, and the strings list with MPPT input, modules per string, Voc at minimum temperature and the inverter limit" width={1440} height={900} caption="306 modules on three inverters, strings sized at the cold morning voltage." />
+
+Each string row shows its Voc at the minimum temperature, its Vmp, the inverter's voltage and current limits and the current on its input (parallel strings add up), and flags **over voltage** or **over current**. A string can be edited by hand, but the strings must add up to the module count or the design is refused. A module and inverter pair where even two modules exceed the input voltage is refused outright.
+
+## Yield and the business case
+
+**Annual Yield** is system size times irradiation (from an atlas, 1,080 kWh per square metre a year by default) times the performance ratio (0.78 by default), less the shading loss. The design also shows the **specific yield** in kWh per kWp and the **bill offset**, the share of the customer's consumption it covers.
+
+The business case walks every year of the assumed lifetime (25 years by default):
+
+1. the yield falls by the degradation rate each year (0.55 percent);
+2. the import tariff rises by the escalation rate (5 percent);
+3. the self consumed share (70 percent by default) is valued at the import rate, and the exported share at the utility's export tariff where it offers net metering;
+4. the **incentive** is worked out from the scheme: per kWp, a percentage of the price or a fixed amount, inside the scheme's size range and dates;
+5. **payback** is the point where the running saving passes the price less the incentive.
+
+<Shot src="/odoo-guides/odoo-solar-pv-system-design-string-sizing/yield.webp" alt="Yield and Savings tab: irradiation 1,080, performance ratio 0.79, shading 2 per cent, annual yield 140,722 kWh, specific yield 836, bill offset 84 per cent, import rate 0.24, self consumption 70 per cent, Commercial Rooftop Grant 10,098, net investment 109,612, annual saving 26,174, payback 3.92 years and lifetime saving" width={1440} height={900} caption="Yield, the incentive and a payback walked year by year." />
+
+The lifetime saving, lifetime yield and the **CO2 avoided** (lifetime yield times the grid carbon factor in Settings) complete it, which is what public sector tenders tend to ask for.
+
+<Callout title="No weather model">
+The yield is irradiation times performance ratio times size, less shading. There is no hourly simulation behind it. That is deliberate: the figures are stated plainly enough that a customer can check them.
+</Callout>
+
+## The parts list and the price
+
+Press **Rebuild Parts List**. It writes the generated lines from the design: the modules, the inverters, one mounting set per module, DC cable for the cable run there and back on every string plus the jumpers between modules, one protection set per inverter and one export meter, each at the product's cost price. Lines added by hand are marked manual and survive a rebuild.
+
+<Shot src="/odoo-guides/odoo-solar-pv-system-design-string-sizing/parts-list.webp" alt="Parts List tab of design DES/2026/0001 with generated lines for 306 modules of 550 Wp, three 50 kW inverters, mounting sets, DC cable, protection sets and the export meter, each with quantity, unit cost, subtotal and the source From the Design" width={1440} height={900} caption="The parts list generated from the design, each line at cost." />
+
+Labour cost and the overhead percentage give the **estimated cost**. Enter the **Quoted Price** and the margin and the **price per Wp** appear. Costs, prices and margins are hidden from Site Technicians, who see the array, the strings and the parts list they build from.
+
+## Review, approval and revisions
+
+**Send for Review** needs a parts list and a price. **Approve** makes this the design the job is built to: an earlier approved design on the job is superseded, and the job takes the design and its quoted price as the contract value. **Reject** sends it back. An approved design cannot be resized, have its parts list rebuilt or be reopened; **New Revision** copies it as the next revision in draft. **Print Proposal** prints the customer proposal with the system, the yield and the business case.
+
+The contract, the stage gate and the payment schedule that follow are in the [stages and milestone billing chapter](/odoo-guides/odoo-solar-project-stages-milestone-billing/).

@@ -1,0 +1,95 @@
+---
+title: "Solar installation project management in Odoo: stage gates, milestone billing, documents and the site diary"
+metaTitle: "Stages, Milestone Billing and Site Diary"
+description: "Run solar installation jobs in Odoo through nine gated stages, bill by milestones that add up to 100 percent, file permits and keep a daily site diary."
+targetQuery: "solar installation project management odoo"
+category: "Industry"
+summary: "The job in Solar Project Management: commercial states and the nine delivery stages, the document gate that cannot be dragged past, the proposal and contract, a payment schedule invoiced from triggers, project documents with expiry, and the daily site report."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-solar-epc-project-management"
+seriesOrder: 2
+modules:
+  - name: "Solar Project Management"
+    technical: "wt_solar_epc"
+    note: "USD 349, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://solar-demo.way4tech.com/"
+  label: "Solar EPC demo"
+related: ["odoo-solar-epc-project-management", "odoo-solar-pv-system-design-string-sizing", "odoo-solar-grid-connection-commissioning"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a project manager skip a stage by dragging the card?"
+    a: "No, while Enforce the Stage Gate is on in Settings. The check runs on every stage change, button or drag, and checks the document of every stage being jumped over as well as the one being left. Moving a job backwards is always allowed."
+  - q: "What happens if the payment schedule does not add up to 100 percent?"
+    a: "Contract Signed is refused until the milestone shares add up to exactly 100 percent, and a schedule over 100 percent is refused as soon as it is saved."
+  - q: "How are milestone invoices created?"
+    a: "From the milestone line on the job or under Billing, Payment Schedule. The invoice is an ordinary Odoo customer invoice for the milestone's share of the contract value, on the milestone product set in Settings, with its taxes mapped through the customer's fiscal position."
+  - q: "Can site staff see the contract value?"
+    a: "No. Site Technicians see the jobs, site reports, visits and tests of their own crew, but contract values, costs, prices and the payment schedule are limited to Design Engineers and Solar Managers."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Between a signed design and a switched on system sit three months of permits, deliveries, crews, weather and invoices. The jobs that go wrong are the ones where the installation started before the structure was signed off, or the third invoice went out before the materials arrived, or nobody can say what happened on site last Tuesday. Solar Project Management runs each job as one record that moves through a commercial state and nine delivery stages, with a document gate on every stage, a payment schedule tied to what has happened, and a site diary per crew per day.
+
+## Two tracks on one job
+
+Delivery, **Projects** opens on a board with a column per stage, filtered on Live Jobs. Each card shows the job, the customer, the size in kWp, the contract value, installation progress and the next activity, with a red **Late** tag when today is past the target handover.
+
+<Shot src="/odoo-guides/odoo-solar-project-stages-milestone-billing/board.webp" alt="Project board with Survey, Design, Permit Application, Grid Connection, Procurement and Installation columns, cards for the live jobs with kWp, value and progress, one tagged Late" width={1440} height={900} caption="The board: live jobs by stage." />
+
+The commercial state runs alongside the stage:
+
+| State | Button | Needs |
+|---|---|---|
+| Scoping | creating the job | nothing |
+| Quoted | Send Proposal | an approved design |
+| Contract Signed | Contract Signed | approved design, contract value, schedule adding up to 100 percent |
+| On Site | Start on Site | a signed contract and a crew |
+| Commissioned | Commissioned | a passed commissioning test |
+| Handed Over | Hand Over | safety certificate, and grid approval if the setting is on |
+| Cancelled | Cancel | no milestone invoiced, not handed over |
+
+Contract Signed sets the **target handover** from the target days of the stages still ahead, and the crew days needed on the job are the system size over what the crew puts up in a day.
+
+## The stage gate
+
+The nine stages are Survey, Design, Permit Application, Grid Connection, Procurement, Installation, Inspection, Commissioning and Handover. Each names one document: the site survey report, the single line diagram, the permit, the grid connection approval, a supplier purchase order, installation photographs, an inspection report, the electrical safety certificate and the handover certificate.
+
+With **Enforce the Stage Gate** on, a job cannot leave a stage until that document is filed and approved on its Documents tab. The check sits on the stage change itself, so pressing **Next Stage** and dragging the card on the board are treated the same, and every stage jumped over is checked too. A card dragged from Survey to Installation asks for the documents of all five stages it would pass. Moving backwards is always allowed.
+
+<Shot src="/odoo-guides/odoo-solar-project-stages-milestone-billing/documents.webp" alt="Documents tab on a handed over job listing the approved site survey report, single line diagram, permit, grid approval, purchase order, installation photographs, inspection report, safety certificate and handover certificate, each with its stage, reference, issuer and date" width={1440} height={900} caption="One approved document per stage." />
+
+Project documents (Compliance, Project Documents) have seventeen types, from the survey report to warranty packs and incentive claims. Each has the stage it opens, the issuer's reference, issue and expiry dates, an attachment, and a state: **Submit**, **Approve**, or **Reject** with a reason. An expired document cannot be approved, and a weekly job puts a to do on approved documents expiring within 30 days on jobs still open.
+
+## Proposal and contract
+
+**Send Proposal** on a job with an approved design moves it to Quoted and queues the Proposal Sent email if the customer has an address. The proposal itself prints from the design. Before **Contract Signed**, break the contract into milestones on the **Payment Schedule** tab: each line has a trigger (on signing, on design approval, on permit granted, on material delivery, on installation complete, on commissioning, on handover), a share and a due date. The amount is the share of the contract value. The shares must add up to exactly 100 percent.
+
+<Shot src="/odoo-guides/odoo-solar-project-stages-milestone-billing/payment-schedule.webp" alt="Payment Schedule tab with four milestones: deposit on signing 20 per cent, materials delivered 40 per cent, installation complete 25 per cent, commissioning and handover 15 per cent, each with amount, due date and state Paid" width={1440} height={900} caption="Four milestones adding up to 100 percent, all paid." />
+
+## Invoicing milestones
+
+A daily job moves pending milestones whose due date has arrived to **Due**, on signed, on site and commissioned jobs, and leaves the project manager a to do to check that the trigger really happened. **Mark Due** does it by hand. **Invoice** raises an Odoo customer invoice for the milestone amount, on the milestone product from Settings, with its taxes mapped through the customer's fiscal position, in the company currency. A job still scoping or quoted cannot be invoiced. The same daily job marks a milestone **Paid** once its invoice is posted and paid in Accounting. On the job, invoiced and still due add up against the contract value.
+
+<Callout title="Cancelling a job with invoices">
+A job with milestone invoices raised cannot be cancelled until those invoices are credited in Accounting, and a handed over job cannot be cancelled at all, because the certificates and warranty register refer to it.
+</Callout>
+
+## On site
+
+**Start on Site** needs a signed contract and a crew. From then on the crew supervisor files a **daily site report**: date, crew, weather (clear, overcast, rain, high wind, extreme heat, frost), headcount and hours on site, modules installed, what was done, what is holding the crew up, and any safety incident. A report counts once it is **Signed Off**, and the job rolls the signed off reports into modules installed and installation progress against the design. The modules on all reports cannot add up to more than the design's module count.
+
+<Shot src="/odoo-guides/odoo-solar-project-stages-milestone-billing/site-report.webp" alt="Daily site report for a crew: clear weather, headcount 4, eight hours, modules installed, the work done on the east bank and a note that the crew was waiting on the crane slot" width={1440} height={900} caption="A day on site: who, what went up, what held them up." />
+
+**Call Off Materials** is meant to create the delivery from the job's warehouse with every stocked line of the parts list. In this version it stops with an error on Odoo 19, so the delivery is created in Inventory by hand for now.
+
+## Costs and margin
+
+Costs are booked on the job's Costs tab as they are spent: materials, labour, subcontractor, access equipment, transport, permits and fees, rework or other, with the supplier and their reference. The job compares the actual cost with the estimate from the approved design, and Reporting, **Margin by Project** shows contract value, estimate, actual and margin per job for managers.
+
+<Shot src="/odoo-guides/odoo-solar-project-stages-milestone-billing/margin.webp" alt="Margin by Project pivot for six jobs with contract value, cost estimate, cost actual and actual margin, totalling 734,000 pounds of contracts and 236,208 of margin" width={1440} height={900} caption="Margin by project: estimate against actual." />
+
+The grid application, commissioning and handover are in the [grid connection and commissioning chapter](/odoo-guides/odoo-solar-grid-connection-commissioning/).

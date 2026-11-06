@@ -1,0 +1,107 @@
+---
+title: "OEE in Odoo per work centre: availability, performance and quality worked out from real time logs"
+metaTitle: "Measuring OEE per Work Centre"
+description: "Measure OEE per work centre in Odoo 19 Community from the terminal's time logs, with planned time three ways and every figure behind the percentage kept."
+targetQuery: "odoo oee calculation work center"
+category: "Industry"
+summary: "How Shop Floor Control works out availability, performance, quality and OEE for a period, the three ways to set planned time, why performance is capped, and how to read an OEE record."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-shop-floor-control"
+seriesOrder: 3
+modules:
+  - name: "Shop Floor Control"
+    technical: "wt_shop_floor"
+    note: "USD 299, Odoo 19 Community, needs Manufacturing"
+demo:
+  url: "https://manufacturing-demo.way4tech.com/"
+  label: "Manufacturing demo"
+related: ["odoo-shop-floor-control", "odoo-shop-floor-terminal-stop-reasons", "odoo-purchase-inventory-dashboard"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is OEE calculated?"
+    a: "Availability is run time over planned time. Performance is the ideal cycle time times the units made, over run time. Quality is good units over units made. OEE is the three multiplied together. All four are stored on the record with the figures they came from."
+  - q: "Why is performance capped at 100%?"
+    a: "Because a machine that beats its ideal cycle time means the ideal cycle time is set wrong, not that the machine was more than fully effective. The uncapped figure is kept beside it so the wrong cycle time is easy to spot."
+  - q: "Does a night shift that crosses midnight count twice in daily OEE?"
+    a: "No. Every time log is clipped to the period being measured, so only the minutes inside the day count towards that day."
+  - q: "Is OEE updated automatically every day?"
+    a: "No. OEE is measured on demand from Analysis, Measure OEE, for the period and machines you choose. There is no scheduled measurement in this version."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+OEE is the number most factories quote and few can defend. The figure ends up on a wall chart, someone asks why the press brake is at 61% this week, and the answer depends on a spreadsheet nobody else can open. The way out is to keep every input next to the result, so a percentage can be taken apart in front of the person questioning it. This chapter of the [shop floor control series](/odoo-guides/odoo-shop-floor-control/) shows how Shop Floor Control works OEE out from the time the terminals logged.
+
+## The three ratios
+
+| Ratio | Worked out as | What pulls it down |
+|---|---|---|
+| Availability | Run time / planned time | Breakdowns, setup, waiting for material, breaks |
+| Performance | Ideal cycle time x units made / run time | Minor stops, running slow |
+| Quality | Good units / units made | Scrap |
+| OEE | Availability x performance x quality | Everything above |
+
+Run time is every minute logged on productive time. Down time is every minute logged against a stop reason, whatever its loss category. Units made are the good and scrapped quantities recorded on the terminal. The ideal cycle time comes from the work centre unless you type one when you measure.
+
+Because every start, pause and resume on the terminal writes a normal Odoo work centre time log, the minutes OEE reads are the same minutes Manufacturing already keeps. Nothing is kept in a parallel ledger.
+
+## Measuring a period
+
+Shop Floor, Analysis, Measure OEE is for users with Configure the Shop Floor. Pick the period, the work centres (leave it empty for every work centre in the company), how planned time is set and, if you want, an ideal cycle time that overrides each machine's own. Measure creates one OEE record per work centre and opens them.
+
+<Shot src="/odoo-guides/odoo-oee-calculation-work-centre/sf-oee-wizard.webp" alt="Measure OEE dialog with a from and to date, planned time set to what the terminal logged, an ideal cycle time of zero meaning each work centre's own, an empty work centres list meaning all, and a Measure button" width={1440} height={900} caption="Measure OEE: a period, the machines, and how planned time is set." />
+
+Planned time is the denominator of availability, so it matters most:
+
+| Planned time | Availability is measured against | Use it for |
+|---|---|---|
+| What the terminal logged (default) | Running plus stopped minutes the terminals recorded | Shift OEE. It makes no claim about hours nobody logged |
+| The whole period | Every minute of the window | A capacity view: unmanned hours count against the machine |
+| A figure I will type | The minutes you enter, above zero | Planned shift hours from your own calendar |
+
+Each time log is clipped to the period. A night shift from 22:00 to 06:00 contributes two hours to one day and six to the next, never eight to both.
+
+## Reading one record
+
+<Shot src="/odoo-guides/odoo-oee-calculation-work-centre/sf-oee-form.webp" alt="OEE record for a MIG weld bay for one day with planned, run and down time in minutes, zero stops, an ideal cycle time of 6 minutes, total count 12, good count 12, availability 100%, performance 67.7%, quality 100% and OEE 67.7%" width={1440} height={900} caption="The weld bay for one day: no stops, no scrap, but slower than the ideal cycle." />
+
+The record keeps the period, planned time, run time, down time, the number of stops, the ideal cycle time, total, good and scrapped counts, and then availability, performance, the uncapped performance, quality and OEE. Here the weld bay had no stops and no scrap, so availability and quality are 100%, and the whole loss is speed: twelve units at an ideal of six minutes each is 72 minutes of work done in about 106 minutes of run time.
+
+Performance is capped at 100%. If a machine beats its ideal cycle time the cap hides nothing, because the uncapped figure is stored beside it: that is the sign the ideal cycle time on the work centre needs raising.
+
+The same week measured over the whole period looks very different, because every night and every unmanned hour now counts against the machine.
+
+<Shot src="/odoo-guides/odoo-oee-calculation-work-centre/sf-oee-window.webp" alt="OEE record for the fibre laser over a whole working week window with planned time equal to the full period, much lower availability and OEE, and a note that unmanned nights count against the laser" width={1440} height={900} caption="Whole period: the same laser, with unmanned hours counted against it." />
+
+## Comparing machines and weeks
+
+Analysis, OEE lists every measurement with the four percentages, with filters for Below 40% and 85% and Above and grouping by work centre or period. There are graph and pivot views as well.
+
+<Shot src="/odoo-guides/odoo-oee-calculation-work-centre/sf-oee-list.webp" alt="OEE list with one row per work centre per period showing from and to dates, availability, performance, quality and OEE percentages for the laser, press brake, weld bay, powder coat line and assembly bench" width={1440} height={900} caption="Every measurement, one row per machine per period." />
+
+<Callout title="Read the graph one period at a time">
+The graph and pivot views add the percentage fields together when several records fall into one cell. Measure the same periods for every machine and filter to one period, or read the list, rather than letting the chart sum a week and its days.
+</Callout>
+
+## A worked example
+
+Take the laser week above. Planned time is the whole window, 6,270 minutes from Monday 07:00 to Friday 15:30. The terminals logged 845 minutes of productive time and 354 minutes of stops across 13 stops. The laser made 311 blanks, 305 good and 6 scrapped, against an ideal cycle time of 2 minutes.
+
+- Availability: 845 / 6,270 = 13.5%. Most of the week nobody was cutting.
+- Performance: 2 x 311 / 845 = 73.6%. When it ran, it ran at about three quarters of ideal speed.
+- Quality: 305 / 311 = 98.1%.
+- OEE: 13.5% x 73.6% x 98.1% = 9.7%.
+
+Measure the same week with planned time set to what the terminals logged and availability becomes run time over run plus down time, 845 / 1,199, about 70%. Neither figure is wrong. The first says the laser has spare capacity; the second says that when someone was on it, a third of the time went on stops. Decide which question you are asking before you compare.
+
+## Getting honest figures
+
+A few habits make the numbers worth arguing about:
+
+- Set the **ideal cycle time** on each work centre from a good, normal run. A cycle time copied from a quote makes performance meaningless.
+- Keep **stop reasons** short and specific per machine, so operators pick the right one rather than the first one.
+- Record **scrap** on the terminal as it happens. Quality only sees what was typed.
+- Use **what the terminal logged** for shift reviews and **the whole period** for capacity questions, and do not mix them in one comparison.
+- Remember the measurement is a snapshot: re-measure a period after late presses have arrived, rather than editing an old record.

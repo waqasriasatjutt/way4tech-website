@@ -1,0 +1,104 @@
+---
+title: "Engineering change orders in Odoo Community: BoM revisions, the difference, approvals and version history"
+metaTitle: "Engineering Change Orders and BoM Versions"
+description: "Change a bill of materials in Odoo 19 Community without touching the live one: an archived revision, the worked out difference, stage approvals, versions."
+targetQuery: "engineering change order odoo community"
+category: "Industry"
+summary: "Raising an engineering change order with PLM / ECO, editing the archived revision, reading the difference, collecting approvals per stage, applying it as a new BoM version, and what happens to other changes raised on the old version."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-shop-floor-control"
+seriesOrder: 4
+modules:
+  - name: "PLM, Engineering Change Orders"
+    technical: "wt_plm_eco"
+    note: "USD 149, Odoo 19 Community, needs Manufacturing"
+demo:
+  url: "https://manufacturing-demo.way4tech.com/"
+  label: "Manufacturing demo"
+related: ["odoo-shop-floor-control", "odoo-work-order-quality-checks", "odoo-serial-numbers-purchase-orders"]
+linkFrom: ["/modules/manufacturing/", "/products/wt-plm-eco/"]
+sources: []
+faqs:
+  - q: "Is the live bill of materials changed while the change order is open?"
+    a: "No. Start Revision makes an archived copy of the live BoM with its components and operations. The engineer edits the copy, and manufacturing orders keep using the live BoM until the change order is applied. Because the copy is archived, no manufacturing order can pick it up."
+  - q: "Who has to approve a change?"
+    a: "The approvers listed on the stages of the change order's type. Each gets an approval line, and a change cannot reach the effective stage while any required line is not approved. Different change types can have different stages and approvers."
+  - q: "What happens if two changes are raised against the same version?"
+    a: "The first one applied wins. A second one that already opened its revision is told in its chatter that it is out of date, and Apply refuses it, because applying it would put the first change back out. A second one still in draft with no revision simply moves on to the new version."
+  - q: "Can I see which version of a BoM was live on a given date?"
+    a: "Yes. Every BoM carries its version, effective date, the change order that produced it and the version it replaced, and Version History on the BoM walks the whole chain, archived versions included."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A bill of materials edited in place is a quiet risk. The engineer changes a quantity on Tuesday, a manufacturing order confirmed on Monday picks up the new figure, and three months later nobody can say what the units in the field were built from. Odoo 19 Community has no change control on bills of materials. This chapter of the [shop floor control series](/odoo-guides/odoo-shop-floor-control/) uses our PLM / ECO module to change one the controlled way: discuss it on a copy, review the difference, collect the approvals, then make it live as a new version.
+
+## Boards, stages and approvers
+
+A **change type** is a board with its own columns. The module ships one, BoM Change, with four stages: New, Engineering Review, Ready to Apply and Effective. Add your own types under Engineering, Configuration: a Quick Correction with no approval round, or a Customer Design Change with a customer sign-off column.
+
+The approval rule sits on the **stage**, not on each change order. Tick Approval Required and list the approvers; every change order of a type that uses the stage gets one approval line per approver. One stage per type is marked **Effective Stage**: a change order lands there once applied, and that stage cannot ask for an approval of its own. A type with no effective stage is refused, because nothing on it could ever go live.
+
+<Shot src="/odoo-guides/odoo-engineering-change-order-bom/eco-stage-form.webp" alt="Engineering Review stage form with approval required ticked, two approvers listed, the requirement text for the column and the change types that use the stage" width={1440} height={900} caption="Engineering Review: approval required, two approvers, written once for every change type that uses it." />
+
+## Raising the change
+
+A change order needs a title, the change type, the product and the current bill of materials. Only live BoMs of that product can be picked, never a revision held by another change. Add the responsible engineer, the reason (it is printed on the change document), priority, and when it should take effect: as soon as approved, or at a date.
+
+**Start Revision** copies the current BoM with its components and operations. The copy is archived, and its form carries a banner saying so: no manufacturing order can find it while the change is being discussed. The change order moves to In Progress and its approval lines are created from the stages. Edit the revision like any bill of materials: swap a component, change a quantity, add or retime an operation.
+
+## The difference
+
+The module compares the revision with the live BoM line by line and stores the result on the Differences tab, with counters for what was added, removed, changed in quantity and changed in operations.
+
+| It finds | For example |
+|---|---|
+| Components added or removed | Lift-off hinge pair added, weld-on hinge pair removed |
+| Quantities changed | M6 captive nuts from 8 to 12 |
+| Operations added, removed or retimed | A weld operation retimed or a powder coat pass taken out |
+| Changes to the BoM itself | Quantity produced, unit of measure, BoM type |
+
+Operations are matched by name and work centre, so renaming an operation shows as one removed and one added. Because the difference is stored, an applied change order still shows what it changed years later. If the revision is edited after the difference was worked out, a yellow warning appears until you press Recompute Differences.
+
+<Shot src="/odoo-guides/odoo-engineering-change-order-bom/eco-e5.webp" alt="Change order to add a cable gland plate to the junction box, in engineering review, with the differences tab showing one component added and a yellow warning that the revision has changed since the differences were computed" width={1440} height={900} caption="One component added, and a warning because the revision was edited afterwards." />
+
+## Approvals
+
+Each approver answers their own line: Approve, or Reject with a reason. The reason is written on the line and posted in the chatter for the engineer, and a red banner tells everyone the change has been refused. An approver can change their mind later. Request Approval sends one email to everyone whose answer is not yet an approval, rejected ones included, using the ECO approval request template. Engineering, My Approvals lists the lines waiting on you; All Approvals shows every line to users who configure engineering changes.
+
+<Shot src="/odoo-guides/odoo-engineering-change-order-bom/eco-e6.webp" alt="Change order for a foamed in place PU gasket with a red banner saying an approver has refused it, and the approvals tab showing the quality manager's rejection with the comment asking for an IP66 test report and the engineering lead still to approve" width={1440} height={900} caption="Quality rejected it, with the reason on the line and in the chatter." />
+
+Only the named approver can answer a line, unless the user has Configure Engineering Changes. The reject dialog can also cancel the change order outright. Cancelling keeps the revision on the record, archived, and Reset to Draft brings it back.
+
+## Applying it
+
+Apply appears once every required approval is in. The dialog recomputes the difference, shows it with the old and new version and the effective date to stamp, and refuses a revision identical to the live BoM.
+
+<Shot src="/odoo-guides/odoo-engineering-change-order-bom/eco-apply-wiz.webp" alt="Apply change order dialog for pre-galvanised sheet on the cable tray, showing current and new version, the effective date and the list of differences with components removed and added and the powder coat operation removed" width={1440} height={900} caption="Apply: the difference, the version change and the date to stamp." />
+
+Applying does four things. The revision becomes the live BoM with the version number put up by one, the effective date and the change order stamped on it. The old version is archived, never deleted. The change order moves to the Effective column. And other change orders on the old version are dealt with. Dropping a card into the effective column on the board does exactly the same and is refused for the same reasons.
+
+## Two changes on one version
+
+When a change is applied, any other open change raised on the version it replaced is looked at. One still in draft with no revision is simply moved on to the new version, with a note. One that already opened its revision is told in its chatter that it is out of date, and Apply refuses it: its copy was taken from the old version, and applying it would quietly put the first change back out.
+
+<Shot src="/odoo-guides/odoo-engineering-change-order-bom/eco-e10.webp" alt="Change order to move the cam lock on the enclosure door, raised against version 2, with a chatter message saying another change order replaced that version with version 3 and this revision is now out of date and cannot be applied" width={1440} height={900} caption="Overtaken: raised on version 2, refused once version 3 went live." />
+
+## Version history
+
+Every bill of materials now carries its version, its effective date, the change order that produced it and the version it replaced. Change Orders on the BoM lists the changes raised against it, and **Version History** walks the whole chain, archived versions and open revisions included. The BoM list gains a Version column and two filters: Draft Revisions and From a Change Order.
+
+<Shot src="/odoo-guides/odoo-engineering-change-order-bom/bom-history.webp" alt="Version history list for the FM-600 control enclosure showing bills of materials at versions 1, 2 and 3 and the revisions held by open change orders" width={1440} height={900} caption="FM-600: versions 1, 2 and 3, and the revisions still being worked on." />
+
+A finished manufacturing order keeps the bill of materials it was made from, so the version built on any day can be traced back from the order.
+
+## Keeping things moving
+
+Engineering, All Change Orders has list, kanban, calendar (on the effective date), pivot and graph views, with filters such as Waiting on Me, Fully Approved, Urgent and Past Effective Date. A scheduled action, Engineering Changes: chase what is sitting still, ships switched off. Switched on, it posts a note on a change that is fully approved but not applied, or whose effective date has passed while approvals are outstanding, at most once a day per change. Every change order prints as an Engineering Change Order document with the reason, every difference and the approvals.
+
+<Callout title="What applying does not do">
+Applying replaces the bill of materials. Manufacturing orders already confirmed on the old version keep it. There is no drawing or document control beyond attachments on the change order, and no automatic notice to purchasing about new components. In this version a rejection comment shows a literal line break tag in the chatter.
+</Callout>
+
+With [Shop Floor Control](/odoo-guides/odoo-work-order-quality-checks/) installed as well, the revision's operations carry their quality checks, so the new version reaches the terminal with its checks in place.

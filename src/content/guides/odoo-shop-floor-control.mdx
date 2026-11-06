@@ -1,0 +1,126 @@
+---
+title: "Shop floor control in Odoo: an operator terminal, stop reasons, quality checks, OEE and engineering change orders"
+metaTitle: "Shop Floor Control and PLM in Odoo 19"
+description: "Run the shop floor in Odoo 19 Community: a touch terminal, stop reasons, blocking quality checks, real OEE and controlled BoM changes with approvals."
+targetQuery: "shop floor control odoo"
+category: "Industry"
+summary: "What a factory needs from Odoo beyond work orders, where standard Odoo Manufacturing stops, and how Shop Floor Control and PLM / ECO add an operator terminal, stop reasons, quality checks, OEE and versioned bills of materials."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-shop-floor-control"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-shop-floor-control.pdf"
+  pages: 34
+modules:
+  - name: "Shop Floor Control"
+    technical: "wt_shop_floor"
+    note: "USD 299, runs on Odoo 19 Community, needs Manufacturing"
+  - name: "PLM, Engineering Change Orders"
+    technical: "wt_plm_eco"
+    note: "USD 149, runs on Odoo 19 Community, needs Manufacturing"
+demo:
+  url: "https://manufacturing-demo.way4tech.com/"
+  label: "Manufacturing demo"
+related: ["odoo-ppm-planned-maintenance", "odoo-purchase-inventory-dashboard", "odoo-serial-numbers-purchase-orders"]
+linkFrom: ["/modules/manufacturing/", "/modules/quality/", "/modules/inventory/", "/products/wt-shop-floor/", "/products/wt-plm-eco/"]
+sources: []
+faqs:
+  - q: "Does this need Odoo Enterprise?"
+    a: "No. Shop Floor Control and PLM / ECO both run on Odoo 19 Community and need only the Manufacturing app, with the Work Orders setting switched on."
+  - q: "Do I have to buy both modules?"
+    a: "No. Each works on its own. Installed together, a change order that edits an operation carries that operation's quality checks into the new version of the bill of materials, so the terminal asks the right questions from the day the change goes live."
+  - q: "Does the terminal read counts from the machine?"
+    a: "No. There is no PLC, counter or OPC link. Operators type the good and scrapped quantity on the terminal. What the module adds is that every press is recorded once, against a reason, and checked on the server."
+  - q: "Are the standard Odoo work centre figures still correct?"
+    a: "Yes. Every start, pause and resume on the terminal writes a normal Odoo work centre time log, so the productivity figures Manufacturing already keeps match what the terminal recorded."
+  - q: "What happens to the old bill of materials when a change is applied?"
+    a: "It is archived with its version number, never deleted. The new one becomes live with the version put up by one, the effective date and the change order that produced it, and the whole chain opens from Version History on the bill of materials."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+Ask a production manager where yesterday's shift went and the honest answer is often a guess. The machine ran, then it stopped, somebody wrote "breakdown" on a sheet, a count was added up at the end of the day and the good parts and the scrap were split by feel. Ask the same manager which version of a product was built last month and the answer is worse, because the bill of materials was edited in place the week after. This guide covers what a small or mid sized factory needs from Odoo on the floor and in the drawing office, where standard Odoo Manufacturing stops, and how two of our modules for Odoo 19 Community fill the gap.
+
+## What the floor and the drawing office need
+
+On the floor, four things have to be recorded as they happen, not reconstructed later:
+
+| Record | Why it matters |
+|---|---|
+| Who is on which machine, for which shift | So every figure has an owner, and one machine is never counted twice |
+| Every stop, with a reason | Downtime with no reason cannot be fixed, only regretted |
+| Good and scrapped quantity, per job | The quality figure, and the count the manufacturing order closes on |
+| Quality checks per operation | A part out of tolerance should not reach the next station |
+
+From those four, OEE (overall equipment effectiveness) can be worked out honestly: availability, performance and quality, multiplied together.
+
+In the drawing office the need is different. A bill of materials changes: a hinge is swapped, a gauge goes up, an operation is added. The change has to be discussed and approved without disturbing production, and once it is live, anybody should be able to see what changed, who signed it off and which version a past order used.
+
+## What standard Odoo does and does not do
+
+Odoo 19 Community Manufacturing has work centres, bills of materials, routing operations, manufacturing orders and work orders, and it keeps time logs per work centre with loss categories. That is a sound base. What it does not have in Community is a touch screen an operator at the machine can use, a configurable list of stop reasons that land in the right loss category, quality checks attached to operations that block finishing a job, a production count that survives a tablet losing its network, or an OEE record you can take apart figure by figure. On the engineering side, Community has no engineering change order at all: a bill of materials is simply edited, and the old version is gone.
+
+## The modules
+
+| Module | Technical name | Price | Needs |
+|---|---|---|---|
+| Shop Floor Control | `wt_shop_floor` | USD 299 | Odoo 19 Community with Manufacturing |
+| PLM, Engineering Change Orders | `wt_plm_eco` | USD 149 | Odoo 19 Community with Manufacturing |
+
+Shop Floor Control adds a Shop Floor app with the terminal, work orders, sessions, analysis and configuration. PLM / ECO adds an Engineering app with a change board, change orders, approvals, change types and stages, and puts a version, an effective date and a version history on every bill of materials.
+
+<Shot src="/odoo-guides/odoo-shop-floor-control/sf-sess-kanban.webp" alt="Shop floor sessions in a kanban grouped by state: closed shifts for the fibre laser, press brake, weld bay, powder coat line and assembly bench, one draft session, one running and two paused, each with operator, good and scrap counts" width={1440} height={900} caption="Sessions by state: who is on which machine right now, and every shift before." />
+
+## The terminal
+
+An operator opens the terminal on a work centre, logs in, and gets a session: one operator, one machine, one shift. Only one session can be open per machine, so the same minutes can never be counted for two people. The left side lists the work orders waiting on that machine. On the right are four large buttons, Start, Pause, Resume and Finish, boxes for good and scrapped quantity, and the quality checks for the operation.
+
+Pause asks why. The buttons are the stop reasons you configured, each tied to a loss category: unplanned downtime, reduced speed or quality loss. A reason can demand a note, and a blocking reason such as a breakdown or a quality hold pauses the whole session. Every press writes a terminal event and, for start, pause and resume, a normal Odoo time log against the right loss.
+
+<Shot src="/odoo-guides/odoo-shop-floor-control/term-reasons.webp" alt="Shop floor terminal for a MIG weld bay showing a weld corners work order in progress with good 11 and scrap 1, large Start, Pause, Resume and Finish buttons, a panel asking why it stopped with stop reason buttons such as Breakdown, Setup and Changeover, Gas Cylinder Change and Quality Hold, and a blocking seam check" width={1440} height={900} caption="Pause asks for a reason. The weld bay offers its own Gas Cylinder Change button." />
+
+The terminal generates a request token before it sends anything and keeps resending the same token until the server answers. A token already recorded is treated as a replay and changes nothing, so a tablet on a weak factory network cannot double a shift's output.
+
+## Quality checks
+
+Checks are defined once on a routing operation: pass or fail, a measurement against a tolerance range, or free text such as a powder batch number. Each work order gets its own copy to answer. The server decides pass or fail, so the screen cannot talk it into accepting a part out of tolerance, and a blocking check has to be answered without a failure before the operation can finish. A shop floor manager can release an operation with checks still open, and that release is logged.
+
+<Shot src="/odoo-guides/odoo-shop-floor-control/sf-wo-list.webp" alt="Shop floor work order list with manufacturing order, product, work centre, state, recorded good and scrap, checks open and failed and stop reason, with a paused row highlighted in yellow and a row with a failed check in red" width={1440} height={900} caption="Work orders: yellow is paused, red has a failed check." />
+
+## OEE
+
+A supervisor picks a period and the machines and presses Measure. The module reads the time logs, clipped to the period so a night shift is not counted in two days, and the production events, then stores planned time, run time, down time, ideal cycle time, total, good and scrapped counts beside the availability, performance, quality and OEE they produce. Planned time can be what the terminals logged, the whole period or a figure you type. Performance is capped at 100%, with the uncapped figure kept, because a machine that beats its ideal cycle time means the cycle time is wrong.
+
+<Shot src="/odoo-guides/odoo-shop-floor-control/sf-oee-form.webp" alt="OEE measurement for a MIG weld bay for one day showing planned time, run time and down time in minutes, stops, ideal cycle time of 6 minutes, total and good counts, and availability, performance, quality and OEE percentages" width={1440} height={900} caption="One OEE record: every figure that went into the percentage is kept on it." />
+
+## Engineering change orders
+
+A change order is raised against the live bill of materials. Start Revision takes an archived copy, so no manufacturing order can pick up a half finished revision, and the engineer edits the copy. The module works out the difference line by line: components added and removed, quantities changed, operations added, removed or retimed, and changes to the bill itself. Approvers are set on the stages of each change type, each approver gets a line, and a change cannot become effective while a required approval is outstanding. Applying makes the revision live with the version put up by one and archives the old version.
+
+<Shot src="/odoo-guides/odoo-shop-floor-control/eco-board.webp" alt="Engineering change board in kanban by stage with change order cards showing reference, title, product, the version change such as v3 to v4, the number of changes and badges for rejected or approvals still to give" width={1440} height={900} caption="The change board: each card shows the version it will create and what is still waiting." />
+
+<Callout title="What neither module does">
+There is no machine connection: quantities are typed on the terminal. There is no maintenance request raised from a breakdown, no drawing or document control beyond attachments, and no SPC charts. Applying a change order replaces the bill of materials but does not alter manufacturing orders already confirmed on the old version. In the current build, picking a machine from the drop-down on Shop Floor, Terminal raises a client error; open the terminal from the work centre with Open Terminal instead.
+</Callout>
+
+## Who does what
+
+Shop Floor Control has two roles: Operate the Terminal, for operators, and Configure the Shop Floor, for supervisors, who set up stop reasons and checks, release checks, reset a failed check and measure OEE. PLM / ECO has Raise Engineering Changes and Configure Engineering Changes; the second sets up change types, stages and approvers and can answer any approval. With both modules installed, an engineer who starts or applies a revision on a bill of materials whose operations carry quality checks also needs Configure the Shop Floor, because the checks are copied with the operations.
+
+## Try it on the demo
+
+The [manufacturing demo](/demos/) is Fernhollow Metalworks Ltd, an invented sheet metal shop with a fibre laser, a press brake, a weld bay, a powder coat line and an assembly bench, nine weeks of shifts and twelve change orders at every stage. Right now the weld bay is held on a failed seam check, the press brake is down and the laser is running. Ask us for a login.
+
+<WhenLive slug="odoo-shop-floor-terminal-stop-reasons">
+
+## The chapters
+
+Four chapters cover the detail: [the operator terminal and stop reasons](/odoo-guides/odoo-shop-floor-terminal-stop-reasons/), [quality checks on work orders](/odoo-guides/odoo-work-order-quality-checks/), [measuring OEE per work centre](/odoo-guides/odoo-oee-calculation-work-centre/), and [engineering change orders and BoM versions](/odoo-guides/odoo-engineering-change-order-bom/).
+
+</WhenLive>
+
+## Where to go from here
+
+The full printable guide covers every screen in both modules, with a fifteen minute walk-through of the demo and a menu map. For the standard side see our [Manufacturing overview](/modules/manufacturing/) and [Quality overview](/modules/quality/). If you want your work centres, stop reasons and checks set up and the terminal on the tablets by each machine, [get in touch](/contact/).

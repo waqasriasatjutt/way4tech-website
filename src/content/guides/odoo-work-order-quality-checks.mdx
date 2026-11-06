@@ -1,0 +1,103 @@
+---
+title: "Quality checks on work orders in Odoo Community: measures with tolerances, pass or fail, and blocking checks"
+metaTitle: "Quality Checks on Work Orders"
+description: "Attach quality checks to Odoo routing operations: tolerance measures, pass or fail and text answers, decided on the server and blocking a job until passed."
+targetQuery: "odoo work order quality check community"
+category: "Industry"
+summary: "Defining quality check points on routing operations in Shop Floor Control, how operators answer them on the terminal, what a blocking check stops, and how supervisors release, pass, fail and reset checks."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-shop-floor-control"
+seriesOrder: 2
+modules:
+  - name: "Shop Floor Control"
+    technical: "wt_shop_floor"
+    note: "USD 299, Odoo 19 Community, needs Manufacturing"
+demo:
+  url: "https://manufacturing-demo.way4tech.com/"
+  label: "Manufacturing demo"
+related: ["odoo-shop-floor-control", "odoo-shop-floor-terminal-stop-reasons", "odoo-engineering-change-order-bom"]
+linkFrom: ["/modules/quality/"]
+sources: []
+faqs:
+  - q: "Can an operator mark an out of tolerance part as passed?"
+    a: "No. The server compares the reading with the minimum and maximum and decides. A database level rule also refuses any measure set to Passed with a reading outside its range, whether by a hand edit, an import or an API call."
+  - q: "What does a blocking check stop?"
+    a: "The operation cannot be finished while a blocking check is unanswered or failed, from the terminal or from the back office. The refusal lists the checks still open and the ones that failed."
+  - q: "Who can finish an operation with a failed check?"
+    a: "A user with Configure the Shop Floor, using Release Checks on the work order. It asks for confirmation and the release is written to the server log."
+  - q: "If I change a check later, does it rewrite earlier answers?"
+    a: "No. Every work order gets its own copy of the operation's checks when it is created or started, so an answer recorded last week stays exactly as it was answered."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A defect found at final assembly costs every operation that came before it. The point of checking at each station is to stop a bad part where it was made, and that only works if the check cannot be skipped and cannot be argued with. This chapter of the [shop floor control series](/odoo-guides/odoo-shop-floor-control/) sets up quality checks on routing operations in Shop Floor Control and follows them from the terminal to the supervisor's desk.
+
+## Where checks live
+
+A check is defined once, on a routing operation, under Shop Floor, Configuration, Quality Checks (or on the Quality Checks tab of the operation). Every work order for that operation gets its own copy to answer. The definition can change later without touching anything already answered.
+
+There are three kinds:
+
+| Type | The operator gives | Passes when |
+|---|---|---|
+| Pass / Fail | Pass, or Fail with a note | Pass. A fail with no note is refused |
+| Measure | A number | It sits between the minimum and the maximum |
+| Text | Free text, such as a batch number | Anything non-empty is written |
+
+<Shot src="/odoo-guides/odoo-work-order-quality-checks/sf-cp-measure.webp" alt="Quality check point form for body blank width on the laser cut operation, type measure, blocking, target 600 mm with minimum 599.5 and maximum 600.5 and a details note to measure across the flat blank" width={1440} height={900} caption="A measure: target, minimum, maximum and the unit, with a note for the operator." />
+
+A measure needs a minimum below its maximum, and its target inside its own range, otherwise the record is refused: a part made exactly to target would fail. **Blocking** decides whether the check can hold up the job. A non-blocking check is recorded, and a failure shows in the results, but it never stops the line.
+
+**Only For Product** narrows a check to one product. That is useful on an operation shared by several products, such as an assembly bench, where one item needs an extra look.
+
+<Shot src="/odoo-guides/odoo-work-order-quality-checks/sf-cp-product.webp" alt="Quality check point to check the lid fits flush on the assemble and test earth operation, pass fail type, not blocking, only for the JB-100 junction box product" width={1440} height={900} caption="A non-blocking check asked only when the junction box is made." />
+
+## Answering on the terminal
+
+When the operator starts a job, any checks of the operation not yet on the work order are copied on, so a restart never asks the same question twice. The terminal lists them under the job, with a red badge counting the blocking ones still to answer. Pass and Fail are buttons, a measure is a number box, a text check is a text box.
+
+The rule that decides is on the server. For a measure, the reading is compared with the range, with a tiny allowance so a gauge reporting 600.5000000001 against a maximum of 600.5 is read as in range. In range is Passed; out of range is Failed, with the reading and the range written into What Went Wrong. The terminal cannot send its own verdict.
+
+<Shot src="/odoo-guides/odoo-work-order-quality-checks/sf-wo-hold.webp" alt="Shop floor work order for weld corners held on a quality hold with good 11 and scrap 1, and a quality checks tab where the blocking check corner seams free of porosity and undercut is failed, answered by the welder" width={1440} height={900} caption="A weld job held: the blocking seam check failed and the job is paused on Quality Hold." />
+
+## What a blocking check stops
+
+Finish is refused while a blocking check is unanswered or failed, and the message names them: "Not answered yet" and "Failed". The same refusal applies to the Finish button in standard Manufacturing, so there is no back door through another screen.
+
+There are three ways forward:
+
+1. **Fix and answer again.** The operator re-measures or re-inspects and answers the check on the terminal. The new answer replaces the old one on the check, and the earlier attempt stays in the event trail.
+2. **Release.** A user with Configure the Shop Floor presses Release Checks on the work order. It asks for confirmation, finishes the operation with checks open, and writes the release to the server log.
+3. **Reset.** A shop floor manager presses Reset on a failed check result. The answer is cleared and the check has to be taken again. An operator cannot reset a failure, and nobody can once the operation is finished.
+
+<Callout title="Where the release is recorded">
+The release is written to the Odoo server log with the work order, the number of open checks and the user. It is not posted in the work order's chatter, so look for released operations by their open or failed checks on a finished work order.
+</Callout>
+
+## Check results
+
+Shop Floor, Analysis, Check Results lists every answer from every work order: instruction, type, blocking, reading or answer, result, who answered and when. Filters for Outstanding, Failed, Blocking and Answered Today; group by work centre, result or work order.
+
+<Shot src="/odoo-guides/odoo-work-order-quality-checks/sf-check-list.webp" alt="Check results list with instructions such as body blank width, flange bend angle, coating thickness, powder batch number and door gasket seal, their type, blocking flag, reading, answer, result and who answered" width={1440} height={900} caption="Every answer from every station, filterable by result." />
+
+From the office, a check result can also be passed or failed by hand. Pass is refused on a measure ("type the reading instead") and on a text check with no answer.
+
+<Shot src="/odoo-guides/odoo-work-order-quality-checks/sf-check-measure.webp" alt="Passed measure check result for a flange bend angle with target 90 degrees, minimum 89.5, maximum 90.5, the reading inside the range, the work order, the session it was answered in and the operator" width={1440} height={900} caption="A passed measure: reading, range, and the session it was answered in." />
+
+## Setting checks up so operators answer them
+
+A check list that is too long gets answered without looking. A few rules keep it honest:
+
+- **Block only what matters.** Make a check blocking when a failure means the part must not move on: a dimension the next station depends on, a seal, an earth test. Coating thickness or a label number can be recorded without stopping the line.
+- **Measure, do not ask.** "Flange angle within tolerance, yes or no" invites a yes. A measure with a range makes the operator read the gauge, and the server decides.
+- **Write the method in Details.** Where to measure and with what, in one line. It saves the argument about how the reading was taken.
+- **Use text for traceability.** A powder batch or a serial label typed at the station is the link from a complaint back to a shift and a machine.
+- **Check one product only when needed.** Only For Product keeps a shared operation's list short for everything else.
+
+On the demo the laser checks the blank width, the press brake the bend angle, the weld bay the seams, the coat line records the powder batch and the coating thickness, and the bench tests the door seal or the earth continuity.
+
+## Checks and engineering changes
+
+When the [PLM / ECO module](/odoo-guides/odoo-engineering-change-order-bom/) is installed too, a revision of a bill of materials copies its operations with their check points. A change that alters an operation therefore goes live with the checks the operation already had, and any you add on the revision. The engineer starting or applying such a revision needs Configure the Shop Floor as well, because creating those check copies is a shop floor configuration right.

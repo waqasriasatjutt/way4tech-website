@@ -1,0 +1,103 @@
+---
+title: "An operator terminal in Odoo: sessions, start and pause with a stop reason, and production counted once"
+metaTitle: "Operator Terminal and Stop Reasons"
+description: "Put a touch terminal at each machine in Odoo 19 Community: one session per machine, stop reasons tied to OEE losses and counts a retry cannot double."
+targetQuery: "odoo operator terminal work center tablet"
+category: "Industry"
+summary: "Setting up work centres and stop reasons, then running a job on the Shop Floor terminal: log in, start, pause with a reason, record good and scrap, finish, and how sessions and terminal events keep the record."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-shop-floor-control"
+seriesOrder: 1
+modules:
+  - name: "Shop Floor Control"
+    technical: "wt_shop_floor"
+    note: "USD 299, Odoo 19 Community, needs Manufacturing"
+demo:
+  url: "https://manufacturing-demo.way4tech.com/"
+  label: "Manufacturing demo"
+related: ["odoo-shop-floor-control", "odoo-work-order-quality-checks", "odoo-oee-calculation-work-centre"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can two operators log in on the same machine?"
+    a: "No. A work centre can have one open or paused session at a time. A second login is refused with the name of the operator already on it, because both terminals would otherwise write productive time against the same machine and OEE would come out above 100%."
+  - q: "What happens if the tablet loses its network halfway through a press?"
+    a: "The terminal created a request token before sending and sends the same token again. The server stores every token with a unique index, so a token it has already recorded is a replay: it returns the earlier answer and changes nothing. The event counts the retries it absorbed."
+  - q: "Can I limit which stop reasons each machine offers?"
+    a: "Yes. Stop Reasons Offered on the work centre form limits the pause buttons on that terminal. Left empty, the terminal offers every stop reason of the company."
+  - q: "What happens to a session nobody logged out of?"
+    a: "A scheduled action runs every hour and closes any session still open or paused sixteen hours after it started, with a note in its chatter, so the next shift can log in."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Downtime that nobody names is downtime nobody fixes. When stops are written up at the end of a shift they come back as "breakdown" or "waiting", the minutes are rounded and the reasons blur together. The fix is to ask at the moment the machine stops, with a short list of buttons, and to record the answer against the machine time it explains. This chapter of the [shop floor control series](/odoo-guides/odoo-shop-floor-control/) sets up work centres and stop reasons in Shop Floor Control, then runs a job on the terminal.
+
+## Work centres become terminals
+
+Shop Floor, Configuration, Terminals lists the ordinary Manufacturing work centres with two things added: who is logged in at each one right now, and its ideal cycle time. Open one and you see a third: the stop reasons it offers.
+
+<Shot src="/odoo-guides/odoo-shop-floor-terminal-stop-reasons/sf-wc-laser.webp" alt="Work centre form for a fibre laser with the open session reference, an ideal cycle time of 2 minutes, an Open Terminal button, a Sessions button and a list of stop reasons offered including Breakdown, Setup and Changeover, Nozzle and Lens Change and Quality Hold" width={1440} height={900} caption="The laser: ideal cycle time, the open session and the pause buttons this machine shows." />
+
+The **ideal cycle time** is the minutes the fastest possible unit takes on this machine. It is the benchmark the performance part of OEE is measured against, so set it from a good run, not from the quote. **Stop reasons offered** keeps the terminal relevant. A laser operator needs a nozzle change button, a welder needs a gas cylinder change, and neither needs the other's. Leave the list empty and every reason of the company is offered. **Open Terminal** starts the touch screen with this machine already chosen.
+
+## Stop reasons
+
+Stop reasons are ordinary records under Configuration, Stop Reasons. Eight come with the module: Breakdown, Setup and Changeover, Waiting for Material, Break, Minor Stop, Running Slow, Rework and Quality Hold. Rename them, archive the ones you do not use and add your own.
+
+| Field | What it does |
+|---|---|
+| Loss category | Unplanned downtime, reduced speed or quality loss. Decides where the minutes land in OEE |
+| Blocks the work centre | Pausing for this reason also pauses the whole session, not only the job |
+| Note required | The terminal refuses the pause until something is typed |
+| Expected duration | The minutes this stop normally takes |
+| Instructions | A note held on the reason |
+| Core loss reason | The Odoo productivity loss it logs against, filled in on first use |
+
+<Shot src="/odoo-guides/odoo-shop-floor-terminal-stop-reasons/sf-reason-breakdown.webp" alt="Breakdown stop reason form with code BRK, loss category unplanned downtime, blocks the work centre and note required ticked, the instruction to say what failed and a Stops button counting logged stops" width={1440} height={900} caption="Breakdown: blocking, a note is required, and the Stops button lists every pause on it." />
+
+<Callout title="Two fields with no effect yet">
+In this version nothing reads the expected duration, and the terminal does not show the instructions to the operator. Both are stored on the reason for reference.
+</Callout>
+
+## Running a job on the terminal
+
+Open the terminal from the work centre with Open Terminal. The left column lists every work order on the machine that is not finished or cancelled, with its state and the number of checks still open. Log In opens a session for the signed in Odoo user on this machine.
+
+<Shot src="/odoo-guides/odoo-shop-floor-terminal-stop-reasons/term-wo.webp" alt="Terminal for a MIG weld bay with four work orders on the left and the selected weld corners job on the right showing its state, good 11 and scrap 1, Start, Pause, Resume and Finish buttons, good and scrap boxes with a Record button and one blocking quality check with Pass and Fail" width={1440} height={900} caption="One job on the weld bay: the buttons, the counts and the check still to answer." />
+
+1. **Start.** Anything still running on the job is closed, a productive time log opens and the work order goes to In Progress.
+2. **Record.** Type good and scrap and press Record, as often as the shift needs. Negative numbers, an empty entry and text that is not a number are refused with a plain message.
+3. **Pause.** Pick a reason. The productive log closes and a new log opens against the reason's loss. A blocking reason also pauses the session.
+4. **Resume.** The stop log closes and productive time starts again.
+5. **Finish.** The good count recorded on the terminal goes onto the work order, never more than is still outstanding, and the operation is finished. Finish is refused while a blocking quality check is unanswered or failed, and the message names which.
+6. **Log Out** closes the session and anything still running on it.
+
+<Shot src="/odoo-guides/odoo-shop-floor-terminal-stop-reasons/term-reasons.webp" alt="Terminal pause panel asking why it stopped, with a note box and buttons for Breakdown, Setup and Changeover, Gas Cylinder Change, Waiting for Material, Break, Minor Stop, Running Slow, Rework and Quality Hold" width={1440} height={900} caption="Pause: the reasons this machine offers, and a note for the ones that need it." />
+
+<Callout title="Open the terminal from the work centre">
+In the current build, choosing a machine in the drop-down on Shop Floor, Terminal raises a client error. Opening the terminal with Open Terminal on the work centre or on a running session presets the machine and works. The terminal also logs in whoever is signed in to Odoo: there is no operator picker or badge login.
+</Callout>
+
+## Counted once, whatever the network does
+
+A tablet on a factory floor drops its connection. The browser retries, sometimes twice at once. Before it sends any press, the terminal creates a request token and keeps sending the same token until the server answers. The server stores each token with a unique database index. If the token is already there, the request is a replay: the earlier answer is returned and not one quantity, minute or state is changed. The event then shows how many retries it absorbed, which makes a shift with a bad network visible in the analysis.
+
+The terminal also sends the time the button was pressed, so a press queued while offline lands at the right minute. A time more than five minutes ahead of the server clock is not trusted and the server time is used instead.
+
+<Shot src="/odoo-guides/odoo-shop-floor-terminal-stop-reasons/sf-event-replay.webp" alt="Terminal event form for a record production press on a press brake with work order, session, operator, good 11 and scrap 1, the request token and retries absorbed of 1" width={1440} height={900} caption="A production press sent twice: retries absorbed 1, counted once." />
+
+## Sessions and the event trail
+
+Shop Floor, Sessions holds one record per operator per machine per shift, in a list and a kanban grouped by Draft, Running, Paused and Closed. A closed session shows its shift length, running minutes, stopped minutes, good, scrap and scrap rate. Running and stopped are read from every machine time log on that work centre inside the session window, clipped to it, so a log that was already running when the operator clocked on only counts from that moment.
+
+<Shot src="/odoo-guides/odoo-shop-floor-terminal-stop-reasons/sf-sess-closed.webp" alt="Closed shop floor session for a MIG weld bay with operator, start and end times, shift length 498 minutes, running and stopped minutes, good 11, scrap 1 and scrap rate, and an events list with finish, quality check, record production, resume and pause" width={1440} height={900} caption="A closed shift, with every press in order underneath." />
+
+Analysis, Terminal Events lists every press from every terminal, with filters for production, stops, retries absorbed and today, grouping by work centre, action, stop reason, operator or day, and a pivot view. From a session, Print gives the shift report.
+
+A scheduled action, Shop Floor: close forgotten sessions, runs hourly and closes any session left open sixteen hours after it started, so a terminal left on over the weekend does not block Monday's shift.
+
+<Callout title="No operator break button">
+The session has its own pause for an operator break, logged against the machine with no job on it. No button in the terminal or on the session form calls it in this version, so operators pause the job instead.
+</Callout>

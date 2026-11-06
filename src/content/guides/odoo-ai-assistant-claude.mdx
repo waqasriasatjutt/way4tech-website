@@ -1,0 +1,92 @@
+---
+title: "Claude AI assistant in Odoo: summaries, lead scores, replies and product copy from your records"
+metaTitle: "Claude AI Assistant in Odoo"
+description: "Add an Ask Claude button to Odoo 19 leads, quotes and products: editable prompts with field placeholders, answers reviewed first, every request logged."
+targetQuery: "claude ai assistant odoo"
+category: "Integration"
+summary: "Ask Claude on a lead, quotation or product with your own Anthropic key: shipped prompts for summaries, lead qualification, reply drafts, quote notes, product descriptions and translation, a token log, and prompts you write yourself."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-sales-messaging-tools"
+seriesOrder: 4
+modules:
+  - name: "AI Assistant"
+    technical: "wt_ai_assistant"
+    note: "USD 199, Odoo 19 Community, needs CRM and Sales, uses your own Anthropic API key"
+demo:
+  url: "https://sales-demo.way4tech.com/"
+  label: "Sales and messaging demo"
+related: ["odoo-sales-messaging-tools", "odoo-email-drip-campaigns", "odoo-sales-crm-dashboard"]
+linkFrom: ["/modules/wt_ai_assistant/", "/modules/crm/"]
+sources: []
+faqs:
+  - q: "Which AI model does it use?"
+    a: "Anthropic's Claude, with a choice of Claude Opus 5 (the default), Claude Sonnet 5 or Claude Haiku 4.5 on the provider. You use your own Anthropic API key and Anthropic bills you per token."
+  - q: "Does the assistant change records by itself?"
+    a: "No. The answer is shown in the dialog first. It is only written to the record, as a chatter note or into a chosen field, when you press Keep This Answer or Apply."
+  - q: "What customer data is sent to Anthropic?"
+    a: "Only what the prompt includes: the fields named in its placeholders and, when Include Recent Messages is on, the last few chatter messages. The Prompt Sent tab on each request shows exactly what was sent."
+  - q: "Can I try it without paying for API calls?"
+    a: "Yes. The provider starts in simulation mode and returns a fixed placeholder answer without calling Anthropic. It also does that when no key is set, so a missing key never costs anything."
+  - q: "Does it score leads into a field I can sort on?"
+    a: "The shipped prompt returns the score as text in the answer. To sort or filter on it, add a field to leads and point the prompt's Write Result To at it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most of the writing a salesperson does is the same handful of jobs: catch up on a lead a colleague worked, decide whether a new enquiry deserves a call today, answer the customer's last email, put a covering note on a quote, and write a product description that is not just the product name. Each takes ten minutes and each is mostly reading the record and the chatter. AI Assistant by Way4Tech puts those jobs behind an **Ask Claude** button on leads, quotations and products in Odoo 19, using prompts you control and answers you check before anything is saved. This chapter of the [sales and messaging tools guide](/odoo-guides/odoo-sales-messaging-tools/) shows it on the live demo.
+
+## The provider and simulation mode
+
+Everything goes through a **provider** record under AI Assistant, Configuration, Providers. It holds your Anthropic API key, the model (Claude Opus 5 by default, Claude Sonnet 5 or Claude Haiku 4.5), a cap on answer length (4,096 tokens) and an effort level of low, medium or high, which is sent to the Opus and Sonnet models only. The key field is restricted to the Configure the Assistant group, so other users cannot read it even through an export.
+
+<Shot src="/odoo-guides/odoo-ai-assistant-claude/ai-provider-form.webp" alt="AI provider Claude in Odoo with an empty API key, model Claude Opus 5, max tokens 4096, effort medium, simulation mode switched on, state Ready and counts of requests and tokens used" width={1440} height={900} caption="The provider: key, model, effort and simulation mode." />
+
+The provider is created at install in **Simulation Mode**. In simulation, and also whenever the key is empty, Ask Claude returns a fixed text that starts "[Simulation mode] No request was sent to Anthropic" and costs nothing. Test Connection in simulation marks the provider Ready without calling anyone. With a key and simulation off, it asks Claude for one word and shows the answer, or the error. Live calls need the Python package `anthropic` on the server; if it is missing, the request fails with a message saying so.
+
+## Asking Claude
+
+Leads and opportunities, quotations and products get an **Ask Claude** button. The dialog opens with the provider and the first prompt for that kind of record, already filled with the record's values and, for prompts that want it, the last few chatter messages. You can read and edit exactly what will be sent before you press the button.
+
+<Shot src="/odoo-guides/odoo-ai-assistant-claude/ai-wiz-lead.webp" alt="Ask Claude dialog on the lead Tools for new fit-out team, Ridgeway Engineering, with a yellow simulation mode banner, provider Claude, the prompt Summarise this opportunity and the filled prompt text listing opportunity, customer, expected revenue, stage, salesperson and description" width={1440} height={900} caption="Ask Claude on a lead, with the prompt filled from the record." />
+
+Six prompts ship with the module:
+
+| Prompt | Works on | What it asks for |
+|---|---|---|
+| Summarise this opportunity | Leads | Where it stands in two sentences, what the customer wants, the next step |
+| Qualify this lead | Leads | A score out of 100, why, what is missing, one next step |
+| Draft a reply to the customer | Leads | A reply to the latest customer message, no invented prices or dates |
+| Write a product description | Products | Two short paragraphs and three benefit bullets, written into the sales description |
+| Explain this quotation to the customer | Quotations | A plain covering note for the quote |
+| Translate a text | Anything | A translation, target language set in the prompt |
+
+Press **Ask Claude** and the answer appears in the same dialog. **Keep This Answer** applies it; **Close** throws it away. Either way the exchange is logged.
+
+<Shot src="/odoo-guides/odoo-ai-assistant-claude/ai-wiz-answer.webp" alt="Ask Claude dialog after asking, scrolled to the answer, which reads Simulation mode no request was sent to Anthropic and explains where Claude's answer would appear, with Ask Claude, Keep This Answer and Close buttons" width={1440} height={900} caption="The real answer on the demo: the simulation text, because no key is connected." />
+
+Applying an answer posts it in the record's chatter under the heading Claude, so the next person sees it. A prompt can instead have **Write Result To** set to a field: the shipped product prompt writes straight into the product's sales description and does not post in the chatter.
+
+## The request log
+
+AI Assistant, AI Requests lists every exchange: when, who asked, the prompt, the document, the model, the total tokens and the state (Done, Applied or Failed). The token total is what Anthropic bills you for, and the provider form adds it up. Filters for my requests, failed and applied, and groupings by prompt, user and month, show who uses it and for what.
+
+<Shot src="/odoo-guides/odoo-ai-assistant-claude/ai-requests.webp" alt="AI Requests list with requests by Rania Haddad, Omar Siddiqui and Priya Menon for summaries, lead qualification, reply drafts, quotation notes, product descriptions and translation, their documents, the Claude model, token totals and states Done, Applied and Failed" width={1440} height={900} caption="The request log, with tokens per request and the total." />
+
+Each request keeps the answer, the input and output tokens, and on the **Prompt Sent** tab the exact text that went out after the placeholders and chatter were filled in. That tab is the first place to look when an answer is off, and the place to check what customer data left the database. **Apply** on a request does what Keep This Answer does, and Open Document goes to the record. A user with Use the Assistant sees only their own requests; the configure group sees everyone's.
+
+<Shot src="/odoo-guides/odoo-ai-assistant-claude/ai-req-reply-prompt.webp" alt="AI request Draft a reply to the customer, state Applied, 884 input and 121 output tokens, with the Prompt Sent tab showing the instruction, the opportunity and customer, and the recent conversation from the chatter" width={1440} height={900} caption="Prompt Sent: exactly what Claude was given, chatter included." />
+
+## Writing your own prompts
+
+Prompts live under Configuration, Prompts and are ordinary records. **Applies to** picks the model. **Prompt** is the question, with `{{field}}` placeholders filled from the record; dotted paths such as `{{partner_id.name}}` work. **Instructions** is the system prompt that sets the role and ground rules and is never shown to the user. **Include Recent Messages** adds the last few chatter messages, oldest first, with a limit you set. **Write Result To**, **Post to Chatter** and **Show as Action** decide where the answer goes and whether the prompt is offered in the dialog. **Preview** renders the prompt on the first record of the model, so you can check the placeholders without asking anything.
+
+<Shot src="/odoo-guides/odoo-ai-assistant-claude/ai-prompt-qualify.webp" alt="AI prompt Qualify this lead applying to leads with include recent messages on, post to chatter and show as action ticked, and the prompt text with placeholders for name, partner, email, phone, expected revenue, stage and description and the answer shape Score, Why, Missing and Next step" width={1440} height={900} caption="The qualify prompt: placeholders, the answer shape and where the result goes." />
+
+<Callout title="Limits in this version, from the code">
+The lead score is text inside the answer, not a field. The store listing mentions extracting action points, but no prompt for that ships, so write one. Placeholders on HTML fields such as a lead's description pass the HTML tags through, and numbers are not formatted. Applied answers in the chatter show literal `<br/>` tags between paragraphs. A user without Odoo's access rights group gets an access error when keeping the answer of a prompt with Write Result To set, so keep product descriptions as an administrator for now. A failed call shows its error in the dialog, but that failed request is not kept in the log.
+</Callout>
+
+## On the demo
+
+The demo runs in simulation mode with no Anthropic key, so asking Claude there returns the simulation text shown above and logs a request. The other answers in its request log, a summary, two lead scores, a reply draft, three product descriptions, a quote note, a translation and a failed call, were stored as example records when the demo was built, to show what live use looks like. They are not output from Claude.

@@ -1,0 +1,108 @@
+---
+title: "WhatsApp Cloud API in Odoo Community: templates, quotes, invoices, replies and overdue reminders"
+metaTitle: "WhatsApp Cloud API Integration"
+description: "Connect Odoo 19 Community to the Meta WhatsApp Cloud API: approved templates, quotes and invoices, a reply inbox, read receipts and overdue reminders."
+targetQuery: "odoo whatsapp cloud api integration community"
+category: "Integration"
+summary: "Set up a WhatsApp Business number in Odoo Community with the official Cloud API, map template placeholders to Odoo fields, send from quotations and invoices, read replies and receipts, and chase overdue invoices every day."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-sales-messaging-tools"
+seriesOrder: 1
+modules:
+  - name: "WhatsApp Integration"
+    technical: "wt_whatsapp_connector"
+    note: "USD 149, Odoo 19 Community, needs Discuss, Invoicing and Sales"
+demo:
+  url: "https://sales-demo.way4tech.com/"
+  label: "Sales and messaging demo"
+related: ["odoo-sales-messaging-tools", "odoo-email-drip-campaigns", "odoo-helpdesk-community"]
+linkFrom: ["/integrations/whatsapp/", "/modules/wt_whatsapp_connector/"]
+sources: []
+faqs:
+  - q: "Does this use the official WhatsApp API or a gateway?"
+    a: "The official Meta WhatsApp Cloud API, called directly from Odoo with your own System User token. There is no reseller in between, and Meta bills your business account for the conversations."
+  - q: "Can customers reply and see the reply in Odoo?"
+    a: "Yes, once you register the webhook URL in Meta and set the App Secret on the account. Replies arrive as incoming messages in the inbox, matched to a contact on the last nine digits of the phone number. Without the App Secret every inbound call is refused."
+  - q: "Can I send a free text message instead of a template?"
+    a: "Yes, when no template is picked the module sends plain text. Meta only delivers free text inside the 24 hour window after the customer last wrote to you. Outside it the message comes back as Failed with Meta's error."
+  - q: "Will overdue reminders message a customer every day?"
+    a: "Yes. The daily job sends the Payment Reminder template to every posted, unpaid or partly paid invoice past its due date, at most once per invoice per day, until it is paid. There is no maximum count, so settle or switch off where a customer asks you to stop."
+  - q: "Can I try it without a Meta account?"
+    a: "Yes. Every account starts in simulation mode, which records messages and marks them sent without calling Meta. The live demo stays in simulation mode."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+In much of the Gulf, South Asia and Africa a customer who leaves three quotation emails unread will answer a WhatsApp message within minutes. The trouble is that those chats usually live on one salesperson's phone. When that person is on leave, nobody knows what the customer was promised, and the accounts team chasing an invoice has no idea the customer already asked for a corrected copy. WhatsApp Integration puts the conversation back on the quotation, the invoice and the contact in Odoo 19 Community, through Meta's own Cloud API. This chapter of the [sales and messaging tools guide](/odoo-guides/odoo-sales-messaging-tools/) walks through it on the live demo.
+
+## What Meta gives you, and what Odoo keeps
+
+There is no reseller in this module. You set up a WhatsApp Business account and an app in Meta's developer console, add your number and create a permanent System User token. Meta then gives you four values:
+
+| Meta value | What it is for in Odoo |
+|---|---|
+| Phone Number ID | A long numeric id for your number (not the number itself). Every send goes to it |
+| WhatsApp Business Account ID | Only needed to pull the template list from Meta |
+| Access token | Authorises each send. Treat it as a password |
+| App Secret | Proves that an inbound webhook call really came from Meta |
+
+In Odoo each number is an **account** record, so one database can run several numbers, one per company or brand, each with its own token. The demo has a sales line and a collections line.
+
+<Shot src="/odoo-guides/odoo-whatsapp-cloud-api-integration/wa-account-form.webp" alt="WhatsApp account Dunecrest Sales Line in Odoo with a simulation ribbon, Meta credentials (phone number id, business account id, masked access token, empty app secret), simulation mode on, Graph base URL and API version v21.0, and the webhook URL and verify token" width={1440} height={900} caption="A WhatsApp account: Meta credentials, the endpoint, simulation mode and the webhook to register in Meta." />
+
+**Test Connection** asks Meta for the phone number record. It is read only and cheap. With a good token the account turns Connected and Meta's display number is shown; with a bad one it turns to Error and keeps Meta's answer under Last Error. Every account starts with **Simulation Mode** on. In simulation the module writes the message to the log and marks it sent without calling Meta at all, so you can wire up templates and buttons before you have credentials. Turn it off once the token is real.
+
+## Templates and their placeholders
+
+Meta only lets a business open a conversation with a template it has approved, so templates are written and approved on Meta's side. Odoo stores the approved wording and, more usefully, the mapping that fills each placeholder from a record.
+
+A template has a label, a **technical name** that must match the name in Meta exactly, a language code (en_US, ar), a category (Utility, Marketing or Authentication), the model it applies to, and the header, body and footer with `{{1}}`, `{{2}}` placeholders. Draft templates are greyed out in the list until you mark them approved by Meta.
+
+<Shot src="/odoo-guides/odoo-whatsapp-cloud-api-integration/wa-template-new.webp" alt="WhatsApp template Delivery Scheduled for sales orders, utility category, approved, with a body containing three placeholders and a Placeholders tab mapping position 1 to partner_id.name, 2 to name and 3 to commitment_date with fallbacks" width={1440} height={900} caption="Each placeholder position reads a field from the record, with a fallback for when it is empty." />
+
+On the Placeholders tab each row maps a position to a dotted **field path** such as `partner_id.name` or `amount_total`. Positions must run 1, 2, 3 with no gaps, and the module refuses a template that skips one. Set a **fallback** on every row, because Meta rejects a message with an empty placeholder. Amounts are formatted with their currency and dates the way Odoo shows them, so a customer reads "21,798.00 AED" rather than a bare number. **Preview** fills the template from the first record of its model and shows the result without sending anything.
+
+The module ships three templates in draft: Invoice Sent, Payment Reminder and Quotation Sent. Register the same wording with Meta before you approve them in Odoo.
+
+## Sending from a quotation or an invoice
+
+Quotations and customer invoices get a **Send on WhatsApp** button in the header. It opens a dialog with the default account, the customer as recipient and a template for that kind of document, already filled from the record. Pick another template and the text is rebuilt. Add people who are not contacts yet under Extra Numbers, comma separated. Any chosen contact without a phone number is listed in a warning, numbers are cleaned to digits, and duplicates are dropped.
+
+<Shot src="/odoo-guides/odoo-whatsapp-cloud-api-integration/wa-wiz-quote.webp" alt="Send on WhatsApp dialog opened from quotation S00015 with the account Dunecrest Sales Line, the template Delivery Scheduled, Coastal Catering Company as recipient and the filled message text" width={1440} height={900} caption="Send on WhatsApp from a quotation. The text is the template filled from the record." />
+
+After the send, a note goes into the chatter of the quote or invoice with the number and the text, so the next person who opens the document sees what was sent. Contacts get a WhatsApp button that lists every message to and from them, and WhatsApp, Messages, New Message opens the same dialog with no document behind it.
+
+<Callout title="Small things to know in this version">
+The template the dialog offers first is the first one for that model in alphabetical order, so check the template before you press Send. The chatter note prints a literal `<br/>` between the number and the text; the message itself is fine. And free text without a template only reaches the customer inside Meta's 24 hour window after their last message to you.
+</Callout>
+
+## Receipts, replies and the inbox
+
+Each account shows a webhook URL (your Odoo address plus `/wt_whatsapp/webhook`) and a random verify token. In Meta you register the URL, paste the token and subscribe to the messages field. Meta first checks the URL with the token, and from then on posts every status change and every reply to it.
+
+Before writing anything, the module checks Meta's `X-Hub-Signature-256` header against the account's App Secret. This matters: the URL is public, and without the check anyone who knew it could forge customer replies. If no App Secret is set, every inbound call is refused, so replies and read receipts never arrive. Set it before you go live.
+
+A signed call is routed to the account that owns the receiving number. Receipts move a message along Sent, Delivered and Read, or to Failed with Meta's error. A reply becomes an incoming message, matched to a contact on the last nine digits of the number, so `+971 50 555 3001` saved on a contact matches `971505553001` from Meta.
+
+<Shot src="/odoo-guides/odoo-whatsapp-cloud-api-integration/wa-messages.webp" alt="WhatsApp All Messages list with incoming and outgoing messages, partner, phone, body, linked document and state Received, Read, Delivered or Failed, the failed row in red with a resend icon" width={1440} height={900} caption="All Messages: every message in or out with its document and state." />
+
+The **Inbox** shows incoming messages only. A message from a number nobody has saved arrives without a contact; create the contact and later messages land on it. All Messages has filters for outgoing, incoming, failed and delivered or read, and groupings by contact, status and template, which gives a quick read of how many quotes were opened against merely delivered.
+
+<Shot src="/odoo-guides/odoo-whatsapp-cloud-api-integration/wa-inbox.webp" alt="WhatsApp Inbox with incoming messages from demo customers, including one from an unknown number asking about delivery to Fujairah and one asking whether quotation S00018 is still valid" width={1440} height={900} caption="The inbox: replies from customers, matched to contacts by phone number." />
+
+A send never throws an error on screen. If Meta refuses a message, the refusal is written on the message, so one bad number does not stop a batch. **Resend** puts a failed message back to draft and sends it again with the same template and values.
+
+<Shot src="/odoo-guides/odoo-whatsapp-cloud-api-integration/wa-msg-failed.webp" alt="A failed outgoing WhatsApp payment reminder for Northgate Logistics FZE with the invoice reference, the template Payment Reminder, a simulated Meta message id and the error code 131026 message undeliverable, with a Resend button" width={1440} height={900} caption="A failed payment reminder keeps Meta's error. Resend tries again." />
+
+## Overdue invoice reminders
+
+Tick **Automatic Payment Reminders** in Settings, General, or switch on the scheduled action "WhatsApp: overdue invoice reminders". Once a day it finds posted customer invoices that are not paid or only partly paid and are past their due date, up to 200 per run, and sends each the Payment Reminder template from the default account: customer name, invoice number, amount still due and the due date. An invoice that already had an outgoing WhatsApp message in the last 24 hours is skipped, so nobody gets two in a day. It is off at install, so nobody is messaged the moment the module goes in.
+
+<Callout title="It does not stop on its own">
+The reminder repeats every day until the invoice is paid. There is no maximum number and no gap setting. On the demo one customer replies asking to stop because they already paid; in real use that means reconciling the payment or switching the reminders off.
+</Callout>
+
+## On the demo
+
+The demo's two accounts are in simulation mode with placeholder ids and no App Secret, so it sends nothing to Meta and receives nothing from it. The 55 messages you see, quotes read and delivered, invoices sent, overdue reminders with one failure, free text chats and eleven replies, were stored as records when the demo was built. The overdue reminder job runs every day there in simulation, so new reminders appear as sent without leaving the server.

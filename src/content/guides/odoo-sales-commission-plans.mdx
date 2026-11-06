@@ -1,0 +1,115 @@
+---
+title: "Sales commission in Odoo Community: plans, tiers, several agents per order and settlements"
+metaTitle: "Sales Commission Plans and Settlements"
+description: "Set up sales commission in Odoo 19 Community: percentage, margin, per unit, per line or tiered plans, paid on invoice or payment and billed to agents."
+targetQuery: "odoo sales commission community"
+category: "Operations"
+summary: "Commission plans and rules for salespeople, resellers and introducers, agents on the sales order, commission lines made when an invoice is posted or paid, and monthly settlements raised as vendor bills with a statement."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-sales-messaging-tools"
+seriesOrder: 3
+modules:
+  - name: "Sales Commission"
+    technical: "wt_sales_commission"
+    note: "USD 15, Odoo 19 Community, needs Sales and Invoicing"
+demo:
+  url: "https://sales-demo.way4tech.com/"
+  label: "Sales and messaging demo"
+related: ["odoo-sales-messaging-tools", "odoo-car-wash-staff-commission", "odoo-insurance-commission-reconciliation", "odoo-sales-crm-dashboard"]
+linkFrom: ["/modules/wt_sales_commission/", "/modules/sales/"]
+sources: []
+faqs:
+  - q: "Can commission be paid only after the customer pays?"
+    a: "Yes. Each plan has a basis: when the invoice is posted, or when it is paid. With on payment, the commission lines are only created once Odoo marks the invoice fully paid, so a bad debt never pays commission."
+  - q: "Can two salespeople share one order?"
+    a: "Yes. Put both in Commission Agents on the sales order. Each earns on every invoice line under their own plan. On the demo, some orders are shared between the salesperson and an outside reseller."
+  - q: "How does the tiered calculation work?"
+    a: "Each invoice line's subtotal is compared with the tiers and the whole line is paid at the rate of the tier it falls in. The tier is chosen per line, not on the order or the month total, so it is not a volume bonus over a period."
+  - q: "How is commission paid out?"
+    a: "A settlement collects one agent's confirmed lines for a period. Confirming it marks the lines settled, and Create Vendor Bill raises one draft vendor bill to the agent for the total, which accounts post and pay like any supplier bill."
+  - q: "Can salespeople see each other's commission?"
+    a: "No. With the See Commission group a salesperson sees only their own lines. The Manage Commission group sees every agent, the settlements and the plans."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Commission is usually agreed in a meeting, written in an email and worked out in a spreadsheet at month end, where it turns into an argument. Did the services count double? Was the invoice paid before or after the cut off? Does the reseller earn on the order the salesperson closed? Odoo Community has no commission model at all, so every company invents its own. Sales Commission by Way4Tech puts the scheme into Odoo as plans and rules, works the amount out for every invoice line the same way for everyone, and pays it through a vendor bill. This chapter of the [sales and messaging tools guide](/odoo-guides/odoo-sales-messaging-tools/) follows it on the live demo.
+
+## Plans and the basis
+
+A **plan** is a named set of rules with one basis:
+
+- **When the invoice is posted**: commission is owed the moment the invoice is validated.
+- **When the invoice is paid**: commission is only created when Odoo marks the invoice fully paid.
+
+On payment is the safer choice. Nothing is owed until the customer has settled, so a written off invoice never pays commission and nobody has to claw it back. The module ships one plan, Standard 5% on Payment. The demo adds five more: a trade desk plan, a margin share for project sales, a tiered plan, a reseller plan and an introducer plan.
+
+<Shot src="/odoo-guides/odoo-sales-commission-plans/co-plan-trade.webp" alt="Commission plan Trade Desk 4% on Invoice with basis when the invoice is posted and two rules: Services 8% on the two service products tried first, and All goods 4% as the catch all" width={1440} height={900} caption="A plan with two rules. The services rule has the lower sequence, so it is tried first." />
+
+## Rules: first match wins
+
+For each invoice line the plan's rules are tried in sequence order. A rule matches when the line passes all of its filters: **products**, **product categories**, **customers** (an empty filter means any) and a **minimum line amount**. The first rule that matches decides the line; a line no rule matches earns nothing. Keep the catch all rule last.
+
+There are five ways for a rule to calculate:
+
+| Calculation | Amount | Demo plan |
+|---|---|---|
+| Percentage of the sale | Line subtotal times the rate | Standard 5%, Trade Desk 4% and 8% |
+| Percentage of the margin | Subtotal minus product cost times quantity, times the rate | Projects Margin Share 25% |
+| Fixed amount per unit | Fixed amount times quantity | Reseller AED 1.50 per unit on core PPE |
+| Fixed amount per line | A fixed amount, once per line | Reseller AED 40 on lines of AED 500 or more |
+| Tiered on the sale amount | Subtotal times the rate of the tier it falls in | Tiered Project Sales |
+
+The margin calculation uses the product's cost. If a product has no cost, the full subtotal counts as margin, so fill in costs before you put anyone on a margin plan.
+
+<Shot src="/odoo-guides/odoo-sales-commission-plans/co-rule-tier.webp" alt="Commission rule Tiered on line value with calculation tiered on the sale amount and three tiers: 0 to 4,999.99 at 2%, 5,000 to 19,999.99 at 3.5% and from 20,000 with no upper bound at 5%" width={1440} height={900} caption="The tiers of the demo's tiered plan. A To of zero means no upper bound." />
+
+<Callout title="Tiers are per line">
+The tier is picked from each invoice line's own subtotal, not from the order total or the agent's month. An order of many small lines earns the lowest rate on each line. If your scheme pays a higher rate once an agent passes a monthly target, this calculation does not do that.
+</Callout>
+
+## Making someone an agent
+
+Any contact can be an agent. On the contact's Sales and Purchase tab tick **Commission Agent** and pick a **Commission Plan**. Salespeople become agents through their own contact record; resellers and introducers are ordinary contacts. A Commission button on an agent's contact counts their confirmed lines.
+
+On a customer, **Assigned Agent** names who earns on that customer's invoices when no sales order says otherwise. The demo's introducer is assigned to three customers, the reseller to two.
+
+## Who earns on an order
+
+The sales order gets two fields under the salesperson, on the Other Info tab. **Commission Agents** can hold several people, and each earns on every line under their own plan. **Estimated Commission** shows what those agents would earn if the whole order were invoiced today. On a new quotation the agents are suggested from the salesperson if they are an agent, otherwise from the customer's assigned agent.
+
+<Shot src="/odoo-guides/odoo-sales-commission-plans/so-form-two-agents.webp" alt="Sales order S00025, Other Info tab, with salesperson Rania Haddad, commission agents Rania Haddad and Sandline Trading Agency and an estimated commission of 833.60 AED" width={1440} height={900} caption="Two agents on one order, with the estimate of what they would earn." />
+
+Nothing is recorded on the order itself. When an invoice is posted, or paid for an on payment plan, the module looks for agents in this order: the agents on the sales orders behind the invoice; if none, the invoice's salesperson if they are an agent; if not, the customer's assigned agent. Only agents with a plan earn. A credit note creates negative lines, and an invoice in another currency is converted to the company currency at the invoice date. **Recompute Commission** on a posted invoice runs both bases again for corrections, without duplicating lines that already exist.
+
+## Commission lines
+
+Every agent gets one line per invoice line: date, customer, invoice, product, base, rate and amount. New lines are **Draft**. **Confirm** makes them payable, **Cancel** takes one out (refused once it is settled), and **Reset to Draft** brings a confirmed or cancelled line back. Filters for draft, confirmed, not settled and this year, and groupings by agent, customer, status and month, give the month end review.
+
+<Shot src="/odoo-guides/odoo-sales-commission-plans/co-lines-agent.webp" alt="Commission Lines filtered on not settled and grouped by agent: Marina Point Introductions with five confirmed lines at 2%, Priya Menon and Sandline Trading Agency, with base and commission totals in AED" width={1440} height={900} caption="Lines not settled yet, grouped by agent, for the month end check." />
+
+A salesperson with only the See Commission group sees their own lines and nobody else's, through a record rule. The Manage Commission group sees every agent, the settlements and the plans.
+
+## Settlements and vendor bills
+
+A **settlement** gathers one agent's confirmed commission for a period and turns it into something accounts can pay.
+
+1. **New settlement.** Pick the agent and the dates, then **Collect Lines**. Every confirmed, unsettled line of that agent dated in the period is pulled in. If there are none it says so.
+2. **Confirm.** The lines are marked settled and the total is fixed.
+3. **Create Vendor Bill.** One draft vendor bill to the agent, dated the end of the period, with one line for the total on the Sales Commission service product. The settlement turns Billed.
+4. **Accounts post and pay the bill** like any supplier bill.
+
+<Shot src="/odoo-guides/odoo-sales-commission-plans/co-set-billed.webp" alt="Commission settlement COM/2026/0001 for Rania Haddad covering June and July 2026, state Billed, with its total, the linked vendor bill and the list of settled commission lines with customer, invoice, product, base, rate and commission" width={1440} height={900} caption="A billed settlement with its lines and the vendor bill it raised." />
+
+**Cancel** releases the lines back to confirmed so they can be settled again, and is refused once the vendor bill is posted. **Print, Commission Statement** gives the agent a statement of every line in the settlement and the total.
+
+<Shot src="/odoo-guides/odoo-sales-commission-plans/doc-commission.webp" alt="Printed commission statement for settlement COM/2026/0001 listing date, customer, invoice, base, rate and commission for each line, with the total due to the agent" width={1440} height={900} caption="The commission statement for the agent." />
+
+<Callout title="One thing to watch">
+If you cancel a settlement whose vendor bill is still in draft, the bill stays linked to it. After resetting the settlement, Create Vendor Bill then refuses with "already has a vendor bill". Delete the draft bill first, then reset and bill again.
+</Callout>
+
+## On the demo
+
+The demo has four salespeople on four different plans, a reseller and an introducer, 136 commission lines from June to November 2026, and settlements in every state: posted June to August bills, a billed September settlement with its bill still in draft, confirmed and draft settlements, and one cancelled. October and November lines are partly still in draft, the way a month end review would find them.

@@ -1,0 +1,105 @@
+---
+title: "Email drip campaigns in Odoo Community: flows triggered by time, opens and clicks"
+metaTitle: "Email Drip Campaigns on Community"
+description: "Build email drip campaigns on Odoo 19 Community: an audience filter, a flow of steps triggered by delays, opens and clicks, tags, activities and results."
+targetQuery: "odoo community email drip campaign"
+category: "Operations"
+summary: "Marketing Automation for Odoo Community: pick the records, build a tree of email, activity, server action and tag steps fired by time, opens, clicks or no open, test it on one lead, then read participants, traces and rates."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-sales-messaging-tools"
+seriesOrder: 2
+modules:
+  - name: "Marketing Automation (Email Drip Campaigns)"
+    technical: "wt_marketing_automation"
+    note: "USD 129, Odoo 19 Community, needs Discuss and UTM"
+demo:
+  url: "https://sales-demo.way4tech.com/"
+  label: "Sales and messaging demo"
+related: ["odoo-sales-messaging-tools", "odoo-whatsapp-cloud-api-integration", "odoo-ai-assistant-claude"]
+linkFrom: ["/modules/marketing-automation/", "/modules/email-marketing/", "/modules/wt_marketing_automation/"]
+sources: []
+faqs:
+  - q: "Is Odoo's own Marketing Automation available on Community?"
+    a: "No, Odoo's Marketing Automation app is Enterprise only. This module gives Community users drip campaigns with time, open and click triggers, tags, activities and server actions."
+  - q: "Can a campaign run on leads instead of contacts?"
+    a: "Yes, on any model with records. The demo runs one on CRM leads and three on contacts. Email steps need a mail template made for that model and an email address on the record."
+  - q: "How often does a campaign run?"
+    a: "A scheduled action runs every hour as OdooBot. Each pass adds newly matching records, reads bounces back, queues reactions to opens and clicks, processes up to 1,000 due steps and closes finished participants. Run Now on a campaign does the same for that campaign at once."
+  - q: "Can the same email go out twice to one person?"
+    a: "No. A database rule allows one trace per person per step, and each step is locked before it runs, so two workers cannot send the same step twice."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A web enquiry that waits a week for a price list has usually bought somewhere else by the time it arrives. The fix is not more effort from the sales team, it is a sequence that runs without them: the welcome email the day the lead comes in, the price list three days later, and a call booked for the account manager if the price list was never opened. On Odoo Enterprise that is the Marketing Automation app. On Community it is this module, Marketing Automation by Way4Tech, part of the [sales and messaging tools guide](/odoo-guides/odoo-sales-messaging-tools/).
+
+## A campaign is three things
+
+Every campaign has an **audience** (which records take part), a **flow** (a tree of steps) and a history (participants and traces). Campaigns have three states. Draft is being built and runs nothing. Running takes on new records and processes what is due. Stopped leaves everything exactly where it is. There is no done state: a finished campaign is a stopped one whose participants have all completed.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-kanban.webp" alt="Automation Campaigns kanban grouped by Draft, Running and Stopped, with New Lead Welcome Series and Quarterly Restock Reminder running, Safety Week Promotion 2026 and Summer Price List Update stopped and Year-End Stock Clearance in draft" width={1440} height={900} caption="Campaigns by state on the demo: two running, two stopped, one draft." />
+
+## The audience
+
+On the campaign you choose a **target model**, Lead on the demo's welcome series, and an **audience** filter on it. The demo uses a tag, so every lead tagged Welcome Series takes part. The filter is read again on every run, so a lead tagged next month joins next month without anybody pressing a button. Three settings control the flow of people:
+
+- **Add Each Record Once**: a record goes through the campaign one time only. Untick it to let a record that finished come round again if it still matches.
+- **Records Added Per Run**: caps how many join in one pass, 1,000 by default, so a filter that suddenly matches everything cannot flood the queue.
+- **Reaction Window**: how many days an email is watched for an open or a click, 30 by default.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-form-a.webp" alt="Campaign New Lead Welcome Series on leads, running, with the audience Tags name equals Welcome Series matching 12 records, records added per run 200, reaction window 30 days and a Flow tab listing five steps with sent, opened and clicked counts" width={1440} height={900} caption="The welcome series: audience, settings and the flow, with counts per step." />
+
+Only users in the Configure Campaigns group can change the target model or the audience. The engine reads the audience as superuser, so anyone who could rewrite the filter could point a campaign at any table and read its record names off the participant list. Once a campaign has participants its model is locked; duplicate it rather than repointing it.
+
+## The flow: triggers and actions
+
+The Flow tab is a tree, indented so you can read it. A step with no previous step fires when a record joins. Every other step hangs off a previous one and fires relative to it, after a delay in hours, days, weeks or months. There are five triggers:
+
+| Trigger | Fires |
+|---|---|
+| At the start of the workflow | When the record joins, plus the delay |
+| After the previous step | The delay after the previous step ran |
+| After the previous e-mail was opened | The delay after the open |
+| After the previous e-mail was clicked | The delay after the click |
+| If the previous e-mail was not opened | After the delay, only if there was no open by then |
+
+The last three need the previous step to send an email, and the module checks that. A step can do one of four things: **send an e-mail** from a template for that model, **schedule an activity** (type, summary, note, due in so many days, for a named user or the campaign's responsible), **run a server action** of the same model, or **add or remove a tag** on a tag field. Flows can be ten steps deep and cannot loop back on themselves.
+
+The demo's welcome series sends the welcome email at once and the price list three days later. Opening the price list adds the tag Engaged. Clicking it runs a server action that marks the lead as hot and writes a note. Not opening it within four days books a call.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-step-activity.webp" alt="Campaign step Call if price list ignored: trigger if the previous e-mail was not opened, previous step Price list email, delay 4 days, action schedule an activity of type Call with summary Call price list not opened, due in 2 days" width={1440} height={900} caption="A step that books a call when the price list was not opened within four days." />
+
+A step can also **expire**. Give it a validity and it is dropped if it could not run in time, which is right for a message that only makes sense on the day: if the server was down for a week, the "last day of the offer" email is not sent a week late.
+
+## Test on one record before you start
+
+Waiting three days to see whether step two works is not a test. **Test** on the campaign asks for a record id (read it off the record's address bar) and shows the record's name. With Ignore Delays ticked, the entry steps are queued for now and run straight away; everything after that is left to the hourly run, as for a real participant. The participant is flagged as a test so it can be filtered out of the figures.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-wiz-test.webp" alt="Test Campaign dialog over the welcome series showing the campaign, the model crm.lead, an empty Record ID field and an Ignore Delays checkbox ticked, with Run and Cancel buttons" width={1440} height={900} caption="Test runs the entry steps on one record straight away." />
+
+With Add Each Record Once on, a record that has already been through cannot be tested again. Duplicate the campaign to test twice. When the test looks right, press **Start**; Start refuses if no step is triggered at the start.
+
+## What the engine does every hour
+
+The scheduled action "Marketing: run campaigns that are due" runs hourly as OdooBot. For each running campaign, inside its own savepoint so one broken campaign cannot stop the others, it adds new matching records, reads bounces back from the outgoing mail, queues the open and click reactions that happened since the last run, processes up to 1,000 due steps, and marks participants completed once nothing is waiting and nothing can still react. Each step is locked before it runs and the database allows one trace per person per step, so a busy server with two workers cannot send the same email twice.
+
+Opens are counted by a one pixel image added to each email, clicks by sending every link through Odoo first. Both routes take only the trace's random token, so a forwarded email cannot be turned into a redirect to somewhere else. A click also counts as an open, because many mail clients block images. Links are tagged with the campaign's UTM campaign, source and medium on the way out.
+
+## Reading the results
+
+Every person in a campaign is a **participant** (running, completed or stopped) and every step they reach is a **trace** (scheduled, processed, rejected or cancelled). A participant can be stopped on their own, which cancels everything still scheduled for them, and resumed later.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-traces-calendar.webp" alt="Campaign traces in calendar view for November 2026 showing welcome, price list and restock reminder steps on the days they ran or are due" width={1440} height={900} caption="The traces calendar: what went out, and what is waiting, day by day." />
+
+A rejected trace carries one of ten reasons: the record no longer exists, no email address, no template, the model has no activities, the tag could not be resolved, the previous email was opened after all, the email could not be delivered, too late to run, the participant was stopped, or the step raised an error. Most rejections in a healthy campaign are the "not opened" branch being skipped because the email was opened, which is what it should do.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-trace-bounced.webp" alt="A rejected campaign trace for the welcome email with reason the e-mail could not be delivered and the mail server error mailbox unavailable user does not exist" width={1440} height={900} caption="A bounce: the trace is rejected with the mail server's reason, and the step queued behind it is cancelled." />
+
+On the campaign, the Results tab gives traces, sent, opened and clicked, with open and click rates against emails sent. An email that was opened and then bounced is taken out of both figures, so the rate cannot pass 100%. The traces also open as a pivot and a bar graph, and Print, Campaign Summary gives a one page summary with every step's figures.
+
+<Shot src="/odoo-guides/odoo-email-drip-campaigns/ma-form-a-results.webp" alt="Results tab of the welcome series with 12 participants, 5 still running, 7 finished, 40 traces, 20 sent, 12 opened and 3 clicked" width={1440} height={900} caption="The Results tab: participants, traces, sent, opened and clicked. The rates follow below these counts." />
+
+<Callout title="Email only, and your own mail server">
+Steps send email, book activities, run server actions or change tags. There is no WhatsApp or SMS step; a server action can call another module, but that is custom work. Emails go into Odoo's normal outgoing queue and leave through whatever mail server the database uses. On the demo no mail server is connected, so new campaign emails wait on the server. The history you see there was built by running the engine at past dates when the demo was set up.
+</Callout>

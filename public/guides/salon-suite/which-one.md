@@ -97,7 +97,7 @@ Login `demo`, password `demo` on every one.
 | POS Salon | salonpos.way4tech.com | guides/salon-pos |
 | Spa POS | spa-app.way4tech.com | guides/spa-pos |
 | Salon Loyalty, Packages and Memberships | salon-app.way4tech.com | guides/enterprise-salon |
-| Salon Quick Booking | quicksalon.devcynx.com | guides/salon-quick-booking |
+| Salon Quick Booking | salon-app.way4tech.com | guides/salon-quick-booking |
 | Salon Theme | salon.way4tech.com | guides/salon-theme |
 
 ## What none of them do

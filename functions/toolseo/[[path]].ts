@@ -1,5 +1,5 @@
 /**
- * /toolseo/* -> SEO Tools app on devcynx (repo waqasriasatjutt/seo-tools).
+ * /toolseo/* -> SEO Tools app (repo waqasriasatjutt/seo-tools).
  *
  * The app lives on its own origin; this keeps it on way4tech.com so the team
  * has one address and the session cookie stays first-party. Everything is

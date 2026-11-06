@@ -1,0 +1,119 @@
+---
+title: "Tank dips and wet stock variance in Odoo: book stock, dip readings and signing off a period"
+metaTitle: "Tank Dips and Wet Stock Variance"
+description: "Keep book stock and dip readings per fuel tank in Odoo, work out wet stock variance in litres, per cent and money, and sign each period off with a cause."
+targetQuery: "wet stock reconciliation odoo"
+category: "Industry"
+summary: "Tanks with dead stock, safe fill and ullage, dip readings frozen against book stock, the water alert, and the wet stock variance per tank: worked out, confirmed with a cause, investigated and closed."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-petrol-pump-management"
+seriesOrder: 2
+modules:
+  - name: "Petrol Pump Management"
+    technical: "wt_fuel_station"
+    note: "USD 299, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://fuelstation-demo.way4tech.com/"
+  label: "Petrol Pump demo"
+related: ["odoo-petrol-pump-management", "odoo-fuel-tanker-delivery-temperature", "odoo-fuel-shift-reconciliation"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What is the difference between book stock and the dip?"
+    a: "Book stock is what should be in the tank: deliveries posted in, less litres sold on closed shifts. The dip is what was actually measured. In the module book stock is read only and moves only when a delivery is posted, a shift closes or a wet stock variance is confirmed."
+  - q: "What wet stock tolerance does the module use?"
+    a: "The company setting Variance Tolerance, half a per cent of litres sold by default. A period whose variance is further out than that is flagged and cannot be confirmed without a cause such as meter drift, a short delivery, water ingress, a dip error, a leak or theft."
+  - q: "Does confirming a variance change the stock?"
+    a: "Yes. Confirming signs the period off and moves the tank's book stock by the variance, bringing the books back to the dip. That is why a confirmed period cannot be worked out again; raise a new period instead."
+  - q: "Can the module read an automatic tank gauge?"
+    a: "No. There is no ATG integration. Type the probe reading in as a dip; the module keeps the millimetres, the litres, the water depth and the temperature for each reading."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Fuel that disappears does not leave a gap on a shelf. It shows up only as a difference between two numbers: what the books say should be in a tank and what a stick says is actually there. Measured once a month, that difference is a shrug. Measured at every shift change and every delivery, it tells you which week a meter started running heavy, which drop came in short and which night a hose was left unlocked. This chapter of the [petrol pump management series](/odoo-guides/odoo-petrol-pump-management/) covers the tanks, the dips and the wet stock variance in the Petrol Pump Management module.
+
+## The tank record
+
+Each underground tank holds one grade and carries four figures that never change on their own: **Capacity** (nominal, as built), **Dead Stock** (litres below the suction pipe that can never be pumped and are not sellable), **Safe Fill** (the highest percentage a driver may fill to) and its code for the dip sheet.
+
+Around them sit the live figures:
+
+| Field | Worked out as |
+|---|---|
+| Book Stock | Deliveries posted in, less litres sold on closed shifts, adjusted by confirmed variances |
+| Last Dip | Litres on the most recent dip reading |
+| Dip vs Book | Last dip less book stock |
+| Ullage | Room left to the safe fill line, against book stock |
+| Full (%) | Book stock against capacity |
+| Water | Water depth on the last dip |
+
+Ullage is the number to give the terminal before booking a tanker, and the delivery screen refuses a load that would not fit under the safe fill line.
+
+<Shot src="/odoo-guides/odoo-tank-dip-wet-stock-variance/tank-list.webp" alt="Tanks list for two sites with grade, capacity, book stock, last dip, dip versus book, ullage, percentage full and water, with one diesel tank in red for water" width={1440} height={900} caption="Every tank, its book stock against its last dip, and the room to safe fill." />
+
+<Shot src="/odoo-guides/odoo-tank-dip-wet-stock-variance/tank-water.webp" alt="Tank A Diesel at Moorside with 21 mm of water on the last dip, above the 15 mm alert, and a chatter message asking for it to be drawn off before the next delivery" width={1440} height={900} caption="Water past the alert depth turns the tank red and the daily job posts a warning." />
+
+Water above the depth in the settings (15 mm by default) flags the tank. Left alone, water rusts the tank and stalls cars on the forecourt; the water job, once switched on, posts a message on each such tank every day.
+
+## Dip readings
+
+A dip is a record of its own: the date, the kind, the millimetres off the stick, the litres off the tank chart, the water depth, the temperature and who took it. Keeping the millimetres next to the litres means a wrong chart conversion can still be found a month later.
+
+| Kind | Where it comes from |
+|---|---|
+| Shift Opening and Shift Closing | Entered on the shift; a closing dip per tank is required by default |
+| Before Delivery and After Delivery | Created by the delivery's Start Discharge and Post to the Tank |
+| Audit | Record a Dip on the tank, any time |
+
+The important detail is what each dip is judged against. When a dip is saved, the book stock at that moment is **frozen on it**. For a closing dip taken while the shift is still open, the module first takes off the litres sold on that shift, which have not yet come off the books, otherwise every closing dip would look like a large loss. The dip's variance is its litres less that frozen figure.
+
+<Shot src="/odoo-guides/odoo-tank-dip-wet-stock-variance/dip-list.webp" alt="Dip Readings list with tank, kind, date, dip in millimetres, water, volume in litres, temperature, frozen book stock and variance" width={1440} height={900} caption="Dip readings, each frozen against the book stock of its moment." />
+
+A dip bigger than the tank's capacity is refused, as is negative water. Attendants who sign in see only the dips they took.
+
+## Working out a period
+
+A wet stock variance record covers one tank and a period. **Work It Out** fills it in:
+
+- **Opening Dip:** the last dip at or before the start of the period.
+- **Delivered:** standard litres on posted deliveries into the tank during the period.
+- **Sold:** litres sold on closed and signed off shifts that started during the period.
+- **Closing Dip:** the last closing, audit or after delivery dip before the end.
+- **Book Stock:** opening plus delivered less sold.
+- **Variance:** closing dip less book stock, in litres, as a percentage of litres sold, and in money at the pump price net of VAT.
+
+<Shot src="/odoo-guides/odoo-tank-dip-wet-stock-variance/var-list.webp" alt="Wet stock variance list with one line per tank per week, opening dip, delivered, sold, closing dip, variance litres and percentage, value, cause and status, with periods outside tolerance in red" width={1440} height={900} caption="Week by week, per tank. Red lines are outside tolerance." />
+
+<Callout title="Line the periods up with the shifts">
+Shifts are counted by their start time and dips by their own time. A night shift that starts on Sunday and closes on Monday morning counts in Sunday's week while its closing dip lands in Monday's. Sites that run past midnight get clean weekly figures by taking a closing dip before midnight or by handing over at midnight, as the demo truck stop does.
+</Callout>
+
+## Confirm, investigate, close
+
+A period outside the **Variance Tolerance** (0.5% by default) needs a cause before **Confirm** is accepted. Confirming does two things: it signs the period off and it moves the tank's book stock by the variance, because the dip is right and the books are wrong. After that the period cannot be worked out again.
+
+**Investigate** marks a confirmed period as under investigation while somebody finds out what happened. **Close** needs a cause on every record, inside tolerance or not, so the next person to read it learns something.
+
+<Shot src="/odoo-guides/odoo-tank-dip-wet-stock-variance/var-over.webp" alt="A wet stock variance for Tank 1 Unleaded outside tolerance at nearly one per cent, cause Meter Out of Calibration, with a note that the nozzle read heavy and was recalibrated and resealed" width={1440} height={900} caption="Two weeks out at nearly 1%: the cause, and what was done about it." />
+
+| Cause | What it usually looks like |
+|---|---|
+| Evaporation and Temperature | Small, steady, either direction |
+| Meter Out of Calibration | Steady loss on one tank in step with its sales |
+| Short Delivery | A step in the week of a delivery |
+| Water Ingress | Water depth climbing on the dips |
+| Dip or Chart Error | A one off jump that reverses |
+| Line or Tank Leak | Loss that carries on when the site is shut |
+| Theft or Drive Off | Loss concentrated on one night or shift |
+
+The variance report prints the period the way an oil company audit asks for it, and the pivot view lays variance litres and value out by tank and period.
+
+<Shot src="/odoo-guides/odoo-tank-dip-wet-stock-variance/doc-variance.webp" alt="Printed wet stock variance report with the site, tank, grade, period, opening dip, deliveries, sales, book stock, closing dip, variance in litres, percentage and value, cause and notes" width={1440} height={900} caption="The printed wet stock variance." />
+
+## The daily check
+
+The scheduled job "yesterday's wet stock variance", switched off by default, creates a one day record for every tank each morning, works it out, deletes it again if the tank neither sold nor received anything, and queues the variance alert email when the day is outside tolerance. Combined with closing dips at every shift change, it means a meter that starts drifting is noticed within a day rather than at the month end.
+
+Related chapters: [tanker deliveries and temperature correction](/odoo-guides/odoo-fuel-tanker-delivery-temperature/) for the litres coming in, and [shift reconciliation](/odoo-guides/odoo-fuel-shift-reconciliation/) for the litres going out.

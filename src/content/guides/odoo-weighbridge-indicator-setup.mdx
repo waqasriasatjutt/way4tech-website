@@ -1,0 +1,107 @@
+---
+title: "Connecting a weighbridge indicator to Odoo: the agent, pairing the PC, manual overrides and the audit trail"
+metaTitle: "Indicator, Pairing and Audit Trail"
+description: "Connect a truck scale indicator to Odoo with the WT Weighbridge agent, pair the PC, control manual weights and audit every weighing."
+targetQuery: "connect weighbridge indicator to odoo"
+category: "Industry"
+summary: "The Windows agent that reads the indicator, the four step setup checklist, one click pairing and the code fallback, stations and pairing keys, the settings, manager-only manual weights and the reports that audit every weighing."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-weighbridge-management"
+seriesOrder: 2
+modules:
+  - name: "WT Weighbridge"
+    technical: "wt_weighbridge"
+    note: "USD 299, Odoo 19 Community, installs Inventory"
+demo:
+  url: "https://weighbridge-demo.way4tech.com/"
+  label: "Weighbridge demo"
+related: ["odoo-weighbridge-management", "odoo-weighbridge-ticket-capture"]
+linkFrom: ["/weighbridge/"]
+sources: []
+faqs:
+  - q: "Does the weighbridge PC need special hardware to talk to Odoo?"
+    a: "No. The free WT Weighbridge agent runs on the Windows PC in the weighbridge office and reads the indicator over RS232 or RS485, a USB serial adapter, or a serial-to-Ethernet converter on the network. The operators use Odoo in a normal browser on that PC."
+  - q: "How is a captured weight protected from tampering?"
+    a: "The agent signs every capture with a key created at pairing and known only to Odoo administrators. Odoo checks the signature, that the reading was stable, that it was taken for this ticket, that the PC clock is within the allowed minutes, that the capture was never used before and that any camera images match, before it records the weight."
+  - q: "What happens when the scale is broken?"
+    a: "A Weighbridge Manager can enter the weight by hand with a reason of at least ten characters. The ticket gets a red Manual weight ribbon, the chatter records who typed it and why, and the Manual overrides report lists every such weighing."
+  - q: "Can the agent simulator be used on a live site?"
+    a: "It should not be. Captures from the simulator are refused unless the station has Allow Simulator ticked, which is meant for demos and training only."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The whole point of a connected weighbridge is that the number on the ticket came from the scale. That depends on three things working together: something on the weighbridge PC that can read the indicator, a trusted link between that PC and Odoo, and a clear, visible exception for the day the scale cannot be used. This chapter of the [weighbridge management series](/odoo-guides/odoo-weighbridge-management/) sets all three up in WT Weighbridge and shows where every weighing can be audited afterwards.
+
+## The agent on the weighbridge PC
+
+WT Weighbridge has two parts. The Odoo module holds tickets, vehicles and settings. The free **WT Weighbridge agent**, a Windows program described on the [agent page](/weighbridge/), runs on the PC in the weighbridge office and reads the indicator over a serial port, a USB serial adapter or a serial-to-Ethernet converter. The browser on that PC talks to the agent at the **Agent address** in the settings, `http://127.0.0.1:8172` by default, so the agent only ever answers on the PC itself.
+
+On its first run the agent's setup wizard listens on the ports, works out the indicator's format and shows the weight it read. If nothing answers, its built in simulator lets you try tickets before the indicator is wired.
+
+## The four step checklist
+
+Pairing is done once per PC, under **Configuration, Setup and pairing**, in the browser the operators will use. The checklist ticks itself:
+
+1. **Install the agent on this PC.** The page looks for the agent and offers the download if it is not found.
+2. **Pair this PC.** Name the PC and press Pair this PC. The browser asks to open the agent, the agent asks "Allow this Odoo?" and the person at the PC clicks Allow. If nothing opens, the agent's tray menu shows a six digit code to type instead.
+3. **Indicator found.** The current reading appears once paired, with a note if it comes from the simulator.
+4. **First weighing.** Ticks after the first weight is captured on that station.
+
+<Shot src="/odoo-guides/odoo-weighbridge-indicator-setup/pair.webp" alt="Weighbridge setup checklist with four steps: install the agent on this PC with a download button, pair this PC, indicator found and first weighing, showing 0 of 4 done" width={1440} height={900} caption="The setup checklist as an unpaired PC sees it." />
+
+Only Weighbridge Managers can pair. When pairing succeeds, the agent hands Odoo a key, and Odoo creates or updates a **station** for that agent.
+
+## Stations
+
+Each paired PC is a station, listed under **Configuration, Stations**. Stations are created only by pairing, never by hand. A station shows its agent ID, the Odoo address it was paired from, when and by whom, the agent version, when it was last seen, the indicator it reads and how many weighings were captured on it. The pairing key is hidden from everyone except Odoo administrators.
+
+<Shot src="/odoo-guides/odoo-weighbridge-indicator-setup/station-gate.webp" alt="Main Gate Weighbridge PC station with agent ID, paired flag, paired Odoo address, paired on and by, weighing count, agent version, last seen, indicator on COM3 at 9600 baud and Allow Simulator unticked" width={1440} height={900} caption="A paired station and what its agent last reported." />
+
+**Remove pairing key** cuts a PC off at once: every capture from it is refused until it is paired again, which is what to do when a PC is replaced or lost. **Allow Simulator** lets a station accept readings from the agent's simulator, for demos and training only.
+
+## What Odoo checks before it records a weight
+
+| Check | A capture is refused when |
+|---|---|
+| Station | The PC is not paired for the ticket's company, or has no key |
+| Signature | It is not signed with that station's key |
+| Stability | The reading was not stable |
+| Simulator | It came from the simulator and the station does not allow it |
+| Ticket | It was taken for another ticket |
+| Clock | The PC time differs from the server by more than **Allowed clock difference** |
+| Reuse | The same capture was used before |
+| Cameras | A snapshot does not match the signed capture |
+| Weight | It is below **Minimum weight**, or the gross would not exceed the tare |
+
+Weights and status on a ticket cannot be written by a user or over the API, so these checks cannot be stepped around.
+
+## Manual weights
+
+When the indicator cannot be used, a **Weighbridge Manager** presses **Manual weight** on the ticket and types the weight in kg, t or lb with a reason of at least ten characters. The usual weight checks still apply. The weighing's mode is Manual override, the ticket carries a red ribbon, the chatter names the manager and the reason, and the printed ticket is marked as a manual weight. A manager can also set a vehicle's stored tare by hand the same way.
+
+<Shot src="/odoo-guides/odoo-weighbridge-indicator-setup/wiz-manual.webp" alt="Manual weight dialog over a ticket with a warning that a manual weight replaces the scale reading and is recorded with the manager's name and reason, fields for weight and unit, a reason box and Record weight and Cancel buttons" width={1440} height={900} caption="Manual weight: managers only, and a reason is required." />
+
+## Operators and managers
+
+Give the people in the weighbridge office the **Operator** group and supervisors the **Manager** group. Operators create tickets, capture weights, use stored tares, print and cancel drafts. Managers also pair PCs, remove pairing keys, type manual weights, set stored tares by hand, cancel tickets after the first weighing and see the two audit reports. The Settings themselves need Odoo's settings rights. Records are kept per company, so a group with several sites and companies sees only its own tickets, vehicles and stations.
+
+## The audit trail
+
+Every weighing is its own record, which cannot be created, edited or deleted from the screens. Two manager reports read them:
+
+- **Manual overrides** lists every typed weight with the ticket, vehicle, partner, product, leg, weight, manager and reason.
+- **All weighings** lists every weighing of every kind, filterable by mode, operator and day.
+
+<Shot src="/odoo-guides/odoo-weighbridge-indicator-setup/rep-manual.webp" alt="Manual overrides report listing weighings typed by a manager over several weeks, with ticket, vehicle, partner, product, leg, kind, weight, mode, operator and reason" width={1440} height={900} caption="Every manual weighing in one list." />
+
+<Shot src="/odoo-guides/odoo-weighbridge-indicator-setup/weighing-form.webp" alt="A captured weighing record with ticket, leg, kind, weight, the value and unit as read from the indicator, mode captured from scale, station, indicator, capture id, read at time, operator and two snapshots" width={1440} height={900} caption="One captured weighing, with what the indicator actually sent." />
+
+For daily running, **Daily weighings** gives final net by day and direction, and **By partner and product** gives the tonnage per supplier or customer and grade, which is the figure to check a mill's or a supplier's statement against.
+
+<Callout title="Settings worth checking on day one">
+Minimum weight (100 kg by default) should sit above what an empty deck reads. Allowed clock difference (10 minutes) assumes the weighbridge PC keeps time, so set it to sync automatically. Camera snapshots can be switched off if no cameras are fitted.
+</Callout>
+
+Back to [weighbridge tickets, stored tare and deductions](/odoo-guides/odoo-weighbridge-ticket-capture/), or the [series overview](/odoo-guides/odoo-weighbridge-management/).

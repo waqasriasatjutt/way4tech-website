@@ -1,0 +1,103 @@
+---
+title: "Fuel tanker deliveries in Odoo: temperature correction, dips before and after, and short delivery claims"
+metaTitle: "Tanker Deliveries and Temperature"
+description: "Take a fuel tanker delivery in Odoo: correct litres to 15 C, dip before and after, flag a short drop and raise the terminal's bill from the delivery."
+targetQuery: "fuel delivery temperature correction odoo"
+category: "Industry"
+summary: "A tanker delivery with one line per compartment, ASTM temperature correction to standard litres, the before and after dips that prove what arrived, short delivery detection, the goods received note and the vendor bill."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-petrol-pump-management"
+seriesOrder: 3
+modules:
+  - name: "Petrol Pump Management"
+    technical: "wt_fuel_station"
+    note: "USD 299, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://fuelstation-demo.way4tech.com/"
+  label: "Petrol Pump demo"
+related: ["odoo-petrol-pump-management", "odoo-tank-dip-wet-stock-variance", "odoo-purchase-inventory-dashboard"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Why correct a fuel delivery for temperature?"
+    a: "Fuel expands as it warms. Terminals bill in standard litres at 15 C, so observed litres at the discharge temperature have to be brought back to the same basis before they are compared with the ticket and booked into the tank. Otherwise warm fuel is booked in as litres nobody paid for."
+  - q: "How does the module decide a delivery is short?"
+    a: "It compares the tank gain between the before and after dips with the standard litres. When the gain is lower by more than half a per cent of the standard litres or 20 litres, whichever is more, the delivery is flagged short and posting it writes the shortfall and the delivery note number on the chatter."
+  - q: "Does posting a delivery create the supplier bill?"
+    a: "No. Posting puts the standard litres on the tank's book stock. Create Bill on the posted delivery raises a draft vendor bill to the supplier with one line per compartment at cost plus duty and the delivery note as the reference."
+  - q: "Can a posted delivery be cancelled?"
+    a: "No. Its litres are already in the tank's book stock, so a mistake is corrected on the wet stock variance. A delivery refused at the gate is cancelled before it is discharged, and one whose bill has been posted has to be credited."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A tanker brings tens of thousands of pounds of fuel onto the site in under an hour, and the driver wants a signature before he leaves. Whatever was not checked in that hour is very hard to claim afterwards. Two things decide whether the site paid for what it received: whether the litres on the ticket and the litres measured are on the same temperature basis, and whether somebody dipped the tank before the hose went on and after it came off. This chapter of the [petrol pump management series](/odoo-guides/odoo-petrol-pump-management/) takes a delivery through the Petrol Pump Management module.
+
+## What a delivery records
+
+The header holds the site, the supplier (terminal or oil company), the date and time of discharge, the tanker plate, the driver, the **delivery note** (bill of lading) number and the **seal numbers** as they were on arrival. A broken seal before discharge is a claim, not a paperwork problem, so it belongs on the record.
+
+Below that is one line per compartment, each into one tank:
+
+| Field | Meaning |
+|---|---|
+| On the Ticket | Standard litres the terminal says it loaded |
+| Observed | Gross litres at the temperature it arrived at |
+| Density | At 15 C, from the loading ticket |
+| Temperature | Product temperature at discharge |
+| Correction Factor and Standard | Worked out from the three above |
+| Dip Before and Dip After | Tank readings either side of the discharge |
+| Dip Gain and Variance | What the tank gained, and that less the standard litres |
+| Cost and Duty per litre | From the terminal's invoice, kept apart so margin reads honestly |
+
+<Shot src="/odoo-guides/odoo-fuel-tanker-delivery-temperature/del-list.webp" alt="Deliveries list for two sites with supplier, discharge date, delivery note, standard litres, dip gain, variance and status, with two short deliveries in red" width={1440} height={900} caption="Deliveries over three months. The two red lines came in short." />
+
+## Temperature correction
+
+Fuel grows with heat. The module takes the density at 15 C and picks the ASTM table 54B coefficients: one set for petrol and other light products below 770 kg/m3, another for diesel and heavier products. From them it works out how much the product expands per degree and applies it, in the ASTM form rather than a straight line, across the gap between the discharge temperature and the reference temperature in the settings (15 C by default). The result is the **Correction Factor**, and Observed times the factor is **Standard**.
+
+Standard litres are what goes onto the tank's book stock and what the bill is checked against. A diesel compartment discharged at 9 C shows fewer observed litres than were loaded; the same load on a summer afternoon shows more. Either way, standard litres put the ticket and the tank on the same footing. The setting **Correct Deliveries for Temperature** can be turned off, in which case standard equals observed.
+
+The module also refuses figures that cannot be real: a density outside 500 to 1200 kg/m3 and a temperature outside minus 40 to 70 C.
+
+<Shot src="/odoo-guides/odoo-fuel-tanker-delivery-temperature/del-posted.webp" alt="A posted tanker delivery with two compartments into the unleaded and diesel tanks, showing observed litres, density, temperature, correction factor, standard litres, dip before, dip after, dip gain and variance" width={1440} height={900} caption="Two compartments, each corrected to standard litres and checked against the tank gain." />
+
+## Before the tanker is booked
+
+The order to the terminal should be sized against room in the ground, not against the last order. Each tank shows its **Ullage**: the litres left between book stock and the safe fill line. That is the figure to give the terminal, and it is the same figure Start Discharge checks against, so a load ordered from it will not be refused at the hose. On a busy site that sells from a tank all the time the tanker is on its way, ullage only grows, which leaves a margin rather than a spill.
+
+## Taking the load in
+
+1. **Draft.** Fill in the header and the compartments. Choosing a tank fills Dip Before from its last dip; check it against the stick.
+2. **Start Discharge.** Refused without a delivery note number, without compartments, with an empty compartment, or when a compartment's standard litres will not fit under the tank's safe fill line ("send the balance back on the tanker"). It creates a Before Delivery dip on each tank and moves the delivery to Discharging.
+3. **Dip after.** Once the hose is off, type Dip After on each compartment. A dip that went down over a delivery is refused.
+4. **Post to the Tank.** Creates the After Delivery dips, adds the standard litres to each tank's book stock and moves the delivery to Posted.
+
+<Shot src="/odoo-guides/odoo-fuel-tanker-delivery-temperature/del-received.webp" alt="A delivery at Moorside in the Discharging state with the dip before filled in and the dip after still empty, and the Post to the Tank button in the header" width={1440} height={900} caption="Discharging: the before dip is on record, the after dip is still to come." />
+
+## A short delivery
+
+The delivery is flagged short when the dip gain falls below the standard litres by more than half a per cent of them or 20 litres, whichever is more. Posting a short delivery writes the shortfall and the delivery note number on its chatter, so the claim goes to the terminal the same day with the before and after dips behind it.
+
+<Shot src="/odoo-guides/odoo-fuel-tanker-delivery-temperature/del-short.webp" alt="A posted delivery flagged short by over 300 litres against the ticket, with the chatter note asking for the claim against the delivery note to be made today" width={1440} height={900} caption="Over 300 litres short. The chatter holds what the claim needs." />
+
+The goods received note prints the same evidence line by line: observed litres, density, temperature, correction factor, standard litres, the dips and the variance.
+
+<Shot src="/odoo-guides/odoo-fuel-tanker-delivery-temperature/doc-grn.webp" alt="Printed goods received note with tanker, driver, delivery note and seals, and per compartment the observed litres, density, temperature, correction factor, standard litres, dips and variance" width={1440} height={900} caption="The goods received note, with the temperature correction shown." />
+
+<Callout title="A short delivery also shows in wet stock">
+The tank's book stock goes up by the standard litres on the ticket, while the dip shows what actually arrived. If the shortfall is not settled with the terminal, the week's wet stock variance carries it, and its cause should be recorded as Short Delivery.
+</Callout>
+
+## The bill
+
+On a posted delivery, **Create Bill** raises a draft vendor bill to the supplier on the site's purchase journal: one line per compartment, standard litres at cost plus duty, with the delivery note as the reference and the delivery as the source. The Vendor Bill button opens it. From there it is an ordinary Odoo bill, posted and paid as any other.
+
+<Shot src="/odoo-guides/odoo-fuel-tanker-delivery-temperature/bill-form.webp" alt="Vendor bill to the fuel terminal raised from a delivery, with one line per compartment for standard litres at cost plus duty, the delivery note as reference and VAT" width={1440} height={900} caption="The terminal's bill, raised from the delivery at standard litres." />
+
+## Refused loads
+
+A tanker turned away, for example for a broken compartment seal, is cancelled before it is discharged and the reason written on it. A posted delivery cannot be cancelled because its litres are already on the books, and a delivery whose bill has been posted has to be credited instead.
+
+Next: [wet stock variance](/odoo-guides/odoo-tank-dip-wet-stock-variance/) puts these deliveries against the metered sales and the dips, period by period.

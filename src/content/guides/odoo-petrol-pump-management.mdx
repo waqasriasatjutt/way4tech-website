@@ -1,0 +1,129 @@
+---
+title: "Petrol pump management in Odoo: tank dips, nozzle meters, shift reconciliation and tanker deliveries"
+metaTitle: "Petrol Pump Management in Odoo, Step by Step"
+description: "Run a filling station in Odoo: tank dips and book stock, nozzle meters, cash over or short per shift, temperature corrected deliveries and fleet accounts."
+targetQuery: "petrol pump management Odoo"
+category: "Industry"
+summary: "What a forecourt has to measure and why, what standard Odoo does not cover, and how the Petrol Pump Management module runs tanks, dips, shifts, the till, tanker deliveries, wet stock, fleet accounts and the shop."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-petrol-pump-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-petrol-pump-management.pdf"
+  pages: 39
+modules:
+  - name: "Petrol Pump Management"
+    technical: "wt_fuel_station"
+    note: "USD 299, runs on Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://fuelstation-demo.way4tech.com/"
+  label: "Petrol Pump demo"
+related: ["odoo-truck-cost-per-km-fuel", "odoo-transport-management", "odoo-fleet-documents-dispatch-readiness"]
+linkFrom: ["/industries/fuel-station/", "/solutions/fuel-station/", "/modules/inventory/"]
+sources: []
+faqs:
+  - q: "Does the petrol pump module read the pumps or the tank gauges?"
+    a: "No. It has no forecourt controller or automatic tank gauge link. The supervisor types the closing totaliser readings and the dips at shift change, which is how most independent sites still work. Every reading is kept, frozen against the book stock of that moment."
+  - q: "Does it need Odoo Enterprise?"
+    a: "No. It runs on Odoo 19 Community and installs Inventory and Invoicing, both part of Community. The statements to fleet customers and the bills from the terminal are ordinary Odoo invoices and vendor bills."
+  - q: "Can one database run several filling stations?"
+    a: "Yes. Each site has its own code, tanks, pumps, nozzles, attendants, price board and shifts, and every record carries its company, so a group with several companies can run them all in one database."
+  - q: "How is the cash over or short worked out?"
+    a: "Fuel sold on the nozzles plus shop sales, less fuel that went out on credit accounts, less card, wallet, voucher and fleet card takings, is the cash that should be in the drawer. The cash counted less that figure is the over or short. Past the company's tolerance the supervisor must write a reason before signing the shift off."
+  - q: "Can attendants see fuel cost and margin?"
+    a: "No. Landed cost, margin per litre, shop cost and fuel card numbers are visible to Site Managers only. An attendant who signs in sees only the nozzle readings they are named on and the dips they took."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+Fuel is sold on margins of a few pence a litre, and nobody ever sees the product. It arrives in a tanker, sits underground and leaves through a meter. A site that loses half a per cent of its throughput, to a meter running fast, a short drop, water in a tank or a nozzle left unlocked overnight, can lose its whole profit and still look busy. The only defence is to measure the fuel at every hand over and compare: ticket against tank gain, book stock against the dip, meters against the till. This guide explains what a forecourt has to measure, where standard Odoo stops, and how our Petrol Pump Management module runs a site in Odoo 19 Community.
+
+## What a forecourt has to keep track of
+
+Four reconciliations run a filling station, and they all feed each other.
+
+| Reconciliation | Compares | Catches |
+|---|---|---|
+| Delivery | Litres on the terminal ticket, corrected to 15 C, against the tank gain between two dips | Short drops, broken seals |
+| Shift | Litres through the meters, less test litres, at the pump price, against what the till took | Cash short, drive offs, card totals that never land |
+| Wet stock | Opening dip plus deliveries less metered sales against the closing dip | Meter drift, leaks, water, theft |
+| Account | Fuel drawn on credit against the account's limit, cap and statement | Unpaid fleet customers, wrong grade, fuel in a drum |
+
+Two numbers sit behind all of them. **Book stock** is what should be in a tank: deliveries in, metered sales out. The **dip** is what a stick or a probe says is there. A few litres apart is temperature and evaporation. A gap that grows steadily in one direction is money leaving the site, and oil company audits commonly use about half a per cent of throughput as the line where it has to be explained.
+
+The price on the board adds a second layer. A litre of fuel contains VAT, a flat duty per litre, the landed cost and the margin, and only the margin is the site's. On the demo, a litre of diesel at 1.529 is 0.255 of VAT, 0.5295 of duty and 0.651 of cost, which leaves about nine pence.
+
+## What standard Odoo does and does not do
+
+Odoo has the building blocks a forecourt needs underneath: products for each grade, Inventory for the shop warehouse, Invoicing for fleet statements and terminal bills, and the chatter for an audit trail. Point of Sale can ring the shop.
+
+What it does not have is anything that thinks in tanks and meters. There is no tank with a dead stock and a safe fill line, no dip reading, no nozzle drawing from a tank, no shift that opens on totaliser readings and closes on a cash count, no temperature correction for a delivery and no wet stock variance. People try to fake it with stock locations per tank and manual inventory adjustments, and lose the one thing that matters: the trail showing which reading disagreed with which, and when.
+
+## The module
+
+| Module | Technical name | Price | Needs |
+|---|---|---|---|
+| Petrol Pump Management | `wt_fuel_station` | USD 299 | Odoo 19 Community with Inventory and Invoicing |
+
+It is one module with three roles. An **Attendant** reads the meters on the nozzles they are put on and sees nothing else. A **Shift Supervisor** opens, closes and signs off shifts, takes deliveries in, dips tanks and runs the accounts and the shop. A **Site Manager** also sets prices, sees landed cost and margin, and signs off wet stock.
+
+<Shot src="/odoo-guides/odoo-petrol-pump-management/site-form.webp" alt="Northgate Service Station site form with code NG, petroleum storage licence number and expiry, days to renewal, shop warehouse, sales and purchase journals, shift pattern two shifts a day, and the tanks tab listing three tanks" width={1440} height={900} caption="A site: licence and renewal countdown, the shop warehouse, the journals and the shift pattern." />
+
+## Setting up a site
+
+A site is set up once, in this order: the site itself with its licence and shift pattern, its underground tanks, its pumps and the nozzles on each pump, then the people. Three details decide whether the numbers will mean anything later.
+
+- **Each nozzle names the tank it draws from.** Get that wrong and every wet stock figure on the site is wrong with it. The module refuses a nozzle linked to a tank on another site.
+- **Each pump has a kind.** An attended pump needs a named attendant on every shift before the shift will close, so a shortage always has an owner. A self service pump does not.
+- **Each pump has a calibration date.** With the interval in the settings, a pump past its meter seal shows red and a weekly job posts a warning on the site.
+
+<Shot src="/odoo-guides/odoo-petrol-pump-management/pump-list.webp" alt="Pumps list with Pump 1, Pump 2, Pump 3 and HGV Lane at Northgate and four lanes at Moorside, showing kind, brand, last calibration and calibration due, with Pump 2 in red because its seal is overdue" width={1440} height={900} caption="Pumps with their calibration dates. Pump 2 is past its seal." />
+
+The company settings hold the tolerances the rest of the module enforces: the cash tolerance on a shift, the wet stock tolerance as a share of throughput, the water depth that raises an alert, the reference temperature for deliveries, the default VAT rate, whether credit limits stop the pumps and the day statements are raised.
+
+## The price board
+
+Pump prices are a log, not a field on the product. Each change records the grade, the pump price, the duty per litre, the VAT rate, the landed cost and the minute it takes effect. Putting a change on the board supersedes the one before it in the same step, so a grade never has two prices at once, and every shift line is valued at the price that was in force when the shift opened. If the terminal phones a rise through mid morning, Apply to Open Shifts re-prices the open shift's readings for that grade.
+
+<Shot src="/odoo-guides/odoo-petrol-pump-management/price-active.webp" alt="Pump price form for diesel at Northgate, in force, showing pump price per litre, excise duty, VAT percentage, landed cost, VAT per litre, net of VAT, net of duty, margin per litre and margin percentage, and the price it moved from" width={1440} height={900} caption="One price change, split into VAT, duty, cost and margin." />
+
+Margin is shown to Site Managers and nobody else. The forecourt screens never carry a cost.
+
+## A day on the forecourt
+
+Opening a shift pulls in every nozzle on the site with its current meter reading and price. The supervisor names the attendant on each nozzle. At the end of the shift the closing readings and any test litres go in, every tank gets a closing dip, and Close Meters moves the meters on, takes the litres off the tanks and the shop items off the shelf. Then the till is counted, the takings go in by tender, and the shift is signed off against the cash that should be there.
+
+<Shot src="/odoo-guides/odoo-petrol-pump-management/shift-kanban.webp" alt="Shifts kanban grouped by status with a draft shift for tomorrow morning, an open afternoon shift, a closed morning shift waiting for the cash count and a long column of reconciled shifts showing litres and over or short" width={1440} height={900} caption="Shifts by status: one open, one waiting for the count, the rest signed off." />
+
+Tanker deliveries are taken in between: dip before, discharge, dip after, then post the standard litres to the tank and raise the bill against the terminal. Every week or month, the wet stock variance per tank puts the dips against the deliveries and the metered sales, and anything outside tolerance needs a cause before it can be signed off.
+
+## Fleet accounts and the shop
+
+Hauliers, coach firms, taxi operators and councils fuel on account. Each account lists its vehicles with the one grade each may take, its tank size and a monthly cap, so petrol into a diesel vehicle, or 300 litres into a car, is refused at the till. The account has a credit limit and a discount quoted in pence a litre, and the month closes with one statement invoice per account. An account that stops paying can be stopped with a reason the till can read out.
+
+The forecourt shop is counted on the shelf and compared with the shop warehouse in Odoo. Shop sales go on the shift with the fuel, so the till reconciles against everything that was sold.
+
+## Limitations
+
+These come from the module's code, and we would rather you read them before you buy:
+
+- **No pump controller, tank gauge or till integration.** Meter readings, dips and takings are typed in at shift change from the totalisers, the stick or probe, and the till's own Z report.
+- **Applying a mid shift price change re-prices the whole reading,** not only the litres sold after the change. For an exact split, close the shift at the change and open a new one.
+- **Invoice Each Fill can be chosen on an account but nothing acts on it.** The monthly job bills Monthly Statement accounts only; use Invoice What Is Outstanding for the others.
+- **Shop sales lower the shelf count but do not move Odoo stock,** so the shrinkage figure is only as good as your stock adjustments in Inventory.
+- **Wet stock periods run by date and count a shift by its start time.** Sites with night shifts that run past midnight get the cleanest figures by taking a closing dip before midnight or handing over at midnight.
+- **All seven scheduled jobs ship switched off.** Turn on the ones the site needs.
+
+<WhenLive slug="odoo-fuel-shift-reconciliation">
+
+## The chapters
+
+Each part of running a forecourt has its own chapter: [shift reconciliation and the till](/odoo-guides/odoo-fuel-shift-reconciliation/), [tank dips and wet stock variance](/odoo-guides/odoo-tank-dip-wet-stock-variance/), [tanker deliveries and temperature correction](/odoo-guides/odoo-fuel-tanker-delivery-temperature/), and [fleet fuel accounts and monthly statements](/odoo-guides/odoo-fleet-fuel-credit-accounts/).
+
+</WhenLive>
+
+## Where to go from here
+
+The full printable guide covers every screen and button, with a fifteen minute walk-through of the [live demo](/demos/). Transport operators who also want fuel cost per kilometre on their trucks should read the [truck cost per km guide](/odoo-guides/odoo-truck-cost-per-km-fuel/) and the [transport management guide](/odoo-guides/odoo-transport-management/). For the wider picture see our [fuel station industry page](/industries/fuel-station/), and if you want a site set up from your own tank charts, pump list and price board, [get in touch](/contact/).

@@ -1,0 +1,121 @@
+---
+title: "Petrol pump shift reconciliation in Odoo: meter readings, takings and cash over or short"
+metaTitle: "Shift Reconciliation and the Till"
+description: "Open a forecourt shift on nozzle meter readings, close it on dips, declare takings by tender and sign off cash over or short in Odoo, step by step."
+targetQuery: "petrol pump shift reconciliation odoo"
+category: "Industry"
+summary: "Opening a shift on totaliser readings, naming the attendant on each nozzle, closing the meters, declaring cash, card, wallet, voucher and fleet card takings, and signing off against the cash that should be in the drawer."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-petrol-pump-management"
+seriesOrder: 1
+modules:
+  - name: "Petrol Pump Management"
+    technical: "wt_fuel_station"
+    note: "USD 299, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://fuelstation-demo.way4tech.com/"
+  label: "Petrol Pump demo"
+related: ["odoo-petrol-pump-management", "odoo-tank-dip-wet-stock-variance", "odoo-fleet-fuel-credit-accounts"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can two shifts be open at the same time on one site?"
+    a: "No. Opening a second shift while one is still open on the same site is refused, because the two sets of meter readings would overlap and neither would reconcile. Close the first shift's meters before opening the next."
+  - q: "What are test litres on a nozzle reading?"
+    a: "Fuel drawn into a calibrated measure to prove the meter and poured back into the tank. It passed the totaliser but nobody bought it, so the module subtracts it from the litres through the meter to get litres sold, and refuses more test litres than went through."
+  - q: "What happens when the till is short?"
+    a: "If the over or short is inside the company's cash tolerance the shift signs off and the amount is noted on the chatter. Past it, Sign Off is refused until the supervisor writes why the till is out; the reason is recorded and an email to the supervisor is queued."
+  - q: "Can a signed off shift be corrected?"
+    a: "No. Once reconciled, the takings, the shop lines, the meter readings and the fills on account are locked, because the over or short on it is the till record for that day. Put a correction through the ledger instead. Card settlement can still be ticked, since the bank pays days later."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The shift is where a forecourt's money is won or lost, a few pounds at a time. Fuel goes through a meter that only counts up; money comes over the counter in five different forms, some of it days later; and some of the fuel never turns into money at the till at all because it went out on a haulier's account. If any of those is not written down at the hand over, a short till cannot be traced to a nozzle, a person or a cause. This chapter of the [petrol pump management series](/odoo-guides/odoo-petrol-pump-management/) follows a shift in the Petrol Pump Management module from opening to sign off.
+
+## The sum the till has to meet
+
+The module works out the cash that should be in the drawer like this:
+
+| Line | Comes from |
+|---|---|
+| Fuel sales | Litres sold on each nozzle at the price applied to it |
+| plus Shop sales | Shop lines on the shift |
+| less On account | Fills on credit accounts during the shift |
+| less Card | Card takings declared |
+| less Other tenders | Mobile wallet, fuel voucher and fleet card takings |
+| = Expected cash | |
+| Over / Short | Cash counted less expected cash |
+
+Negative is short. The company setting **Cash Tolerance** is how far either way the till may be before the supervisor has to write down why. The demo uses 5.00.
+
+## Opening the shift
+
+A shift belongs to a site and a trading day, with a type (morning, afternoon or night), a start time and a supervisor. The trading day is the day the takings belong to, so a night shift that crosses midnight stays on the day it started. One shift may be open per site at a time.
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/shift-kanban.webp" alt="Shifts kanban grouped by Draft, Open, Closed and Reconciled at Northgate and Moorside, with litres sold and over or short on each card" width={1440} height={900} caption="Shifts by status. A site has one open shift at a time." />
+
+Pressing **Open Shift** adds a line for every nozzle on the site. Each line carries the opening meter, copied from the nozzle's current reading, and the pump price in force at the shift's start time for that grade. The supervisor then names the attendant on each nozzle. On an attended pump that is required before the shift can close: a shortage that cannot be traced to a person is a shortage nobody owns. On a self service pump it can stay empty.
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/shift-open.webp" alt="An open afternoon shift at Northgate with the Nozzles tab listing seven nozzles, their pump, tank, attendant, opening meter and price per litre, with closing meters still empty" width={1440} height={900} caption="An open shift: every nozzle with its opening meter, price and attendant." />
+
+Only a supervisor sets the price and the attendant on a reading. An attendant who signs in sees the Forecourt menu and, under **My Nozzles**, only the readings they are named on.
+
+## Reading the meters
+
+At the end of the shift each nozzle gets its closing meter reading and any test litres. The module works out:
+
+- **Through the Meter:** closing less opening.
+- **Litres Sold:** through the meter less test litres.
+- **Amount:** litres sold at the price applied.
+- **Cost and Margin:** for managers only, from the landed cost on the price.
+
+A closing reading lower than the opening one is refused, because a totaliser does not run backwards. So are more test litres than went through the meter.
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/nozzle-reading.webp" alt="A nozzle reading form showing the shift, nozzle, pump, tank, grade, attendant, opening and closing meter, test litres, litres through the meter, litres sold, price applied and amount" width={1440} height={900} caption="One nozzle reading, with five test litres taken off the litres sold." />
+
+## Closing the meters
+
+**Close Meters** checks, in order, that every nozzle has a closing reading, that every attended nozzle has an attendant and, with **Dip Every Tank at Shift Change** on, that every tank the shift sold from has a closing dip on this shift. Then it:
+
+1. sets the end time if it is empty,
+2. moves each nozzle's meter on to its closing reading,
+3. takes the litres sold off each tank's book stock,
+4. takes the shop lines off the shelf counts, refusing to close if a shift sold more of an item than the shelf held.
+
+From that point the readings and shop lines are locked. A mistake in a reading is corrected on the wet stock variance for the period, not by editing the shift.
+
+<Callout title="Prices that move mid shift">
+Every reading is valued at the price in force when the shift opened. If a price change lands mid shift, the manager can press Apply to Open Shifts on it, which re-prices that grade on every open shift at the site. It re-prices the whole reading, not only the litres after the change, so if you need the exact split, close the shift at the moment of the change and open a new one.
+</Callout>
+
+## Declaring the takings
+
+On a closed shift the supervisor adds one takings line per tender: cash, card, mobile wallet, fuel voucher or fleet card. A card or fleet card line must carry the terminal batch number; without it a card total that does not arrive cannot be chased with the acquirer. Even a shift that took nothing needs a zero cash line, so the count is on record.
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/shift-rec-take.webp" alt="Takings tab of a reconciled shift with card, cash and mobile wallet lines and their batch references, and below them fuel sales, shop sales, total sales, on account and card totals" width={1440} height={900} caption="Takings by tender. Card lines carry the batch number and when the bank paid." />
+
+Card money lands a day or two after the shift. **Settled by the Bank** and the settled date are ticked with Mark Settled when it arrives, and stay editable after sign off. A scheduled job, off by default, chases card and fleet card totals on signed off shifts that have not settled after three days.
+
+## Signing off
+
+**Sign Off** moves the shift to Reconciled. It is refused when there are no takings lines, and when the over or short is outside the tolerance with nothing in **Why the Till Is Out**. Inside tolerance, the chatter records the amount the till was out. Outside, it records the amount and the reason, and an email to the supervisor is queued if their login has an address.
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/shift-rec.webp" alt="A reconciled morning shift at Northgate with its trading day, supervisor, start and end times, litres sold and the Nozzles tab listing each nozzle with attendant, opening and closing meter, litres sold and price, and the chatter noting the till was out by 0.95, inside tolerance" width={1440} height={900} caption="A signed off shift: the chatter records the till out by 0.95, inside tolerance." />
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/shift-out-notes.webp" alt="A signed off shift outside tolerance with the TILL OUT ribbon, card and cash takings, and the chatter recording the 37.32 shortfall and the reason, a drive off on pump 1 with the plate passed to the police" width={1440} height={900} caption="Outside tolerance: the reason had to be written before sign off, and the chatter keeps it." />
+
+After sign off nothing that feeds the figures can change: no new takings, no edits to the declared amounts, and no fills added to or cancelled from the shift. The over or short is the till record for that day.
+
+## The Z reading slip
+
+**Print Z Reading** prints the shift reconciliation on 80 mm roll paper: the site, the shift, every nozzle reading, litres and money by grade, the takings and the over or short. It is the slip that goes in the safe with the cash bag.
+
+<Shot src="/odoo-guides/odoo-fuel-shift-reconciliation/doc-zreading.webp" alt="Shift reconciliation slip on 80 mm paper with site name, shift number, nozzle readings, litres by grade, takings by tender and over or short" width={1440} height={900} caption="The shift reconciliation slip." />
+
+## Seeing it across shifts
+
+Under Reporting, **Takings and Variance** is a pivot of shifts by trading day and site with sales, expected cash and over or short. Grouping by supervisor shows whose shifts keep coming out short. The shift list itself flags every shift outside tolerance in red, and the attendant record totals the shifts and litres each person has worked.
+
+Next in the series: [tank dips and wet stock variance](/odoo-guides/odoo-tank-dip-wet-stock-variance/), which checks the litres the meters say were sold against what is left in the ground.

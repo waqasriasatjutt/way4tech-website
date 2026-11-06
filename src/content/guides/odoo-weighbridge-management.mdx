@@ -1,0 +1,127 @@
+---
+title: "Weighbridge management in Odoo: truck scale tickets with the weight taken from the indicator"
+metaTitle: "Weighbridge Management in Odoo, Step by Step"
+description: "Run truck scale tickets in Odoo: live weight from the indicator, stable-only capture, stored tare, deductions, manager-only manual weights and stock."
+targetQuery: "weighbridge management odoo"
+category: "Industry"
+summary: "Why a weighbridge ticket needs the weight from the indicator and not from a keyboard, what standard Odoo leaves out, and how WT Weighbridge runs tickets, vehicles, stored tare, deductions, manual overrides and stock."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-weighbridge-management"
+seriesOrder: 0
+pdf:
+  url: "/downloads/guides/odoo-weighbridge-management.pdf"
+  pages: 21
+modules:
+  - name: "WT Weighbridge"
+    technical: "wt_weighbridge"
+    note: "USD 299, runs on Odoo 19 Community, installs Inventory. The Windows agent is a free download"
+demo:
+  url: "https://weighbridge-demo.way4tech.com/"
+  label: "Weighbridge demo"
+related: ["odoo-purchase-inventory-dashboard", "jewellery-stock-count-by-weight-odoo", "odoo-transport-management"]
+linkFrom: ["/weighbridge/", "/windows-apps/", "/modules/inventory/", "/solutions/agriculture/"]
+sources: []
+faqs:
+  - q: "How does the weight get from the weighbridge into Odoo?"
+    a: "A free Windows agent on the weighbridge office PC reads the indicator over a serial port, a USB serial adapter or a serial-to-Ethernet converter. The ticket screen in Odoo shows the live reading, and Capture weight sends a signed, stable reading to the ticket. Nobody types the number."
+  - q: "Can an operator change a weight after it is captured?"
+    a: "No. Weights and the ticket status cannot be written directly, not even through the API. They are set only by a capture, by Use stored tare, or by a Weighbridge Manager typing a manual weight with a reason, which is flagged on the ticket and listed in the Manual overrides report."
+  - q: "Does it need Odoo Enterprise?"
+    a: "No. WT Weighbridge runs on Odoo 19 Community and needs only Inventory. Products on tickets must be counted in a weight unit such as kilograms or tonnes."
+  - q: "Can a truck be weighed only once?"
+    a: "Yes, when it has a valid stored tare. The stored tare is kept on the vehicle, refreshed from every captured empty weighing and valid for a set number of days. Use stored tare records it as the tare weighing so the truck does not have to cross empty."
+  - q: "Does the module raise invoices for the weighed goods?"
+    a: "No. A done ticket sets its final net as the quantity on the linked receipt or delivery, and can create and validate that transfer. Bills and invoices come from Purchase, Sales or Invoicing as usual."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+import WhenLive from '../../components/guides/WhenLive.astro';
+
+At most weighbridges the operator still reads the indicator and types the number. That is where the money leaks: a digit misread at the end of a long shift, a truck weighed while still rolling onto the deck, a tare remembered from last week, a friendly driver and a rounder number. A scrap yard pays for what the ticket says came in, a mill invoices for what it says went out, and nobody can prove afterwards which figure was real. This guide covers what a weighbridge ticket has to record, where standard Odoo stops, and how our WT Weighbridge module takes the weight from the indicator itself in Odoo 19 Community.
+
+## What a weighbridge ticket has to record
+
+Every truck is weighed twice. An inbound truck bringing goods in is weighed loaded on arrival, which is the gross, and empty on the way out, which is the tare. An outbound truck is the other way round. Net is gross less tare, and a deduction for moisture, soil or impurities brings it down to the final net that is paid or invoiced.
+
+| On the ticket | Why it matters |
+|---|---|
+| Vehicle, driver, partner, product | Who and what the weight belongs to |
+| Direction | Decides which weighing is the gross and which the tare |
+| First and second weighing with time, operator and method | The evidence, and who stands behind it |
+| Deduction with a reason | The difference between weight and value |
+| Final net in the product's unit | What goes into stock and onto the bill |
+
+The weak point is always the method. A weight read from the indicator by a machine at the moment the reading is stable is evidence. A weight typed by a person is an opinion.
+
+## What standard Odoo does and does not do
+
+Odoo Inventory has receipts, deliveries, products counted in kilograms or tonnes, and lots. It does not have a weighbridge ticket, two weighings, gross and tare, a vehicle's stored tare, deductions, a scale connection or an audit trail of how each weight was obtained. Without a module, weighbridge sites keep a separate ticket book or a standalone weighbridge program and retype the net into the receipt, which brings back exactly the error the scale was meant to remove.
+
+## The module
+
+| Module | Technical name | Price | Needs |
+|---|---|---|---|
+| WT Weighbridge | `wt_weighbridge` | USD 299 | Odoo 19 Community with Inventory, plus the free Windows agent |
+
+It has two roles. An **Operator** creates tickets and captures weights. A **Manager** also pairs weighbridge PCs, enters manual weights with a reason, sets a stored tare by hand and cancels tickets after the first weighing.
+
+<Shot src="/odoo-guides/odoo-weighbridge-management/ticket-list.webp" alt="Weighbridge tickets list for a scrap yard with ticket number, date, vehicle plate, partner, product such as HMS steel scrap or copper wire, direction, net and final net, a manual override column and the status" width={1440} height={900} caption="Tickets: trucks in the yard waiting for their second weighing at the top, done tickets below." />
+
+## How the weight gets in
+
+The free WT Weighbridge agent runs on the Windows PC in the weighbridge office and reads the indicator over RS232, a USB serial adapter or a serial-to-Ethernet converter. A manager pairs that PC with Odoo once, from a four step checklist in the Weighbridge app. After that, the ticket form on that PC shows the indicator reading in large figures, green when it is stable, and **Capture weight** works only on a stable reading.
+
+Each capture is signed by the agent with a key only Odoo knows. Before recording it, Odoo checks the signature, that it is stable, that it was taken for this ticket, that the PC clock is within the allowed minutes of the server, that it has never been used before and that any camera images match it. Then it records the weighing with the station, the indicator and the raw value read.
+
+<Shot src="/odoo-guides/odoo-weighbridge-management/ticket-done-in.webp" alt="A done inbound weighbridge ticket for HMS 1 and 2 steel scrap with first weight gross and second weight tare both captured from scale, net weight, a 2 percent deduction for oil on turnings, final net and the quantity in tonnes, with camera snapshots in the chatter" width={1440} height={900} caption="A done inbound ticket: both weights captured, a 2% deduction, final net in tonnes, snapshots in the chatter." />
+
+## Vehicles and stored tare
+
+Every truck is a vehicle record with its plate, owner or haulier, usual driver and **stored tare**. With the setting on, every done ticket whose tare was captured from the scale refreshes the stored tare. It stays valid for the number of days in the settings, and while it is valid, **Use stored tare** can stand in for the empty weighing so the truck crosses once. A manager can set a stored tare by hand, with a reason, for a truck weighed empty elsewhere.
+
+## Deductions and manual weights
+
+A deduction is a percentage or a fixed number of kilograms with a reason, such as rain soaked scrap or pallets picked out of the load. When the indicator cannot be used at all, a manager can type the weight with a written reason. The ticket gets a red Manual weight ribbon, the chatter records who and why, and the Manual overrides report lists every case.
+
+<Shot src="/odoo-guides/odoo-weighbridge-management/ticket-manual.webp" alt="A done ticket with a red Manual weight ribbon, the second weighing in manual override mode, and the chatter naming the manager and the reason that the scale was under service" width={1440} height={900} caption="A manual weight: ribbon, chatter and report, so it is never quiet." />
+
+## Into stock and onto paper
+
+A done ticket sets its final net as the quantity on the linked receipt or delivery, in the product's own unit, and can create the transfer and validate it if you choose. Tickets print on A5 or on an 80 mm roll, with both weighings, the deduction, the final net, the camera snapshots on A5, and signature lines for the driver and the operator.
+
+## Who uses it
+
+The module was written for sites where trucks are weighed for money or for stock:
+
+- **Scrap and recycling yards** buying mixed loads from dealers and dismantlers and selling sorted grades to mills, where deductions for dirt, oil and water are a daily argument.
+- **Grain and feed mills** receiving farm loads and deducting moisture.
+- **Quarries, cement and aggregate plants** despatching by the tonne.
+- **Logistics yards** that weigh trucks in and out for the stock they carry.
+
+The demo is a scrap yard in Lahore: around ten inbound loads a day from six dealers, two or three outbound loads to three mills, fourteen trucks with stored tares, and a handful of manual weights from days when the scale was under service.
+
+<Shot src="/odoo-guides/odoo-weighbridge-management/rep-partner.webp" alt="By partner and product pivot of done tickets, showing final net in kilograms for each supplier and customer against each scrap grade" width={1440} height={900} caption="Final net per partner and grade over three months, the figure to check a statement against." />
+
+## Limitations
+
+These come from the module's code and the demo, and we would rather you read them before you buy:
+
+- **It needs the Windows agent on the weighbridge PC.** The live weight is read through the browser on that PC; another computer sees "Not paired" and cannot capture.
+- **Only continuous output indicators are read.** The agent listens to what the indicator sends; it does not poll indicators that only answer on request.
+- **It does not bill.** Receipts and deliveries get the quantity; purchase bills and customer invoices are raised elsewhere in Odoo.
+- **Automatic validation can stop on an Inventory prompt.** With Odoo's SMS on delivery confirmation installed, the first validated delivery asks a question the ticket cannot answer, and the ticket notes that the transfer needs attention. Answer it once in Inventory.
+- **Quantities in tonnes are rounded to the unit's precision.** On the demo this left 0.01 tonne remainders as backorders when receipts were validated automatically; check the rounding of your weight unit.
+- **There is no driver kiosk or mobile screen.** Tickets are run from the weighbridge PC.
+
+<WhenLive slug="odoo-weighbridge-ticket-capture">
+
+## The chapters
+
+Two chapters cover the detail: [weighbridge tickets, stored tare and deductions](/odoo-guides/odoo-weighbridge-ticket-capture/), and [connecting the scale indicator, pairing and the audit trail](/odoo-guides/odoo-weighbridge-indicator-setup/).
+
+</WhenLive>
+
+## Where to go from here
+
+The full printable guide covers every screen, with a fifteen minute walk-through of the [live demo](/demos/). The agent itself is described on the [WT Weighbridge agent page](/weighbridge/) and the other [Windows apps](/windows-apps/). For the stock side see our [Inventory overview](/modules/inventory/), and if you want your indicator wired and your weighbridge PC paired, [get in touch](/contact/).

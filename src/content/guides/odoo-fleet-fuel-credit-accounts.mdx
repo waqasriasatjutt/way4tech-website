@@ -1,0 +1,108 @@
+---
+title: "Fleet fuel accounts in Odoo: credit limits, vehicle checks at the pump and monthly statements"
+metaTitle: "Fleet Accounts and Statements"
+description: "Run fleet fuel accounts in Odoo: vehicle grade and tank checks, credit limits, per litre discounts, stopped accounts and one statement a month."
+targetQuery: "fleet fuel credit account odoo"
+category: "Industry"
+summary: "Credit accounts for hauliers, coach firms, taxis and councils: vehicles with their grade, tank size, monthly cap and odometer, the checks every fill runs, stopping an account, and monthly statement invoices worked back from the pump price."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-petrol-pump-management"
+seriesOrder: 4
+modules:
+  - name: "Petrol Pump Management"
+    technical: "wt_fuel_station"
+    note: "USD 299, Odoo 19 Community, installs Inventory and Invoicing"
+demo:
+  url: "https://fuelstation-demo.way4tech.com/"
+  label: "Petrol Pump demo"
+related: ["odoo-petrol-pump-management", "odoo-fuel-shift-reconciliation", "odoo-truck-cost-per-km-fuel"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Can a fill be refused because the vehicle could not hold it?"
+    a: "Yes. Each vehicle has a tank capacity, and a fill of more litres than that is refused when it is saved. So is a fill from a nozzle of a different grade than the vehicle takes, and a vehicle that belongs to another account."
+  - q: "How is the credit limit checked?"
+    a: "When a fill is put on the account, the module adds its amount to what the account already owes, which is posted unpaid invoices plus confirmed fills not yet billed. If that passes the credit limit, and Enforce Credit Limits is on, the fill is refused. A stopped account is refused whatever its limit."
+  - q: "Is VAT charged twice on a fleet statement?"
+    a: "No. The pump price already includes VAT and duty, so the statement does not use it as the untaxed price. The module asks Odoo's tax engine what a line would come to and scales the unit price so the line, VAT included, equals the price on the driver's docket."
+  - q: "Can each fill be invoiced on its own?"
+    a: "The account form offers Invoice Each Fill, but no code acts on it: the monthly job bills only accounts on Monthly Statement. For any account, Invoice What Is Outstanding raises an invoice for all its confirmed fills at once."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A haulage yard round the corner can be half a forecourt's diesel volume, and it pays at the end of the month. That is good business right up to the point where a driver fills a jerry can on the account, a car gets diesel, or a customer stops paying and the till keeps serving his vans because nobody told the attendant. Fleet accounts need three things: limits the pumps actually enforce, checks at the moment of the fill, and one clean statement a month. This chapter of the [petrol pump management series](/odoo-guides/odoo-petrol-pump-management/) sets them up in the Petrol Pump Management module.
+
+## The account
+
+An account belongs to a customer contact, has a kind (haulage, bus and coach, taxi and private hire, plant and agriculture, council and public sector, other) and a home site, which is where it normally fuels but does not stop its vehicles filling elsewhere on the estate.
+
+| Field | What it does |
+|---|---|
+| Credit Limit | How much may be owed before fills are refused. Zero means no limit |
+| Discount / l | Taken off the pump price on every fill, the way fleet deals are quoted |
+| Owing | Posted unpaid invoices plus confirmed fills not yet billed |
+| Unbilled | Confirmed fills since the last statement |
+| Available Credit | Limit less owing |
+| Billing | Monthly Statement or Invoice Each Fill |
+| Their Order Number | Printed on the statement, for customers who will not pay without it |
+
+<Shot src="/odoo-guides/odoo-fleet-fuel-credit-accounts/acct-list.webp" alt="Credit accounts list with Pennwick Haulage, Fellbrook Coaches, Brightline Cars in red as stopped, Moorvale Council Fleet and Hartsedge Plant Hire, showing kind, credit limit, owing, unbilled and available credit" width={1440} height={900} caption="Five accounts. The stopped one is in red." />
+
+<Shot src="/odoo-guides/odoo-fleet-fuel-credit-accounts/acct-form.webp" alt="Pennwick Haulage account form with customer, home site Moorside Truck Stop, kind haulage, credit limit, discount per litre, owing, unbilled, available credit, billing monthly, payment terms and their order number, with the vehicles tab" width={1440} height={900} caption="A haulage account: limit, per litre discount, what it owes and its vehicles." />
+
+## Vehicles
+
+Every vehicle on an account has a registration, a make and model and exactly one **grade** it may take. **Tank Capacity** is used to refuse a fill bigger than the vehicle holds, which is how fuel ends up in a drum on the side. **Monthly Cap** limits the litres a month the vehicle may draw, and **Last Odometer** is updated on every fill so consumption can be worked out per vehicle. The fuel card number is kept, but only managers can see it.
+
+<Shot src="/odoo-guides/odoo-fleet-fuel-credit-accounts/veh-form.webp" alt="Vehicle form for a tractor unit with registration, make and model, grade diesel, tank capacity 650 litres, monthly cap, litres drawn this month, last odometer, usual driver and masked fuel card" width={1440} height={900} caption="One vehicle: the grade it takes, its tank, its cap and the last odometer." />
+
+## The fill
+
+A fill is raised under Forecourt, Fuel on Account against the shift it went out on: account, vehicle, nozzle, litres, odometer and the docket number the driver signed. The price in force at that time and the account's discount fill in, giving the net price and amount.
+
+Two sets of checks run. When the fill is saved:
+
+- the vehicle must be on the account,
+- the litres cannot exceed the vehicle's tank,
+- the nozzle must dispense the vehicle's grade.
+
+When it is put on the account with **Put on the Account**:
+
+- the account must not be stopped,
+- the amount must not take it past its credit limit (with Enforce Credit Limits on),
+- the vehicle must not pass its monthly cap,
+- the odometer cannot be lower than the last fill's.
+
+<Shot src="/odoo-guides/odoo-fleet-fuel-credit-accounts/fill-confirmed.webp" alt="A confirmed fill on account with site, shift, account, vehicle, nozzle Pump 1 / 1B, litres, price per litre, discount per litre, net price, amount, odometer and docket number" width={1440} height={900} caption="A confirmed fill: net price after the per litre discount, odometer and docket." />
+
+The fill comes off the shift's expected cash, because the fuel went through the nozzle with no money over the counter. Once its shift is signed off the fill cannot be cancelled or changed, since that would move a till figure somebody has already signed.
+
+## Reading the account
+
+Each vehicle shows the litres it has drawn this month against its cap, and the account shows the litres for the whole fleet this month. Because every fill carries the odometer, the fills list for one vehicle, read in date order, gives its distance between fills and so its consumption. A van that suddenly needs twice the litres for the same mileage is the fill to ask the driver about. The account form's smart buttons open the full lists of vehicles and fills for that customer.
+
+## Stopping an account
+
+When a customer stops paying, write the reason on the account and press **Stop the Account**. From then on every fill is refused with that reason, which is what the person on the till reads out to the driver. The reason goes on the account's chatter and an email is queued to the customer. **Release** lifts the stop.
+
+<Shot src="/odoo-guides/odoo-fleet-fuel-credit-accounts/acct-blocked.webp" alt="Brightline Cars account stopped, with the block reason that the October statement is unpaid and the office must be spoken to before fuelling any car, and the Release button" width={1440} height={900} caption="A stopped account and the reason the till will see." />
+
+## Statements
+
+The monthly statements job runs on the **Statement Day** in the settings. For every account on Monthly Statement billing it collects the confirmed fills of the month just gone and raises one customer invoice, with one line per fill: date, plate, litres and net price, on the site's sales journal and with the account's order number as the reference. **Invoice What Is Outstanding** on an account bills all its confirmed fills straight away.
+
+The pump price already contains VAT and duty, so using it as the untaxed price would charge VAT on VAT. Instead the module asks Odoo's tax engine what a line would come to with the product's taxes, mapped through the customer's fiscal position, and scales the unit price so the line total including VAT equals the docket. It holds for prices already marked tax included, several taxes and flat per litre taxes.
+
+<Shot src="/odoo-guides/odoo-fleet-fuel-credit-accounts/stmt-form.webp" alt="Customer invoice for a month of fills on a haulage account, one line per fill with date, plate, litres and net price, VAT at 20% and the total" width={1440} height={900} caption="A monthly statement: one line per fill, VAT worked back from the pump price." />
+
+The invoices are created as drafts, so they are checked, posted and sent like any other customer invoice, and payments are recorded the normal way. Posted unpaid statements count towards what the account owes.
+
+<Callout title="Invoice Each Fill is not wired up">
+The billing choice Invoice Each Fill exists on the account, but nothing in the module acts on it, and the monthly job skips those accounts. Bill them with Invoice What Is Outstanding when you want to. Like every scheduled job in the module, the statements job ships switched off.
+</Callout>
+
+## Where it fits
+
+Fleet operators who want the other side of this, fuel cost per kilometre on each of their own trucks, should read the [truck cost per km guide](/odoo-guides/odoo-truck-cost-per-km-fuel/). For how the fills sit in the till, see [shift reconciliation](/odoo-guides/odoo-fuel-shift-reconciliation/).

@@ -1,0 +1,108 @@
+---
+title: "Weighbridge tickets in Odoo: gross and tare capture, stored tare, deductions and the receipt"
+metaTitle: "Tickets, Stored Tare and Deductions"
+description: "Weigh trucks in and out in Odoo: capture gross and tare from the scale, reuse a stored tare, deduct moisture or dirt and put the final net on the receipt."
+targetQuery: "weighbridge ticket odoo"
+category: "Industry"
+summary: "An inbound and an outbound weighbridge ticket step by step: the live weight, Capture weight, Use stored tare, percent and kilogram deductions, cancelling, and how the final net reaches the receipt or delivery and the printed ticket."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-weighbridge-management"
+seriesOrder: 1
+modules:
+  - name: "WT Weighbridge"
+    technical: "wt_weighbridge"
+    note: "USD 299, Odoo 19 Community, installs Inventory"
+demo:
+  url: "https://weighbridge-demo.way4tech.com/"
+  label: "Weighbridge demo"
+related: ["odoo-weighbridge-management", "odoo-weighbridge-indicator-setup", "odoo-purchase-inventory-dashboard"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Which weighing is the gross on a weighbridge ticket?"
+    a: "It depends on the direction. On an inbound ticket the first weighing is the gross, taken loaded, and the second is the tare, taken empty. On an outbound ticket the first is the tare and the second the gross. The module works this out from the direction, and refuses a second weighing that would make the gross lower than the tare."
+  - q: "How long is a stored tare valid?"
+    a: "For the number of days in the Stored tare validity setting, 90 by default, counted from when it was taken. Zero means it never expires. Every done ticket whose tare was captured from the scale refreshes it, when Update stored tare from captured tares is on."
+  - q: "How is a moisture deduction worked out?"
+    a: "With Deduction Type set to Percent, the deduction is the net times the percentage, rounded to 0.1 kg, and the final net is the net less that. A percentage above 100 is refused. With Kilograms the value is taken off as it is, and cannot exceed the net."
+  - q: "Can an operator cancel a ticket?"
+    a: "An operator can cancel a ticket that is still in draft. After the first weighing only a Weighbridge Manager can, and the weighings stay in the audit trail. A ticket whose stock move is already done cannot be cancelled until the transfer is returned in Inventory."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A weighbridge office runs on tickets. A truck rolls on, a ticket is opened, a number is taken, the truck goes to unload or load, comes back and another number is taken. If the ticket is quick to run, operators use it; if the numbers on it come from the scale and not from a keyboard, everybody downstream can trust it. This chapter of the [weighbridge management series](/odoo-guides/odoo-weighbridge-management/) runs tickets in WT Weighbridge, from the first weighing to the receipt.
+
+## Raising the ticket
+
+A ticket needs a direction, a vehicle and normally a partner and a product.
+
+- **Inbound (receipt)** for goods coming in, **Outbound (delivery)** for goods going out.
+- **Vehicle** is the plate. Choosing it fills the partner from the vehicle's owner and the driver from its usual driver.
+- **Product** must be counted in a weight unit (kg, t, lb) while the stock setting is on, because the final net is set on the stock move in that unit.
+- **Receipt / delivery** can be linked now, or created when the ticket is done.
+
+Tickets are numbered from the WB sequence. The list shows date, vehicle, partner, product, direction, net and final net, and tickets waiting for their second weighing in blue.
+
+## The first weighing
+
+On a paired weighbridge PC the top of the ticket shows the live weight from the indicator in large figures, green when stable, and says whether the next weighing is the gross or the tare. **Capture weight** is enabled only while the reading is stable. When it is pressed, the agent signs the reading and sends it with any camera snapshots, and Odoo checks it before recording anything.
+
+<Shot src="/odoo-guides/odoo-weighbridge-ticket-capture/ticket-first.webp" alt="A ticket with the first weighing done, showing the live weight panel saying Not paired with the capture button disabled, the first weight of 21,190 kg captured from scale, second weight pending, and two camera snapshots in the chatter" width={1440} height={900} caption="First weighing done. On a PC without the agent, as on the demo, the live panel says Not paired." />
+
+The weighing is recorded with the operator, the time, the station, the indicator and the raw value it read, and the chatter shows it with the snapshots. The capture is refused when the weight is below the minimum in the settings, which catches an empty platform. From this point the direction, the vehicle and the company of the ticket are fixed.
+
+## The second weighing
+
+The second capture completes the ticket. The module computes:
+
+| Field | Inbound | Outbound |
+|---|---|---|
+| Gross | First weighing | Second weighing |
+| Tare | Second weighing | First weighing |
+| Net | Gross less tare | Gross less tare |
+| Final net | Net less the deduction | Net less the deduction |
+
+A second weighing that would make the gross not higher than the tare is refused with a hint to check the direction, and a ticket cannot finish with a net of zero or less.
+
+<Shot src="/odoo-guides/odoo-weighbridge-ticket-capture/ticket-done-out.webp" alt="A done outbound ticket to a steel mill with the tare weighed empty first and the gross weighed loaded second, both captured from scale, the net and final net, the quantity in tonnes and the delivery it was set on" width={1440} height={900} caption="Outbound: tare first, gross second, final net on the delivery." />
+
+## Using the stored tare
+
+A truck with a valid stored tare does not have to cross the bridge empty. When the next weighing is the tare and the vehicle's stored tare is valid, **Use stored tare** appears in the header. After a confirmation it records the stored tare as that weighing, with the date the tare was taken in the reason. On an outbound ticket that can be the first weighing; on an inbound ticket, the second.
+
+<Shot src="/odoo-guides/odoo-weighbridge-ticket-capture/ticket-stored.webp" alt="A done inbound ticket whose second weighing mode is Stored tare, with the reason giving the date the stored tare was taken, and the gross captured from scale" width={1440} height={900} caption="The tare taken from the vehicle's stored tare instead of a second crossing." />
+
+The stored tare lives on the vehicle, with when and by whom it was taken and the ticket it came from. With **Update stored tare from captured tares** on, every done ticket whose tare was captured refreshes it. A stored tare used on a ticket does not refresh itself, so it cannot be kept alive forever without the truck being weighed empty. It expires after **Stored tare validity** days.
+
+<Shot src="/odoo-guides/odoo-weighbridge-ticket-capture/veh-form.webp" alt="Vehicle LES-4721 with owner, usual driver, type, stored tare of 11,170 kg, when and by whom it was taken, the ticket it came from, its expiry date and the chatter history of stored tare changes" width={1440} height={900} caption="A vehicle's stored tare and its history." />
+
+## Deductions
+
+Deductions are set on the ticket before it is done:
+
+- **Percent:** the net times the percentage, rounded to 0.1 kg. Above 100% is refused.
+- **Kilograms:** a fixed weight, which cannot exceed the net.
+
+Each has a reason, such as moisture on a rain soaked load or rubber picked out at the sorting bay. **Final net** is the net less the deduction, and **Quantity in product unit** converts it into the product's unit, so 8,516 kg of HMS scrap counted in tonnes is 8.52 t.
+
+<Shot src="/odoo-guides/odoo-weighbridge-ticket-capture/ticket-kg.webp" alt="A done inbound ticket with a 300 kg deduction for tyres removed at the sorting bay, showing net, deduction in kg and final net" width={1440} height={900} caption="A kilogram deduction with its reason." />
+
+## When the ticket is done
+
+With **Set stock move quantity when a ticket is done** on, the final net goes onto the receipt for an inbound ticket or the delivery for an outbound one: the module finds the move for the product, or adds one, confirms the transfer if it is still a draft and sets the quantity. With no transfer linked and **Create a receipt or delivery when none is linked** on, it creates one in the company's first warehouse with the ticket as the source document. **Validate the receipt or delivery** goes one step further.
+
+<Callout title="When validation stops">
+If Inventory needs an answer before validating, the ticket writes that the transfer needs more information and leaves it ready. On the demo this was Odoo's one-time question about SMS on delivery confirmation, which appears when Inventory's SMS add-on is installed. Answer it once in Inventory and later deliveries validate on their own.
+</Callout>
+
+## Printing and cancelling
+
+**Print A5** and **Print 80 mm** are on every ticket past draft, with both weighings, who took them and how, gross, tare, net, the deduction and final net, and signature lines for the driver and the operator. The A5 ticket includes the snapshots, and a ticket with a typed weight is marked as a manual weight.
+
+<Shot src="/odoo-guides/odoo-weighbridge-ticket-capture/doc-a5.webp" alt="Printed A5 weighbridge ticket with company header, ticket details, first and second weighing with time, operator and mode, gross, tare, net, deduction, final net and four camera snapshots" width={1440} height={900} caption="The A5 ticket with its snapshots." />
+
+A draft ticket can be cancelled by an operator; after the first weighing only by a manager. A done or cancelled ticket is locked except for its notes, and a ticket with weighings cannot be deleted. The weighings stay as the audit record whatever happens to the ticket.
+
+Next: [connecting the indicator, pairing the PC and the audit trail](/odoo-guides/odoo-weighbridge-indicator-setup/).

@@ -1,0 +1,98 @@
+---
+title: "Spray records in Odoo: input applications, pre-harvest intervals, maximum dose and the wind limit"
+metaTitle: "Spray Records and Pre-Harvest Intervals"
+description: "Keep the spray record in Odoo 19 Community: batch, rate and interval on every input, harvests blocked until clear, over-doses and windy sprays refused."
+targetQuery: "pre-harvest interval spray record odoo"
+category: "Industry"
+summary: "How Farm Management turns every input line into the application record, works out when a field is clear to harvest, refuses an over-dose and a spray on a windy day, and keeps the weather log those checks read."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-farm-management"
+seriesOrder: 2
+modules:
+  - name: "Farm Management"
+    technical: "wt_agriculture_farm"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Accounting"
+demo:
+  url: "https://farm-demo.way4tech.com/"
+  label: "Farm demo"
+related: ["odoo-farm-management", "odoo-crop-cycle-gross-margin", "odoo-harvest-moisture-lot-traceability"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Where does the pre-harvest interval come from?"
+    a: "From the product. Each farm input carries its interval, maximum dose per hectare and active substance off the label, and the interval is copied onto the input line when the line is added. Change it on the line only if the label on the container says something different."
+  - q: "What happens when a field is still inside an interval at harvest?"
+    a: "Confirming the harvest is refused. The message names the field, the date it is clear, the product and the date it went on. Every booked application on that field since drilling counts, including passes not tied to the crop cycle."
+  - q: "How does the wind check know the wind speed?"
+    a: "The spray pass takes the wind reading from the weather log for that field and that day. If the reading is above the company's maximum spray wind, booking the spray as done is refused. The reading can be corrected on the pass."
+  - q: "Who can see the spray operator's certificate number?"
+    a: "Only farm managers. It is held back from other staff because it identifies a named individual, but it is on the line and on the printed spray record."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A spray record kept on a clipboard in the tractor is fine until somebody needs it. A residue query from a buyer, a farm assurance inspection or a recall on a batch of product all ask the same questions: what went on which field, when, at what rate, out of which container, and was the crop cut after the interval had run. This chapter of the [farm management series](/odoo-guides/odoo-farm-management/) shows how Farm Management makes the record as the work is booked and uses it to stop mistakes.
+
+## Setting up the inputs
+
+Any Odoo product becomes a farm input on its **Farm Input** tab:
+
+| Field | Used for |
+|---|---|
+| Farm Input | Seed, fertiliser, plant protection product, lime, feed, veterinary or other. Puts it in the input picker on a pass |
+| Pre-Harvest Interval (days) | The days between application and cutting, off the label |
+| Active Substance | Printed on the spray record; an inspector asks for the active, not the trade name |
+| Maximum Dose / ha | The label rate; an application above it is refused |
+
+<Shot src="/odoo-guides/odoo-spray-records-pre-harvest-interval/product-input.webp" alt="Product form farm input tab for a T2 fungicide set as a plant protection product with a 35 day pre-harvest interval, prothioconazole 250 g per litre as active substance and a maximum dose of 1.5 litres per hectare" width={1440} height={900} caption="A fungicide set up from its label: interval, active and maximum dose." />
+
+## The input line is the record
+
+On a pass, the Inputs Used tab holds one line per product: the quantity, the unit, the rate per hectare worked out over the area worked, the cost, the interval copied from the product, the batch number off the container, the target (septoria, blackgrass, aphids), and the operator certificate number, visible to farm managers only.
+
+<Shot src="/odoo-guides/odoo-spray-records-pre-harvest-interval/act-spray.webp" alt="Spray pass inputs used tab with two lines, a growth regulator and a fungicide, showing active substance, quantity in litres, rate per hectare, cost, pre-harvest interval, batch number, target and operator certificate" width={1440} height={900} caption="A spray pass: two products, each with its batch, rate and interval." />
+
+When the pass is booked as done the line becomes evidence. It cannot be deleted any more: correct the quantity or cancel the pass. The pass itself cannot be deleted either, because the database would take the lines with it. With stock tracking on, each line is meant to draw the product out of the farm's input store. In the current build that move is not made on Odoo 19, so the store is kept in Inventory for now.
+
+## Three label rules, enforced
+
+| Rule | When it bites | What it says |
+|---|---|---|
+| No input, no booking | Booking a sowing, fertiliser, spray or lime pass with no line | Record what went on the ground first |
+| Maximum dose | Saving a line whose rate per hectare is above the label | The rate, the label rate, and "an over-dose is a rejected load" |
+| Wind limit | Booking a spray as done when the wind reading is above the company limit | The reading, the limit, and to correct it or move the pass |
+
+The wind reading on a pass is filled from the weather log for that field on the planned day. The limit is a company setting, 15 kph by default, because it is a licence condition and differs by scheme.
+
+<Shot src="/odoo-guides/odoo-spray-records-pre-harvest-interval/act-windy.webp" alt="Planned spray pass on a field for today with a wind reading of 24 kph taken from the weather log, above the 15 kph limit, so it cannot be booked as done" width={1440} height={900} caption="Planned for today at 24 kph: Book as Done will be refused." />
+
+## When is the field clear?
+
+Each booked line has a clear date: the application date plus the interval. The field and the crop cycle both show **Clear to Harvest From**, the latest clear date still running on that ground. Compliance, Intervals Running lists every booked application still inside its interval, grouped by field.
+
+<Shot src="/odoo-guides/odoo-spray-records-pre-harvest-interval/phi-list.webp" alt="Intervals running list grouped by field with each plant protection application, its date, interval and clear date" width={1440} height={900} caption="Read this before the combine goes out." />
+
+Confirming a harvest is refused while any booked application on that field, since the crop was drilled, is still inside its interval on the harvest date. The refusal names the latest one, because that is the one that decides. The interval belongs to the ground, not the paperwork, so a spray booked without a cycle on that field still counts.
+
+<Shot src="/odoo-guides/odoo-spray-records-pre-harvest-interval/h-draft.webp" alt="Draft harvest of leeks dated today with a note that it will not confirm because the rust spray interval is still running on the field" width={1440} height={900} caption="A leek load booked for today: it cannot be confirmed until the rust spray interval runs out." />
+
+The flag that says an interval has elapsed is stored so it can be searched. A nightly job, Farm: expire pre-harvest intervals, refreshes it, so a field blocked this morning is free this afternoon without anyone editing a record. The rule can be switched off with Enforce Pre-Harvest Intervals in the settings; it is on by default and an assurance scheme will expect it on.
+
+<Callout title="Back-dated harvests">
+The check compares every application since drilling with the harvest date. A harvest entered late, dated before a later spray on the same field, is still refused by that later spray. Enter harvests as they come off.
+</Callout>
+
+## The weather log
+
+Compliance, Weather Log keeps one line per field per day: rainfall, minimum and maximum temperature, wind, humidity and condition. A date in the future is refused, because it records what happened, not a forecast. The wind feeds the spray check and the rainfall gives the 30 day total on the field, which is what explains a yield a year later. Filters for Rain Recorded and Windy, and a rainfall graph by field.
+
+<Shot src="/odoo-guides/odoo-spray-records-pre-harvest-interval/wx-list.webp" alt="Weather log list grouped by field with daily rainfall, minimum and maximum temperature, wind speed, humidity and condition, rainy days highlighted" width={1440} height={900} caption="One line per field per day, typed in by the team." />
+
+## Who books what
+
+The people who do the spraying book their own passes. A Farm Worker sees only the passes they are named on, and passes nobody is named on, with their input lines; the Compliance menu with every application, the intervals and the operator certificate stay with the agronomist and the manager. That keeps the record honest at the source, where the batch number is read off the container, while the farm manager keeps the overview. An agronomist can plan a spray as a draft or planned pass days ahead, with the products and rates, and the driver books it as done on the day, when the wind reading for that field is checked.
+
+## On paper
+
+The Spray Record prints from a pass in A4 landscape: field, date, operator and wind, then every product with active substance, batch, quantity, rate, target, interval and clear date. The Field Record Sheet prints every application ever made on a field beside its cropping history, and the Harvest Passport lists everything under a load.

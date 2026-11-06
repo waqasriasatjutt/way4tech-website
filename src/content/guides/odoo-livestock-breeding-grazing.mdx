@@ -1,0 +1,97 @@
+---
+title: "Livestock in Odoo: herds, ear tags, weights, breeding and calvings, milk records and paddock grazing"
+metaTitle: "Livestock, Breeding and Grazing"
+description: "Run herds and flocks in Odoo 19 Community: animals on ear tags with weights, calvings worked out by species, milk records and paddocks with a rest clock."
+targetQuery: "livestock herd management odoo"
+category: "Industry"
+summary: "The livestock side of Farm Management: herds and animals, weights and daily gain, selling and culling with reasons, breeding with expected calving by species, recording calvings, the production log, and paddock rotation with rest and stocking rules."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-farm-management"
+seriesOrder: 4
+modules:
+  - name: "Farm Management"
+    technical: "wt_agriculture_farm"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Accounting"
+demo:
+  url: "https://farm-demo.way4tech.com/"
+  label: "Farm demo"
+related: ["odoo-farm-management", "odoo-crop-cycle-gross-margin", "odoo-pet-vaccination-reminders"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is the expected calving date worked out?"
+    a: "Service date plus the gestation for the species: 283 days for dairy and beef cattle, 147 for sheep, 150 for goats, 114 for pigs and 21 for poultry. It can be moved if a scan says otherwise."
+  - q: "Does recording a calving create the calves?"
+    a: "Yes. Put the actual calving date and the number born alive on the breeding record and press Record Calving. The calves are created in the dam's herd with the dam, the sire, the birth date and an ear tag built from the dam's tag, ready for their own tags to be typed in."
+  - q: "Can stock be turned back onto a paddock too soon?"
+    a: "No. Turning a herd in is refused if the paddock has had less than the minimum rest since it was last grazed, 21 days by default, if another herd is still on it, or if the head count is above the paddock's limit."
+  - q: "Who can see what an animal cost or sold for?"
+    a: "Only farm managers. Purchase and sale prices sit on a Trading tab held back from general staff because they are trading information."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+On a mixed farm the stock records are kept by the person with the least time to keep them: the stockperson writing a calving on the back of a feed ticket at two in the morning. Farm Management gives that person short forms that do the arithmetic, and gives the manager the herd figures without a spreadsheet. This chapter of the [farm management series](/odoo-guides/odoo-farm-management/) covers herds, animals, breeding, milk records and grazing.
+
+## Herds and animals
+
+A herd or flock has a species (dairy or beef cattle, sheep, goats, pigs, poultry), a purpose, a main breed suggested on every animal added, a stockperson, and live counts of head and breeding females. It also shows the paddock it is on now.
+
+Each animal is recorded on its **official ear tag**, unique per company, beside an internal reference made from the company prefix and a number. It has a name if the stockperson uses one, breed, sex, birth date and age, dam and sire, and the service it was born from, so the pedigree reads both ways. A dam must be female and older than her calf, a sire male, and nothing can be its own parent or be born in the future.
+
+<Shot src="/odoo-guides/odoo-livestock-breeding-grazing/an-cow.webp" alt="Dairy cow record with ear tag, name, breed, sex, birth date and age, and a breeding tab listing her services with method, service date, expected calving, scan date and outcome" width={1440} height={900} caption="A cow on her ear tag, with every service and its outcome." />
+
+## Weights and daily gain
+
+The Weights tab takes one weighing per day with a body condition score from 1 to 5, because a weight on its own does not say whether she is fit or fat. **Daily gain** is worked out between the first and the last weighing on record. It is the number that says whether the ration is working, for a finishing steer or a growing heifer.
+
+<Shot src="/odoo-guides/odoo-livestock-breeding-grazing/an-calf.webp" alt="Suckler calf record with dam, sire and birth date filled from the calving, and a weights tab with three weighings, body condition scores and the daily gain" width={1440} height={900} caption="A spring calf: three weighings and its daily gain." />
+
+## Leaving the herd
+
+**Sell** needs a sale price on the Trading tab, which only farm managers can see, and stamps the sale date: an animal that leaves with no price makes the herd margin meaningless. **Cull** and **Dead** each need an exit reason: age, fertility, cell count or mastitis, lameness, finished for slaughter, injury, disease or other. Read back over three years, the culling reasons say what to fix. Animals that have left are kept, greyed out, under the Left the Herd filter.
+
+## Breeding
+
+A breeding record is one service: the dam, the sire (an animal on the farm) or a bull or ram code for a straw, the method (natural service, artificial insemination or embryo transfer) and the service date. The **expected calving** is the service date plus the gestation for the species:
+
+| Species | Gestation used |
+|---|---|
+| Dairy and beef cattle | 283 days |
+| Sheep | 147 days |
+| Goats | 150 days |
+| Pigs | 114 days |
+| Poultry | 21 days |
+
+**Scanned in Calf** stamps the scan date and marks her pregnant; **Not in Calf** and **Aborted** close the service. To record the birth, put the actual calving date and the number born alive, then press **Record Calving**: the calves are created in the herd with the dam, sire and birth date and the outcome becomes Calved.
+
+<Shot src="/odoo-guides/odoo-livestock-breeding-grazing/br-calved.webp" alt="Breeding record for a dairy cow with artificial insemination, service date, expected and actual calving, one offspring, outcome calved and the calf listed" width={1440} height={900} caption="A calved service, with the calf it created." />
+
+The Animals list has a Calving Within a Month filter, and a nightly job, Farm: calvings due, can post a note on every animal due within the look ahead days. It ships switched off.
+
+<Callout title="Check the calves">
+Calves created by Record Calving alternate female and male and take an ear tag built from the dam's tag with a number after it. Correct the sex and type the official tag once the calf is tagged.
+</Callout>
+
+## Milk, eggs and wool
+
+The production log takes milk in litres, eggs in dozens, wool in kilograms or anything else, per herd (a bulk tank or whole house figure) or per animal (milk recording). Milk lines carry butterfat, protein and the somatic **cell count** from the tanker sample: a rising trend is a mastitis problem before it is a mastitis case. There is one figure per herd, animal, day and product, so a bulk tank morning cannot be entered twice. With a price per unit the log gives a value, and a per head figure from the herd's count.
+
+<Shot src="/odoo-guides/odoo-livestock-breeding-grazing/prod-graph.webp" alt="Production graph of daily bulk tank milk litres for the milking herd over ninety days" width={1440} height={900} caption="Daily milk litres: the peaks are the milk recording days, added on top of the bulk tank." />
+
+## Paddocks and grazing
+
+A paddock has an area (no bigger than the field it is fenced out of), a sward type, whether there is water, a maximum head and a fence note. It also keeps who is on it, when it was last grazed, its rest days and whether it is **Ready to Graze**: empty and rested for at least the minimum, 21 days by default.
+
+<Shot src="/odoo-guides/odoo-livestock-breeding-grazing/pad-list.webp" alt="Paddocks list with area, sward, water, maximum head, the herd currently on each, last grazed date, rest days and ready to graze flag" width={1440} height={900} caption="Paddocks: who is on which, and how long the others have rested." />
+
+A grazing block moves a herd on and off. **Turn In** is refused if the paddock has not had its rest, or another herd is on it; putting more head on than the paddock carries is refused at any time. **Take Off** stamps the date off. A nightly job, Farm: paddock rest and overdue grazing, refreshes the rest days every night and posts a note on any block still out past its planned date off.
+
+<Shot src="/odoo-guides/odoo-livestock-breeding-grazing/gz-out.webp" alt="Grazing block of the lowland flock on a river paddock, turned in with a planned date out in the past, still grazing, with a chatter note that the flock should have come off" width={1440} height={900} caption="Out now and overdue: the nightly job has noted it." />
+
+The grazing list has filters for Out Now, Planned and Overdue Off, and the paddock list for Ready to Graze, Stock On and No Water, so the morning question of where the flock goes next is answered from two screens. Each block also gives the days grazed and the stocking rate in head per hectare, which is the figure to compare against the sward when a paddock starts to look tired.
+
+<Callout title="Planned blocks and overlap">
+A planned block with no date off is treated as occupying its paddock for a year when other blocks are checked for overlap. Give short planned blocks a date off.
+</Callout>

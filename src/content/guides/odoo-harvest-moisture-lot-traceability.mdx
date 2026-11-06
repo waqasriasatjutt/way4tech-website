@@ -1,0 +1,103 @@
+---
+title: "Harvest records in Odoo: moisture shrink, lot references, traceability and invoicing the buyer"
+metaTitle: "Harvests, Moisture Shrink and Lots"
+description: "Record harvests in Odoo 19 Community: shrink wet grain to contract moisture, give each load a lot, trace it to the ground and invoice the shrunk tonnes."
+targetQuery: "harvest record moisture shrink odoo"
+category: "Industry"
+summary: "Recording a harvest with Farm Management, how the moisture shrink and the value are worked out, the lot reference, what Confirm checks and does, invoicing the buyer, the harvest advice and the traceability back to the ground."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-farm-management"
+seriesOrder: 3
+modules:
+  - name: "Farm Management"
+    technical: "wt_agriculture_farm"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Accounting"
+demo:
+  url: "https://farm-demo.way4tech.com/"
+  label: "Farm demo"
+related: ["odoo-farm-management", "odoo-spray-records-pre-harvest-interval", "odoo-weighbridge-management"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is wet grain shrunk?"
+    a: "When the moisture is above the company's target moisture, the tonnage at target moisture is the weighed tonnes times (100 minus the moisture) divided by (100 minus the target). At or below the target, nothing is taken off. The default target is 14.5%."
+  - q: "Is the buyer invoiced on the weighed or the shrunk weight?"
+    a: "On the shrunk weight. The invoice line quantity is the tonnage at target moisture, at the contract price per tonne, and the line text gives the weighed tonnes and the moisture."
+  - q: "What is the lot reference made of?"
+    a: "The farm code, the field's land parcel reference (or its code) and the harvest number. It can be overwritten with the merchant's own lot number."
+  - q: "Can a confirmed harvest be changed?"
+    a: "It can be cancelled or put back to draft until it is on a posted invoice. Once it has been booked into the grain store, putting it back to draft is refused; correct the stock move instead."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+The weighbridge ticket says 210 tonnes. The merchant pays for 204, because the grain came in at 17% and the contract is at 14.5%. If the farm records the 210, the margin is wrong, the store book is wrong and the invoice will be disputed. This chapter of the [farm management series](/odoo-guides/odoo-farm-management/) records harvests in Farm Management on the weight that is actually paid for, and keeps the trail from the load back to the ground.
+
+## Recording a load
+
+**Record Harvest** on a growing or harvested crop cycle opens a new harvest with the cycle, today's date and the crop's expected price. A harvest is one load or one day off a field:
+
+| Field | Note |
+|---|---|
+| Date | The day it came off. The interval check is measured against it, so do not backdate it to suit a lorry |
+| Quantity (t) | As weighed |
+| Moisture (%) | Off the meter at the trailer, between 0 and 100 |
+| Grade | Premium, milling, malting, seed, standard, feed, reject |
+| Price / t | The contract price |
+| Buyer, Taxes | Who it is sold to; taxes default from the produce product |
+
+<Shot src="/odoo-guides/odoo-harvest-moisture-lot-traceability/h-wet.webp" alt="Harvest record for wheat with weighed tonnes, moisture above the target, the tonnage at target moisture, grade, price per tonne, value and the lot reference" width={1440} height={900} caption="A wet load: weighed tonnes, the shrunk tonnes and the value on the shrunk weight." />
+
+## The shrink and the value
+
+Above the target moisture, a company setting at 14.5% by default, the weight is shrunk back: tonnes at target = tonnes x (100 - moisture) / (100 - target). At 17% moisture, 210 tonnes becomes about 204. Wet grain weighs more and is worth the same, so the **value is the shrunk tonnage times the price**. That is the figure the crop's revenue and margin use, and the figure on the invoice, so no cheque will ever be smaller than the margin sheet claimed.
+
+Potatoes and leeks are recorded with no moisture, so nothing is taken off.
+
+## Confirm
+
+**Confirm** does four things:
+
+1. **Checks the interval.** It is refused while any booked application on the field since drilling is still inside its pre-harvest interval on the harvest date, as the [spray records chapter](/odoo-guides/odoo-spray-records-pre-harvest-interval/) explains.
+2. **Is meant to book it into the grain store.** With stock tracking on and a grain store on the farm, the weighed tonnes should go into stock as the produce product, set up in tonnes. In the current build this move is not made on Odoo 19 (see below).
+3. **Moves the crop on.** A growing cycle becomes Harvested, with the harvest date.
+4. **Writes the lot** into the chatter.
+
+The **lot reference** is the farm code, the field's land parcel reference and the harvest number, for example THF/SO4960 2277/00080. Overwrite it with the merchant's own lot number if they issue one.
+
+<Shot src="/odoo-guides/odoo-harvest-moisture-lot-traceability/h-conf.webp" alt="Confirmed harvest of beans with lot reference, quantity, moisture, shrunk tonnes, grade, buyer and value, waiting to be invoiced" width={1440} height={900} caption="Confirmed, not yet invoiced." />
+
+## Invoicing the buyer
+
+**Invoice** raises a customer invoice for the buyer, through the farm's sales journal and in the company currency, pinned so a foreign currency journal cannot misread the price. The line is the produce product at the **shrunk tonnage** and the contract price, with the taxes of the product for this company, and reads "crop, variety, lot, weighed tonnes at moisture". Post it and collect it in Accounting as usual. The harvest moves to Invoiced, and its Invoice button opens the invoice.
+
+<Shot src="/odoo-guides/odoo-harvest-moisture-lot-traceability/invoice.webp" alt="Customer invoice to a grain merchant with one line for milling wheat at the tonnage at target moisture and the price per tonne, the line text giving the lot, weighed tonnes and moisture, zero rated" width={1440} height={900} caption="The invoice: shrunk tonnes at the contract price, the lot on the line." />
+
+**Send Advice** emails the buyer the weight, moisture and lot using the Farm: Harvest Advice template, and notes it in the chatter. It needs an email on the buyer.
+
+Only confirmed and invoiced harvests count in the crop's tonnage and revenue. Cancel and Reset to Draft are refused once the load is on a posted invoice: credit the invoice instead. Reset to Draft is also refused once the load is in the grain store.
+
+## From the load back to the ground
+
+The **Traceability** tab on a harvest lists every application on that field from drilling to the cut date: product, active substance, date, quantity, rate, batch and interval. After a residue query, that list is the answer, and the **Harvest Passport** prints it with the lot, the parcel, the cropped area and the soil.
+
+<Shot src="/odoo-guides/odoo-harvest-moisture-lot-traceability/h-paid-trace.webp" alt="Harvest traceability tab listing seed, herbicide, nitrogen, growth regulator and fungicide applications on the field since drilling with dates, rates, batch numbers and intervals" width={1440} height={900} caption="Everything on the ground under this load, with the batch numbers." />
+
+<Shot src="/odoo-guides/odoo-harvest-moisture-lot-traceability/doc-passport.webp" alt="Printed harvest passport with the farm logo, lot reference, crop and variety, cut date, buyer, farm, field, land parcel, cropped area and soil, followed by a table of everything applied to the ground" width={1440} height={1013} caption="The Harvest Passport, ready for the buyer or the inspector." />
+
+<Callout title="Grain store stock">
+The code books the harvest into the grain store against Odoo's production location, looked up by a reference Odoo 19 no longer has. It skips the move without a message, so in the current build the grain store does not change. Keep stock in Inventory by hand until that is fixed.
+</Callout>
+
+<Callout title="Weighbridge and harvest">
+Farm Management takes the weighed tonnes as typed. If the loads cross a weighbridge, our [weighbridge module](/odoo-guides/odoo-weighbridge-management/) captures the weight from the indicator; the two are separate modules and do not pass tickets to each other.
+</Callout>
+
+## A harvest that is more than one load
+
+A field of wheat comes off over two or three days and a field of potatoes over weeks. Record a harvest per load or per day: each gets its own moisture, grade, price and buyer, and its own lot. The first confirmed load moves the crop cycle to Harvested; later loads keep adding to the tonnage and revenue on the same cycle. On the demo, the potato field on Kiln Field has three loads at two prices, one invoiced and posted, one invoiced in draft and one not yet invoiced, and the leeks have been part lifted with a second load waiting on the interval.
+
+## Reading the harvest
+
+Cropping, Harvests lists every load with filters for Confirmed, To Invoice and Rejected Grade, grouping by crop, field, season, grade, buyer and day, and a tonnage pivot. On the crop cycle, the Harvests tab and the Margin tab show the same loads summed into yield per hectare, shrunk tonnes and revenue.

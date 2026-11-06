@@ -1,0 +1,101 @@
+---
+title: "Crop cycles in Odoo: costed field work and gross margin per hectare, per crop and per field"
+metaTitle: "Crop Cycles and Gross Margin per Hectare"
+description: "Plan crop cycles in Odoo 19 Community, cost every pass from labour and machine rates, and read gross margin per hectare and cost per tonne for each crop."
+targetQuery: "gross margin per hectare odoo"
+category: "Industry"
+summary: "Planning a crop cycle with Farm Management, the rotation and pH warnings, how field work is costed from the labour and machinery rates, and how the gross margin, cost per tonne and yield alert are worked out."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-farm-management"
+seriesOrder: 1
+modules:
+  - name: "Farm Management"
+    technical: "wt_agriculture_farm"
+    note: "USD 249, Odoo 19 Community, installs Inventory and Accounting"
+demo:
+  url: "https://farm-demo.way4tech.com/"
+  label: "Farm demo"
+related: ["odoo-farm-management", "odoo-spray-records-pre-harvest-interval", "odoo-harvest-moisture-lot-traceability"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is the labour cost of a pass worked out?"
+    a: "Hours each, times the number of people on the job, times the labour rate per hour on the settings page. Machinery is machine hours times the machinery rate. Inputs are the quantity times the cost per unit on each input line."
+  - q: "Can seed be counted twice in the margin?"
+    a: "Not if it is entered once. Seed booked straight against the crop goes in Seed Cost; seed put on the drilling pass as an input lands in the input cost. Use one or the other for a crop, as the field help says."
+  - q: "Does a rotation warning stop me planting?"
+    a: "No. Planning a crop straight after another of the same rotation group, or on a field whose pH is outside the crop's range, writes a warning into the cycle's chatter but does not refuse it."
+  - q: "When does a cycle show as below target?"
+    a: "Once it has confirmed harvests and the harvested tonnage is under the yield alert percentage of the expected tonnage, which is the cropped area times the crop's target yield. The default alert is 80%."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A gross margin worked out the following spring is a history lesson. A gross margin that builds up pass by pass while the crop is in the ground is a management tool: the cost of the second fungicide is known the day it goes on, and a field heading for a loss is visible before the merchant calls. This chapter of the [farm management series](/odoo-guides/odoo-farm-management/) plans a crop cycle in Farm Management and follows its cost to the margin per hectare.
+
+## One crop, one field, one season
+
+A crop cycle is one crop on one field for one season. The field gives the area and soil, the crop gives the variety, growing days, target yield, expected price and seed rate, and the season is the harvest year it counts in. Every cost booked against the cycle and every tonne taken off it lands in the same record, which is the only way a margin per hectare means anything.
+
+A new cycle takes the field's area, which you lower when only part of the field carries the crop. The seed quantity is suggested from the seed rate and the area. Two cost fields sit on the cycle itself: **Seed Cost**, for a seed invoice booked straight against the crop, and **Other Costs**, for rent, contract work, drying and haulage that never came through a pass.
+
+## Planning it
+
+**Plan** needs a drilling date and a season that is not closed. The expected harvest is the drilling date plus the crop's growing days, and you can move it when the season runs late. Plan also checks the agronomy and writes what it finds into the chatter:
+
+- a crop in the same **rotation group** as the last crop harvested on that field, such as barley after wheat, because soil borne disease builds up on a tight rotation;
+- a field whose **soil pH** is outside the crop's range, such as potatoes on chalk.
+
+<Shot src="/odoo-guides/odoo-crop-cycle-gross-margin/cy-planned.webp" alt="Planned maincrop potato cycle on a chalk field with drilling and expected harvest dates and a chatter message saying the field tested at pH 7.8 while the crop wants 5.0 to 6.5" width={1440} height={900} caption="Planned potatoes on chalk: the pH warning is written into the record." />
+
+Neither warning refuses the plan. A grower has good reasons to break a rotation and lime fixes a pH; what matters is that the decision is on file when the yield comes in low. Some things are refused: a cycle bigger than its field, two cycles whose dates overlap and add up to more than the field, a drilling date outside the season and an expected harvest before drilling.
+
+**In the Ground** moves the cycle to Growing, and the passes begin.
+
+## Every pass, costed the day it is booked
+
+A field activity is one pass: plough, cultivate, drill, fertilise, spray, lime, irrigate, crop walk, mow, harvest. It records the operator, how many people were on it, the hours each, the machine hours and the machine. When it is booked as done its cost is fixed:
+
+| Heading | Worked out as |
+|---|---|
+| Labour | Hours each x people x labour rate |
+| Machinery | Machine hours x machinery rate |
+| Inputs | Quantity x cost per unit, on each input line |
+| Per hectare | Total over the area worked |
+
+The labour and machinery rates are company settings. Set the machinery rate from last year's machinery account divided by last year's hours, as the field help suggests, and the cost of a pass is real.
+
+<Shot src="/odoo-guides/odoo-crop-cycle-gross-margin/act-spray-cost.webp" alt="Field activity cost tab for a spray pass showing labour, machinery and input cost, the total and the cost per hectare over the area worked" width={1440} height={900} caption="A spray pass: labour, machinery and inputs, and the cost per hectare." />
+
+A pass with no cycle, such as lime between crops, stays on the field record but in no crop's margin. A pass over part of a field takes a smaller Area Worked. Booking a sowing, fertiliser, spray or lime pass with nothing recorded on it is refused, and a done pass cannot be deleted. Each done pass writes its cost into the cycle's chatter, so the cycle reads as a diary of the crop.
+
+## The margin
+
+The Margin tab gathers five cost headings with no overlap, then the output:
+
+<Shot src="/odoo-guides/odoo-crop-cycle-gross-margin/cy-closed.webp" alt="Closed winter wheat crop cycle margin tab with seed used, seed cost, input, labour, machinery and other costs and total, and output with expected, harvested and shrunk tonnes, yield per hectare, variance, revenue and gross margin" width={1440} height={900} caption="Costs on the left, output on the right." />
+
+- **Costs:** seed cost, inputs, labour and machinery from the passes that were not cancelled, other costs, the total and the cost per hectare.
+- **Output:** expected tonnes (area x target yield), harvested tonnes, tonnes at target moisture, yield per hectare and the variance against target.
+- **Money:** revenue from confirmed and invoiced harvests, gross margin, margin per hectare and cost per tonne (total cost over harvested tonnes).
+
+The cost per tonne is the number to take into a conversation with a merchant. Revenue follows the shrunk tonnage, so a wet harvest does not inflate it; the [harvest chapter](/odoo-guides/odoo-harvest-moisture-lot-traceability/) explains the shrink.
+
+<Callout title="Seed once, not twice">
+Seed booked in Seed Cost and seed put on the drilling pass as an input are two separate headings. If a farm does both for the same crop, the margin pays for the seed twice. Pick one way per crop.
+</Callout>
+
+## The yield alert
+
+A harvested cycle whose harvested tonnage is under the alert share of its expected tonnage, 80% by default, is flagged: red in the list, a ribbon on the form, and the Below Target Yield filter. It is the prompt to walk the field before it is drilled again.
+
+<Shot src="/odoo-guides/odoo-crop-cycle-gross-margin/cy-under.webp" alt="Second wheat crop cycle on a silt field with a below target ribbon, a variance of about minus 29 percent against expected tonnes and the gross margin" width={1440} height={900} caption="A second wheat under target: flagged, with the rotation warning still in its chatter." />
+
+## Closing and comparing
+
+**Close** on a harvested cycle signs it off and posts the margin per hectare in the chatter. A season is closed with Close Off once nothing in it is draft, planned or growing; a closed season takes no new cycles and cannot be reopened.
+
+Reporting, Gross Margin is for farm managers: harvested and closed cycles in a pivot and a graph, by season, crop, field or soil. The Gross Margin Sheet prints every heading and the field work behind it for one cycle.
+
+<Shot src="/odoo-guides/odoo-crop-cycle-gross-margin/margin-pivot.webp" alt="Gross margin pivot of harvested and closed crop cycles by season and crop with cropped area, total cost, revenue and gross margin" width={1440} height={900} caption="Gross Margin: by season and crop, for the farm manager." />

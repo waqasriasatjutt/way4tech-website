@@ -1,0 +1,121 @@
+---
+title: "SLA policies in Odoo Helpdesk for Community: targets per team, priority and tag, and breach tracking"
+metaTitle: "SLA Policies and Breaches"
+description: "Set helpdesk SLA policies in Odoo 19 Community by team, priority and tag, see which policy wins, when the clock stops, and how breaches are flagged."
+targetQuery: "odoo helpdesk sla policy"
+category: "Operations"
+summary: "How the Helpdesk and Support Ticket Management module turns a service promise into a deadline on every ticket: the policy fields, the strictest match, the target stage that stops the clock, the hourly breach check and where breaches are reported."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-helpdesk-community"
+seriesOrder: 1
+modules:
+  - name: "Helpdesk and Support Ticket Management"
+    technical: "wt_helpdesk"
+    note: "USD 49, Odoo 19 Community"
+demo:
+  url: "https://helpdesk-demo.way4tech.com/"
+  label: "Helpdesk demo"
+related: ["odoo-helpdesk-community", "odoo-helpdesk-customer-portal", "odoo-sla-service-credits", "odoo-cafm-facility-maintenance"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "What happens when two SLA policies match the same ticket?"
+    a: "The strictest one is attached, meaning the policy with the fewest target hours. A ticket carries one policy and one deadline at a time. If its priority, tags or team change later, the match is worked out again."
+  - q: "Are SLA hours counted in working hours?"
+    a: "No. The clock runs in elapsed hours from the moment the ticket was opened, nights and weekends included. A 24 hour promise made at 6 pm on Thursday is due at 6 pm on Friday."
+  - q: "When does the SLA clock stop?"
+    a: "When the ticket first reaches the policy's target stage, or any stage after it on the board. The time is stamped as SLA Reached On and the clock does not restart if the ticket moves back."
+  - q: "Will a ticket nobody opens still be flagged as breached?"
+    a: "Yes. A scheduled action runs every hour and flags every open ticket whose deadline has passed without reaching its target stage. The flag is also updated whenever the ticket changes."
+  - q: "Can a policy apply to only some customers?"
+    a: "Yes, through tags. Leave a policy's tags empty to cover every ticket of the team, or set tags such as Business Account so the policy only applies to tickets that carry at least one of them."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+"We reply within a working day" is printed on half the contact pages in the world, and almost nobody measures it. A service level agreement only means something when every ticket carries its own deadline, the deadline is visible on the board, and the tickets that miss it turn red without anyone having to look. This chapter shows how the Helpdesk and Support Ticket Management module does that on Odoo 19 Community, using the policies on the [helpdesk demo](https://helpdesk-demo.way4tech.com/).
+
+## Decide the promises first
+
+Before opening Odoo, write the promises down per team in plain words. On the demo, an appliance retailer's technical support team has four:
+
+| Promise | Team | Applies to | Stops at | Hours |
+|---|---|---|---|---|
+| Urgent fault: engineer on it within 2 hours | Technical Support | Urgent | In Progress | 2 |
+| Business accounts answered within 4 hours | Technical Support | Any priority, tag Business Account | In Progress | 4 |
+| High priority fault solved within 24 hours | Technical Support | High and Urgent | Solved | 24 |
+| Fault solved within 3 days | Technical Support | Any priority | Solved | 72 |
+
+Two kinds of promise sit in that table. Some are about **first response** (someone is on it), which is a target of In Progress. Others are about **resolution**, a target of Solved. Both are written the same way.
+
+## Write a policy
+
+Open **Helpdesk, Configuration, SLA Policies** and create one per promise.
+
+<Shot src="/odoo-guides/odoo-helpdesk-sla-policies/sla-list.webp" alt="SLA Policies list with each policy's name, team, minimum priority, tags, target stage and target hours, for Customer Care, Technical Support, Warranty and Returns and Installation Bookings" width={1440} height={900} caption="Every policy with its team, minimum priority, tags, target stage and hours." />
+
+| Field | What it does |
+|---|---|
+| Team | The policy only applies to tickets of this team |
+| Minimum Priority | This priority and above: High also covers Urgent |
+| Tags | Empty for every ticket; otherwise the ticket needs at least one of them |
+| Target Stage | Reaching it, or any later stage, stops the clock. It must be on the team's board |
+| Target (Hours) | Elapsed hours from the ticket's opening, more than zero |
+| Notes | Free text, for example the clause of the customer contract |
+
+<Shot src="/odoo-guides/odoo-helpdesk-sla-policies/sla-urgent.webp" alt="SLA policy form Urgent fault: engineer on it within 2 hours, team Technical Support, minimum priority Urgent, target stage In Progress, target 2 hours, with stat buttons for its tickets and breached tickets" width={1440} height={900} caption="A first response promise for urgent faults, with its ticket and breach counts." />
+
+The stat buttons on a policy count the tickets it governs and how many breached. The policy list adds a success rate column, the share of the policy's tickets that did not breach. The same policies also appear on the team's SLA Policies tab, where Use SLA Policies switches deadlines off for a team entirely.
+
+<Shot src="/odoo-guides/odoo-helpdesk-sla-policies/sla-business.webp" alt="SLA policy form Business accounts answered within 4 hours for Technical Support with minimum priority Low, tag Business Account, target stage In Progress and target 4 hours" width={1440} height={900} caption="A policy on a tag: business accounts get four hours whatever the priority." />
+
+## Which policy wins
+
+When a ticket is created, and again whenever its team, priority, tags or opening date change, the module takes every active policy of the ticket's team, keeps those that match, and attaches the **strictest**: the one with the fewest hours. The deadline is the opening time plus those hours.
+
+| Ticket in Technical Support | Matching policies | Attached |
+|---|---|---|
+| Urgent fault from a private customer | Urgent 2 h, High 24 h, Fault 72 h | Urgent 2 h |
+| Normal fault from a business account | Business 4 h, Fault 72 h | Business 4 h |
+| Low question about the Wi-Fi app | Fault 72 h | Fault 72 h |
+
+One ticket carries one policy and one deadline. That keeps the board readable, and it means the promise you show the customer is always the tightest one you made.
+
+<Callout title="Wall clock, not office hours">
+Hours are counted on the wall clock from the moment the ticket was opened, nights and weekends included. If your promise is "four working hours", set a figure that covers your closed hours, or keep urgent policies for teams that really work around the clock. Opened On is editable, so a ticket typed in after a phone call can be back-dated and counted honestly.
+</Callout>
+
+## When the clock stops
+
+The clock stops the first time the ticket reaches the target stage or any stage after it on the board, and the moment is stamped as **SLA Reached On**. Moving the ticket back later does not restart it. A ticket created straight into its target stage has met its policy at once.
+
+| Situation | How it is judged |
+|---|---|
+| Reached the target stage | Breached if it got there after the deadline |
+| Closed without ever reaching it | Breached if it was closed after the deadline |
+| Still open, target not reached | Breached once the deadline has passed |
+
+Because stages are ordered, a policy that targets Solved also stops when a ticket is Cancelled, which comes later on the board. Cancelling a ticket before its deadline therefore counts as meeting the promise. Keep that in mind when you read a policy's success rate.
+
+## Seeing breaches
+
+A ticket past its deadline gets a red **Breached** ribbon, the SLA Breached box is ticked and Hours Left goes below zero.
+
+<Shot src="/odoo-guides/odoo-helpdesk-sla-policies/ticket-breached.webp" alt="An open helpdesk ticket with a red Breached ribbon, its SLA policy, a deadline in the past, negative hours left and SLA Breached ticked" width={1440} height={900} caption="A breached ticket: the ribbon, the policy, and hours left below zero." />
+
+Nobody has to open a ticket for that to happen. The flag is updated on every change, and the scheduled action **Helpdesk: flag tickets past their SLA deadline** runs every hour over all companies. On the board the deadline sits on each card, the **SLA Breached** and **Past the Deadline** filters isolate the problem tickets, and the team cards show their breached count.
+
+**Helpdesk, Reporting, SLA Breaches** lists every breached ticket, open and closed. Group it by team, by agent or by policy to see where promises are being broken, and whether a policy is simply unrealistic.
+
+<Shot src="/odoo-guides/odoo-helpdesk-sla-policies/breaches.webp" alt="SLA Breaches report listing breached tickets with reference, subject, customer, team, agent, priority, stage and SLA deadline" width={1440} height={900} caption="Every breached ticket, ready to group by team, agent or policy." />
+
+The **calendar view** of the tickets places each open ticket on its deadline, which is the quickest way to see what falls due tomorrow.
+
+<Shot src="/odoo-guides/odoo-helpdesk-sla-policies/calendar.webp" alt="Helpdesk tickets in a calendar view placed on their SLA deadlines for the week" width={1440} height={900} caption="Open tickets on their deadlines: the week ahead at a glance." />
+
+## Reviewing the policies
+
+Once a month, read the success rate column of the policy list. A policy that is breached more than one time in five is either badly staffed or badly written. Check whether its tickets wait in a stage before the target, for example Waiting on Customer, which counts against you because the clock keeps running. If it does, consider a first response policy on In Progress alongside a looser resolution policy, rather than one tight promise on Solved.
+
+The [hub page](/odoo-guides/odoo-helpdesk-community/) has the full PDF guide, and the [portal chapter](/odoo-guides/odoo-helpdesk-customer-portal/) covers the customer side of the desk.

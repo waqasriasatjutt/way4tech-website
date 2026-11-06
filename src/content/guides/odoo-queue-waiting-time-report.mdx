@@ -1,0 +1,117 @@
+---
+title: "Queue waiting time reports in Odoo: the live dashboard, the token timeline and the branch PDF"
+metaTitle: "Dashboard, Tokens and Waiting Time Reports"
+description: "Measure a waiting room in Odoo: live queue dashboard, waiting and service time per service, counter and staff, the token timeline, analysis and a PDF."
+targetQuery: "queue waiting time report odoo"
+category: "Industry"
+region: "UAE, GCC and Pakistan"
+summary: "What the WT Queue and Token System measures and where to read it: the live dashboard for today, every token with its timeline, the pivot and graph analysis, and the one page PDF report per branch for any dates."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-queue-token-management-system"
+seriesOrder: 2
+modules:
+  - name: "WT Queue & Token System"
+    technical: "wt_queue_system"
+    note: "USD 199, Odoo 19 Community or Enterprise. The WT Queue Windows app is free."
+demo:
+  url: "https://queue-demo.way4tech.com/"
+  label: "Queue demo"
+related: ["odoo-queue-token-management-system", "odoo-queue-kiosk-tv-display-setup", "odoo-appointment-queue-check-in"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How is the waiting time worked out?"
+    a: "From the moment the ticket was issued to its first call at a counter. A recall does not restart it, and a transfer to another service does not either, so the figure is what the customer actually waited before someone first called them."
+  - q: "How is the service time worked out?"
+    a: "From the moment staff pressed Start to Done, and only for tickets that were actually served. No shows and cancelled tickets have no service time, so they cannot pull the average down."
+  - q: "Can I see waiting times per member of staff?"
+    a: "Yes. Every call carries the staff member who made it. The token list groups by staff, the analysis can put staff on the rows, and the PDF report has a By staff table with issued, served, no shows, average and longest wait and average service."
+  - q: "Can the dashboard show a past day?"
+    a: "No. The live dashboard always shows today in the branch time zone. For any other day or range, use Queue analysis or print the Queue report for the dates you want."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+"We are always busy in the afternoon" is not something you can staff from. "Between five and seven, the pharmacy line averages nine minutes of waiting with one desk open, and consultation averages two" is. The whole point of a queue system, beyond the order on the floor, is that every ticket leaves behind two measured times. This chapter shows where the WT Queue and Token System puts them: the live dashboard, the token list and timeline, the analysis and the PDF report. The examples are from the [queue demo](https://queue-demo.way4tech.com/), which holds three months of history.
+
+## The two times
+
+Every ticket in Odoo is built from a timeline of events sent by the branch hub: issued, called, recalled, serving started, transferred, done, no show, cancelled. From that timeline the module works out:
+
+- the **waiting time**, from issue to the first call;
+- the **service time**, from Start to Done, for served tickets only.
+
+Both are stored on the ticket with full precision, so averages over a month stay exact. A ticket is never edited by hand. When events arrive late or twice after an internet outage, Odoo sorts the whole timeline again and rebuilds the state and the times, so the figures do not drift.
+
+## The live dashboard
+
+**Queue, Dashboard** shows today for one branch and reloads itself every ten seconds. Pick another branch from the drop-down at the top.
+
+<Shot src="/odoo-guides/odoo-queue-token-management-system/dashboard.webp" alt="Queue dashboard for Al Qusais Clinic with tiles for waiting now 5, at a counter 7, served today 46 of 60 issued with 2 no shows, average wait 2.6 minutes, average service 6.1 minutes and longest waiting 15.4 minutes, then tables per service and per counter, tickets per hour and latest activity" width={1440} height={900} caption="Today at Al Qusais: the six numbers, then services, counters and hours." />
+
+| Tile | What it counts |
+|---|---|
+| Waiting now | Tickets in the line, not yet called |
+| At a counter | Tickets called or being served |
+| Served today | Tickets done, with tickets issued and no shows |
+| Average wait | Issue to first call, over every ticket called today |
+| Average service | Start to Done, over every ticket served today |
+| Longest waiting now | The oldest ticket still waiting, in minutes |
+
+Waiting now, At a counter and Served today are links: click one and the list of tickets behind the number opens. Below the tiles, the **Services** table gives each line its waiting count, issued, served, no shows and its own averages. The **Counters** table shows what each counter is serving right now (or "free"), who is working there and how fast they have been today. **Tickets per hour** shows when people arrive, and **Latest activity** lists the last eight events. The hub badge at the top right says whether the hub PC is online.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/dash-jumeirah.webp" alt="Queue dashboard switched to Jumeirah Clinic with its own tiles, the services General Consultation, Dental, Pharmacy and Priority Care, four counters and the tickets per hour" width={1440} height={900} caption="Switch the branch: Jumeirah, where Dental is the slow line." />
+
+<Callout title="Today only">
+The dashboard does not take a date. It always counts today in the branch time zone, from midnight. For yesterday, last week or a month, use the analysis or the PDF below.
+</Callout>
+
+## Every token, with its timeline
+
+**Queue, Tokens** opens on today. Each line has the ticket number, service, counter, customer, issue time, wait and service minutes (with the average at the bottom of the column), the staff member and the state: Requested, Waiting, Called, Serving, Done, No show or Cancelled.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/tokens.webp" alt="Token list filtered on today with numbers such as A015, R016 and P009, their service, counter, customer, issue time, wait and service minutes, staff and a coloured state badge for requested, waiting, serving and done" width={1440} height={900} caption="Today's tokens: who waited, who served them, and how long it took." />
+
+The filters cover Today, Last 7 days, Waiting, Called or serving, Done, No show, Requested from Odoo and With customer. Group by Service, Counter, Staff, Status or Day to answer the usual questions in two clicks, for example "how many no shows did each doctor have this week".
+
+Open a ticket and the **Timeline** tab tells its story. This one was issued for General Consultation, seen in Doctor room 3, transferred to Pharmacy and finished at the pharmacy desk. **Issued for** keeps the first service and **Service** shows the last; the transfer count is 1.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/token-transfer.webp" alt="Token A017 in the Done state: branch Al Qusais Clinic, service Pharmacy, issued for General Consultation, counter Pharmacy desk, served by Rohan Mehta, customer and phone, the issued, called, serving and done times, wait 1.3 minutes, service 2.5 minutes, transfer count 1, and the timeline of issued, called and serving started at Doctor room 3" width={1440} height={900} caption="A transferred ticket: same number, two services, every step timed." />
+
+A no show tells its story the same way: called, recalled, given up. The recall count is on the ticket, which settles the "nobody called me" argument at the desk.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/token-noshow.webp" alt="A token in the No show state with its counter and staff, a recall count of 1, and the timeline showing issued, called, recalled and no show" width={1440} height={900} caption="A no show: called, recalled once, then given up." />
+
+## Queue analysis
+
+**Reporting, Queue analysis** opens a pivot on the last seven days: services down the side, states across, with average wait and average service minutes. Put counters, staff, days or the hour issued on the rows instead.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/analysis-pivot.webp" alt="Queue analysis pivot for the last 7 days with services as rows, states such as done, no show, serving and waiting as columns, and the average wait and service minutes in each cell" width={1440} height={900} caption="Average wait and service minutes by service and state." />
+
+The graph view stacks the tickets per hour issued, coloured by service. That is the shape of the day you staff to.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/analysis-graph.webp" alt="Stacked bar chart of tickets by hour issued from 8 to 21, coloured by service, with a morning peak at 10 and an evening peak around 18" width={1440} height={900} caption="Tickets by hour issued: a morning and an evening peak." />
+
+<Callout title="Two branches, one service name">
+When two branches both have a service called Pharmacy, the pivot lists them separately because they are separate records (Odoo adds a "(2)" to the second). Filter on the branch, or group by branch first, to compare like with like.
+</Callout>
+
+## Reading the numbers
+
+A few patterns come up in almost every branch, and the reports answer each one directly:
+
+- **Average wait is fine but people complain.** Look at the longest wait in the PDF and the Longest waiting now tile. An average of two minutes can hide a pharmacy line where a few people wait half an hour at the evening peak.
+- **One line is always slow.** Compare that service's average service time with its average minutes on the service form. If dental takes eighteen minutes and the service is set to ten, the waiting estimate on the ticket is wrong as well.
+- **One counter serves less than the others.** Group the tokens by counter and by staff for a week. A desk with a low count and a high average service may be handling the hard cases, or may need a second service taken off it.
+- **Many no shows in one service.** Open a few of them. If they were called once and given up within a minute, the TV may not be visible from where those customers sit, or the call language may not be one they follow.
+
+## The Queue report PDF
+
+**Reporting, Queue report (PDF)** asks for the branch and the dates (today by default) and prints one report. On the branch form, **Print today's report** does the same for today in one click.
+
+<Shot src="/odoo-guides/odoo-queue-waiting-time-report/report-pdf.webp" alt="Queue report for Al Qusais Clinic for 7 October to 5 November 2026: the branch total of 3,515 issued and 3,297 served, then tables by service, by counter and by staff with issued, served, no show, average wait, longest wait and average service, and a bar per hour of tickets issued" width={1440} height={1805} caption="Thirty days at Al Qusais on one page: by service, counter, staff and hour." />
+
+Each table has the same columns: issued, served, no shows, average wait, longest wait and average service. A ticket counts under the service it was issued for and the counter that last handled it. Requested tickets that never got a number are left out. The bars at the bottom are tickets per hour across the whole range, which makes a good page to bring to a staffing meeting.
+
+The [setup chapter](/odoo-guides/odoo-queue-kiosk-tv-display-setup/) covers the services and counters these figures are cut by, and the [appointments chapter](/odoo-guides/odoo-appointment-queue-check-in/) covers linking tickets to customers.

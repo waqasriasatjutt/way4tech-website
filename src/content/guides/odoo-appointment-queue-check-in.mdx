@@ -1,0 +1,113 @@
+---
+title: "Appointment check in to a queue in Odoo: customers from the kiosk, booked patients and the phone page"
+metaTitle: "Appointments, Customers and the Phone Page"
+description: "Link a walk-in queue to Odoo contacts: phone number matching at the kiosk, queue visits on each contact, appointment check in and a phone tracking page."
+targetQuery: "appointment check in queue odoo"
+category: "Industry"
+region: "UAE, GCC and Pakistan"
+summary: "How the WT Queue and Token System ties the queue to the people in it: the mobile number at the kiosk finds the Odoo contact, the counter sees the customer card, an appointment joins the line with Check in to queue, and the customer follows the turn on their phone."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-queue-token-management-system"
+seriesOrder: 3
+modules:
+  - name: "WT Queue & Token System"
+    technical: "wt_queue_system"
+    note: "USD 199, Odoo 19 Community or Enterprise, uses the Calendar app for appointments."
+demo:
+  url: "https://queue-demo.way4tech.com/"
+  label: "Queue demo"
+related: ["odoo-queue-token-management-system", "odoo-appointment-booking", "odoo-patient-appointments-opd", "odoo-queue-waiting-time-report"]
+linkFrom: ["/modules/appointments/"]
+sources: []
+faqs:
+  - q: "How does the kiosk know which customer took a ticket?"
+    a: "The kiosk offers an optional mobile number field. Odoo compares the last nine digits of that number with the phone on its contacts, so 050 555 1364 and +971 50 555 1364 match the same person. The ticket is then linked to that contact."
+  - q: "Do booked patients go ahead of walk-ins?"
+    a: "Yes. Check in to queue creates the ticket with a priority five higher than the service's own, so the hub calls the booked customer before walk-ins who have the same service priority."
+  - q: "What does the customer see on their phone?"
+    a: "The QR code on the printed ticket opens a page on your Odoo with their number, their service and either how many are ahead of them, which counter to go to, or that they have been served, plus the numbers being called now. It refreshes every 20 seconds."
+  - q: "Can someone look up another person's ticket on the phone page?"
+    a: "No. The link carries a short signature made from the ticket and a key held by the branch. A link without the right signature gets a not found page, and the page is marked so search engines do not index it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A queue that does not know who is standing in it makes the desk ask the same questions every visit. The patient who came three times this month is a stranger at the counter, the man with a 4:30 booking waits behind walk-ins, and the mother who stepped out to the car comes back to find her number long gone. The WT Queue and Token System links each ticket to the Odoo contact behind it, lets an appointment join the line with one click, and puts the turn on the customer's own phone. This chapter shows all three on the [queue demo](https://queue-demo.way4tech.com/).
+
+## A phone number finds the customer
+
+After choosing a service, the kiosk asks for a mobile number. It is optional, and the customer can skip it.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/kiosk-phone.webp" alt="WT Queue kiosk screen for the Laboratory service asking for the mobile number, marked optional, with a number pad and the buttons Back, Skip and Get ticket" width={1600} height={990} caption="The optional mobile number on the kiosk, from the free WT Queue app." />
+
+When a number is given, Odoo compares its last nine digits with the phone of its contacts, so a local number and the same number with the country code match the same person. The ticket is linked to that contact. When a counter calls the ticket, the counter bar shows the **customer card** from Odoo: name, phone, email, how many visits were served, the date of the last visit and the first lines of the contact's internal notes. "Prefers Arabic" or "wheelchair user" in the notes is how the counter knows before the customer reaches the desk.
+
+## Queue visits on the contact
+
+Every contact who has taken a ticket gets a **Queue visits** button.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/contact.webp" alt="Contact form of Hassan Mansour with email and phone and a Queue visits button showing 14" width={1440} height={900} caption="A contact with fourteen queue visits." />
+
+Click it for every ticket that customer took, at any branch: service, counter, times, waiting and service minutes and who served them.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/contact-visits.webp" alt="List of the 14 tokens of Hassan Mansour from August to November with service, counter, issue time, wait and service minutes, staff and state, mostly done with one cancelled" width={1440} height={900} caption="The customer's queue history, with the average wait at the bottom." />
+
+### What the counter sees
+
+| On the customer card | Where it comes from |
+|---|---|
+| Name, phone, email, photo | The Odoo contact |
+| Visits | Tickets of this contact that were served, at any branch |
+| Last visit | The day of the most recent served ticket |
+| Note | The first 240 characters of the contact's internal notes |
+
+### Keeping the match clean
+
+The match is only as good as the phone numbers on your contacts. Three habits help:
+
+- **One number per contact in the Phone field.** The kiosk compares against Phone, so a mobile kept only in a note or another field is not found.
+- **Merge duplicates.** If two contacts end in the same nine digits, the oldest contact wins, so a newer duplicate never collects the visits.
+- **Use the notes for the desk.** Whatever is written at the top of the internal notes is what staff read when the number is called. Keep it short and useful: language, access needs, a reminder about paperwork.
+
+A ticket with no number, or with a number Odoo does not know, is still served normally. It simply has no customer, and the counter sees no card. Nothing is created automatically, so walk-ins who give a new number do not fill your contacts with half records.
+
+## Checking an appointment in
+
+The module adds a **Queue service** field to calendar events. Set it on the appointment, for example General Consultation, and when the customer arrives click **Check in to queue**.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/appointment.webp" alt="Calendar event Consultation: Rania Kapoor this afternoon with Dr. Leena Pillai, queue service General Consultation and a Check in to queue button" width={1440} height={900} caption="An appointment with its queue service, ready to check in." />
+
+Check in creates a ticket in the **Requested** state and posts a note on the appointment. The button goes away and the **Queue token** field links to the ticket. The hub collects requests with its next heartbeat and gives the number within a minute, and the TV calls it like any other.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/appointment-checked-in.webp" alt="Calendar event Consultation: Anita Hamdan with queue service General Consultation and queue token Requested, the Check in to queue button no longer shown" width={1440} height={900} caption="Checked in: the token is requested and waiting for a number." />
+
+The ticket keeps the customer from the appointment, carries the origin Odoo and links back to the event, so booked patients can be told apart from walk-ins by their origin.
+
+On the front desk this becomes a short routine. Reception opens today's appointments in Calendar, and as each patient walks in, clicks Check in to queue instead of printing a ticket. The patient sits down and watches the TV for their number. A patient who arrives without having been checked in can still take an ordinary ticket at the kiosk, so nobody is stuck at the desk if reception is busy.
+
+<Callout title="When check in refuses">
+Check in to queue refuses when no queue service is set on the appointment, when the appointment already has a ticket in the queue, and when the branch of that service has no paired hub, because nothing could give it a number. The demo has no hub PC, so its newest check in stays Requested.
+</Callout>
+
+## The customer follows the turn on their phone
+
+The printed ticket carries the number, how many people are ahead, an estimated wait and a QR code. The ticket is printed as a picture, so Arabic and Urdu come out right on any ESC/POS printer.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/ticket.webp" alt="Printed thermal ticket from the WT Queue app with the clinic name, service Laboratory, number L019, two ahead and about 12 minutes, a QR code and a thank you line" width={576} height={913} caption="The printed ticket with its QR code." />
+
+The QR code opens a page served by your Odoo at /queue/track/. It shows the branch in its colour, the number and service, and one of three messages: how many are ahead in the same line, which counter to go to, or that the ticket has been served. Below, the numbers being called now and where. The page refreshes every 20 seconds.
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/track-waiting.webp" alt="Phone page for ticket A024 at Al Qusais Clinic, General Consultation, 2 ahead of you, with the numbers being served now and their counters" width={780} height={1688} caption="Waiting: two ahead in the consultation line." />
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/track-called.webp" alt="Phone page for ticket R016, Registration and Insurance, with the message Please go to Reception 2" width={780} height={1688} caption="Called: go to Reception 2." />
+
+<Shot src="/odoo-guides/odoo-appointment-queue-check-in/track-done.webp" alt="Phone page for ticket A017, Pharmacy, with the message Served. Thank you for your visit." width={780} height={1688} caption="Served, with the numbers being called now." />
+
+The link carries a short signature made from the ticket and a key the branch holds, so nobody can read another person's ticket by changing the address, and the page tells search engines not to index it. If a ticket has not reached Odoo yet, for example while the internet is down, the page says the ticket is being registered and keeps refreshing.
+
+<Callout title="No text messages">
+The module sends no SMS or WhatsApp. The phone page is the whole "you are next" feature, and it needs the customer to scan the QR code.
+</Callout>
+
+For online booking before the visit, see the [appointment booking guide](/odoo-guides/odoo-appointment-booking/). The [hub page](/odoo-guides/odoo-queue-token-management-system/) has the full PDF guide.

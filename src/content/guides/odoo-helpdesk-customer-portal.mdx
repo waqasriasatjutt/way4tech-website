@@ -1,0 +1,117 @@
+---
+title: "Helpdesk email tickets and customer portal in Odoo Community: aliases, my tickets, replies and ratings"
+metaTitle: "Email Tickets and the Customer Portal"
+description: "Let customers reach your Odoo Community helpdesk by email and portal: team aliases, /my/tickets, replies, new ticket form, ratings and closing reasons."
+targetQuery: "odoo helpdesk customer portal tickets"
+category: "Operations"
+summary: "The two doors into the Helpdesk and Support Ticket Management module, an email alias per team and the customer portal, and what happens at the other end: replies on the thread, closing with a reason, the customer's rating and the customer copy of the ticket."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-helpdesk-community"
+seriesOrder: 2
+modules:
+  - name: "Helpdesk and Support Ticket Management"
+    technical: "wt_helpdesk"
+    note: "USD 49, Odoo 19 Community, uses Discuss and the portal"
+demo:
+  url: "https://helpdesk-demo.way4tech.com/"
+  label: "Helpdesk demo"
+related: ["odoo-helpdesk-community", "odoo-helpdesk-sla-policies", "odoo-b2b-dealer-portal-trade-pricing"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "Do customers need a login to raise a ticket?"
+    a: "For the portal form, yes: it is open to signed-in portal users only. Anyone can still raise a ticket by writing to a team's email alias, and a customer who has a link from a ticket email can open that ticket without logging in."
+  - q: "Can a customer see another customer's tickets?"
+    a: "No. The portal list only shows tickets where the signed-in customer is the customer, and the detail page checks access on every request, so guessing a ticket number leads back to the account page."
+  - q: "Does a customer reply reopen a closed ticket?"
+    a: "No. The reply is added to the ticket's thread, but a closed ticket stays closed so a thank-you note does not put finished work back on the board. On an open ticket a reply sets the kanban state back to In Progress."
+  - q: "When can a customer rate a ticket?"
+    a: "Once the ticket is in a closing stage and has not been rated yet. The rating form appears on the ticket's portal page with five choices from Very Poor to Very Good and an optional comment, and it can be given once."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+Most customers never think about how they reach support. They write to the address on the invoice, or they log in to the account they already have and look for a button. A helpdesk that only works for agents, while customers keep phoning to ask "any news?", saves very little. This chapter covers the two doors into the Helpdesk and Support Ticket Management module on Odoo 19 Community, an email alias per team and the customer portal, and what the customer sees from the moment they write to the moment they rate the answer. The examples are on the [helpdesk demo](https://helpdesk-demo.way4tech.com/).
+
+## Door one: an email alias per team
+
+On a team's form, under **Incoming Email**, set an alias name such as `support`. Every email sent to support@ your mail domain then raises a ticket in that team. The **Email Alias** field shows the full address once Odoo has a mail domain on the company.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/team.webp" alt="Technical Support team form with leader and members, balanced assignment, the email alias support with its full address, portal submission ticked, and stat buttons for tickets, open and breached" width={1440} height={900} caption="A team with its alias, assignment rule and portal switch." />
+
+What happens to the email:
+
+- the **subject** becomes the ticket subject and the body starts the thread;
+- the sender's **address** is kept as the ticket's contact email, split cleanly from the display name, and their name as the contact name;
+- a sender who is already a **contact** in Odoo is linked as the customer;
+- the ticket lands on the team's first stage and is handed out by the team's assignment rule;
+- **answers** from the ticket go back to that address, and the customer's next emails land on the same ticket.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/ticket-email.webp" alt="A helpdesk ticket raised by email with no linked contact: contact name and email taken from the sender, team Technical Support, stage New, and the original email in the thread" width={1440} height={900} caption="Raised by email: no contact needed, the address is kept for the answer." />
+
+<Callout title="Mail has to be set up first">
+The alias needs Odoo's incoming mail working: a mail domain on the company, and either an incoming mail server or a forward from your mail host to Odoo. On your own server it is a one-off setup.
+</Callout>
+
+## Door two: the customer portal
+
+Customers with a portal login see a **Support Tickets** tile on their account page.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/portal-home.webp" alt="Customer portal account page with tiles for addresses, connection and security, and Support Tickets, next to the customer's contact details" width={1440} height={900} caption="The Support Tickets tile on the customer's account page." />
+
+The list at **/my/tickets** shows the reference, subject, status and dates. Customers can sort by newest, reference, stage or priority, filter all, open or closed, and search in the reference or the subject. They only ever see tickets where they are the customer.
+
+<Shot src="/odoo-guides/odoo-helpdesk-community/portal-list.webp" alt="Customer portal page My Support Tickets listing the customer's own tickets with reference, subject, status and dates" width={1440} height={900} caption="The customer's own tickets, with sort, filter and search." />
+
+Opening a ticket shows its status, team, priority, dates and description, then the conversation. The customer writes in the box above the messages, and it lands on the ticket's thread where the agent sees it. Internal notes never appear here.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/portal-ticket.webp" alt="Portal page of a ticket about a washer making a loud noise on spin, status Waiting on Customer, with the description, the agent's question asking for a video and the serial number, and a message box for the reply" width={1440} height={900} caption="A ticket as the customer sees it, with the agent's question and the reply box." />
+
+### Raising a ticket on the portal
+
+**/my/tickets/new** is a short form: the team (only teams with Portal Submission ticked are offered, each with its portal description), a subject, a priority and the description. The ticket is created for the signed-in customer with their name, email and phone, and opens straight away.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/portal-new.webp" alt="Raise a Ticket portal form with a team selector, subject, priority with Low, Normal and High, and a description box" width={1440} height={900} caption="The portal form: team, subject, priority and description." />
+
+The priority on the portal goes up to High. Urgent is kept for agents, so a customer cannot push their own ticket ahead of genuine emergencies. The pages work on a phone as they are.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/phone-new.webp" alt="The Raise a Ticket form on a phone screen" width={780} height={1688} caption="Raising a ticket from a phone." />
+
+<Callout title="No public website form">
+The new ticket form needs a portal login. There is no anonymous form on the website; customers without a login write to the email alias, and an agent can always type a ticket in while on the phone.
+</Callout>
+
+## Giving customers a portal login
+
+The portal is standard Odoo: a customer gets a login when you grant them portal access from their contact, and Odoo emails them an invitation to set a password. Who should get one depends on the business. A retailer may invite only business accounts and frequent customers; a software company may invite every user of its product. Customers who never log in lose nothing, because every ticket can still be followed by email.
+
+Before inviting anyone, check three things:
+
+- the teams customers should be able to choose have **Portal Submission** ticked, and the others do not (on the demo, Installation Bookings is not offered on the portal, because the coordinator books those jobs by phone);
+- each offered team has a short **Portal Description**, so the customer picks the right one;
+- the contact has the right email address, because portal replies and ticket emails go there.
+
+A customer only sees tickets where they are the customer. A ticket raised by email from an address that is not yet a contact has no customer, so it does not appear on anyone's portal until an agent links the contact.
+
+## Closing the loop
+
+Agents close a ticket with the **Close** button, which asks for the closing stage (Solved or Cancelled) and a **reason**. The reason goes on the thread as an internal note, or as a message to the customer when **Tell the Customer** is ticked. If the Solved stage has the "ticket closed" email template, the customer is told by email as well.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/close-wizard.webp" alt="Close Ticket dialog over a helpdesk ticket with the closing stage, a required reason box and a Tell the Customer option" width={1440} height={900} caption="Closing with a reason, and choosing whether the customer reads it." />
+
+When the customer writes back to a closed ticket, the message is added to the thread but the ticket stays closed: a thank-you should not put finished work back on the board. If the problem has come back, the agent clicks **Reopen**.
+
+## The rating
+
+On a closed ticket that has not been rated, the customer's portal page shows **How did we do?** with five choices from Very Poor to Very Good and an optional comment. It can be given once, and it appears on the agent's side in the ticket's Feedback tab.
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/portal-rate.webp" alt="Portal page of a solved ticket with the How did we do? form offering Very Poor, Poor, Acceptable, Good and Very Good and a comment box" width={1440} height={900} caption="The rating form on a closed ticket." />
+
+<Shot src="/odoo-guides/odoo-helpdesk-customer-portal/feedback.webp" alt="Feedback tab of a solved ticket showing a Poor rating, the date and the customer's comment that they had to chase three times" width={1440} height={900} caption="The same rating on the agent side, comment included." />
+
+Behind the portal page there is also a customer copy of the ticket as a PDF, without the agent, the SLA policy or the breach flag. The page itself has no download button for it.
+
+On the agent side, filter **Rated** and group by Assigned To to see who collects the praise and who collects the complaints. The "ticket closed" email template ends with a link to rate the ticket, so customers usually arrive at the form straight from their inbox; the link carries an access token, so it works without logging in.
+
+The [SLA chapter](/odoo-guides/odoo-helpdesk-sla-policies/) covers the promises behind each ticket, and the [hub page](/odoo-guides/odoo-helpdesk-community/) has the full PDF guide.

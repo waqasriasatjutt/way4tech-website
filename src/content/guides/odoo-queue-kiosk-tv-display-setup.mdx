@@ -1,0 +1,105 @@
+---
+title: "Setting up a queue kiosk and TV display with Odoo: branches, hub pairing, services and counters"
+metaTitle: "Kiosk, TV and Counter Setup"
+description: "Set up a queue in Odoo: create the branch, pair the hub PC, define services and ticket letters, link counters and staff, and brand the kiosk and TV."
+targetQuery: "queue kiosk and tv display setup odoo"
+category: "Industry"
+region: "UAE, GCC and Pakistan"
+summary: "Everything a branch needs before the first ticket: the branch and its time zone, pairing the hub with a single use code, services with letters and priorities, counters with their staff, and the colours, languages, texts and media the customer sees."
+published: 2026-11-05
+updated: 2026-11-05
+series: "odoo-queue-token-management-system"
+seriesOrder: 1
+modules:
+  - name: "WT Queue & Token System"
+    technical: "wt_queue_system"
+    note: "USD 199, Odoo 19 Community or Enterprise. The WT Queue Windows app is free."
+demo:
+  url: "https://queue-demo.way4tech.com/"
+  label: "Queue demo"
+related: ["odoo-queue-token-management-system", "odoo-queue-waiting-time-report", "odoo-appointment-queue-check-in"]
+linkFrom: []
+sources: []
+faqs:
+  - q: "How does the hub PC connect to Odoo?"
+    a: "Each branch gets a pairing code on its form in Odoo, valid for seven days and usable once. On the hub PC you click the invite link from the branch form, or type the code into the WT Queue setup. Odoo then hands the hub a token, which it keeps only as a hash, and the services, counters, colours and logo come down to the branch."
+  - q: "What happens if the hub PC is replaced?"
+    a: "Make a new pairing code on the branch form and pair the new PC with it. Odoo tells the new hub the highest number already issued today for each service, so it carries on from there and numbers never repeat in a day."
+  - q: "Do I have to go to the branch to change a service?"
+    a: "No. Every change to a service, a counter, the branding or the TV media marks the branch as changed, and the hub fetches the new setup on its next heartbeat, every 30 seconds by default."
+  - q: "How do I let elderly customers go first?"
+    a: "Create a service for them with a higher priority, for example 10, and add it to the counters that should serve it. Tickets of a higher priority service are called first at every counter that takes it."
+---
+import Shot from '../../components/guides/Shot.astro';
+import Callout from '../../components/guides/Callout.astro';
+
+A queue fails in its first week for boring reasons: the pharmacy window calls consultation tickets, the TV says "counter Doctor room 3" instead of "counter 3", the Arabic names were never typed, or nobody can tell whether the PC in the back office is still talking to the server. All of that is decided in the setup. In the WT Queue and Token System there is no settings page at all: everything is set per branch in Odoo, and the branch PCs take it from there. This chapter walks the setup in the order you would do it, on the [queue demo](https://queue-demo.way4tech.com/).
+
+## Step 1: create the branch
+
+Open **Queue, Configuration, Branches** and create the branch. Give it a name and, above all, the right **time zone**: ticket numbers restart at midnight in that zone, and the dashboard and the reports count days in it. A branch of the same company in another country gets its own zone.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/branches.webp" alt="Branches list in Odoo with Al Qusais Clinic and Jumeirah Clinic paired, Al Nahda Clinic not paired, showing the online toggle, the hub PC name, when each was last seen, how many are waiting now and the tokens issued today" width={1440} height={900} caption="Branches with their pairing state, hub PC and today's counts." />
+
+The moment the branch is saved it gets a **pairing code** in the form WTQ-XXXX-XXXX, valid for seven days and usable once. The Setup tab shows it with a checklist that ticks itself as you go: app installed, hub paired, devices found, first token received.
+
+## Step 2: pair the hub PC
+
+Pick the branch PC that stays on, usually the reception PC. Install the free WT Queue app from the download link on the branch form, keep "This PC is the hub", and click the **invite link** from the branch form on that PC (or paste the code). The hub pairs, and from then on it signs every call with a token Odoo keeps only as a sha256 hash.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/branch-setup.webp" alt="Al Qusais Clinic branch form, Setup tab: a setup checklist with four green ticks for install the app, pair the hub, devices found and first token received, and on the right the download link, the pairing code, when it is valid until and when it was used, the invite link and the six digit LAN join code" width={1440} height={900} caption="A paired branch: the checklist is green and the LAN join code is showing." />
+
+The other PCs of the branch (the kiosk, the TV, each counter) install the same app, find the hub on the network by themselves and join with the six digit **LAN join code**, which appears on the branch form once the hub is paired. A counter PC is told which counter it is and who works there.
+
+The **Hub** tab is where IT looks when something is wrong: the hub PC name and Windows version, the app version, when it was paired, how many events are waiting to sync and the age of the oldest one, the heartbeat interval, and every kiosk, display and counter that joined, with when each was last seen.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/branch-hub.webp" alt="Hub tab of the branch form: hub PC QUS-RECEPTION-PC on Windows 11 Pro with app version 1.0.0, sync figures with nothing waiting, a heartbeat of 30 seconds, and a table of devices that joined the hub: entrance kiosk, waiting hall TV and six counters" width={1440} height={900} caption="The Hub tab: the PC, the sync state and every screen that joined." />
+
+<Callout title="When a hub goes quiet">
+A scheduled action runs every five minutes and marks a paired hub offline when it has not been heard from for three heartbeats, and never sooner than a minute. The branch then carries an orange Offline ribbon and shows under the Offline filter. Revoke hub cuts a hub off completely; New pairing code makes a fresh code (the old one stops working) for a replacement PC.
+</Callout>
+
+## Step 3: define the services
+
+A service is a line with its own ticket letter. Set them on the branch's Services tab, or under **Configuration, Services**.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/services.webp" alt="Services tab of Al Qusais Clinic edited in a list: R Registration and Insurance, A General Consultation, L Laboratory, P Pharmacy and V Priority Care, each with its Arabic name, priority, average minutes, colour, the number waiting and an active toggle" width={1440} height={900} caption="Services with letter, names, priority, average minutes and colour." />
+
+| Field | What it does |
+|---|---|
+| Prefix | The ticket letter, up to three letters or digits, stored in capitals and unique within the branch |
+| Names | English, Arabic and Urdu, shown on the kiosk in each language |
+| Priority | Higher is called first at every counter that serves the service |
+| Average minutes | The waiting estimate printed on the ticket until real data exists |
+| Colour | The button on the kiosk and the chips on the TV |
+| Start number | Where the count begins each morning |
+
+The demo's Al Qusais Clinic has Registration and Insurance (R), General Consultation (A), Laboratory (L), Pharmacy (P) and Priority Care (V) with priority 10. Archive a service you stop offering rather than deleting it, so its old tickets keep their link.
+
+## Step 4: set up the counters
+
+A counter is where a customer is called to. Each has a **number**, which is what the TV shows and the voice says, its **services** and its **staff**.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/counter.webp" alt="Counter form for Doctor room 3 at Al Qusais Clinic with number 3, services General Consultation and Priority Care, staff Dr. Salim Karim, the current token and how many it has served today" width={1440} height={900} caption="Doctor room 3 calls consultation and priority tickets." />
+
+Keep the number short. "Please go to counter 3" is clear; "please go to counter Doctor room 3" is not. Two reception desks can share the registration line while one of them also takes priority tickets, which is how the demo is set up.
+
+## Step 5: branding, languages and the TV
+
+The **Branding and languages** tab sets what the customer sees: the primary and accent colours, three or four digits on the ticket, Arabic and Urdu on the kiosk, which languages the TV calls numbers in, the welcome line in each language, the footer printed on the ticket and the ticker that scrolls along the bottom of the TV. The branch logo goes on the kiosk header and the ticket.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/branding.webp" alt="Branding and languages tab: primary and accent colours, number digits 3, Arabic and Urdu switched on for the kiosk, calls in English and Arabic, welcome texts in English, Arabic and Urdu, the ticket footer and the display ticker" width={1440} height={900} caption="Colours, languages and texts, all set in Odoo." />
+
+<Callout title="Voices come from Windows">
+The TV speaks with the Windows voices on the display PC. English comes with Windows. For Arabic or Urdu calls, add that voice in Windows Settings, Time and language, Speech; without it the call is made in English.
+</Callout>
+
+Under **Display media**, upload the pictures (PNG, JPG) and videos (MP4) the TV plays beside the calls. Pictures show for the seconds you set; videos play to the end. Use 16:9 pictures, for example 1920 by 1080. Each file carries a checksum, so the hub only downloads what changed.
+
+## How changes reach the branch
+
+You never touch the branch PCs to change a service. Every change to the branch, its services, counters or media flags the branch, the hub's next heartbeat (every 30 seconds by default) sees the flag and fetches the new setup. The staff counter bar, the kiosk buttons and the TV follow.
+
+<Shot src="/odoo-guides/odoo-queue-kiosk-tv-display-setup/counter-bar.webp" alt="The WT Queue counter bar for staff showing the current ticket A061, four waiting with A062 next, and buttons Call next, Recall, Start, Done, No show and Transfer" width={1312} height={115} caption="The counter bar staff use all day, fed by this setup." />
+
+Once the setup is done, the [waiting time chapter](/odoo-guides/odoo-queue-waiting-time-report/) shows what the branch produces, and the [hub page](/odoo-guides/odoo-queue-token-management-system/) has the full PDF guide.

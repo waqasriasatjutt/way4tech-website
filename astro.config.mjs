@@ -120,6 +120,11 @@ function sourcesFor(pathname) {
   if (a === 'odoo-guides') return ['src/pages/odoo-guides/index.astro', 'src/content/guides/'];
   if (a === 'learn' && b === 'odoo-owl' && c) return [`src/content/course/${c}.mdx`];
   if (a === 'learn' && b === 'odoo-owl') return ['src/pages/learn/odoo-owl/index.astro', 'src/content/course/', ...data];
+  if (a === 'software' && b === 'construction-cloud' && c === 'guide') {
+    return seg[3]
+      ? [`src/data/cc-guide/chapters/${seg[3]}.html`, 'src/pages/software/construction-cloud/guide/[chapter].astro']
+      : ['src/pages/software/construction-cloud/guide/index.astro', 'src/data/cc-guide/guide.json'];
+  }
   if (a === 'author') return [`src/pages/author/${b}.astro`, 'src/data/modules-catalog.ts'];
   if (a === 'case-studies') return ['src/pages/case-studies/index.astro', 'src/data/site.ts'];
   if (a === 'countries' && b && c === 'cost') return ['src/pages/countries/[slug]/cost.astro', ...data];

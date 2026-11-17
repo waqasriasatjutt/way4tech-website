@@ -1,0 +1,137 @@
+---
+import Base from '~/layouts/Base.astro';
+import { SITE } from '~/data/site';
+import { CC } from '~/data/construction-cloud';
+import { CCG_CHAPTERS, CCG_PARTS, CCG_PDF, GUIDE_PATH, chapterUrl, chaptersOfPart, chapterByKey } from '~/data/cc-guide';
+
+const pageUrl = `${SITE.url}${GUIDE_PATH}`;
+const figures = CCG_CHAPTERS.reduce((n, c) => n + c.figures, 0);
+const start = (key: string) => chapterByKey(key);
+
+const paths = [
+  { head: 'New to the system?', text: 'Read Part 1 first, about 30 minutes. It shows the screens and explains the ideas every other chapter uses.', link: start('01_start_here') },
+  { head: 'Know your job?', text: 'Go straight to your role in Part 2. Each role chapter lists what you see and the tasks you do, step by step.', link: start('10_director') },
+  { head: 'Looking for a screen?', text: 'Use Part 3, menu by menu, or the menu map at the back.', link: start('99_menu_map') },
+  { head: 'Setting the system up?', text: 'Parts 5 and 6 explain how records connect and how to control users, approvals and month end.', link: start('80_expert_setup') },
+];
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${CC.name} user guide`,
+    description: `The full ${CC.name} user guide: ${CCG_CHAPTERS.length} chapters from first login to expert setup.`,
+    url: pageUrl,
+    hasPart: CCG_CHAPTERS.map(c => ({ '@type': 'TechArticle', name: c.title, url: `${SITE.url}${chapterUrl(c)}` })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Software', item: `${SITE.url}/software/` },
+      { '@type': 'ListItem', position: 3, name: CC.name, item: `${SITE.url}/software/construction-cloud/` },
+      { '@type': 'ListItem', position: 4, name: 'User guide', item: pageUrl },
+    ],
+  },
+];
+---
+<Base
+  title="Construction Cloud User Guide"
+  description={`The ${CC.name} user guide online: ${CCG_CHAPTERS.length} chapters on every role, menu and business flow, from tender and estimate to final account.`}
+  canonical={pageUrl}
+  structuredData={schema}
+>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-20">
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/software/" class="hover:text-white">Software</a> / <a href="/software/construction-cloud/" class="hover:text-white">{CC.name}</a> / <span class="text-white">User guide</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="eyebrow text-brand-200">{CC.name}</div>
+        <h1 class="h1 mt-4">User guide</h1>
+        <p class="lede mt-6 text-brand-100">How to use {CC.name} from your first login to expert setup: every role, every menu and the main business flows from tender to final account. {CCG_CHAPTERS.length} chapters and {figures} screenshots from the demo company, Kestrel Construction.</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={chapterUrl(CCG_CHAPTERS[0])} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Start reading</a>
+          <a href="/software/construction-cloud/" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Product overview</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <h2 class="h3">Where to start</h2>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            {paths.map(p => p.link && (
+              <a href={chapterUrl(p.link)} class="card group flex flex-col">
+                <h3 class="font-semibold">{p.head}</h3>
+                <p class="mt-2 flex-1 text-sm text-ink-600">{p.text}</p>
+                <span class="mt-4 text-sm font-semibold text-brand-600 group-hover:text-brand-700">{p.link.title} &rarr;</span>
+              </a>
+            ))}
+          </div>
+
+          {CCG_PARTS.map(p => {
+            const list = chaptersOfPart(p.index);
+            return list.length > 0 && (
+              <div class="mt-14" id={`part-${p.index + 1}`}>
+                <div class="eyebrow">{p.label}</div>
+                <h2 class="h3 mt-2">{p.title}</h2>
+                <p class="mt-2 text-ink-600">{p.blurb}</p>
+                <ol class="mt-6 divide-y divide-ink-100 rounded-2xl border border-ink-200">
+                  {list.map(c => (
+                    <li>
+                      <a href={chapterUrl(c)} class="group flex gap-4 p-4 hover:bg-ink-50">
+                        <span class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">{c.num}</span>
+                        <span class="min-w-0">
+                          <span class="block font-semibold text-ink-900 group-hover:text-brand-700">{c.title}</span>
+                          <span class="mt-1 block text-sm text-ink-600">{c.description}</span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            );
+          })}
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <nav class="rounded-2xl bg-ink-50 p-6" aria-label="Parts">
+              <h2 class="text-sm font-semibold">Parts of the guide</h2>
+              <ol class="mt-4 space-y-2">
+                {CCG_PARTS.map(p => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`#part-${p.index + 1}`}>{p.label}: {p.title}</a></li>
+                ))}
+              </ol>
+            </nav>
+            {CCG_PDF.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 p-6">
+                <h2 class="text-sm font-semibold">Download as PDF</h2>
+                <p class="mt-2 text-sm text-ink-600">The same guide, laid out for print, in {CCG_PDF.length} files.</p>
+                <ul class="mt-4 space-y-3">
+                  {CCG_PDF.map(f => (
+                    <li>
+                      <a href={f.url} class="font-semibold text-brand-700 hover:text-brand-800" download>{f.title}</a>
+                      <span class="block text-xs text-ink-500">{f.covers.join(', ')}. {f.pages} pages, {f.mb} MB.</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">{CC.name}</h2>
+              <p class="mt-2 text-sm text-brand-100">Hosted construction management software, set up and supported by us.</p>
+              <a href={CC.requestUrl} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Request a demo</a>
+              <a href={CC.demoUrl} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Try the demo</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

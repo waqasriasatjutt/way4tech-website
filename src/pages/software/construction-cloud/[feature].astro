@@ -3,6 +3,7 @@ import Base from '~/layouts/Base.astro';
 import Shots from '~/components/suite/Shots.astro';
 import { SITE } from '~/data/site';
 import { CC, CC_FEATURES } from '~/data/construction-cloud';
+import { GUIDE_PATH, chapterUrl, featureChapters } from '~/data/cc-guide';
 
 export function getStaticPaths() {
   return CC_FEATURES.map(f => ({ params: { feature: f.slug }, props: { f } }));
@@ -11,6 +12,7 @@ export function getStaticPaths() {
 const { f } = Astro.props;
 const pageUrl = `${SITE.url}/software/construction-cloud/${f.slug}/`;
 const others = CC_FEATURES.filter(o => o.slug !== f.slug);
+const guide = featureChapters(f.slug);
 
 const schema = [
   {
@@ -66,6 +68,23 @@ const schema = [
           <h2 class="h3 mt-14">On screen</h2>
           <p class="mt-3 text-ink-600">From the demo company, Kestrel Construction.</p>
           <div class="mt-6"><Shots shots={f.shots} /></div>
+
+          {guide.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">Step by step in the user guide</h2>
+              <p class="mt-3 text-ink-600">The chapters of the <a href={GUIDE_PATH} class="font-semibold text-brand-600 hover:text-brand-700">{CC.name} user guide</a> that cover this, with every screen and button.</p>
+              <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+                {guide.map(c => (
+                  <li>
+                    <a href={chapterUrl(c)} class="card group block h-full">
+                      <span class="text-xs font-semibold uppercase tracking-wider text-ink-500">Chapter {c.num}</span>
+                      <span class="mt-1 block font-semibold text-ink-900 group-hover:text-brand-700">{c.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
 
         <aside class="lg:col-span-1">
@@ -76,6 +95,17 @@ const schema = [
               <a href={CC.requestUrl} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Request a demo</a>
               <a href="/software/construction-cloud/" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Product overview</a>
             </div>
+            {guide.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 p-6">
+                <h2 class="text-sm font-semibold">In the user guide</h2>
+                <ul class="mt-4 space-y-2">
+                  {guide.map(c => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={chapterUrl(c)}>{c.title}</a></li>
+                  ))}
+                </ul>
+                <a href={GUIDE_PATH} class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">All chapters &rarr;</a>
+              </div>
+            )}
             <div class="rounded-2xl bg-ink-50 p-6">
               <h2 class="text-sm font-semibold">Other features</h2>
               <ul class="mt-4 space-y-2">

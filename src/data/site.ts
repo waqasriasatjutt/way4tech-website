@@ -2,7 +2,7 @@ import { DEMO_COUNT } from './demos';
 export const SITE = {
   name: 'Way4Tech',
   tagline: 'Odoo ERP that fits your business - not the other way around.',
-  description: 'Odoo implementation and custom module company. 180+ modules published on the Odoo App Store. Implementation, customisation, hosting and support for Pakistan, the UAE, Saudi Arabia and 15 more markets.',
+  description: 'Odoo implementation and custom module company. 200+ modules published on the Odoo App Store. Implementation, customisation, hosting and support for Pakistan, the UAE, Saudi Arabia and 15 more markets.',
   url: 'https://way4tech.com',
   email: 'info@way4tech.com',
   alt_email: 'waqasriasatjutt@gmail.com',
@@ -56,17 +56,17 @@ export function whatsappHref(pathname?: string, subject?: string): string {
 }
 
 /*
- * Published modules on the Odoo App Store, counted on apps.odoo.com on
- * 2026-10-23: 181 apps under the author "Waqas Riasat" (177 of them for 19.0,
- * 114 for 20.0) plus 5 under "Way4Tech". Stated as "180+" and always linked to
- * the author listing so anyone can check it. Recount before raising it.
+ * Published modules on the Odoo App Store. On 2026-11-17 scripts/gen-catalogue.py
+ * confirmed 212 distinct Way4Tech modules live on apps.odoo.com (most listed for
+ * both 19.0 and 20.0). Stated as "200+" and always linked to the author listing
+ * so anyone can check it. Recount before raising it.
  *
  * Every figure on this site must be something a buyer can verify. The old
  * "9+ years / 500+ deployments / 1000+ modules / Odoo Partner" block could not
  * be, and the site itself contradicted it.
  */
 export const APP_STORE = {
-  count: '180+',
+  count: '200+',
   url: 'https://apps.odoo.com/apps/modules/browse?author=Waqas%20Riasat',
 };
 
@@ -110,7 +110,7 @@ export const HIGHLIGHTS = [
   { icon: '🧩', title: 'Odoo developers', desc: 'Python and OWL module work on Odoo Community, Enterprise and Odoo.sh.' },
   { icon: '🌍', title: '18 country guides', desc: 'Tax, e-invoicing, payroll and payment notes for each market we cover.' },
   { icon: '🖥️', title: 'Live demos', desc: 'Garage, salon, facility, transport, travel and more, running on real Odoo.' },
-  { icon: '🔧', title: '180+ published modules', desc: 'Listed on the Odoo App Store, each with its own page and screenshots.' },
+  { icon: '🔧', title: '200+ published modules', desc: 'Listed on the Odoo App Store, each with its own page and screenshots.' },
   { icon: '🛡️', title: 'Support and hosting', desc: 'Monitoring, backups and security patching on your server or ours.' },
   { icon: '💬', title: 'Arabic · English · Urdu', desc: 'Multilingual project teams end-to-end.' },
 ];
@@ -443,7 +443,7 @@ export const PRICING = [
 
 /* FAQs (SEO) */
 export const FAQS = [
-  { q: 'Are you an official Odoo partner?', a: 'No. Way4Tech is an independent Odoo development and implementation company. We publish 180+ modules on the Odoo App Store under the author name Waqas Riasat, and we implement and customise Odoo Community, Odoo Enterprise and Odoo.sh. An Enterprise subscription is bought from Odoo S.A.; we do the implementation and development work around it.' },
+  { q: 'Are you an official Odoo partner?', a: 'No. Way4Tech is an independent Odoo development and implementation company. We publish 200+ modules on the Odoo App Store under the author name Waqas Riasat, and we implement and customise Odoo Community, Odoo Enterprise and Odoo.sh. An Enterprise subscription is bought from Odoo S.A.; we do the implementation and development work around it.' },
   { q: 'How long does a typical Odoo implementation take?', a: 'Single-module Starter projects run 3-4 weeks. Multi-module Growth projects run 8-12 weeks. Enterprise multi-country rollouts run 4-9 months with phased go-lives.' },
   { q: 'Do you support Odoo Community or only Enterprise?', a: 'Both. We recommend Community for cost-sensitive teams with technical maturity, Enterprise for teams that want Studio, IoT, MRP II, and full vendor support. We also migrate Community ↔ Enterprise.' },
   { q: 'Do you handle ZATCA Phase 2 e-invoicing in Saudi Arabia?', a: "Yes. ZATCA Phase 2 clearance and reporting runs on Odoo's own Saudi e-invoicing localisation. We configure it, onboard each invoicing unit with ZATCA, and test clearance in the simulation environment before go-live." },

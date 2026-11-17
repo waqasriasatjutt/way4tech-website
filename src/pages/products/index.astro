@@ -3,6 +3,7 @@ import Base from '~/layouts/Base.astro';
 import { SITE, PRODUCTS } from '~/data/site';
 import { MODULE_CATALOG } from '~/data/modules-catalog';
 import { MODULE_MEDIA } from '~/data/module-media';
+import { SUITE_LINKS } from '~/data/suites';
 
 /*
  * The full module list. Same merge as /products/[slug].astro:
@@ -23,6 +24,8 @@ interface Card {
   summary: string;
   category: string;
   family: string;
+  suite: string;
+  series: string;
   priceText: string | null;
   onStore: boolean;
 }
@@ -84,6 +87,8 @@ for (const [key, mod] of Object.entries(MODULE_CATALOG)) {
     summary: (typeof mod.summary === 'string' ? mod.summary.trim() : '') || older?.tagline || '',
     category,
     family: familyOf(category),
+    suite: typeof mod.suite === 'string' && mod.suite ? mod.suite : 'Tools and Utilities',
+    series: (Array.isArray(mod.versions) ? mod.versions : []).map((v: string) => v.replace(/\.0$/, '')).join(' and '),
     priceText: formatPrice(mod.price, mod.currency),
     // Listed only when the manifest says so and the URL really is the store.
     onStore: mod.published === true && storeUrl.startsWith(APPS_ODOO),
@@ -101,6 +106,8 @@ for (const p of PRODUCTS) {
     summary: (p.tagline || '').trim(),
     category,
     family: familyOf(category),
+    suite: 'Tools and Utilities',
+    series: '',
     priceText: null,
     onStore: false,
   });
@@ -109,20 +116,34 @@ for (const p of PRODUCTS) {
 const total = cards.length;
 const onStoreCount = cards.filter(c => c.onStore).length;
 
-const byFamily = new Map<string, Card[]>();
-for (const c of cards) {
-  const bucket = byFamily.get(c.family);
-  if (bucket) bucket.push(c);
-  else byFamily.set(c.family, [c]);
-}
+/* Grouped by suite, in the order a buyer looks for them: the industry suites
+   first, then the cross-industry modules. The suite comes from the catalogue. */
+const SUITE_ORDER = [
+  'Construction', 'Real Estate', 'Restaurant', 'Retail', 'Garage and Automotive', 'HR and HRMS',
+  'Facility', 'Labour Camp', 'Jewelry', 'Transport and Logistics', 'Distribution and Van Sales',
+  'Project and Work Tracker', 'Healthcare', 'Industry Apps', 'Turkish Localization',
+  'Accounting and Finance', 'Sales, CRM and Messaging', 'Dashboards', 'Hardware and Desktop Apps',
+  'Themes and Branding', 'Tools and Utilities',
+];
+/* Suites with their own overview page. */
+const SUITE_PAGES: Record<string, string> = SUITE_LINKS;
 
-const groups = [...byFamily.entries()]
+const bySuite = new Map<string, Card[]>();
+for (const c of cards) {
+  const bucket = bySuite.get(c.suite);
+  if (bucket) bucket.push(c);
+  else bySuite.set(c.suite, [c]);
+}
+const rank = (n: string) => { const i = SUITE_ORDER.indexOf(n); return i < 0 ? 999 : i; };
+
+const groups = [...bySuite.entries()]
   .map(([name, items]) => ({
     name,
     id: anchorOf(name),
-    items: [...items].sort((a, b) => a.name.localeCompare(b.name)),
+    page: SUITE_PAGES[name] || '',
+    items: [...items].sort((a, b) => (b.priceText ? 1 : 0) - (a.priceText ? 1 : 0) || a.name.localeCompare(b.name)),
   }))
-  .sort((a, b) => b.items.length - a.items.length || a.name.localeCompare(b.name));
+  .sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
 
 const pageUrl = `${SITE.url}/products/`;
 
@@ -151,8 +172,8 @@ const schema = [
 ];
 ---
 <Base
-  title="Products - Odoo Modules by Way4Tech"
-  description={`${total} Odoo modules from Way4Tech: HR and payroll, accounting, dashboards, POS, themes and industry apps. ${onStoreCount} of them are published on the Odoo Apps Store.`}
+  title="Odoo Modules for Odoo 19 and 20 | Store Modules"
+  description={`${total} Odoo modules from Way4Tech for Odoo 19 and 20, grouped by suite: construction, real estate, restaurant, garage, HR and payroll, facility and more. ${onStoreCount} on the Odoo Apps Store.`}
   structuredData={schema}
 >
   <section class="bg-ink-900 text-white">
@@ -161,7 +182,7 @@ const schema = [
         <div class="eyebrow text-brand-300">Our Odoo modules</div>
         <h1 class="h1 mt-4">{total} production-ready Odoo modules.</h1>
         <p class="lede mt-6 text-ink-300">
-          {total} modules across {groups.length} categories, {onStoreCount} of them published on the Odoo Apps Store.
+          {total} modules in {groups.length} suites and groups, {onStoreCount} of them published on the Odoo Apps Store, most for both Odoo 19 and Odoo 20.
           Almost every page here is written from the module's own manifest, so the page and the module say the
           same thing.
         </p>
@@ -189,9 +210,10 @@ const schema = [
     <div class="container-site">
       {groups.map(g => (
         <div id={g.id} class="mb-16 scroll-mt-24">
-          <h2 class="h3 mb-6 flex items-center gap-3">
+          <h2 class="h3 mb-6 flex flex-wrap items-center gap-3">
             {g.name}
             <span class="text-sm font-normal text-ink-500">({g.items.length})</span>
+            {g.page && <a href={g.page} class="text-sm font-semibold text-brand-600 hover:text-brand-700">Suite overview →</a>}
           </h2>
           <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {g.items.map(c => (
@@ -206,7 +228,7 @@ const schema = [
                     {c.priceText
                       ? <span class="text-sm font-semibold text-ink-900">{c.priceText}</span>
                       : <span class="text-sm text-ink-500">Pricing on request</span>}
-                    <span class="mt-1 block text-xs text-ink-400">{c.category}</span>
+                    <span class="mt-1 block text-xs text-ink-400">{c.series ? `Odoo ${c.series}` : c.category}</span>
                   </div>
                   <span class="text-sm font-medium text-brand-600 group-hover:text-brand-700">Details →</span>
                 </div>

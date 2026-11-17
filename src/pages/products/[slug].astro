@@ -74,7 +74,8 @@ export function getStaticPaths() {
   const pages: {
     slug: string; technical: string; name: string; summary: string;
     intro: string[]; sections: { heading: string; bullets: string[] }[];
-    category: string; family: string; version: string;
+    category: string; family: string; suite: string; version: string; latestVersion: string;
+    versions: string[]; storeUrls: Record<string, string>;
     price: number | null; currency: string; storeUrl: string; onStore: boolean;
   }[] = [];
   const seen = new Set<string>();
@@ -98,6 +99,7 @@ export function getStaticPaths() {
     const storeUrl = typeof mod.storeUrl === 'string' ? mod.storeUrl.trim() : '';
     const onStore = mod.published === true && storeUrl.startsWith(APPS_ODOO);
     const category = (typeof mod.category === 'string' ? mod.category.trim() : '') || older?.category || 'Odoo modules';
+    const family = familyOf(category);
 
     pages.push({
       slug,
@@ -107,8 +109,12 @@ export function getStaticPaths() {
       intro,
       sections: sectionsOf(mod.sections),
       category,
-      family: familyOf(category),
+      family,
       version: typeof mod.version === 'string' ? mod.version.trim() : '',
+      latestVersion: typeof mod.latestVersion === 'string' ? mod.latestVersion.trim() : '',
+      suite: typeof mod.suite === 'string' ? mod.suite : family,
+      versions: Array.isArray(mod.versions) ? mod.versions : [],
+      storeUrls: onStore && mod.storeUrls ? mod.storeUrls : {},
       // 0 is not a price. Those modules render with no price rather than "free".
       price: typeof mod.price === 'number' && Number.isFinite(mod.price) && mod.price > 0 ? mod.price : null,
       currency: (typeof mod.currency === 'string' && mod.currency.trim() ? mod.currency.trim() : 'USD').toUpperCase(),
@@ -132,7 +138,11 @@ export function getStaticPaths() {
       sections: [],
       category,
       family: familyOf(category),
+      suite: 'Other',
       version: '',
+      latestVersion: '',
+      versions: [],
+      storeUrls: {},
       price: null,
       currency: 'USD',
       storeUrl: '',
@@ -162,9 +172,13 @@ export function getStaticPaths() {
   }
 
   return pages.map((product) => {
-    const sameCategory = pages.filter(o => o.slug !== product.slug && o.category === product.category);
-    const sameFamily = pages.filter(o => o.slug !== product.slug && o.family === product.family && o.category !== product.category);
-    const related = [...sameCategory, ...sameFamily]
+    const sameSuite = product.suite && !['Tools and Utilities', 'Other'].includes(product.suite)
+      ? pages.filter(o => o.slug !== product.slug && o.suite === product.suite)
+      : [];
+    const taken = new Set(sameSuite.map(o => o.slug));
+    const sameCategory = pages.filter(o => o.slug !== product.slug && !taken.has(o.slug) && o.category === product.category);
+    const sameFamily = pages.filter(o => o.slug !== product.slug && !taken.has(o.slug) && o.family === product.family && o.category !== product.category);
+    const related = [...sameSuite, ...sameCategory, ...sameFamily]
       .slice(0, 6)
       .map(o => ({ slug: o.slug, name: o.name, summary: o.summary, category: o.category }));
     return { params: { slug: product.slug }, props: { product, related } };
@@ -211,7 +225,19 @@ const priceText = formatPrice(product.price, product.currency);
 /* '19.0.1.0.6' gives an Odoo series of '19.0'. The tail is the module's own
    release number and is shown separately. */
 const versionParts = (product.version || '').split('.').filter(Boolean);
-const odooSeries = versionParts.length >= 2 ? `${versionParts[0]}.${versionParts[1]}` : (versionParts[0] || '');
+const fromVersion = versionParts.length >= 2 ? `${versionParts[0]}.${versionParts[1]}` : (versionParts[0] || '');
+/* Every series the module is listed for, as '19 and 20'. */
+const seriesList = (product.versions.length ? product.versions : (fromVersion ? [fromVersion] : []))
+  .map((v: string) => v.replace(/\.0$/, ''));
+const odooSeries = seriesList.length > 1
+  ? `${seriesList.slice(0, -1).join(', ')} and ${seriesList[seriesList.length - 1]}`
+  : (seriesList[0] || '');
+const storeLinks = Object.entries(product.storeUrls as Record<string, string>)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([v, url]) => ({ label: `Odoo ${v.replace(/\.0$/, '')}`, url }));
+const versionText = product.latestVersion && product.latestVersion !== product.version
+  ? `${product.version} / ${product.latestVersion}`
+  : product.version;
 
 const specs: Spec[] = [];
 if (product.category) specs.push({ label: 'Category', value: product.category });
@@ -220,9 +246,11 @@ if (priceText) specs.push({ label: 'Price', value: priceText });
 specs.push({ label: 'Odoo Apps Store', value: product.onStore ? 'Listed' : 'Not listed' });
 
 const metaSource = product.summary || product.intro[0] || `${product.name}, an Odoo module built and maintained by ${SITE.name}.`;
-const metaDescription = metaSource.length > 158
-  ? `${metaSource.slice(0, 155).replace(/[\s,;:.-]+$/, '')}...`
-  : metaSource;
+const metaSuffix = odooSeries && !/odoo\s*\d/i.test(metaSource) ? ` For Odoo ${odooSeries}.` : '';
+const metaBudget = 158 - metaSuffix.length;
+const metaDescription = (metaSource.length > metaBudget
+  ? `${metaSource.slice(0, metaBudget - 3).replace(/[\s,;:.-]+$/, '')}...`
+  : metaSource) + metaSuffix;
 
 const breadcrumbSchema = {
   '@context': 'https://schema.org',
@@ -289,7 +317,7 @@ const delivery = [
 const TITLE_LIMIT = 60;
 const TITLE_SOFT_LIMIT = 63;
 const TITLE_SUFFIX_LEN = ' | Way4Tech'.length;
-const TITLE_QUALIFIERS = [' - Odoo Module', ' - Odoo', ''];
+const TITLE_QUALIFIERS = [...(odooSeries ? [` for Odoo ${odooSeries}`, ` - Odoo ${odooSeries}`] : []), ' - Odoo Module', ' - Odoo', ''];
 const DANGLING_WORDS = new Set(['and','or','with','for','the','a','an','to','of','in','on','&','-','+','by','from']);
 
 function tidyStem(value) {
@@ -444,8 +472,14 @@ const pageTitle = buildProductTitle(product.name);
           {product.onStore && product.storeUrl ? (
             <div class="mt-12 rounded-2xl border border-ink-200 bg-ink-50 p-6">
               <h2 class="text-lg font-semibold">Buy it on the Odoo Apps Store</h2>
-              <p class="mt-2 text-ink-700">{product.name} is published on apps.odoo.com{priceText ? ` at ${priceText}` : ''}. Buy there and you get every update we publish for that version.</p>
-              <a href={product.storeUrl} target="_blank" rel="noopener" class="btn-primary mt-5">View on Odoo Apps</a>
+              <p class="mt-2 text-ink-700">{product.name} is published on apps.odoo.com{odooSeries ? ` for Odoo ${odooSeries}` : ''}{priceText ? ` at ${priceText}` : ''}. Buy there and you get every update we publish for that version.</p>
+              <div class="mt-5 flex flex-wrap gap-3">
+                {storeLinks.length > 1 ? storeLinks.map((l) => (
+                  <a href={l.url} target="_blank" rel="noopener" class="btn-primary">{l.label} listing</a>
+                )) : (
+                  <a href={product.storeUrl} target="_blank" rel="noopener" class="btn-primary">View on Odoo Apps</a>
+                )}
+              </div>
             </div>
           ) : (
             <div class="mt-12 rounded-2xl border border-ink-200 bg-ink-50 p-6">
@@ -505,7 +539,7 @@ const pageTitle = buildProductTitle(product.name);
                 {product.version && (
                   <div class="flex justify-between gap-3">
                     <dt class="text-ink-500">Version</dt>
-                    <dd class="text-right font-medium text-ink-900">{product.version}</dd>
+                    <dd class="text-right font-medium text-ink-900">{versionText}</dd>
                   </div>
                 )}
                 {priceText && (

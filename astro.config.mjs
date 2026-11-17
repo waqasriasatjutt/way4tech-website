@@ -97,6 +97,8 @@ const SECTION_DATA = {
   countries: ['src/data/country-detail.ts'],
   services: ['src/data/services-detail.ts'],
   products: ['src/data/modules-catalog.ts', 'src/data/module-media.ts'],
+  suites: ['src/data/suites.ts', 'src/data/modules-catalog.ts'],
+  software: ['src/data/construction-cloud.ts'],
   modules: ['src/data/module-depth.ts'],
   solutions: ['src/data/solution-depth.ts'],
   industries: ['src/data/industries-detail.ts', 'src/data/industries/'],
@@ -178,7 +180,7 @@ function isNoindexed(pathname) {
 
 // Pages that must never appear in the sitemap, with and without the
 // trailing slash and the .html form.
-const SITEMAP_EXCLUDED = new Set(['/404', '/404/', '/404.html']);
+const SITEMAP_EXCLUDED = new Set(['/404', '/404/', '/404.html', '/demos/']);
 
 // A /solutions/<slug>/ page that has an /industries/<slug>/ twin declares that
 // twin canonical (see src/pages/solutions/[slug].astro). Submitting a URL that
@@ -238,6 +240,14 @@ const SECTION_HINTS = {
   products: {
     index: { priority: 0.9, changefreq: 'monthly' },
     child: { priority: 0.8, changefreq: 'monthly' },
+  },
+  suites: {
+    index: { priority: 0.9, changefreq: 'monthly' },
+    child: { priority: 0.9, changefreq: 'monthly' },
+  },
+  software: {
+    index: { priority: 0.9, changefreq: 'monthly' },
+    child: { priority: 0.9, changefreq: 'monthly' },
   },
   'windows-apps': {
     index: { priority: 0.9, changefreq: 'monthly' },

@@ -250,7 +250,7 @@ export const SUITES: Suite[] = [
       { label: 'Labour recovery and technician efficiency', href: '/odoo-guides/odoo-garage-labour-recovery-technician-efficiency/' },
       { label: 'Service plans and insurance claims', href: '/odoo-guides/odoo-garage-service-plans-insurance-claims/' },
     ],
-    pdf: { label: 'Garage Management complete user guide (PDF, 346 pages)', href: '/downloads/guides/odoo-garage-management.pdf' },
+    pdf: { label: 'Garage Management complete user guide (PDF, 347 pages)', href: '/downloads/guides/odoo-garage-management.pdf' },
     shots: [
       shot('/odoo-guides/odoo-garage-management/job-card-form.webp', 'Garage job card with customer, vehicle, bay, technician, progress and the estimate email', 'A job card in progress, with the estimate the customer approved.', 1280, 800),
     ],

@@ -1,0 +1,161 @@
+---
+import Base from '~/layouts/Base.astro';
+import Shots from '~/components/suite/Shots.astro';
+import { SITE } from '~/data/site';
+import { CC, CC_FEATURES } from '~/data/construction-cloud';
+
+const pageUrl = `${SITE.url}/software/construction-cloud/`;
+
+/* No price is published yet, so the SoftwareApplication node carries no offers. */
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: CC.name,
+    applicationCategory: 'BusinessApplication',
+    applicationSubCategory: 'Construction management software',
+    operatingSystem: 'Web, Android, iOS (installable web app)',
+    description: CC.description,
+    url: pageUrl,
+    publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+    featureList: CC_FEATURES.map(f => f.title),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Software', item: `${SITE.url}/software/` },
+      { '@type': 'ListItem', position: 3, name: CC.name, item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: CC.faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+---
+<Base title={CC.seoTitle} description={CC.description} structuredData={schema}>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/software/" class="hover:text-white">Software</a> / <span class="text-white">{CC.name}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex flex-wrap gap-2">
+          <span class="chip !bg-white/10 !text-white">Hosted software</span>
+          <span class="chip !bg-white/10 !text-white">For contractors</span>
+        </div>
+        <h1 class="h1 mt-6">Construction Cloud: construction management software for contractors</h1>
+        <p class="lede mt-6 text-brand-100">{CC.lede}</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={CC.requestUrl} class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Request a demo</a>
+          <a href={CC.demoUrl} target="_blank" rel="noopener" class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Try the demo &#8599;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          {CC.intro.map(p => <p class="mb-5 text-lg text-ink-700">{p}</p>)}
+          <div class="mt-10"><Shots shots={CC.shots} /></div>
+
+          <h2 class="h3 mt-14">Who it is for</h2>
+          <ul class="mt-6 space-y-3">
+            {CC.whoFor.map(w => (
+              <li class="flex gap-3">
+                <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">&rarr;</span>
+                <span class="text-ink-700">{w}</span>
+              </li>
+            ))}
+          </ul>
+
+          <h2 class="h3 mt-14">One system from tender to final account</h2>
+          <ol class="mt-6 grid gap-3 sm:grid-cols-2">
+            {CC.lifecycle.map((step, i) => (
+              <li class="flex gap-3 rounded-xl border border-ink-200 p-4">
+                <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{i + 1}</span>
+                <span class="font-medium text-ink-800">{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">See it on your own jobs</h2>
+              <p class="mt-2 text-sm text-brand-100">A walkthrough on the demo company, then a quote for your users, jobs and data migration.</p>
+              <a href={CC.requestUrl} class="btn-primary w-full mt-5 bg-white !text-brand-700 hover:bg-brand-50">Request a demo</a>
+              <a href={CC.demoUrl} target="_blank" rel="noopener" class="btn-secondary w-full mt-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Try the demo</a>
+            </div>
+            <div class="rounded-2xl bg-ink-50 p-6">
+              <h2 class="text-sm font-semibold">Features</h2>
+              <ul class="mt-4 space-y-2">
+                {CC_FEATURES.map(f => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/software/construction-cloud/${f.slug}/`}>{f.title}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section bg-ink-50 border-y border-ink-100">
+    <div class="container-site">
+      <div class="max-w-2xl">
+        <div class="eyebrow">Features</div>
+        <h2 class="h2 mt-3">What Construction Cloud covers</h2>
+      </div>
+      <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {CC_FEATURES.map(f => (
+          <a href={`/software/construction-cloud/${f.slug}/`} class="card group flex flex-col">
+            <h3 class="font-semibold">{f.title}</h3>
+            <p class="mt-2 flex-1 text-sm text-ink-600">{f.card}</p>
+            <span class="mt-4 text-sm font-semibold text-brand-600 group-hover:text-brand-700">Read more &rarr;</span>
+          </a>
+        ))}
+      </div>
+      <h3 class="h3 mt-14">Also included</h3>
+      <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+        {CC.extras.map(x => (
+          <li class="flex gap-3">
+            <span class="mt-1 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-bold">&#10003;</span>
+            <span class="text-ink-700">{x}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          <h2 class="h3">Questions we get asked</h2>
+          <div class="mt-6 space-y-6">
+            {CC.faqs.map(f => (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h3 class="font-semibold text-ink-900">{f.q}</h3>
+                <p class="mt-2 text-ink-700">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div class="lg:col-span-1">
+          <div class="rounded-2xl border border-ink-200 p-6">
+            <h2 class="text-sm font-semibold">Running Odoo already?</h2>
+            <p class="mt-2 text-sm text-ink-600">Our construction modules for your own Odoo 19 or 20 server are on the Odoo Apps Store.</p>
+            <a href="/suites/construction/" class="mt-4 inline-block text-sm font-semibold text-brand-600 hover:text-brand-700">Construction suite &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

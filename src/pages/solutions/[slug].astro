@@ -4,12 +4,14 @@ import RelatedGuides from '~/components/guides/RelatedGuides.astro';
 import { SITE, SOLUTIONS, INDUSTRIES, COUNTRIES } from '~/data/site';
 import { INDUSTRY_DETAIL } from '~/data/industries-detail';
 import { solutionDepth } from '~/data/solution-depth';
+import { SOLUTION_SUITE } from '~/data/suites';
 
 export function getStaticPaths() {
   return SOLUTIONS.map(s => ({ params: { slug: s.slug }, props: { sol: s } }));
 }
 
 const { sol } = Astro.props;
+const suiteLink = SOLUTION_SUITE[sol.slug];
 const related = SOLUTIONS.filter(s => s.slug !== sol.slug).slice(0, 6);
 
 // 25 of the 37 solution slugs also exist under /industries/, where the page
@@ -96,6 +98,12 @@ if (!twinExists && depth?.faqs?.length) {
       <div class="grid gap-14 lg:grid-cols-3">
         <div class="lg:col-span-2">
           <p class="text-lg text-ink-700">{sol.short}</p>
+          {suiteLink && (
+            <div class="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-5">
+              <p class="text-ink-800"><strong>Our {suiteLink.name} suite:</strong> the store modules we publish for this industry, with prices, a live demo and a free guide.</p>
+              <a href={suiteLink.href} class="mt-3 inline-block font-semibold text-brand-700 hover:text-brand-800">See the {suiteLink.name} suite &rarr;</a>
+            </div>
+          )}
 
           {depth?.intro?.map(p => <p class="mt-5 text-ink-700">{p}</p>)}
 

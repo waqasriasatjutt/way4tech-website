@@ -1,0 +1,205 @@
+---
+import Base from '~/layouts/Base.astro';
+import Shots from '~/components/suite/Shots.astro';
+import { SITE } from '~/data/site';
+import { SUITES } from '~/data/suites';
+import { MODULE_CATALOG } from '~/data/modules-catalog';
+
+export function getStaticPaths() {
+  return SUITES.map(s => ({ params: { slug: s.slug }, props: { suite: s } }));
+}
+
+const { suite } = Astro.props;
+const pageUrl = `${SITE.url}/suites/${suite.slug}/`;
+
+const money = (p: number | null | undefined) =>
+  typeof p === 'number' && p > 0 ? `USD ${Number.isInteger(p) ? p : p.toFixed(2)}` : '';
+const seriesOf = (v: string[] = []) => v.map(x => x.replace(/\.0$/, '')).join(' and ');
+
+/* Every module must exist in the catalogue, or the build stops: a suite page
+   must never print a name or price the store does not carry. */
+const ladder = suite.modules.map(m => {
+  const mod = MODULE_CATALOG[m.key];
+  if (!mod) throw new Error(`suites/${suite.slug}: ${m.key} is not in the module catalogue`);
+  return {
+    slug: m.key,
+    name: mod.name,
+    role: m.role,
+    price: money(mod.price),
+    priceNum: mod.price,
+    series: seriesOf(mod.versions),
+    store: mod.published ? mod.storeUrl : '',
+  };
+});
+const others = SUITES.filter(s => s.slug !== suite.slug);
+
+const schema: object[] = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Suites', item: `${SITE.url}/suites/` },
+      { '@type': 'ListItem', position: 3, name: suite.name, item: pageUrl },
+    ],
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: suite.faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+if (ladder.length) {
+  schema.push({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${suite.name} modules`,
+    itemListElement: ladder.map((m, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'SoftwareApplication',
+        name: m.name,
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: `Odoo ${m.series}`,
+        url: `${SITE.url}/products/${m.slug}/`,
+        ...(m.priceNum && m.store ? { offers: { '@type': 'Offer', price: m.priceNum.toFixed(2), priceCurrency: 'USD', url: m.store } } : {}),
+      },
+    })),
+  });
+}
+---
+<Base title={suite.seoTitle} description={suite.description} structuredData={schema}>
+  <section class="bg-odoo-gradient text-white">
+    <div class="container-site py-16 sm:py-24">
+      <nav class="text-sm text-brand-200" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-white">Home</a> / <a href="/suites/" class="hover:text-white">Suites</a> / <span class="text-white">{suite.name}</span>
+      </nav>
+      <div class="mt-6 max-w-3xl">
+        <div class="flex flex-wrap gap-2">
+          <span class="chip !bg-white/10 !text-white">{suite.name} suite</span>
+          {suite.badge && <span class="chip !bg-white/10 !text-white">{suite.badge}</span>}
+        </div>
+        <h1 class="h1 mt-6">{suite.h1}</h1>
+        <p class="lede mt-6 text-brand-100">{suite.lede}</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {suite.demos[0] && <a href={suite.demos[0].url} target="_blank" rel="noopener" class="btn-primary bg-white !text-brand-700 hover:bg-brand-50">Try the demo &#8599;</a>}
+          <a href={`/contact/?product=${suite.slug}&source=suites/${suite.slug}`} class="btn-secondary !bg-white/5 !border-white/20 !text-white hover:!bg-white/10">Talk to us</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container-site">
+      <div class="grid gap-14 lg:grid-cols-3">
+        <div class="lg:col-span-2">
+          {suite.intro.map(p => <p class="mb-5 text-lg text-ink-700">{p}</p>)}
+
+          {ladder.length > 0 && (
+            <>
+              <h2 class="h3 mt-12">The modules</h2>
+              <div class="mt-6 space-y-4">
+                {ladder.map(m => (
+                  <a href={`/products/${m.slug}/`} class="card group flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between !p-5">
+                    <div>
+                      <h3 class="font-semibold text-ink-900">{m.name}</h3>
+                      <p class="mt-1 text-sm text-ink-600">{m.role}</p>
+                      {m.series && <span class="mt-2 inline-block text-xs text-ink-500">Odoo {m.series}</span>}
+                    </div>
+                    <div class="flex-none text-left sm:text-right">
+                      <span class="block text-sm font-semibold text-ink-900">{m.price || 'Included'}</span>
+                      <span class="mt-1 block text-sm font-medium text-brand-600 group-hover:text-brand-700">Details &rarr;</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+              <p class="mt-4 text-sm text-ink-500">Prices are the one-off Odoo Apps Store prices for each module, in US dollars.</p>
+            </>
+          )}
+
+          {suite.offer && (
+            <div class="mt-12 rounded-2xl border border-ink-200 p-6">
+              <h2 class="h3">{suite.offer.name}</h2>
+              <p class="mt-2 text-ink-700">{suite.offer.note}</p>
+              <a href={`/contact/?product=${suite.slug}&source=suites/${suite.slug}`} class="btn-primary mt-5">Ask about it</a>
+            </div>
+          )}
+
+          <h2 class="h3 mt-14">What it does well</h2>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            {suite.highlights.map(h => (
+              <div class="card">
+                <h3 class="font-semibold">{h.title}</h3>
+                <p class="mt-2 text-sm text-ink-600">{h.body}</p>
+              </div>
+            ))}
+          </div>
+
+          {suite.shots && suite.shots.length > 0 && (
+            <>
+              <h2 class="h3 mt-14">On screen</h2>
+              <div class="mt-6"><Shots shots={suite.shots} /></div>
+            </>
+          )}
+
+          <h2 class="h3 mt-14">Questions we get asked</h2>
+          <div class="mt-6 space-y-6">
+            {suite.faqs.map(f => (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h3 class="font-semibold text-ink-900">{f.q}</h3>
+                <p class="mt-2 text-ink-700">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <aside class="lg:col-span-1">
+          <div class="sticky top-24 space-y-6">
+            <div class="rounded-2xl bg-odoo-gradient p-6 text-white">
+              <h2 class="text-lg font-semibold">Live demo</h2>
+              <ul class="mt-4 space-y-4">
+                {suite.demos.map(d => (
+                  <li>
+                    <a href={d.url} target="_blank" rel="noopener" class="font-semibold underline hover:text-brand-100">{d.label} &#8599;</a>
+                    <p class="mt-1 text-sm text-brand-100">{d.note}</p>
+                  </li>
+                ))}
+              </ul>
+              <a href="/demos/" class="btn-secondary w-full mt-5 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">Demo logins</a>
+            </div>
+            {(suite.guides.length > 0 || suite.pdf) && (
+              <div class="rounded-2xl bg-ink-50 p-6">
+                <h2 class="text-sm font-semibold">Free guides</h2>
+                <ul class="mt-4 space-y-2">
+                  {suite.guides.map(g => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={g.href}>{g.label}</a></li>
+                  ))}
+                  {suite.pdf && <li><a class="text-sm font-semibold text-brand-600 hover:text-brand-700" href={suite.pdf.href}>{suite.pdf.label}</a></li>}
+                </ul>
+              </div>
+            )}
+            {suite.related && suite.related.length > 0 && (
+              <div class="rounded-2xl border border-ink-200 p-6">
+                <h2 class="text-sm font-semibold">Read next</h2>
+                <ul class="mt-4 space-y-2">
+                  {suite.related.map(r => (
+                    <li><a class="text-sm text-ink-700 hover:text-brand-600" href={r.href}>{r.label}</a></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div class="rounded-2xl border border-ink-200 p-6">
+              <h2 class="text-sm font-semibold">Other suites</h2>
+              <ul class="mt-4 space-y-2">
+                {others.map(o => (
+                  <li><a class="text-sm text-ink-700 hover:text-brand-600" href={`/suites/${o.slug}/`}>{o.name}</a></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>

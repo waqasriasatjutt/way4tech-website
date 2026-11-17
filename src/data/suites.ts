@@ -83,6 +83,53 @@ export const SUITES: Suite[] = [
     ],
     solution: 'construction',
   },
+  {
+    slug: 'real-estate',
+    name: 'Real Estate',
+    catalogueSuite: 'Real Estate',
+    seoTitle: 'Real Estate Software on Odoo: Portal and Leasing',
+    description: 'Five real estate modules for Odoo 19 and 20: property management, Enterprise leasing and maintenance, a property portal website, developer sales with payment plans, and a listings marketplace.',
+    h1: 'Real estate software on Odoo: portal, developer sales and property management',
+    lede: 'Five modules that build on each other, from a property and lease register to a full property portal website with developer sales and a paid listings marketplace.',
+    intro: [
+      'Start with Real Estate Management for properties, owners, tenants, leases, rent invoices, viewings, offers and agents. Add Real Estate Management Enterprise for service charges and utilities, late fees, inspections and deposit deductions, vendor work orders, planned maintenance, owner payouts and rent roll, vacancy and aging reports.',
+      'For the public side, the Property Portal puts a search-led property website on your Odoo site: search with map and filters, projects, agents, favourites and saved searches, post-your-property and calculators. Developer Sales handles towers, floors and units through booking, allotment, sale agreement and possession with payment plans. The Marketplace adds listing packages, featured ads, verified listings and agent reviews.',
+    ],
+    modules: [
+      { key: 'wt-real-estate', role: 'Properties, owners, tenants, leases, rent invoices, viewings, offers, agents and listing feeds.' },
+      { key: 'wt-real-estate-enterprise', role: 'Service charges and utilities, late fees, inspections, maintenance, owner payouts and portfolio reports.' },
+      { key: 'wt-real-estate-portal', role: 'The public property website: search, map, projects, agents, saved searches and post-your-property.' },
+      { key: 'wt-real-estate-developer', role: 'Towers, floors and units, availability grid, booking to possession, payment plans, transfers and dealer and buyer portals.' },
+      { key: 'wt-real-estate-marketplace', role: 'Listing packages, featured and premium ads, verified listings, agent reviews, valuation estimate and map search.' },
+    ],
+    highlights: [
+      { title: 'Pakistan ready', body: 'Marla and kanal area units, prices in lakh and crore, instalment calculators and a location tree of cities, areas and societies.' },
+      { title: 'Gulf ready', body: 'Post-dated cheque books with bounce handling, permit numbers on listings, owner statements and lease renewals with escalation.' },
+      { title: 'One database', body: 'The website, the agents, the developer sales team and accounts work on the same records, so a booking on the portal is a booking in the back office.' },
+      { title: 'Portals for everyone', body: 'Tenants, owners, buyers and dealers each get their own portal pages for invoices, units, statements and documents.' },
+    ],
+    demos: [
+      { label: 'Property portal and developer sales', url: 'https://property-demo.way4tech.com/', note: 'Sample agency Crescent Estates, Pakistan listings.' },
+      { label: 'Property management (Enterprise)', url: 'https://realestate-pro.way4tech.com/', note: 'A letting agency in the Gulf.' },
+    ],
+    guides: [
+      { label: 'Odoo real estate management guide', href: '/odoo-guides/odoo-real-estate-management/' },
+      { label: 'Lease renewal and rent escalation', href: '/odoo-guides/odoo-lease-renewal-rent-escalation/' },
+      { label: 'Owner statements and property maintenance', href: '/odoo-guides/odoo-owner-statements-property-maintenance/' },
+    ],
+    pdf: { label: 'Real estate guide (PDF, 47 pages)', href: '/downloads/guides/odoo-real-estate-management.pdf' },
+    shots: [
+      shot('/suites/real-estate/portal-home.webp', 'Property portal home page with natural language search, filters and listing counts', 'The property portal home: type a search in plain words or use the filters.'),
+      shot('/suites/real-estate/portal-search.webp', 'Property search results with premium, featured and verified listing badges and a filter panel', 'Search results with grid, list and map views, saved searches and listing badges.'),
+    ],
+    related: [{ label: 'Odoo for real estate', href: '/solutions/real-estate/' }],
+    faqs: [
+      { q: 'Do I need all five modules?', a: 'No. A letting agency needs the core and Enterprise. A developer selling off-plan needs the core, the portal and Developer Sales. A listings business needs the core, the portal and the Marketplace.' },
+      { q: 'Does it run on Odoo Community?', a: 'Yes, all five run on Odoo 19 and Odoo 20, Community or Enterprise.' },
+      { q: 'Can it publish to property portals?', a: 'The core module produces listing feeds in the formats the main Gulf portals read. Each portal still needs your own account with them.' },
+    ],
+    solution: 'real-estate',
+  },
 ];
 
 /** Catalogue suite name to suite page, for the /products/ headings. */

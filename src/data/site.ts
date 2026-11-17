@@ -1,3 +1,4 @@
+import { DEMO_COUNT } from './demos';
 export const SITE = {
   name: 'Way4Tech',
   tagline: 'Odoo ERP that fits your business - not the other way around.',
@@ -84,8 +85,7 @@ export interface LiveDemo {
   kind: 'website' | 'backend';
 }
 export const LIVE_DEMOS: LiveDemo[] = [
-  { url: 'https://garage-demo.way4tech.com/', title: 'Garage and workshop', what: 'Job cards from estimate to invoice, vehicle history with VIN and odometer, inspection sheets, labour and parts.', products: ['w4t-garage-management'], kind: 'backend' },
-  { url: 'https://garage-pro.way4tech.com/', title: 'Garage and workshop, Pro build', what: 'The same garage system with the paid add-on features switched on, for side by side comparison.', products: ['w4t-garage-management'], kind: 'backend' },
+  { url: 'https://garage-guide.way4tech.com/', title: 'Garage and workshop', what: 'Job cards from estimate to invoice, vehicle history with VIN and odometer, inspection sheets, labour and parts, with service plans and insurance claims from the Enterprise add-on.', products: ['w4t-garage-management', 'w4t-garage-enterprise'], kind: 'backend' },
   { url: 'https://salon.way4tech.com/', title: 'Salon and spa website', what: 'A fictional salon website on Odoo, with its service menu and portal booking.', products: ['wt-salon-management', 'wt-enterprise-salon'], kind: 'website' },
   { url: 'https://facility-demo.way4tech.com/', title: 'Facility management (CAFM)', what: 'Site and asset register, planned maintenance, work orders and SLA clocks.', products: ['wt-facility-management'], kind: 'backend' },
   { url: 'https://facility-pro.way4tech.com/', title: 'Facility management, Pro build', what: 'The CAFM system with the extended feature set, for comparison with the base build.', products: ['wt-facility-management'], kind: 'backend' },
@@ -93,7 +93,8 @@ export const LIVE_DEMOS: LiveDemo[] = [
   { url: 'https://transport-pro.way4tech.com/', title: 'Transport and fleet, Pro build', what: 'The transport system with the extended feature set switched on.', products: ['wt-transport-management'], kind: 'backend' },
   { url: 'https://freight-demo.way4tech.com/', title: 'Freight forwarding and customs', what: 'Air, sea and road job files, master and house bills, containers, customs entries and profit by lane.', products: ['wt-freight-forwarding'], kind: 'backend' },
   { url: 'https://travel-demo.way4tech.com/', title: 'Travel agency and tours', what: 'Booking files with PNR, passports and visas, supplier cost and sell price, fixed departures.', products: ['wt-travel-agency'], kind: 'backend' },
-  { url: 'https://restro.way4tech.com/', title: 'Restaurant and cloud kitchen', what: 'Menu engineering with recipe cost, table and delivery orders, kitchen display and wastage.', products: ['wt-restaurant-management'], kind: 'backend' },
+  { url: 'https://restro.way4tech.com/', title: 'Restaurant suite and online ordering', what: 'Multi-branch restaurant POS with kitchen display, delivery and call centre, and a customer ordering website at /order whose orders land in the same inbox.', products: ['w4-resto-suite', 'w4-resto-website'], kind: 'backend' },
+  { url: 'https://restaurant.way4tech.com/', title: 'Restaurant and cloud kitchen', what: 'Menu engineering with recipe cost, table and delivery orders, kitchen display and wastage.', products: ['wt-restaurant-management'], kind: 'backend' },
   { url: 'https://distributor-demo.way4tech.com/', title: 'Distributor and van sales', what: 'Order taker and delivery apps for field distribution on Odoo 19.', products: ['wt-sale-distributor'], kind: 'backend' },
   { url: 'https://rental-demo.way4tech.com/', title: 'Online rental store', what: 'A fictional hire company: date range booking, availability checks, period pricing and deposits on Odoo Website.', products: ['wt-rental-website', 'wt-rental-management'], kind: 'website' },
 ];
@@ -102,7 +103,7 @@ export const STATS = [
   { value: APP_STORE.count, label: 'Modules on the Odoo App Store' },
   { value: '19 + 20', label: 'Odoo versions we publish for' },
   { value: '18',      label: 'Country localisation guides' },
-  { value: String(LIVE_DEMOS.length), label: 'Live demo systems' },
+  { value: String(DEMO_COUNT), label: 'Live demo systems' },
 ];
 
 export const HIGHLIGHTS = [

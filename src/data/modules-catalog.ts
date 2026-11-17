@@ -107,8 +107,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    }
   ],
   "category": "Services/Automotive",
-  "version": "19.0.1.0.0",
-  "price": 299.0,
+  "version": "19.0.1.1.4",
+  "price": 199.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/w4t_garage_management/",
   "published": true
@@ -4142,8 +4142,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    }
   ],
   "category": "Sales/Sales",
-  "version": "19.0.1.0.0",
-  "price": 79.0,
+  "version": "19.0.1.1.0",
+  "price": 15.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_sales_commission/",
   "published": true

@@ -1,6 +1,6 @@
 ---
 import { SITE, SERVICES, MODULES, SOLUTIONS, COUNTRIES, whatsappHref } from '~/data/site';
-import { SUITES } from '~/data/suites';
+import { SUITES, SUITE_GROUPS } from '~/data/suites';
 
 /*
  * Header.
@@ -22,7 +22,11 @@ const modByCat: Record<string, typeof MODULES> = {};
 MODULES.forEach(m => { (modByCat[m.category] ||= []).push(m); });
 const modCats = Object.entries(modByCat);
 
-const solTop = SOLUTIONS.slice(0, 12);
+/* Solutions menu: only industries we have a real suite or hosted software for,
+   each pointing at its suite. Every /solutions/ page stays live and is listed
+   on /solutions/. */
+const solMenu = SUITES.filter(su => su.tagline);
+const suiteGroups = SUITE_GROUPS.map(g => ({ label: g, items: SUITES.filter(su => su.group === g) })).filter(g => g.items.length);
 
 const countryGroups = [
   { label: 'Gulf & Middle East', items: COUNTRIES.filter(c => ['saudi-arabia', 'uae', 'qatar', 'kuwait', 'oman', 'bahrain', 'egypt', 'jordan', 'turkey'].includes(c.slug)) },
@@ -152,23 +156,20 @@ const waHref = whatsappHref(Astro.url.pathname);
           Solutions
           <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
         </button>
-        <div class="mega top-full w-[min(92vw,720px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
-          <div class="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3">
-            {solTop.map(s => (
-              <a href={`/solutions/${s.slug}/`} class="flex gap-2.5 rounded-lg p-2 hover:bg-ink-50">
-                <span class="shrink-0 text-xl">{s.icon}</span>
-                <span>
-                  <span class="block text-sm font-semibold text-ink-900">{s.title}</span>
-                  <span class="mt-0.5 block text-xs leading-tight text-ink-500">{s.tagline}</span>
-                </span>
+        <div class="mega top-full w-[min(92vw,820px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid max-h-[70vh] gap-1 overflow-y-auto p-5 sm:grid-cols-2 xl:grid-cols-3">
+            {solMenu.map(su => (
+              <a href={`/suites/${su.slug}/`} class="block rounded-lg p-2 hover:bg-ink-50">
+                <span class="block text-sm font-semibold text-ink-900">{su.name}</span>
+                <span class="mt-0.5 block text-xs leading-tight text-ink-500">{su.tagline}</span>
               </a>
             ))}
           </div>
           <div class="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-ink-100 bg-ink-50 px-6 py-3 text-sm">
-            <span class="text-ink-600">{SOLUTIONS.length} industry-ready Odoo solutions.</span>
+            <span class="text-ink-600">Industries with a ready suite or hosted software.</span>
             <span class="flex items-center gap-5">
               <a href="/industries/" class="font-semibold text-brand-700 hover:text-brand-800">Industries &rarr;</a>
-              <a href="/solutions/" class="font-semibold text-brand-700 hover:text-brand-800">All solutions &rarr;</a>
+              <a href="/solutions/" class="font-semibold text-brand-700 hover:text-brand-800">All {SOLUTIONS.length} solutions &rarr;</a>
             </span>
           </div>
         </div>
@@ -205,14 +206,17 @@ const waHref = whatsappHref(Astro.url.pathname);
         </div>
       </div>
 
-      <!-- PRODUCTS: hosted software, industry suites and the store modules -->
-      <div class="group relative">
+      <!-- PRODUCTS: hosted software, industry suites and the store modules.
+           Not relative: the panel is too wide to hang off the trigger, so it
+           centres on the sticky header instead, and the group fills the bar's
+           full height so the pointer never crosses a gap on its way down. -->
+      <div class="group flex h-16 items-center">
         <button type="button" aria-haspopup="true" class="flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-2 hover:bg-ink-50 hover:text-brand-700 xl:px-3">
           Products
           <svg class="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L2 4h8z"/></svg>
         </button>
-        <div class="mega top-full w-[min(92vw,640px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
-          <div class="grid gap-6 p-6 sm:grid-cols-2">
+        <div class="mega top-full w-[min(94vw,940px)] rounded-2xl border border-ink-100 bg-white shadow-2xl">
+          <div class="grid max-h-[75vh] gap-6 overflow-y-auto p-6 md:grid-cols-[180px_1fr]">
             <div>
               <div class="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600">Software</div>
               <a href="/software/construction-cloud/" class="block rounded-lg p-2 hover:bg-ink-50">
@@ -226,16 +230,23 @@ const waHref = whatsappHref(Astro.url.pathname);
               </a>
             </div>
             <div>
-              <div class="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600">Industry Suites</div>
-              <ul class="space-y-0.5">
-                {SUITES.map(su => (
-                  <li><a href={`/suites/${su.slug}/`} class="block rounded px-2 py-1.5 text-sm text-ink-700 hover:bg-ink-50 hover:text-brand-700">{su.name}{su.badge ? ` (${su.badge.toLowerCase()})` : ''}</a></li>
+              <div class="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600">Suites</div>
+              <div class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                {suiteGroups.map(g => (
+                  <div>
+                    <div class="mb-1 px-2 text-xs font-semibold text-ink-400">{g.label}</div>
+                    <ul>
+                      {g.items.map(su => (
+                        <li><a href={`/suites/${su.slug}/`} class="block rounded px-2 py-1 text-sm text-ink-700 hover:bg-ink-50 hover:text-brand-700">{su.name}{su.badge ? ` (${su.badge.toLowerCase()})` : ''}</a></li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
           <div class="flex flex-wrap items-center justify-between gap-3 rounded-b-2xl border-t border-ink-100 bg-ink-50 px-6 py-3 text-sm">
-            <a href="/suites/" class="font-semibold text-brand-700 hover:text-brand-800">All suites &rarr;</a>
+            <a href="/suites/" class="font-semibold text-brand-700 hover:text-brand-800">All {SUITES.length} suites &rarr;</a>
             <a href="/demos/" class="font-semibold text-brand-700 hover:text-brand-800">Live demos &rarr;</a>
           </div>
         </div>

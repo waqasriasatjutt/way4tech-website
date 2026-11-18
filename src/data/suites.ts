@@ -29,14 +29,28 @@ export interface Suite {
   shots?: SuiteShot[];
   related?: { label: string; href: string }[];
   faqs: { q: string; a: string }[];
-  solution?: string;
+  /** /solutions/<slug>/ (and the /industries/ twin) pages that link to this suite. */
+  solution?: string | string[];
+  /** /modules/<slug>/ pages that link to this suite. */
+  modulePages?: string[];
+  /** /integrations/<slug>/ pages that link to this suite. */
+  integrationPages?: string[];
+  /** Products menu group. */
+  group: SuiteGroup;
+  /** Short line for the Solutions menu. Industry suites only. */
+  tagline?: string;
 }
+
+export type SuiteGroup = 'Property and projects' | 'Food, retail and trade' | 'Service businesses' | 'Health, people and education' | 'Tools and integrations';
+export const SUITE_GROUPS: SuiteGroup[] = ['Property and projects', 'Food, retail and trade', 'Service businesses', 'Health, people and education', 'Tools and integrations'];
 
 const shot = (src: string, alt: string, caption: string, w = 1400, h = 900, phone = false): SuiteShot => ({ src, alt, caption, w, h, phone });
 
 export const SUITES: Suite[] = [
   {
     slug: 'construction',
+    group: 'Property and projects',
+    tagline: 'BoQ, job costing, valuations and retention',
     name: 'Construction',
     catalogueSuite: 'Construction',
     seoTitle: 'Odoo Construction Management: BoQ and Job Costing',
@@ -85,6 +99,8 @@ export const SUITES: Suite[] = [
   },
   {
     slug: 'real-estate',
+    group: 'Property and projects',
+    tagline: 'Leasing, property portal and developer sales',
     name: 'Real Estate',
     catalogueSuite: 'Real Estate',
     seoTitle: 'Real Estate Software on Odoo: Portal and Leasing',
@@ -132,6 +148,8 @@ export const SUITES: Suite[] = [
   },
   {
     slug: 'restaurant',
+    group: 'Food, retail and trade',
+    tagline: 'POS, kitchen display, delivery and online ordering',
     name: 'Restaurant',
     catalogueSuite: 'Restaurant',
     seoTitle: 'Restaurant Online Ordering and POS for Odoo',
@@ -187,6 +205,8 @@ export const SUITES: Suite[] = [
   },
   {
     slug: 'retail',
+    group: 'Food, retail and trade',
+    tagline: 'Online ordering with live stock per branch',
     name: 'Retail',
     catalogueSuite: 'Retail',
     badge: 'Early access',
@@ -222,6 +242,8 @@ export const SUITES: Suite[] = [
   },
   {
     slug: 'garage',
+    group: 'Service businesses',
+    tagline: 'Job cards, inspections and technician time',
     name: 'Garage and Automotive',
     catalogueSuite: 'Garage and Automotive',
     seoTitle: 'Garage Management Software on Odoo',
@@ -263,6 +285,8 @@ export const SUITES: Suite[] = [
   },
   {
     slug: 'labour-camp',
+    group: 'Property and projects',
+    tagline: 'Beds, worker papers and contractor billing',
     name: 'Labour Camp',
     catalogueSuite: 'Labour Camp',
     seoTitle: 'Labour Camp Management Software for Odoo',
@@ -297,6 +321,8 @@ export const SUITES: Suite[] = [
   },
   {
     slug: 'auto-parts',
+    group: 'Food, retail and trade',
+    tagline: 'Trade-only dealer portal with fitment search',
     name: 'Auto Parts Wholesale',
     seoTitle: 'Auto Parts Dealer Portal for Odoo',
     description: 'Auto parts wholesale on Odoo: a trade-only dealer portal with vehicle fitment search, OEM and cross-reference part numbers, dealer pricing, pack quantities and one-click reorder.',
@@ -328,6 +354,709 @@ export const SUITES: Suite[] = [
       { q: 'Is it on the Odoo Apps Store?', a: 'Not yet. Ask us and we will install it on your Odoo 19 database.' },
     ],
   },
+  {
+    slug: 'hr-payroll',
+    group: 'Health, people and education',
+    name: 'HR and Payroll',
+    catalogueSuite: 'HR and HRMS',
+    seoTitle: 'HRMS and Payroll for Odoo Community',
+    description: 'HR and payroll modules for Odoo 19 and 20 Community: recruitment, leave, attendance, shifts, payroll with accounting and bank files, loans, expenses, appraisals and employee self service.',
+    h1: 'HR and payroll software on Odoo Community',
+    lede: 'Every HR module we publish, from hiring to the payslip and the bank file, on Odoo Community. Buy the WT HRMS Suite for the lot or pick single modules.',
+    intro: [
+      'WT HRMS Suite installs the HR modules together in one purchase: recruitment, payroll with accounting, bank files and Pakistan rules, leave, attendance, loans and advances, expenses, overtime, shifts, appraisals, training, assets, documents with expiry alerts, letters, onboarding and exit checklists, rewards, travel, work from home, a staff service desk, workforce structure reporting and the employee portal for payslips.',
+      'Around the suite sit the modules sold separately: unpaid leave and late deductions on the payslip, a face recognition time clock, ZKTeco and Hikvision attendance devices, an employee referral programme and a salary package configurator for offers. All run on Odoo 19 and Odoo 20, Community or Enterprise.',
+    ],
+    modules: [
+      { key: 'wt-hrms-suite', role: 'Every module marked "in the suite" below, in one purchase.' },
+      { key: 'wt-hrms-core', role: 'In the suite. The free base: extended employee and contract records, the HR dashboard and a multi-level approval engine.' },
+      { key: 'wt-hrms-onboarding', role: 'In the suite. One workbook loads the company, departments, employees, salaries, leave policies and holidays.' },
+      { key: 'wt-hrms-recruitment', role: 'In the suite. Job postings, a candidate pipeline, interviews with scorecards and an offer that becomes an employee.' },
+      { key: 'wt-hrms-leave', role: 'In the suite. Leave policies on Time Off: entitlement, carry forward, eligibility, compensatory off and encashment.' },
+      { key: 'wt-hrms-attendance', role: 'In the suite. Late and early flags, worked and overtime hours, and a monthly attendance summary.' },
+      { key: 'wt-hrms-shifts', role: 'In the suite. Shift types, a roster by date and shift swaps approved by a manager.' },
+      { key: 'wt-hrms-overtime', role: 'In the suite. Overtime requests at weekday, weekend and holiday rates, paid through the payslip.' },
+      { key: 'wt-hrms-payroll', role: 'In the suite. Salary structures, editable rules, payslip batches, a dry run and PDF payslips.' },
+      { key: 'wt-hrms-payroll-pk', role: 'In the suite. Pakistan income tax slabs, EOBI, provincial social security and provident fund.' },
+      { key: 'wt-hrms-payroll-accounting', role: 'In the suite. Payslips posted to a salary journal, one balanced entry each.' },
+      { key: 'wt-hrms-payroll-bank-files', role: 'In the suite. Salary transfer files for HBL, MCB, UBL and Meezan, plus a CSV for any other bank.' },
+      { key: 'wt-hrms-payroll-portal', role: 'In the suite. Employees see their own payslips, year to date totals and loan balances on the portal.' },
+      { key: 'wt-hrms-loans', role: 'In the suite. Loans with an instalment schedule, approval and deduction on the payslip.' },
+      { key: 'wt-hrms-advances', role: 'In the suite. Salary advances with a ceiling, a recovery schedule and deduction on the payslip.' },
+      { key: 'wt-hrms-expense', role: 'In the suite. Expense sheets through approval, reimbursed by a posted payment.' },
+      { key: 'wt-hrms-appraisal', role: 'In the suite. Appraisal periods, weighted KRA lines, goals and approval.' },
+      { key: 'wt-hrms-training', role: 'In the suite. Skills and levels, training programmes and training requests.' },
+      { key: 'wt-hrms-lifecycle', role: 'In the suite. Onboarding and exit checklists, resignations with notice period.' },
+      { key: 'wt-hrms-documents', role: 'In the suite. Employee documents by type, with warnings before passports, visas and contracts expire.' },
+      { key: 'wt-hrms-letters', role: 'In the suite. Offer, experience, salary certificate, NOC and warning letters as PDF from templates.' },
+      { key: 'wt-hrms-assets', role: 'In the suite. Laptops, phones, SIM cards, vehicles and keys issued to staff and returned.' },
+      { key: 'wt-hrms-rewards', role: 'In the suite. Rewards, warnings and disciplinary actions with severity and escalation.' },
+      { key: 'wt-hrms-travel', role: 'In the suite. Travel requests with dates, destination, an advance and approval.' },
+      { key: 'wt-hrms-wfh', role: 'In the suite. Work from home requests with manager approval.' },
+      { key: 'wt-hrms-service-requests', role: 'In the suite. A staff request desk for IT, admin and facilities, with an SLA deadline.' },
+      { key: 'wt-hrms-workforce-structure', role: 'In the suite. Team size by level, management depth, wide spans of control and employees with no manager.' },
+      { key: 'wt-hrms-payroll-absence', role: 'Sold separately. Unpaid leave and late arrivals deducted on the payslip, plus a Today board.' },
+      { key: 'wt-face-attendance', role: 'Sold separately. A Windows PC or tablet with a webcam as a face recognition time clock, with consent tracking.' },
+      { key: 'wt-zkteco-adms', role: 'Sold separately. Live punches from ZKTeco devices over the ADMS push protocol.' },
+      { key: 'wt-zkteco-bridge', role: 'Sold separately. Pulls attendance from ZKTeco and Hikvision devices on the office network through a Windows agent.' },
+      { key: 'wt-hr-referral-program', role: 'Sold separately. Employee referrals with points at each hiring stage and rewards claimed on the portal.' },
+      { key: 'wt-salary-package-configurator', role: 'Sold separately. A private offer link where the candidate adjusts benefits and sees net pay recompute.' },
+    ],
+    highlights: [
+      { title: 'One purchase', body: 'The WT HRMS Suite installs the HR modules together, so leave, attendance, overtime, loans and payroll read from each other.' },
+      { title: 'Payroll to the bank', body: 'Payslip batches with a dry run, posting to a salary journal, and a transfer file ready for the bank portal.' },
+      { title: 'Rules that are enforced', body: 'Leave entitlement, carry forward, probation eligibility and document limits are checked on the request, not left to memory.' },
+      { title: 'Devices and self service', body: 'Face recognition, ZKTeco and Hikvision attendance, and a portal where staff see their own payslips and balances.' },
+    ],
+    demos: [{ label: 'HRMS and Payroll demo', url: 'https://hr19.way4tech.com/', note: 'A 55-person sample company with leave, attendance, shifts and payroll.' }],
+    guides: [
+      { label: 'Odoo HRMS for Community: overview', href: '/odoo-guides/odoo-hrms/' },
+      { label: 'Run payroll in Odoo Community', href: '/odoo-guides/run-payroll-odoo-community/' },
+      { label: 'Leave management and approval chains', href: '/odoo-guides/odoo-leave-management/' },
+      { label: 'Attendance, shifts and overtime', href: '/odoo-guides/odoo-attendance-shifts-overtime/' },
+      { label: 'Recruitment, job offers and hiring', href: '/odoo-guides/odoo-recruitment-job-offer-online-acceptance/' },
+      { label: 'Employee self service', href: '/odoo-guides/odoo-employee-self-service/' },
+      { label: 'Odoo payroll for Pakistan', href: '/odoo-guides/odoo-payroll-pakistan/' },
+      { label: 'ZKTeco attendance devices and Odoo', href: '/odoo-guides/zkteco-adms-odoo/' },
+    ],
+    pdf: { label: 'HRMS guide (PDF, 73 pages)', href: '/downloads/guides/odoo-hrms.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-hrms/hr-dashboard.webp', 'HRMS dashboard in Odoo with headcount, contracts, leave today, birthdays and new hires', 'The HR dashboard.', 1440, 900),
+    ],
+    related: [{ label: 'HRMS add-ons guide (PDF, 36 pages)', href: '/downloads/guides/odoo-hrms-add-ons.pdf' }],
+    faqs: [
+      { q: 'Do I need Odoo Enterprise for payroll?', a: 'No. The payroll engine, payroll accounting and the bank files run on Odoo Community. Enterprise works too.' },
+      { q: 'What is in the suite and what is sold separately?', a: 'Each module above says which. Unpaid leave and late deductions, face attendance, the two device connectors, the referral programme and the salary package configurator are separate purchases.' },
+      { q: 'Is it only for Pakistan?', a: 'No. The payroll engine works for any country. Pakistan Payroll adds the local tax slabs and contributions, and the bank file module ships with Pakistani bank formats plus a generic CSV.' },
+    ],
+    modulePages: ['hr', 'payroll', 'attendance', 'leaves', 'recruitment', 'appraisals', 'expenses'],
+    integrationPages: ['zkteco'],
+  },
+  {
+    slug: 'distribution',
+    group: 'Food, retail and trade',
+    tagline: 'Order taker and delivery apps, van stock and collections',
+    name: 'Distribution and Van Sales',
+    catalogueSuite: 'Distribution and Van Sales',
+    seoTitle: 'Van Sales and Distribution Software for Odoo',
+    description: 'Distribution and van sales for Odoo 19 and 20: an order taker app, a delivery app with proof of delivery, routes and beat plans, van stock, cash collection and an Enterprise add-on with GPS and an offline app.',
+    h1: 'Distribution and van sales software on Odoo',
+    lede: 'For distributors and FMCG companies that sell on routes: salesmen take orders at the shop, drivers deliver and collect cash, and managers see it all by route.',
+    intro: [
+      'Van Sales and Field Sales Management gives you two mobile apps and a back office. The Order Taker app runs the day: routes and stops, check-in at the shop, the catalogue with prices and stock, and an order or a reason for no order. The Delivery app handles full or partial delivery with back orders, a customer signature, cash or bank collection and returns from the field.',
+      'Van Sales adds vans with their own stock location, loading and unloading, and selling straight from the van with delivery, invoice and cash in one step. The Enterprise add-on brings live GPS tracking and route replay, an installable offline app, suggested orders, credit risk bands, route optimisation, promotions and free goods, incentives and a manager cockpit on the phone.',
+    ],
+    modules: [
+      { key: 'wt-sale-distributor', role: 'Order Taker and Delivery apps, routes and beat plans, proof of delivery, cash collection and reports.' },
+      { key: 'wt-sale-distributor-van', role: 'Vans with their own stock, loading and unloading, selling from the van, returns and thermal receipts. Needs the base module and Odoo Fleet.' },
+      { key: 'wt-sale-distributor-enterprise', role: 'GPS tracking and route replay, offline app, suggested orders, credit control, promotions, incentives and a manager cockpit. Needs the base module and Van Sales.' },
+    ],
+    highlights: [
+      { title: 'Two apps for the field', body: 'An order taker app for the salesman and a delivery app for the driver, both working from the same routes.' },
+      { title: 'Cash on the route', body: 'Collections against today\'s invoices and older dues, and a day summary of the cash to deposit.' },
+      { title: 'Van stock', body: 'Each van is a stock location, loaded in the morning and settled at the end of the day.' },
+      { title: 'Manager view', body: 'Sales by route and territory, visits, strike rate and pending deliveries on one dashboard.' },
+    ],
+    demos: [{ label: 'Distribution and van sales demo', url: 'https://distributor-demo.way4tech.com/', note: 'Salesman routes, orders at the shop, van stock, collections and team tracking.' }],
+    guides: [
+      { label: 'Odoo FMCG distribution management', href: '/odoo-guides/odoo-distribution-management/' },
+      { label: 'Van sales and route sales setup', href: '/odoo-guides/odoo-van-sales/' },
+      { label: 'Routes, beat plans and setup', href: '/odoo-guides/odoo-distribution-routes-beat-plans/' },
+      { label: 'The order booking app for salesmen', href: '/odoo-guides/odoo-order-booking-app/' },
+      { label: 'Delivery, collections and credit control', href: '/odoo-guides/odoo-delivery-cash-collection-credit/' },
+    ],
+    pdf: { label: 'Distribution guide (PDF, 65 pages)', href: '/downloads/guides/odoo-distribution-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-distribution-management/m01-dashboard.webp', 'Distribution dashboard in Odoo with sales today, visits, deliveries pending and collections', 'The distribution dashboard.', 1600, 1000),
+    ],
+    faqs: [
+      { q: 'Which module do I start with?', a: 'Van Sales and Field Sales Management is the base. Add Van Sales if your salesmen sell from stock on the van, and the Enterprise add-on for GPS tracking, the offline app and credit control.' },
+      { q: 'What does the base module need?', a: 'Sales, Inventory and Accounting. Van Sales also needs Odoo Fleet.' },
+    ],
+    solution: 'distribution-fmcg',
+  },
+  {
+    slug: 'hospital',
+    group: 'Health, people and education',
+    tagline: 'Patients, OPD, wards, pharmacy and medical billing',
+    name: 'Hospital and Medical Billing',
+    seoTitle: 'Hospital Management and Medical Billing on Odoo',
+    description: 'Hospital management for Odoo 19 and 20 in four tiers, from OPD and wards to lab, insurance, ICU and a patient portal, plus pharmacy management and US medical billing and RCM.',
+    h1: 'Hospital management and medical billing on Odoo',
+    lede: 'A hospital system in four tiers that build on each other, a pharmacy module, and a separate revenue cycle product for US medical billing companies.',
+    intro: [
+      'Hospital Management is the base: patient records, doctor appointments, OPD visits, IPD admissions, the ward and bed board, prescriptions, invoicing and a front desk dashboard. Enterprise adds laboratory and radiology, insurance policies and claims, operation theatre, blood bank, ambulance dispatch and analytics. Ultimate adds an in-house pharmacy with batch and expiry, doctor commission, cashier sessions, the insurance revenue cycle, emergency triage, ICU charting and ICD-10. Premium adds the patient portal, online booking, a waiting room screen, QR check-in, video consultations, SMS and WhatsApp reminders, an executive dashboard and a REST API.',
+      'Pharmacy Management runs a pharmacy on its own: prescriptions, dispensing, batch and expiry, a controlled drug register and insurance claims. US Medical Billing and RCM is for billing companies serving US physicians, not for the clinic: encounters to 837P claims, 835 posting, denials and appeals, AR analysis and percentage of collections invoicing.',
+    ],
+    modules: [
+      { key: 'wt-hospital-management', role: 'Patients, appointments, OPD, IPD admissions, ward and bed board, prescriptions and invoicing.' },
+      { key: 'wt-hospital-management-enterprise', role: 'Lab and radiology, insurance claims, operation theatre, blood bank, ambulance and analytics. Needs the base module.' },
+      { key: 'wt-hospital-management-ultimate', role: 'In-house pharmacy, doctor commission, cashier sessions, insurance revenue cycle, emergency, ICU and ICD-10. Needs Enterprise.' },
+      { key: 'wt-hospital-management-premium', role: 'Patient portal, online booking, waiting screen, QR check-in, video consults, SMS and WhatsApp, BI and a REST API. Needs Ultimate.' },
+      { key: 'w4t-pharmacy-management', role: 'Prescriptions, dispensing with a safety check, batch and expiry, controlled drug register and insurance claims.' },
+      { key: 'wt-medical-billing', role: 'For US billing companies: 837P claims, 835 posting, denials and appeals, AR analysis and client invoicing.' },
+    ],
+    highlights: [
+      { title: 'Start small', body: 'The base module costs USD 10 and covers OPD, admissions and billing. Add a tier when the hospital needs it.' },
+      { title: 'Wards and beds', body: 'Admissions against a ward and bed board, so the front desk sees what is free.' },
+      { title: 'Pharmacy safety', body: 'Dispensing checked against the patient file, and a controlled drug register kept as you go.' },
+      { title: 'US revenue cycle', body: 'Claims out as 837P, remittances in as 835, and a file that does not reconcile is refused.' },
+    ],
+    demos: [
+      { label: 'Clinic and hospital demo', url: 'https://clinic.way4tech.com/', note: 'Patients, appointments and clinic billing.' },
+      { label: 'Pharmacy demo', url: 'https://pharmacy-demo.way4tech.com/', note: 'Two branches with prescriptions, a safety check, a controlled drug register and claims.' },
+    ],
+    guides: [
+      { label: 'Odoo clinic and hospital management', href: '/odoo-guides/odoo-clinic-management/' },
+      { label: 'Patients, appointments and OPD visits', href: '/odoo-guides/odoo-patient-appointments-opd/' },
+      { label: 'IPD admissions, wards and bed board', href: '/odoo-guides/odoo-hospital-ipd-bed-management/' },
+      { label: 'Pharmacy management, step by step', href: '/odoo-guides/odoo-pharmacy-management/' },
+      { label: 'The controlled drug register', href: '/odoo-guides/odoo-controlled-drug-register/' },
+    ],
+    pdf: { label: 'Clinic and hospital guide (PDF, 71 pages)', href: '/downloads/guides/odoo-clinic-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-clinic-management/front-desk-dashboard.webp', 'Hospital front desk dashboard in Odoo with appointments today, bed occupancy and in-house patients', 'The front desk dashboard.', 1440, 900),
+    ],
+    related: [{ label: 'Pharmacy guide (PDF, 36 pages)', href: '/downloads/guides/odoo-pharmacy-management.pdf' }],
+    faqs: [
+      { q: 'Which tier do I need?', a: 'A clinic with OPD and a few beds starts with the base module. Add Enterprise for lab, radiology and insurance, Ultimate for an in-house pharmacy, emergency and ICU, and Premium for the patient portal and online booking.' },
+      { q: 'Is every tier on Odoo 20?', a: 'The base, Enterprise and Ultimate tiers are on Odoo 19 and Odoo 20. Premium is on Odoo 19.' },
+      { q: 'Is Medical Billing for my clinic?', a: 'No. It is for companies that do billing for US physicians. A clinic runs on Hospital Management.' },
+    ],
+    solution: ['hospital-management', 'clinic-management', 'pharmacy'],
+  },
+  {
+    slug: 'facility-management',
+    group: 'Property and projects',
+    tagline: 'CAFM: assets, planned maintenance, SLAs and contracts',
+    name: 'Facility Management',
+    catalogueSuite: 'Facility',
+    seoTitle: 'CAFM Facility Management Software on Odoo',
+    description: 'Facility management CAFM for Odoo 19 and 20: sites and assets, planned maintenance on interval or meter, work orders with SLA clocks, permit to work, and maintenance contracts with billing in Enterprise.',
+    h1: 'Facility management (CAFM) software on Odoo',
+    lede: 'For in-house maintenance teams, managing agents and FM contractors: the estate and its assets, planned and reactive work, the SLA clocks, and whether each contract makes money.',
+    intro: [
+      'Facility Management CAFM holds the estate as sites, buildings, floors and spaces, with an asset tree under them. Planned maintenance runs on a calendar interval, a meter reading or whichever comes first, and statutory inspections sit on the asset class. A fault becomes a work order with response and resolution clocks that honour cover hours, and permits to work are enforced on the record.',
+      'Facility Management Enterprise adds the commercial side: annual maintenance contracts, what is covered and what is chargeable, invoices on the billing cycle, every hour and part costed to a site and a contract, and the margin on each contract.',
+    ],
+    modules: [
+      { key: 'wt-facility-management', role: 'Sites and spaces, asset register, planned maintenance, work orders with SLA clocks, technicians, contractors and permit to work.' },
+      { key: 'wt-facility-enterprise', role: 'Maintenance contracts, covered and chargeable work, billing cycles, costing per site and contract, and contract margin. Needs the base module.' },
+    ],
+    highlights: [
+      { title: 'Planned work that gets raised', body: 'Jobs are raised days ahead of the due date, on an interval or a meter, so there is time to order the part.' },
+      { title: 'Two SLA clocks', body: 'Response and resolution on every job, with cover hours honoured and waiting time for parts banked.' },
+      { title: 'No permit, no start', body: 'Hot work, confined space and isolation permits issued only by an authorised person.' },
+      { title: 'Contract margin', body: 'Enterprise shows what each contract earns against the hours and parts spent on it.' },
+    ],
+    demos: [
+      { label: 'Facility Management CAFM', url: 'https://facility-demo.way4tech.com/', note: 'Assets, planned maintenance, work orders and SLAs.' },
+      { label: 'Facility Management Enterprise', url: 'https://facility-pro.way4tech.com/', note: 'CAFM with contracts and analytics.' },
+    ],
+    guides: [
+      { label: 'Odoo CAFM for facility maintenance', href: '/odoo-guides/odoo-cafm-facility-maintenance/' },
+      { label: 'Asset register, meters and lifetime cost', href: '/odoo-guides/odoo-asset-register-facility-management/' },
+      { label: 'Planned maintenance and statutory checks', href: '/odoo-guides/odoo-ppm-planned-maintenance/' },
+      { label: 'Help desk work orders and SLA clocks', href: '/odoo-guides/odoo-help-desk-work-orders-facility/' },
+      { label: 'Permit to work', href: '/odoo-guides/odoo-permit-to-work/' },
+      { label: 'Maintenance contracts and chargeable work', href: '/odoo-guides/odoo-maintenance-contracts-billing/' },
+    ],
+    pdf: { label: 'CAFM guide (PDF, 79 pages)', href: '/downloads/guides/odoo-cafm-facility-maintenance.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-cafm-facility-maintenance/work-order-sla.webp', 'Reactive work order in Odoo with site, building, room, asset, priority and SLA clocks', 'A reactive work order with its SLA clocks.', 1280, 800),
+    ],
+    faqs: [
+      { q: 'What does the base module need?', a: 'Inventory and Accounting. It runs on Odoo Community and Enterprise, for Odoo 19 and Odoo 20.' },
+      { q: 'Do I need Enterprise?', a: 'Only if you hold maintenance contracts and bill clients for them. An in-house team usually runs on the base module.' },
+    ],
+    solution: 'facility-management',
+    modulePages: ['maintenance'],
+  },
+  {
+    slug: 'salon-spa',
+    group: 'Service businesses',
+    tagline: 'Bookings, stylist commission, salon and spa POS',
+    name: 'Salon and Spa',
+    seoTitle: 'Salon and Spa Software on Odoo',
+    description: 'Salon and spa modules for Odoo 19 and 20: appointments with a floor board and online booking, stylist commission, salon and spa POS, and loyalty, packages, memberships and gift cards.',
+    h1: 'Salon and spa software on Odoo',
+    lede: 'Bookings, the till and the regulars, for hair and beauty salons, barbers and spas. Start with the booking module and add the POS and loyalty pieces you need.',
+    intro: [
+      'Salon Management runs the appointment book: rooms and stations on a live floor board, time slots with no double booking, an advance at booking, recurring visits, an online booking portal, stylist commission and targets, invoicing and thermal receipts.',
+      'POS Salon puts bookings into the Odoo Point of Sale, and Spa POS adds the room and station grid, therapists and treatment length on the receipt. Salon Loyalty, Packages and Memberships adds loyalty tiers, prepaid packages, memberships, gift cards, deposits, a waitlist, reviews, consent forms and before and after photos. The Salon and Spa website theme gives the public site to go with it.',
+    ],
+    modules: [
+      { key: 'wt-salon-management', role: 'Appointments, floor board, online booking, advances, stylist commission and invoicing.' },
+      { key: 'wt-pos-saloon', role: 'Salon bookings in the Odoo Point of Sale. Needs Salon Management and Point of Sale.' },
+      { key: 'wt-spa-pos', role: 'Spa till with the room grid, therapists, advances taken off the bill and treatment receipts. Needs Salon Management and POS Salon.' },
+      { key: 'wt-enterprise-salon', role: 'Loyalty tiers, packages, memberships, gift cards, deposits, waitlist, reviews and consent forms. Needs Salon Management.' },
+      { key: 'wt-theme-salon', role: 'Website theme for salons and spas with a services menu, gallery and booking call to action.' },
+    ],
+    highlights: [
+      { title: 'No double booking', body: 'Every slot is checked before it is booked, and the floor board shows each room and station live.' },
+      { title: 'Commission without a spreadsheet', body: 'Each service is tied to the stylist who did it, so commission and targets come from the sales.' },
+      { title: 'Spa rooms', body: 'Rooms with live status, couples suites and cleaning time between treatments in the spa till.' },
+      { title: 'Regulars come back', body: 'Packages, memberships, gift cards and loyalty tiers in the Enterprise add-on.' },
+    ],
+    demos: [
+      { label: 'Salon and spa demo', url: 'https://salon.way4tech.com/', note: 'Appointments, stylists and salon POS.' },
+      { label: 'Spa and wellness demo', url: 'https://spa-app.way4tech.com/', note: 'Spa bookings, therapists and packages.' },
+    ],
+    guides: [
+      { label: 'Odoo salon and spa management setup', href: '/odoo-guides/odoo-salon-spa-management/' },
+      { label: 'Which salon module: front desk and website', href: '/odoo-guides/odoo-salon-front-desk-website/' },
+      { label: 'Salon POS: bookings, tips and the receipt', href: '/odoo-guides/odoo-salon-pos-till/' },
+      { label: 'Spa POS: rooms, couples and intake forms', href: '/odoo-guides/odoo-spa-pos-rooms-couples/' },
+      { label: 'Loyalty, packages, memberships and gift cards', href: '/odoo-guides/odoo-salon-loyalty-packages-memberships/' },
+    ],
+    pdf: { label: 'Salon and spa guide (PDF, 93 pages)', href: '/downloads/guides/odoo-salon-spa-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-salon-spa-management/booking-portal.webp', 'Public booking page on an Odoo website with salon services, duration and price', 'The online booking page.', 1280, 800),
+      shot('/odoo-guides/odoo-salon-spa-management/spa-room-grid.webp', 'Spa room grid in the Odoo Point of Sale with treatment rooms and their status', 'The spa room grid in the POS.', 1280, 800),
+    ],
+    faqs: [
+      { q: 'Which modules does a small salon need?', a: 'Salon Management on its own covers bookings, commission and invoicing. Add POS Salon if you take payment at a till.' },
+      { q: 'Does it run on Odoo Community?', a: 'Yes. All of them run on Odoo 19 and Odoo 20, Community or Enterprise.' },
+    ],
+    solution: 'salon-spa',
+  },
+  {
+    slug: 'transport-logistics',
+    group: 'Service businesses',
+    tagline: 'Trips, fleet costing, freight forwarding and couriers',
+    name: 'Transport and Logistics',
+    catalogueSuite: 'Transport and Logistics',
+    seoTitle: 'Transport Management and Freight Software on Odoo',
+    description: 'Transport and logistics modules for Odoo 19 and 20: trips, drivers and fleet costs, rate cards and settlements, freight forwarding with customs, and a courier connector for Aramex, SMSA, Naqel, Leopards and TCS.',
+    h1: 'Transport and logistics software on Odoo',
+    lede: 'For fleet operators, freight forwarders and anyone who ships: what a trip earned and cost, the job file from quote to invoice, and courier labels from the delivery order.',
+    intro: [
+      'Transport Management covers trips, drivers, vehicles, fuel and maintenance, freight dispatch and profit per trip. The Enterprise add-on answers what a job should be charged, what it really cost and who gets paid: contract rate cards, a two-sided charge sheet, driver and subcontractor settlements, true cost per kilometre, fuel loss detection, tyres and multi-stop consignments.',
+      'Freight Forwarding Management handles air, sea and road job files, master and house bills, containers, chargeable weight, customs clearance and gross profit by lane. The courier connector books Aramex, SMSA, Naqel, Leopards and TCS shipments from the transfer, with live rates, labels, tracking and cash on delivery fees.',
+    ],
+    modules: [
+      { key: 'wt-transport-management', role: 'Trips, drivers, vehicles, fuel, maintenance, dispatch and profit per trip.' },
+      { key: 'wt-transport-management-enterprise', role: 'Rate cards, charge sheets, driver and subcontractor settlement, cost per km, fuel loss and tyres. Needs the base module.' },
+      { key: 'wt-freight-forwarding', role: 'Air, sea and road job files, bills of lading, containers, customs and gross profit by lane.' },
+      { key: 'wt-delivery-carrier-connector', role: 'Aramex, SMSA, Naqel, Leopards and TCS: rates, waybills, labels, tracking and COD fees.' },
+    ],
+    highlights: [
+      { title: 'Profit per trip', body: 'Fuel, expenses and the invoice on each trip, so every trip shows what it made.' },
+      { title: 'True cost per km', body: 'Enterprise adds standing costs to running costs, so the rate card is set against the real figure.' },
+      { title: 'One job file', body: 'Freight quotes, bills, containers, customs and charges on one file, with gross profit by lane and salesperson.' },
+      { title: 'Courier labels', body: 'Book the shipment and print the label from the delivery, with a tracking link for the customer.' },
+    ],
+    demos: [
+      { label: 'Transport Management', url: 'https://transport-demo.way4tech.com/', note: 'Fleet, trips, drivers and freight operations.' },
+      { label: 'Transport Enterprise', url: 'https://transport-pro.way4tech.com/', note: 'Costing, settlements and dashboards.' },
+      { label: 'Freight forwarding', url: 'https://freight-demo.way4tech.com/', note: 'Freight operations on Odoo 20.' },
+    ],
+    guides: [
+      { label: 'Odoo transport management (TMS)', href: '/odoo-guides/odoo-transport-management/' },
+      { label: 'Trips, expenses and trip invoicing', href: '/odoo-guides/odoo-transport-trips-expenses/' },
+      { label: 'Rate cards and charge sheets', href: '/odoo-guides/odoo-transport-rate-cards-billing/' },
+      { label: 'Truck cost per km, fuel and driver pay', href: '/odoo-guides/odoo-truck-cost-per-km-fuel/' },
+      { label: 'Odoo freight forwarding and customs', href: '/odoo-guides/odoo-freight-forwarding/' },
+    ],
+    pdf: { label: 'Transport guide (PDF, 107 pages)', href: '/downloads/guides/odoo-transport-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-transport-management/trip-form.webp', 'Completed trip in Odoo with vehicle, driver, customer, origin and destination', 'A completed trip.', 1440, 900),
+    ],
+    related: [{ label: 'Freight forwarding guide (PDF, 61 pages)', href: '/downloads/guides/odoo-freight-forwarding.pdf' }],
+    faqs: [
+      { q: 'Transport or freight forwarding?', a: 'Run your own trucks: Transport Management. Arrange freight with carriers and clear customs: Freight Forwarding. Some companies need both.' },
+      { q: 'What does Transport Management need?', a: 'Fleet, Employees and Accounting. The Enterprise add-on runs on Odoo Community too.' },
+    ],
+    solution: ['logistics-transport', 'freight-forwarding'],
+    modulePages: ['fleet'],
+  },
+  {
+    slug: 'project-work-tracker',
+    group: 'Tools and integrations',
+    name: 'Project Pro and Work Tracker',
+    catalogueSuite: 'Project and Work Tracker',
+    seoTitle: 'Project Pro, Timesheets and Work Tracker for Odoo',
+    description: 'Productivity modules for Odoo 19 and 20: Project Pro boards with approvals and automations, a Gantt chart, a timesheet grid, a map view, a project dashboard and the WT Work Tracker desktop agent.',
+    h1: 'Project Pro, timesheets and work tracking for Odoo',
+    lede: 'Run projects on boards people like using, plan them on a Gantt chart, fill timesheets on a grid, and see where the hours went.',
+    intro: [
+      'Project Pro turns Odoo Project into a work platform: colour boards with custom columns, My Day, daily standups in Discuss, tickets with SLA, timers, approval workflows, an automation engine and notifications people receive. It needs only Project and Discuss, no Enterprise modules.',
+      'Around it: a Gantt chart with dependencies and a critical path, a timesheet grid with period locks, a map view with route planning, and a project dashboard. WT Work Tracker is a Windows agent that records the active application, window title and idle time, never keystrokes or screen content, and its free companions put that effort on tasks, timesheets, attendance and Project Pro boards.',
+    ],
+    modules: [
+      { key: 'wt-project-pro', role: 'Boards with custom columns, My Day, approvals, automations, tickets with SLA, timers and notifications.' },
+      { key: 'wt-gantt-view', role: 'Gantt chart with four dependency types, cascade rescheduling, critical path and resource conflicts.' },
+      { key: 'wt-grid-view', role: 'Timesheet grid by day, week or month with editable totals, period locks and a copy wizard.' },
+      { key: 'wt-map-view', role: 'Any model on a map, with geocoding and route planning.' },
+      { key: 'wt-project-dashboard', role: 'Ten KPI cards, task status, workload by assignee and overdue tasks.' },
+      { key: 'wt-work-tracker', role: 'Windows agent for activity tracking: application, window title and idle time, with consent and retention rules.' },
+      { key: 'wt-work-tracker-project', role: 'Free. Effort per task and a task picker in the tray, when Project is installed.' },
+      { key: 'wt-work-tracker-timesheet', role: 'Free. Turns a tracked day into timesheet lines, one per task.' },
+      { key: 'wt-work-tracker-attendance', role: 'Free. Attendance hours next to tracked activity, and the gap between them.' },
+      { key: 'wt-work-tracker-project-pro', role: 'Free. A Tracked column on every Project Pro board.' },
+    ],
+    highlights: [
+      { title: 'Boards people use', body: 'Colour statuses, custom columns and a My Day page, on Odoo Community.' },
+      { title: 'Approvals and automations', body: 'Real approval steps on items, and automations such as nudging the assignee on overdue work.' },
+      { title: 'Timesheets on a grid', body: 'A week of hours in one grid, with a rolling daily close so past periods stay locked.' },
+      { title: 'Tracking without spying', body: 'Work Tracker records which application and window, never keystrokes or what is on the screen.' },
+    ],
+    demos: [
+      { label: 'Productivity demo', url: 'https://productivity-demo.way4tech.com/', note: 'A design agency with Gantt plans, maps, a timesheet grid and approvals.' },
+      { label: 'Work Tracker demo', url: 'https://tracker-demo.way4tech.com/', note: 'A 13-person studio with focus, effort, attendance gap and suggested timesheets.' },
+    ],
+    guides: [
+      { label: 'Odoo project management with Project Pro', href: '/odoo-guides/odoo-project-management/' },
+      { label: 'Boards, columns, timeline and workload', href: '/odoo-guides/odoo-project-boards-timeline-workload/' },
+      { label: 'Approvals, automations and notifications', href: '/odoo-guides/odoo-project-approvals-automation/' },
+      { label: 'Gantt chart with dependencies', href: '/odoo-guides/odoo-community-gantt-chart/' },
+      { label: 'Timesheet grid and period locks', href: '/odoo-guides/odoo-timesheet-grid-view/' },
+      { label: 'Odoo employee work tracker', href: '/odoo-guides/odoo-employee-work-tracker/' },
+    ],
+    pdf: { label: 'Project management guide (PDF, 66 pages)', href: '/downloads/guides/odoo-project-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-project-management/home.webp', 'Project Pro home in Odoo with open items, overdue count and project boards', 'Project Pro: the home page with your boards.', 1400, 875),
+      shot('/odoo-guides/odoo-employee-work-tracker/my-activity.webp', 'Work Tracker My Activity page with active, idle and productive time and an hour by hour timeline', 'Work Tracker: one person\'s day.', 1440, 900),
+    ],
+    related: [
+      { label: 'Work tracker guide (PDF, 45 pages)', href: '/downloads/guides/odoo-employee-work-tracker.pdf' },
+      { label: 'Productivity apps guide (PDF, 66 pages)', href: '/downloads/guides/odoo-community-productivity-apps.pdf' },
+    ],
+    faqs: [
+      { q: 'Does Project Pro need Odoo Enterprise?', a: 'No. It needs only Project and Discuss, on Odoo 19 or Odoo 20 Community.' },
+      { q: 'Does Work Tracker take screenshots or log keys?', a: 'It never records keystrokes or screen content. It records the foreground application, the window title, idle time and counts of input events.' },
+    ],
+    solution: 'professional-services',
+    modulePages: ['project', 'timesheets'],
+  },
+  {
+    slug: 'gym',
+    group: 'Service businesses',
+    tagline: 'Memberships, door check-in, classes and PT',
+    name: 'Gym and Fitness',
+    seoTitle: 'Gym Management Software on Odoo',
+    description: 'Gym and fitness club management for Odoo 19 and 20: membership plans with recurring billing and freeze, door check-in, a class timetable with waitlist, PT packages and trainer pay, and a member portal.',
+    h1: 'Gym and fitness club software on Odoo',
+    lede: 'Memberships that bill themselves, a door that checks who may come in, a class timetable with a waitlist, and personal training with trainer pay.',
+    intro: [
+      'Gym Management covers membership plans with recurring billing and freeze, door check-in that refuses with the reason, a class timetable with waitlist, PT packages and trainer pay. Members get a mobile portal with a digital check-in pass, workout and nutrition plans, and automated class reminders. An online join and free trial form brings new members in.',
+      'The Gym and Fitness website theme gives the public site: classes, trainers, membership tiers and a join call to action.',
+    ],
+    modules: [
+      { key: 'wt-gym-management', role: 'Memberships, recurring billing, freeze, door check-in, classes with waitlist, PT packages, trainer pay and a member portal.' },
+      { key: 'wt-theme-gym', role: 'Website theme for gyms and studios with classes, trainers and membership tiers.' },
+    ],
+    highlights: [
+      { title: 'Billing that runs itself', body: 'Membership plans raise recurring invoices, and a freeze pauses them.' },
+      { title: 'A door that checks', body: 'Check-in refuses a member who is expired, frozen or in arrears, and says why.' },
+      { title: 'Classes with a waitlist', body: 'A timetable with capacity, a waitlist and reminders before class.' },
+      { title: 'PT and trainer pay', body: 'Personal training packages with sessions used, and what each trainer is owed.' },
+    ],
+    demos: [{ label: 'Gym demo', url: 'https://gym-demo.way4tech.com/', note: 'Memberships, plans, check-in and classes.' }],
+    guides: [
+      { label: 'Odoo gym and fitness club management', href: '/odoo-guides/odoo-gym-management/' },
+      { label: 'Membership plans, billing and holds', href: '/odoo-guides/odoo-gym-membership-billing/' },
+      { label: 'Check-in and the member file', href: '/odoo-guides/odoo-gym-member-check-in/' },
+      { label: 'Class booking and waitlist', href: '/odoo-guides/odoo-gym-class-booking-waitlist/' },
+      { label: 'PT packages and trainer pay', href: '/odoo-guides/odoo-gym-personal-training/' },
+    ],
+    pdf: { label: 'Gym guide (PDF, 65 pages)', href: '/downloads/guides/odoo-gym-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-gym-management/members-kanban.webp', 'Fitness club members in Odoo with member number, status and an at risk tag', 'Members, with the ones at risk flagged.', 1440, 900),
+    ],
+    faqs: [
+      { q: 'What does it need?', a: 'The Invoicing app. It runs on Odoo 19 and Odoo 20, Community or Enterprise.' },
+      { q: 'Can members book classes themselves?', a: 'Yes, from the member portal on their phone, which also holds their check-in pass.' },
+    ],
+    solution: 'gym-fitness',
+  },
+  {
+    slug: 'school',
+    group: 'Health, people and education',
+    tagline: 'Admissions, fees, attendance, exams and report cards',
+    name: 'School',
+    seoTitle: 'School Management Software on Odoo',
+    description: 'School management for Odoo 19 and 20: admissions, fees, attendance, timetable, exams, report cards, result sheets and transcripts, plus library, hostel, canteen and multi-campus in Enterprise.',
+    h1: 'School management software on Odoo',
+    lede: 'From the admission form to the report card: students, fees, attendance, timetable and exams, with printable reports and an Enterprise add-on for the rest of campus life.',
+    intro: [
+      'School Management covers admissions and enrollment, grades and academic sessions, fee structures, attendance, the timetable, assignments, lesson plans, exams and seating, term reports, transport and scholarships. School Academic Reports prints the report card per term or year, the class result sheet with positions, and the transcript across all years.',
+      'School Management Enterprise adds library issue and return, hostel rooms and allocation, canteen wallets, medical, sports, alumni, counselling and multi-campus. The School and Education website theme gives the public site.',
+    ],
+    modules: [
+      { key: 'wt-school-management', role: 'Admissions, fees, attendance, timetable, assignments, exams, transport and scholarships.' },
+      { key: 'wt-school-academic-reports', role: 'Report cards, class result sheets with positions and transcripts.' },
+      { key: 'wt-enterprise-school', role: 'Library, hostel, canteen wallets, medical, sports, alumni, counselling and multi-campus. Needs School Management and Academic Reports.' },
+      { key: 'wt-theme-education', role: 'Website theme for schools and education.' },
+    ],
+    highlights: [
+      { title: 'Fees per grade', body: 'Fee structures per grade with several components, and fee slips per student with their payment status.' },
+      { title: 'Report cards from marks', body: 'Report cards and result sheets are worked out from marks and attendance when you print them.' },
+      { title: 'Campus life', body: 'Library, hostel, canteen and multi-campus in the Enterprise add-on.' },
+    ],
+    demos: [{ label: 'School demo', url: 'https://education.way4tech.com/', note: 'Students, classes, fees and attendance.' }],
+    guides: [
+      { label: 'Odoo school management: setup and overview', href: '/odoo-guides/odoo-school-management/' },
+      { label: 'Student admission and fees', href: '/odoo-guides/odoo-student-admission-fees/' },
+      { label: 'Exams, grades and report cards', href: '/odoo-guides/odoo-school-report-cards/' },
+    ],
+    pdf: { label: 'School guide (PDF, 59 pages)', href: '/downloads/guides/odoo-school-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-school-management/students-list.webp', 'School Management in Odoo with the students list and menus for applications, enrollments, exams and fees', 'The students list.', 1366, 800),
+    ],
+    faqs: [
+      { q: 'What does School Management install?', a: 'Employees, Invoicing, Fleet, Attendances and Time Off. It runs on Odoo 19 and Odoo 20 Community.' },
+      { q: 'Are report cards in the base module?', a: 'Printable report cards, result sheets and transcripts come with School Academic Reports.' },
+    ],
+    solution: 'school-management',
+  },
+  {
+    slug: 'hotel',
+    group: 'Service businesses',
+    tagline: 'Reservations, front desk, folios and housekeeping',
+    name: 'Hotel',
+    seoTitle: 'Hotel Management PMS on Odoo',
+    description: 'Hotel management PMS for Odoo 19 and 20: room types and rooms, reservations with availability, check-in and check-out, folio billing, a housekeeping board and an occupancy dashboard.',
+    h1: 'Hotel management software (PMS) on Odoo',
+    lede: 'For hotels, resorts and guest houses: rooms, reservations, the front desk, the guest folio and housekeeping, on Odoo.',
+    intro: [
+      'Hotel Management PMS holds room types and rooms, takes reservations with an availability check, runs check-in and check-out, and bills the stay on a folio. The housekeeping board shows the status of every room and raises the cleaning tasks, and the occupancy dashboard shows the house at a glance.',
+      'The Hotel and Resort website theme gives the public site with room types, amenities and a booking call to action.',
+    ],
+    modules: [
+      { key: 'wt-hotel-management', role: 'Rooms, reservations with availability, check-in and out, folio billing, housekeeping and occupancy.' },
+      { key: 'wt-theme-hotel', role: 'Website theme for hotels and resorts with room types, amenities and a booking call to action.' },
+    ],
+    highlights: [
+      { title: 'No overbooking', body: 'Reservations are checked against the rooms free for the dates.' },
+      { title: 'One folio per stay', body: 'Room nights and extras go on the folio and become the guest invoice at check-out.' },
+      { title: 'Housekeeping board', body: 'Room status by available, occupied, reserved and out of order, with cleaning tasks raised for the team.' },
+    ],
+    demos: [{ label: 'Hotel demo', url: 'https://hotel.way4tech.com/', note: 'Rooms, reservations and front desk.' }],
+    guides: [
+      { label: 'Odoo hotel management: the overview', href: '/odoo-guides/odoo-hotel-management/' },
+      { label: 'Reservations, check-in and housekeeping', href: '/odoo-guides/odoo-hotel-reservations-front-desk/' },
+      { label: 'Folio billing and the guest invoice', href: '/odoo-guides/odoo-hotel-folio-billing/' },
+    ],
+    pdf: { label: 'Hotel guide (PDF, 49 pages)', href: '/downloads/guides/odoo-hotel-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-hotel-management/room-board.webp', 'Hotel room board in Odoo grouped by available, occupied, out of order and reserved', 'The room board.', 1440, 900),
+    ],
+    faqs: [
+      { q: 'What does it need?', a: 'Only Invoicing and Discuss. It runs on Odoo 19 and Odoo 20 Community.' },
+      { q: 'Who works in it?', a: 'Reception, housekeeping and managers each have their own role, and record rules keep the data of each company apart.' },
+    ],
+    solution: 'hotel-hospitality',
+  },
+  {
+    slug: 'jewellery',
+    group: 'Food, retail and trade',
+    tagline: 'Gold rate, making charges, old gold and hallmarks',
+    name: 'Jewellery',
+    catalogueSuite: 'Jewelry',
+    seoTitle: 'Jewellery and Gold Shop Software on Odoo',
+    description: 'Jewellery management for Odoo 19 and 20: a dated gold rate per gram and purity, making and wastage charges, old gold buy-back with a purity test, repair job cards, hallmark and HUID, and stock by weight.',
+    h1: 'Jewellery and gold shop software on Odoo',
+    lede: 'Price every piece from today\'s rate, its weight and purity, take old gold back at a tested purity, and keep the hallmark register straight.',
+    intro: [
+      'Jewelry Management keeps a dated rate per gram for each metal and purity, and prices each piece from its weight with making and wastage charges on top. Old gold is bought back with a purity test, repairs run on job cards, and hallmark and HUID numbers sit in a register.',
+      'Stock is counted and reported by weight as well as by piece. It runs on Odoo 19 and Odoo 20, with Inventory and Accounting.',
+    ],
+    modules: [{ key: 'wt-jewelry-management', role: 'Gold rate per gram and purity, making and wastage, old gold buy-back, repair job cards, hallmark and HUID.' }],
+    highlights: [
+      { title: 'Today\'s rate', body: 'A rate per gram for each purity, dated, so every bill uses the rate of the day it was made.' },
+      { title: 'Making and wastage', body: 'Making per gram, as a percentage of the metal or a fixed amount, and wastage as a percentage of the weight, shown on the printed bill.' },
+      { title: 'Old gold', body: 'Old gold bought back at the purity the test shows.' },
+      { title: 'Stock by weight', body: 'Stock counted and reported by weight as well as by piece.' },
+    ],
+    demos: [{ label: 'Jewellery demo', url: 'https://jewelry-demo.way4tech.com/', note: 'Sample shop Al Nour Jewellers.' }],
+    guides: [
+      { label: 'Odoo jewellery and gold management', href: '/odoo-guides/odoo-jewellery-management/' },
+      { label: 'Gold rate, purity and making charges', href: '/odoo-guides/gold-rate-making-charges-odoo/' },
+      { label: 'Counter sales, VAT and old gold', href: '/odoo-guides/odoo-jewellery-counter-sales-old-gold/' },
+      { label: 'Repair job cards and approval memos', href: '/odoo-guides/jewellery-repair-job-card-odoo/' },
+      { label: 'Stock by weight, certificates and reports', href: '/odoo-guides/jewellery-stock-count-by-weight-odoo/' },
+    ],
+    pdf: { label: 'Jewellery guide (PDF, 38 pages)', href: '/downloads/guides/odoo-jewellery-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-jewellery-management/printed-bill.webp', 'Printed jewellery bill from Odoo with net weight, rate per gram, making and wastage', 'A printed bill with weight, rate, making and wastage.', 1280, 420),
+    ],
+    faqs: [
+      { q: 'What does it need?', a: 'Inventory and Accounting, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+      { q: 'Can it handle more than one purity?', a: 'Yes. Each metal and purity has its own dated rate per gram.' },
+    ],
+    solution: 'jewellery-retail',
+  },
+  {
+    slug: 'travel-agency',
+    group: 'Service businesses',
+    tagline: 'Booking files, PNR, visas and tour packages',
+    name: 'Travel Agency',
+    seoTitle: 'Travel Agency Software on Odoo',
+    description: 'Travel agency and tour operator management for Odoo 19 and 20: booking files with PNR, passport and visa checks, flight, hotel, transfer and cruise segments, markup and commission, and fixed departures.',
+    h1: 'Travel agency software on Odoo',
+    lede: 'For travel agencies and tour operators: one booking file per trip, with the passengers, their papers, every segment and the margin.',
+    intro: [
+      'Travel Agency Management keeps a booking file per trip with the PNR, passengers, passport and visa checks, and flight, hotel, transfer and cruise segments. Markup and commission are worked out per segment, tours run as fixed departures, and deposits and cancellations are handled on the file.',
+      'The Travel and Tour website theme gives the public site with destinations, tour packages and a booking call to action.',
+    ],
+    modules: [
+      { key: 'wt-travel-agency', role: 'Booking files with PNR, passport and visa checks, segments, markup, commission and fixed departures.' },
+      { key: 'wt-theme-travel', role: 'Website theme for travel agencies with destinations and tour packages.' },
+    ],
+    highlights: [
+      { title: 'One file per trip', body: 'Passengers, segments, payments and documents on one booking file.' },
+      { title: 'Papers checked', body: 'A file will not confirm while a traveller\'s passport expires within six months of departure, and visa checklists come from the country rule.' },
+      { title: 'Margin per consultant', body: 'Markup and commission per segment, and margin by consultant.' },
+    ],
+    demos: [{ label: 'Travel agency demo', url: 'https://travel-demo.way4tech.com/', note: 'Bookings, itineraries and travel invoicing.' }],
+    guides: [
+      { label: 'Odoo travel agency management', href: '/odoo-guides/odoo-travel-agency-management/' },
+      { label: 'Booking files, PNR and passport checks', href: '/odoo-guides/odoo-travel-booking-file-pnr/' },
+      { label: 'Tour packages and fixed departures', href: '/odoo-guides/odoo-tour-packages-fixed-departures/' },
+      { label: 'Visa applications and country rules', href: '/odoo-guides/odoo-visa-application-tracking/' },
+      { label: 'Deposits, refunds and margin scheme VAT', href: '/odoo-guides/odoo-travel-deposits-cancellations/' },
+    ],
+    pdf: { label: 'Travel agency guide (PDF, 56 pages)', href: '/downloads/guides/odoo-travel-agency-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-travel-agency-management/booking-board.webp', 'Travel booking files in Odoo grouped by enquiry, quoted, confirmed and ticketed', 'Booking files by status.', 1440, 900),
+    ],
+    faqs: [
+      { q: 'What does it need?', a: 'The Invoicing app, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+      { q: 'Can the passport rule be changed?', a: 'Yes. Six months is the default and it is a setting, because some destinations want three months and some want none.' },
+    ],
+    solution: 'travel-agency',
+  },
+  {
+    slug: 'print-suite',
+    group: 'Tools and integrations',
+    name: 'Print Suite',
+    seoTitle: 'Odoo Label Printing and Direct Print',
+    description: 'Label printing and direct print for Odoo 19 and 20: design labels with barcodes and print them as PDF or Zebra ZPL, send any report straight to a printer, and print POS receipts without an IoT box.',
+    h1: 'Label printing and direct print for Odoo',
+    lede: 'Design product, lot and price labels, and send labels, invoices and delivery slips straight to the right printer, without the PDF preview and without a cloud print service.',
+    intro: [
+      'Label Designer lets you design product, variant, lot and serial, package, location and price tag labels by drag and drop, with EAN, UPC, Code 128, Code 39, QR and Data Matrix barcodes, and print them as PDF or as ZPL for Zebra printers. Direct Print sends any Odoo report straight to a printer, with rules per report, user and workstation, a print queue with retry and a free agent for Windows, Linux and macOS.',
+      'When both are installed, Print Suite joins them for free: designed labels go straight to the Zebra, each template has its printer, and labels print the moment a receipt is validated. Two more free companions print invoices when they are confirmed and delivery slips when they are validated. POS Print Anywhere does the same for POS receipts and kitchen tickets, with no IoT box.',
+    ],
+    modules: [
+      { key: 'wt-label-designer', role: 'Drag and drop label designer with barcodes, printed as PDF or Zebra ZPL.' },
+      { key: 'w4-direct-print', role: 'Any report straight to a printer, with rules, a print queue and a local print agent.' },
+      { key: 'wt-print-suite', role: 'Free. Joins the two: labels straight to the printer, one per unit when a receipt is validated.' },
+      { key: 'wt-direct-print-stock', role: 'Free. Prints the delivery slip or picking list when a transfer is validated.' },
+      { key: 'wt-direct-print-account', role: 'Free. Prints the invoice or bill when it is confirmed.' },
+      { key: 'w4-pos-print', role: 'POS receipts, kitchen tickets and reports on any printer, no IoT box.' },
+    ],
+    highlights: [
+      { title: 'No preview, no dialog', body: 'Press Print and the report goes to its printer. When no rule matches, it downloads as before.' },
+      { title: 'Zebra and PDF', body: 'The same label prints as ZPL on a Zebra or as PDF on sheets and label rolls.' },
+      { title: 'No subscription', body: 'Printing runs through your own agent or straight to a network printer, with no cloud print service.' },
+      { title: 'A queue you can see', body: 'Every job with its status; failed jobs are tried again and can be sent again by hand.' },
+    ],
+    demos: [],
+    guides: [
+      { label: 'Odoo label printing: PDF and Zebra ZPL', href: '/odoo-guides/odoo-label-printing/' },
+      { label: 'Direct print without the preview', href: '/odoo-guides/odoo-direct-print-without-preview/' },
+      { label: 'POS printer without an IoT box', href: '/odoo-guides/odoo-pos-printer-without-iot-box/' },
+    ],
+    pdf: { label: 'Label printing guide (PDF, 39 pages)', href: '/downloads/guides/odoo-label-printing.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-label-printing/designer.webp', 'Label designer canvas in Odoo with a price tag, a logo, a barcode and the price', 'Designing a price tag.', 1600, 1000),
+    ],
+    related: [{ label: 'Free Windows apps, including the print agent', href: '/windows-apps/' }],
+    faqs: [
+      { q: 'Do I need PrintNode or another print service?', a: 'No. Direct Print prints through a small agent on your own network, or straight from the server to a network printer.' },
+      { q: 'What does Label Designer need?', a: 'Inventory, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+    ],
+    modulePages: ['barcode', 'iot'],
+  },
+  {
+    slug: 'rental',
+    group: 'Service businesses',
+    tagline: 'Rental orders, online rental shop and plant hire',
+    name: 'Rental',
+    seoTitle: 'Rental Management Software on Odoo Community',
+    description: 'Rental modules for Odoo 19 and 20 Community: rental on the sales order with rate tables and deposits, an online rental shop with a date picker, and equipment rental with meters, off-hire and damage.',
+    h1: 'Rental management software on Odoo Community',
+    lede: 'Rent by the hour, day, week or month without Odoo Enterprise: rental orders, an online rental shop, and plant and tool hire unit by unit.',
+    intro: [
+      'Rental Management puts rentals on the sales order: hourly, daily, weekly and monthly rate tables where the cheapest rate wins, availability that refuses to oversell, partial pickup and return, late return charges and security deposits. Online Rental Shop adds a date range picker on the website product page, availability checked on the server, period pricing, blackout dates and My Rentals in the customer portal.',
+      'Equipment Rental Management is for plant, tool and machinery hire: a fleet held unit by unit with hour and kilometre meters, rate cards, availability across a date range, off-hire, damage and deposits.',
+    ],
+    modules: [
+      { key: 'wt-rental-management', role: 'Rentals on the sales order: rate tables, availability, pickup and return, late charges and deposits.' },
+      { key: 'wt-rental-website', role: 'Rent through the website shop with a date picker, live availability and My Rentals in the portal.' },
+      { key: 'wt-equipment-rental', role: 'Plant and tool hire unit by unit: meters, rate cards, availability, off-hire, damage and deposits.' },
+    ],
+    highlights: [
+      { title: 'No Enterprise needed', body: 'Rental on Odoo Community, on the sales order you already use.' },
+      { title: 'No overselling', body: 'Availability is checked for the rental window, including other visitors\' carts on the website.' },
+      { title: 'Cheapest rate wins', body: 'Rate tables by hour, day, week and month, and the customer pays the lowest that applies.' },
+      { title: 'Plant hire', body: 'Units with meters, off-hire readings, damage charges and inspection certificates.' },
+    ],
+    demos: [
+      { label: 'Rental demo', url: 'https://rental-demo.way4tech.com/', note: 'Rental orders, availability, pickup and return.' },
+      { label: 'Equipment rental demo', url: 'https://equipmentrental-demo.way4tech.com/', note: 'Plant, tool and machinery hire unit by unit.' },
+    ],
+    guides: [
+      { label: 'Odoo rental management on Community', href: '/odoo-guides/odoo-rental-management/' },
+      { label: 'Pickup, return, late fees and deposits', href: '/odoo-guides/odoo-rental-pickup-return-deposits/' },
+      { label: 'Online rental booking on the website', href: '/odoo-guides/odoo-rental-website-booking/' },
+      { label: 'Equipment rental management', href: '/odoo-guides/odoo-equipment-rental-management/' },
+    ],
+    pdf: { label: 'Rental guide (PDF, 44 pages)', href: '/downloads/guides/odoo-rental-management.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-rental-management/rental-shop.webp', 'Online rental shop on an Odoo website for a cargo bike hire company', 'The online rental shop.', 1440, 900),
+    ],
+    related: [{ label: 'Equipment rental guide (PDF, 59 pages)', href: '/downloads/guides/odoo-equipment-rental-management.pdf' }],
+    faqs: [
+      { q: 'Rental Management or Equipment Rental?', a: 'Rental Management suits products rented from stock, such as bikes, party gear or cameras. Equipment Rental suits plant and machinery hired unit by unit with meters and inspections.' },
+      { q: 'What do they need?', a: 'Rental Management needs Sales and Inventory, the rental shop needs eCommerce, and Equipment Rental installs Inventory and Invoicing.' },
+    ],
+    solution: 'equipment-rental',
+    modulePages: ['rental'],
+  },
+  {
+    slug: 'integrations',
+    group: 'Tools and integrations',
+    name: 'Integrations',
+    seoTitle: 'Shopify and n8n Connectors for Odoo',
+    description: 'Integration modules for Odoo 19 and 20: a two-way Shopify connector for products, stock, orders, refunds and payouts, and an n8n connector with signed webhooks, a REST API and ready-made recipes.',
+    h1: 'Shopify and n8n connectors for Odoo',
+    lede: 'Two connectors we publish: Shopify for stores that sell online and keep the books in Odoo, and n8n for automating Odoo with everything else.',
+    intro: [
+      'Shopify Connector syncs both ways: products, variants, prices and stock to any number of stores, orders with taxes, discounts and payments into Odoo, fulfilments, refunds both ways, and payouts with their fees reconciled to invoices and credit notes.',
+      'n8n Connector Enterprise makes Odoo a full n8n citizen: signed events out on any model with retries and a replay log, a REST API in for every model with an OpenAPI schema, scoped keys and rate limits, and ready-made recipes for Slack, Shopify, Google Sheets, Stripe, Telegram and Gmail.',
+    ],
+    modules: [
+      { key: 'wt-shopify-connector', role: 'Two-way Shopify sync: products, stock, orders, fulfilments, refunds and payouts.' },
+      { key: 'wt-n8n-connector', role: 'Signed webhooks out, a REST API in, scoped keys, an audit log and n8n recipes.' },
+    ],
+    highlights: [
+      { title: 'Payouts reconciled', body: 'Shopify payouts come in with their transactions and fees, matched to invoices and credit notes.' },
+      { title: 'Many stores', body: 'Any number of Shopify stores on one Odoo, with a stock policy per location.' },
+      { title: 'Events you can trust', body: 'n8n deliveries are signed, retried, logged and can be replayed.' },
+      { title: 'An API for every model', body: 'A REST API with an OpenAPI schema, scoped keys and rate limits.' },
+    ],
+    demos: [],
+    guides: [
+      { label: 'Odoo Shopify connector: setup guide', href: '/odoo-guides/odoo-shopify-connector/' },
+      { label: 'Shopify product and stock sync', href: '/odoo-guides/odoo-shopify-product-stock-sync/' },
+      { label: 'Shopify orders, refunds and payouts', href: '/odoo-guides/odoo-shopify-orders-payouts/' },
+      { label: 'n8n and Odoo: options and setup', href: '/odoo-guides/n8n-odoo-automation/' },
+    ],
+    pdf: { label: 'Shopify connector guide (PDF, 46 pages)', href: '/downloads/guides/odoo-shopify-connector.pdf' },
+    shots: [
+      shot('/odoo-guides/odoo-shopify-connector/dashboard.webp', 'Shopify dashboard in Odoo with running jobs, sales today, revenue trend and queue health', 'The Shopify dashboard in Odoo.', 1560, 975),
+      shot('/odoo-guides/n8n-odoo-automation/deliveries.webp', 'Webhook deliveries list with sent, retrying and stopped deliveries and a Replay button', 'n8n deliveries with retries and replay.', 1280, 800),
+    ],
+    related: [{ label: 'All integrations we build', href: '/integrations/' }],
+    faqs: [
+      { q: 'What does the Shopify connector need?', a: 'Sales, Inventory, Accounting, CRM and Delivery, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+      { q: 'What does the n8n connector need?', a: 'Only base, mail and web, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+    ],
+    integrationPages: ['shopify'],
+  },
 ];
 
 /** Catalogue suite name to suite page, for the /products/ headings. */
@@ -335,7 +1064,19 @@ export const SUITE_LINKS: Record<string, string> = Object.fromEntries(
   SUITES.filter(s => s.catalogueSuite).map(s => [s.catalogueSuite as string, `/suites/${s.slug}/`]),
 );
 
-/** Solution slug to suite page, for the link block on /solutions/<slug>/. */
+const asList = (v?: string | string[]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+
+/** Solution slug to suite page, for the link block on /solutions/<slug>/ and /industries/<slug>/. */
 export const SOLUTION_SUITE: Record<string, { href: string; name: string }> = Object.fromEntries(
-  SUITES.filter(s => s.solution).map(s => [s.solution as string, { href: `/suites/${s.slug}/`, name: s.name }]),
+  SUITES.flatMap(s => asList(s.solution).map(sol => [sol, { href: `/suites/${s.slug}/`, name: s.name }])),
+);
+
+/** Integration page slug to suite page, for the link block on /integrations/<slug>/. */
+export const INTEGRATION_SUITE: Record<string, { href: string; name: string }> = Object.fromEntries(
+  SUITES.flatMap(s => asList(s.integrationPages).map(m => [m, { href: `/suites/${s.slug}/`, name: s.name }])),
+);
+
+/** Module page slug to suite page, for the link block on /modules/<slug>/. */
+export const MODULE_SUITE: Record<string, { href: string; name: string }> = Object.fromEntries(
+  SUITES.flatMap(s => asList(s.modulePages).map(m => [m, { href: `/suites/${s.slug}/`, name: s.name }])),
 );

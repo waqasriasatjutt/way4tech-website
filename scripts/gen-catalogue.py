@@ -28,7 +28,7 @@ REPOS = {
     '20.0': Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT.parent / 'odoostore-20',
 }
 # Built but not for sale yet. Never list these.
-SKIP = {'wt_org_collections', 'w4t_auto_parts_wholesale'}
+SKIP = {'wt_org_collections'}
 SKIP_PREFIX = ('wt_real_estate_feeds', 'wt_real_estate_ai', 'wt_real_estate_whatsapp',
                'wt_real_estate_api', 'wt_real_estate_es', 'wt_real_estate_vendor',
                'wt_real_estate_leasing', 'wt_real_estate_finance')

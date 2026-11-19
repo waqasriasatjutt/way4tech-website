@@ -158,11 +158,11 @@ export const SUITES: Suite[] = [
     lede: 'A complete restaurant system on Odoo POS, and an ordering website on your own Odoo site that sends orders into the same inbox, till and kitchen. No commission per order.',
     intro: [
       'The Restaurant Suite installs every module in one go: waiter tablets and mobile POS, table operations, kitchen display stations, silent printing, menus with modifiers and time-based menus, branch transfers, delivery zones and riders, a call centre console, online orders from your channels, reservations and a waitlist, recipes and stock, loyalty, wallet payments, fiscal compliance and owner reports. Each module is also sold on its own.',
-      'Restaurant Website Ordering (Odoo 20) is the customer side: a menu with photos and dietary badges, an item customiser for sizes and extras, a cart, pickup or delivery with delivery zones, tips and tax at checkout, orders scheduled for later, card or cash payment, and a live status page for the customer.',
+      'Restaurant Website Ordering (Odoo 20) is the customer side: a menu with photos and dietary badges, an item customiser for sizes and extras, a cart, pickup or delivery with delivery zones, "use my location" to find the area and fill in the address, tips and tax at checkout, orders scheduled for later, card or cash payment, and a live status page where the customer follows the rider on a map.',
     ],
     modules: [
       { key: 'w4-resto-suite', role: 'Every restaurant module below in one install, with a setup wizard.' },
-      { key: 'w4-resto-website', role: 'Your own ordering website: menu, item options, cart, checkout and live order tracking. Odoo 20.' },
+      { key: 'w4-resto-website', role: 'Your own ordering website: menu, item options, cart, checkout, store locator and live order tracking with the rider on a map. Odoo 20.' },
       { key: 'w4-resto-kds', role: 'Kitchen display stations with timers, expo and dark mode.' },
       { key: 'w4-resto-delivery', role: 'Delivery zones, riders, a live board and a rider phone screen.' },
       { key: 'w4-resto-call-center', role: 'Agent console with routing to branches and complaints.' },
@@ -175,6 +175,7 @@ export const SUITES: Suite[] = [
     highlights: [
       { title: 'Commission-free ordering', body: 'Customers order on your own site. Each order lands in the Online Orders inbox, becomes a POS order in the branch and raises a kitchen ticket.' },
       { title: 'Delivery zones', body: 'Zones with their own fee, minimum order and ETA, and riders managed from the delivery board in the back office.' },
+      { title: 'Live rider map', body: 'Once the order is out for delivery the customer sees the rider on a map with the distance and time left, fed from the rider phone screen.' },
       { title: 'Multi-branch', body: 'Branch isolation, transfers between branches, a customer branch picker and revenue by branch.' },
       { title: 'Fiscal compliance', body: 'Pakistan FBR, PRA and SRB, and Saudi ZATCA, reported from the order. Registration with the authority is still yours.' },
     ],
@@ -209,25 +210,25 @@ export const SUITES: Suite[] = [
     tagline: 'Online ordering with live stock per branch',
     name: 'Retail',
     catalogueSuite: 'Retail',
-    badge: 'Early access',
     seoTitle: 'Retail Online Ordering for Odoo 20',
-    description: 'Retail online ordering for Odoo 20, in early access: store picker, live stock per branch, product variants and a cart for click and collect. Checkout is still being built.',
-    h1: 'Retail online ordering for Odoo 20 (early access)',
+    description: 'Retail online ordering for Odoo 20: store picker, live stock per branch, variants, checkout for pickup or delivery, card or pay on collection, and the order straight into the branch POS.',
+    h1: 'Retail online ordering for Odoo 20',
     lede: 'A storefront where the customer picks a branch and sees what that branch has in stock right now. Built on Odoo 20, multi-branch from the start.',
     intro: [
       'Retail Stores Base sets up your branches with their warehouse and opening hours. Retail Website Ordering adds the storefront: a store picker, the catalogue by category with photos and prices, live stock per branch, a picker for size, colour and quantity, and a cart with pickup or delivery.',
-      'This is early access. Checkout and posting the order into the branch POS are being built next, so the demo stops at the cart. Talk to us if you want to be one of the first stores on it.',
+      'At checkout the customer pays on collection or by card through any payment provider you enable. The order lands on an online orders board for that branch: accept it and it becomes a POS order in the open session, mark it ready or out for delivery, and done takes the payment and moves the stock. Stock in open orders is held, and the customer gets an email and a live status page.',
     ],
     modules: [
       { key: 'w4-retail-base', role: 'Branches with their warehouse and opening hours.' },
-      { key: 'w4-retail-website', role: 'Storefront with store picker, live stock per branch, variants and a cart.' },
+      { key: 'w4-retail-website', role: 'Storefront with store picker, live stock per branch, variants, cart, checkout and orders into the branch POS.' },
     ],
     highlights: [
       { title: 'Stock per branch', body: 'The customer sees the stock of the branch they picked, and sold out items cannot be added.' },
       { title: 'Multi-branch', body: 'Each branch has its own warehouse and hours, and the customer can switch branch at any time.' },
-      { title: 'Odoo 20', body: 'Built for Odoo 20 from the start.' },
+      { title: 'Straight into the POS', body: 'Each online order becomes a POS order in that branch, so stock and takings stay in one place.' },
+      { title: 'Live order status', body: 'The customer follows the order from received to ready or out for delivery, with a confirmation email.' },
     ],
-    demos: [{ label: 'Retail storefront', url: 'https://retail-demo.way4tech.com/shop/order', note: 'Two branches, open to anyone, no login needed.' }],
+    demos: [{ label: 'Retail storefront', url: 'https://retail-demo.way4tech.com/shop/order', note: 'Two branches, open to anyone, no login needed. Try a pickup order end to end.' }],
     guides: [],
     shots: [
       shot('/suites/retail/storefront.webp', 'Retail storefront with a store picker, featured products with photos and a pickup or delivery choice', 'The storefront on a desktop.'),
@@ -235,7 +236,8 @@ export const SUITES: Suite[] = [
     ],
     related: [{ label: 'Odoo for retail stores', href: '/solutions/retail-stores/' }],
     faqs: [
-      { q: 'Can customers pay online yet?', a: 'Not yet. Checkout is the next release. Today the storefront shows live stock per branch and builds the cart.' },
+      { q: 'Can customers pay online?', a: 'Yes, by card through any payment provider enabled in Odoo, or they pay on collection or on delivery.' },
+      { q: 'How do staff see the orders?', a: 'On an online orders board per branch. Accepting an order sends it to the open POS session of that branch.' },
       { q: 'Will it run on Odoo 19?', a: 'It is built for Odoo 20 only.' },
     ],
     solution: 'retail-stores',
@@ -262,6 +264,7 @@ export const SUITES: Suite[] = [
       { title: 'Authority before work', body: 'The customer approves an amount. Work cannot start on a job card worth more than they signed for.' },
       { title: 'Inspections that sell', body: 'Red and amber items carry the operation and its price, and accepted items become labour lines in one click.' },
       { title: 'Labour recovery', body: 'Sold hours against clocked hours per technician, per job and per operation.' },
+      { title: 'Photos on the job', body: 'The vehicle on arrival, existing damage, the fault and before and after shots, kept on the job card and the vehicle history.' },
       { title: 'Claims desk', body: 'Insurance and warranty claims with the insurer share, excess and approvals, in the Enterprise add-on.' },
     ],
     demos: [{ label: 'Garage demo', url: 'https://garage-guide.way4tech.com/', note: 'Sample workshop Falcon Auto Works, base plus Enterprise.' }],
@@ -333,7 +336,7 @@ export const SUITES: Suite[] = [
       'A "what is moving" wall shows hot products from recent sales. The module is built on Odoo eCommerce and is not on the Odoo Apps Store yet; ask us for it.',
     ],
     modules: [],
-    offer: { name: 'Auto Parts Wholesale and Dealer Portal', note: 'Odoo 19. Not on the Apps Store yet: price and installation on request.' },
+    offer: { name: 'Auto Parts Wholesale and Dealer Portal', note: 'Odoo 19 and Odoo 20. Price and installation on request.' },
     highlights: [
       { title: 'Trade only', body: 'Only approved dealers and staff see prices and reach the shop.' },
       { title: 'Vehicle fitment', body: 'Find parts by make and model, with fitment held on each product.' },
@@ -351,7 +354,7 @@ export const SUITES: Suite[] = [
     ],
     faqs: [
       { q: 'Can the public see our prices?', a: 'No. Visitors see the dealer landing page. Prices and the shop open only for approved dealers and staff.' },
-      { q: 'Is it on the Odoo Apps Store?', a: 'Not yet. Ask us and we will install it on your Odoo 19 database.' },
+      { q: 'Is it on the Odoo Apps Store?', a: 'Not yet. Ask us and we will install it on your Odoo 19 or Odoo 20 database.' },
     ],
   },
   {
@@ -686,6 +689,7 @@ export const SUITES: Suite[] = [
     modules: [
       { key: 'wt-project-pro', role: 'Boards with custom columns, My Day, approvals, automations, tickets with SLA, timers and notifications.' },
       { key: 'wt-gantt-view', role: 'Gantt chart with four dependency types, cascade rescheduling, critical path and resource conflicts.' },
+      { key: 'wt-project-pro-timesheet', role: 'A week timesheet for Project Pro, a Time tab on every ticket and task, and a Time Report by person, project and item.' },
       { key: 'wt-grid-view', role: 'Timesheet grid by day, week or month with editable totals, period locks and a copy wizard.' },
       { key: 'wt-map-view', role: 'Any model on a map, with geocoding and route planning.' },
       { key: 'wt-project-dashboard', role: 'Ten KPI cards, task status, workload by assignee and overdue tasks.' },
@@ -698,7 +702,7 @@ export const SUITES: Suite[] = [
     highlights: [
       { title: 'Boards people use', body: 'Colour statuses, custom columns and a My Day page, on Odoo Community.' },
       { title: 'Approvals and automations', body: 'Real approval steps on items, and automations such as nudging the assignee on overdue work.' },
-      { title: 'Timesheets on a grid', body: 'A week of hours in one grid, with a rolling daily close so past periods stay locked.' },
+      { title: 'Timesheets and a time report', body: 'A week of hours in one grid, notes with bullet lists, time off kept apart, and a report of hours by person, project and ticket that opens the item in a click.' },
       { title: 'Tracking without spying', body: 'Work Tracker records which application and window, never keystrokes or what is on the screen.' },
     ],
     demos: [

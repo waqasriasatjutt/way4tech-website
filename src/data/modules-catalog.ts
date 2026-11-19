@@ -258,12 +258,12 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Sales/Point of Sale",
   "suite": "Restaurant",
-  "version": "19.0.1.1.0",
+  "version": "19.0.1.1.1",
   "versions": [
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.1.0",
+  "latestVersion": "20.0.1.1.1",
   "price": 199.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/w4_resto_delivery/",
@@ -794,38 +794,55 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
  "w4-resto-website": {
   "technical": "w4_resto_website",
   "name": "Restaurant Website Ordering",
-  "summary": "A food-app ordering experience on your own Odoo website: a live menu with photos, an item customiser for sizes, flavours, ingredients and extras, a cart and a checkout for takeaway or delivery. Every order lands on a native Website channel in the same Online Orders inbox as your aggregators, flows into the branch POS session and prints in the kitchen.",
+  "summary": "A food-app ordering experience on your own Odoo website: a live menu with photos, an item customiser, a cart and a checkout for pickup or delivery with delivery areas, tips, time slots and card payment. Every order lands in the same Online Orders inbox as your aggregators, flows into the branch POS and the kitchen, and the customer tracks the rider on a live map.",
   "intro": [],
   "sections": [
    {
-    "heading": "A real food ordering experience",
+    "heading": "The menu",
     "bullets": [
-     "A menu by category with photos, prices, dietary badges and allergens",
-     "An item customiser the way a food app does it: pick a size or a flavour, pick one sauce, add any extras, each with its price added live",
-     "Required and optional choices are enforced, minimum and maximum per group",
-     "A cart you can edit, a clear total, takeaway or delivery, a note to the kitchen",
-     "Items that are 86'd at the branch show as sold out and cannot be ordered"
+     "A landing page with a rotating offer carousel and the most popular dishes",
+     "A branch picker and a store locator with a map, opening hours and \"find my nearest\"",
+     "A menu by category with photos, prices, dietary badges and allergens, a sticky category bar, search and dietary filter chips",
+     "An item customiser the way a food app does it: sizes, flavours, sauces and extras, each with its price added live, with required and optional choices and a minimum and maximum per group; combo meals",
+     "Items that are 86'd at the branch show as sold out and cannot be ordered",
+     "A Popular row from the real best sellers of the last 30 days",
+     "An announcement bar, a welcome popup with a promo code and a short splash video per branch"
+    ]
+   },
+   {
+    "heading": "Basket and checkout",
+    "bullets": [
+     "Pickup or delivery asked up front, curbside pickup with the car details and an \"I am here\" button",
+     "Delivery areas with a fee, a minimum order and an ETA per area; \"Use my location\" finds the area from the phone GPS and fills in the address",
+     "Free delivery over an amount, with a progress bar in the basket",
+     "\"Complete your order\" suggestions, promo codes and a first order discount",
+     "Tip presets or a custom tip, tax shown the way the till computes it, service, bag and small order fees",
+     "ASAP or a time slot, from the branch opening hours, lead time, cut-off, holidays and a cap on orders per slot",
+     "Cash on delivery or at the counter, or a card through any Odoo payment provider you enable",
+     "Remembered details and a one tap reorder of past orders, an email receipt"
     ]
    },
    {
     "heading": "Straight into the back office",
     "bullets": [
      "A native Website channel sits beside your aggregator channels in Online Orders",
-     "Orders arrive as new, the restaurant accepts them from the inbox or the register",
      "On acceptance the order becomes a draft in the branch POS session, priced and taxed by Odoo, and a kitchen ticket is raised where the KDS is installed",
-     "The chosen options travel with every line, so the kitchen reads exactly what the customer built",
-     "The customer follows the order on a live status page: received, accepted, preparing, ready"
+     "The chosen options travel with every line, so the kitchen reads exactly what the customer built; the driver note stays apart from the kitchen note",
+     "Orders for later are held out of the kitchen and sent automatically when it is time to cook them; a Scheduled Orders list shows what is coming",
+     "Orders not accepted in time are cancelled automatically so no customer waits on a forgotten order",
+     "A phone blocklist, a per phone hourly cap, a maximum order value and a daily reconciliation of website orders",
+     "Branch settings changes are tracked in the chatter"
     ]
    }
   ],
   "category": "Sales/Point of Sale",
   "suite": "Restaurant",
-  "version": "20.0.1.0.0",
+  "version": "19.0.1.20.0",
   "versions": [
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
-  "price": 169.0,
+  "latestVersion": "20.0.1.1.0",
+  "price": 199.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/20.0/w4_resto_website/",
   "storeUrls": {
@@ -858,11 +875,11 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Sales/Point of Sale",
   "suite": "Retail",
-  "version": "20.0.1.0.0",
+  "version": "20.0.1.1.0",
   "versions": [
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.1.0",
   "price": null,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/20.0/w4_retail_base/",
@@ -874,7 +891,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
  "w4-retail-website": {
   "technical": "w4_retail_website",
   "name": "Retail Website Ordering",
-  "summary": "A shopping storefront on your own Odoo website: browse a store by category with photos, live stock and variants, build a basket and order for pickup or delivery. Multi-branch: the customer picks a store and the order is pinned to that store, its stock and its POS. Built on the Retail Stores base.",
+  "summary": "A shopping storefront on your own Odoo website: browse a store by category with photos, live stock and variants, check out for pickup or delivery, pay on collection or by card, and the order lands in the POS of that store. The customer follows it on a live status page. Multi-branch, built on the Retail Stores base.",
   "intro": [],
   "sections": [
    {
@@ -883,17 +900,29 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
      "A catalog by category with photos, prices and live stock",
      "A product picker for size, colour and quantity, priced live",
      "A basket you can edit, with a clear total, pickup or delivery",
-     "Out-of-stock items show as sold out and cannot be over-ordered"
+     "Out-of-stock items show as sold out and cannot be over-ordered",
+     "A checkout with name, phone, email, pickup or delivery address and notes",
+     "Pay at pickup or on delivery, or by card with any payment provider you enable",
+     "Stock is checked again as the order is placed; a sold-out item is taken out of the basket with a clear message"
+    ]
+   },
+   {
+    "heading": "Straight into the store's POS",
+    "bullets": [
+     "Every order arrives in an Online orders board per store: accept, mark ready for pickup or out for delivery, then done",
+     "Accepting sends a draft order to the store's open POS session; done takes the payment and validates it, so the stock leaves that store's warehouse",
+     "Stock in open orders is held, so two shoppers never buy the same last item",
+     "The customer gets a confirmation email and follows the order on a live status page: received, accepted, ready or out for delivery, done"
     ]
    }
   ],
   "category": "Sales/Point of Sale",
   "suite": "Retail",
-  "version": "20.0.1.1.0",
+  "version": "20.0.1.2.0",
   "versions": [
    "20.0"
   ],
-  "latestVersion": "20.0.1.1.0",
+  "latestVersion": "20.0.1.2.0",
   "price": 189.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/20.0/w4_retail_website/",
@@ -976,12 +1005,12 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Services/Automotive",
   "suite": "Garage and Automotive",
-  "version": "19.0.1.1.3",
+  "version": "19.0.1.1.4",
   "versions": [
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.1.3",
+  "latestVersion": "20.0.1.1.4",
   "price": 99.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/w4t_garage_enterprise/",
@@ -1005,7 +1034,8 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
      "Estimate, customer approval, work in progress, quality check, ready, invoiced. Nothing skips a step and the illegal moves are refused with a message that says what to do instead",
      "The customer authorises an amount, not just a job. Work cannot start on a job card worth more than the figure they signed for, so the awkward call happens before the spanner comes out, not after",
      "A printed job card with the authorisation wording and a signature box, which is what you hand across the counter before the vehicle goes on the ramp",
-     "Complaint, diagnosis and work done kept as three separate pieces of text, because that is how a warranty claim and a comeback are argued"
+     "Complaint, diagnosis and work done kept as three separate pieces of text, because that is how a warranty claim and a comeback are argued",
+     "Photos on the job card: the vehicle on arrival, existing damage, the fault, before and after, the part that failed. Taken on a phone, kept against the job and the vehicle, so what you found can always be shown"
     ]
    },
    {
@@ -1089,12 +1119,12 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Services/Automotive",
   "suite": "Garage and Automotive",
-  "version": "19.0.1.1.4",
+  "version": "19.0.1.1.6",
   "versions": [
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.1.3",
+  "latestVersion": "20.0.1.1.4",
   "price": 199.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/w4t_garage_management/",
@@ -1389,7 +1419,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 249.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_agriculture_farm/",
@@ -1557,7 +1587,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.0.1",
   "price": 89.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_approval_workflow/",
@@ -2168,7 +2198,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 1299.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_carwash_management/",
@@ -2740,7 +2770,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.0.1",
   "price": 1299.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_dental_management/",
@@ -3941,12 +3971,12 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Services/Fitness",
   "suite": "Industry Apps",
-  "version": "19.0.2.0.0",
+  "version": "19.0.2.0.1",
   "versions": [
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.2.0.0",
   "price": 249.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_gym_management/",
@@ -4434,7 +4464,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.4.0.4",
+  "latestVersion": "20.0.4.0.5",
   "price": 30.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_hrms_appraisal/",
@@ -6352,12 +6382,12 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   ],
   "category": "Services/Jewellery",
   "suite": "Jewelry",
-  "version": "19.0.1.0.0",
+  "version": "19.0.1.0.2",
   "versions": [
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.0.2",
   "price": 299.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_jewelry_management/",
@@ -7504,7 +7534,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.0.1",
   "price": 49.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_pos_table_reservation/",
@@ -7755,6 +7785,37 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
   "storeUrls": {
    "19.0": "https://apps.odoo.com/apps/modules/19.0/wt_project_pro/",
    "20.0": "https://apps.odoo.com/apps/modules/20.0/wt_project_pro/"
+  },
+  "published": true
+ },
+ "wt-project-pro-timesheet": {
+  "technical": "wt_project_pro_timesheet",
+  "name": "Project Pro Timesheets",
+  "summary": "Bridge between Project Pro and Timesheets: see and edit the time logged on every item and ticket, multi line notes, and a Time Report by person, project, ticket and task with one click to the item.",
+  "intro": [
+   "Installs by itself when Project Pro and Timesheets are both present."
+  ],
+  "sections": [
+   {
+    "heading": "Rights stay as Odoo sets them",
+    "bullets": [
+     "A user with own timesheets sees and edits their own hours",
+     "A timesheet approver sees the team and can fill a week for someone else"
+    ]
+   }
+  ],
+  "category": "Services/Project",
+  "suite": "Project and Work Tracker",
+  "version": "19.0.1.3.0",
+  "versions": [
+   "20.0"
+  ],
+  "latestVersion": "20.0.1.3.0",
+  "price": null,
+  "currency": "USD",
+  "storeUrl": "https://apps.odoo.com/apps/modules/20.0/wt_project_pro_timesheet/",
+  "storeUrls": {
+   "20.0": "https://apps.odoo.com/apps/modules/20.0/wt_project_pro_timesheet/"
   },
   "published": true
  },
@@ -8438,7 +8499,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.0.1",
   "price": 99.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_rental_website/",
@@ -9347,7 +9408,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.0",
+  "latestVersion": "20.0.1.0.1",
   "price": 349.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/19.0/wt_solar_epc/",
@@ -9514,7 +9575,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_clinic/",
@@ -9551,7 +9612,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_construction/",
@@ -9588,7 +9649,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_consulting/",
@@ -9625,7 +9686,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_ecommerce/",
@@ -9662,7 +9723,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_education/",
@@ -9699,7 +9760,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_event/",
@@ -9736,7 +9797,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_fashion/",
@@ -9773,7 +9834,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_gym/",
@@ -9810,7 +9871,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_hotel/",
@@ -9847,7 +9908,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_lawfirm/",
@@ -9884,7 +9945,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_ngo/",
@@ -9921,7 +9982,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_photography/",
@@ -9995,7 +10056,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_restaurant/",
@@ -10032,7 +10093,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_saas/",
@@ -10083,7 +10144,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.1.0",
+  "latestVersion": "20.0.1.1.1",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_salon/",
@@ -10120,7 +10181,7 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
    "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.0.1",
+  "latestVersion": "20.0.1.0.2",
   "price": 39.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/themes/19.0/wt_theme_travel/",

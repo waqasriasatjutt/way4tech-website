@@ -56,7 +56,7 @@ export const DEMO_GROUPS: DemoGroup[] = [
       { name: 'Restaurant Suite', host: 'restro.way4tech.com', tag: 'Restaurant', line: 'Multi-branch restaurant POS, KDS, delivery, call centre and reports, with website orders landing in the same inbox.', cred: 'std' },
       { name: 'Restaurant Online Ordering', host: 'restro.way4tech.com', path: 'order', tag: 'Restaurant', line: 'The customer side: menu, item options, cart, tips, delivery zones, card or cash payment and a live order tracker with the rider on a map.', cred: 'open' },
       { name: 'Real Estate Property Portal', host: 'property-demo.way4tech.com', tag: 'Property', line: 'Property search with map and filters, projects, agents, saved searches and post-your-property, plus developer sales with towers, units and payment plans.', cred: 'std' },
-      { name: 'Retail Online Ordering (early access)', host: 'retail-demo.way4tech.com', path: 'shop/order', tag: 'Retail', line: 'Odoo 20 storefront with a store picker, live stock per branch, variants and a cart. Checkout is still being built.', cred: 'open' },
+      { name: 'Retail Online Ordering', host: 'retail-demo.way4tech.com', path: 'shop/order', tag: 'Retail', line: 'Odoo 20 storefront with a store picker, live stock per branch, variants, checkout for pickup or delivery and orders into the branch POS.', cred: 'open' },
       { name: 'Construction Cloud', host: 'construction-cloud.way4tech.com', tag: 'Construction', line: 'Hosted construction management: estimating and tenders, BoQ and billing, contracts and claims, site diary, quality, HSE and role dashboards.', cred: 'std' },
       { name: 'Freight / Logistics', host: 'freight-demo.way4tech.com', tag: 'Logistics', line: 'Freight operations on Odoo 20.', cred: 'std' },
     ],

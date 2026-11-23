@@ -299,12 +299,15 @@ export const SUITES: Suite[] = [
     intro: [
       'Labour Camp Management keeps camps, blocks, rooms and beds, and allocates workers to beds with check-in and check-out. It watches visa, ID and permit expiry, records inspections, complaints, incidents and gate entries, and tracks meals, bus runs and utilities.',
       'At month end it works out what each contractor owes for its men from the agreement rates and raises the invoices. It runs on Odoo 19 and Odoo 20.',
+      'Camp operators in the Gulf are inspected on exactly what this records: how many men to a room, when each man\'s visa runs out, whether the mess and the water were checked, and what each contractor was charged for the beds his men used. The record is built as the work happens rather than assembled for the inspector afterwards.',
     ],
     modules: [{ key: 'wt-labour-camp', role: 'Camps, rooms and beds, allocation, papers, inspections, complaints, mess, buses and contractor billing.' }],
     highlights: [
       { title: 'Bed by bed', body: 'Occupancy per camp, room and bed, with reservations and rooms under maintenance kept out of allocation.' },
       { title: 'Papers falling due', body: 'Visa, ID and permit expiry dates in one list, so nobody is found expired at the gate.' },
       { title: 'Contractor billing', body: 'Monthly charges per contractor from the agreement, ready to invoice.' },
+      { title: 'Gate and inspection log', body: 'Gate entries, inspections, incidents and complaints are recorded against the camp and the room they concern.' },
+      { title: 'Mess, buses and utilities', body: 'Meals served, bus runs and utility readings are kept per camp, so the real cost per man is known.' },
     ],
     demos: [{ label: 'Labour camp demo', url: 'https://labourcamp-demo.way4tech.com/', note: 'Two camps, 171 beds, sample company Desert Star Accommodation.' }],
     guides: [
@@ -317,9 +320,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-labour-camp-management/camp-board.webp', 'Labour camp board with occupancy by camp and room', 'The camp board.', 1440, 900),
     ],
+    related: [
+      { label: 'Labour camp management guide', href: '/odoo-guides/odoo-labour-camp-management/' },
+      { label: 'Facility management and CAFM', href: '/suites/facility-management/' },
+      { label: 'HR and payroll', href: '/suites/hr-payroll/' },
+    ],
     faqs: [
       { q: 'Does it handle more than one camp?', a: 'Yes. Each camp has its own blocks, rooms and beds, and the board shows occupancy across all of them.' },
       { q: 'Can contractors be billed for their workers?', a: 'Yes. The agreement sets the rate per bed or per head, and the monthly charges are worked out from who actually stayed.' },
+      { q: 'How many camps and beds can it hold?', a: 'There is no limit in the module. The demo runs two camps and 171 beds, and occupancy is reported per camp, per room and per bed.' },
+      { q: 'Does it warn before a visa expires?', a: 'Visa, ID and permit expiry dates sit in one list that can be filtered and sorted, so the papers falling due next are visible well before the date passes.' },
+      { q: 'Can different contractors be charged different rates?', a: 'Yes. The rate sits on the agreement with each contractor, per bed or per head, and the month end charge is worked out from who actually stayed.' },
+      { q: 'Does it suit staff accommodation as well as labour camps?', a: 'Yes. Camps, blocks, rooms and beds are generic, so worker accommodation and staff housing use the same structure.' },
+      { q: 'Which countries is it built around?', a: 'The expiry and permit tracking follows the documents used in the UAE, Saudi Arabia and Qatar. Nothing in the module is tied to a single country.' },
     ],
   },
   {
@@ -334,6 +347,7 @@ export const SUITES: Suite[] = [
     intro: [
       'The public sees a dealer landing page and no prices. Approved dealers reach the shop, filter by make and model, search by OEM or cross-reference number, and buy at their own price list, in pack quantities with a minimum order.',
       'A "what is moving" wall shows hot products from recent sales. The module is built on Odoo eCommerce and is not on the Odoo Apps Store yet; ask us for it.',
+      'Parts wholesalers lose orders at the moment a buyer cannot tell whether a part fits. Fitment held on the product, with OEM and cross-reference numbers searchable beside it, means the dealer answers that question himself at midnight instead of phoning the branch in the morning.',
     ],
     modules: [],
     offer: { name: 'Auto Parts Wholesale and Dealer Portal', note: 'Odoo 19 and Odoo 20. Price and installation on request.' },
@@ -342,6 +356,8 @@ export const SUITES: Suite[] = [
       { title: 'Vehicle fitment', body: 'Find parts by make and model, with fitment held on each product.' },
       { title: 'Part number search', body: 'Search by OEM number and by cross-reference numbers from other brands.' },
       { title: 'Dealer pricing and packs', body: 'A price list per dealer tier, pack quantities and minimum order, rounded up on the order.' },
+      { title: 'One click reorder', body: 'A dealer repeats a previous order without searching for the parts again.' },
+      { title: 'What is moving', body: 'A wall of hot products built from recent sales, so trade buyers see what other dealers are taking.' },
     ],
     demos: [{ label: 'Auto parts dealer portal', url: 'https://autoparts-demo.way4tech.com/', note: 'Sample wholesaler with a dealer login on the demos page.' }],
     guides: [
@@ -352,9 +368,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-auto-parts-wholesale/trade-shop.webp', 'Trade shop for approved dealers with vehicle fitment search and part cards', 'The trade shop an approved dealer sees.', 1440, 900),
     ],
+    related: [
+      { label: 'Auto parts wholesale guide', href: '/odoo-guides/odoo-auto-parts-wholesale/' },
+      { label: 'Garage and workshop', href: '/suites/garage/' },
+      { label: 'Distribution and van sales', href: '/suites/distribution/' },
+    ],
     faqs: [
       { q: 'Can the public see our prices?', a: 'No. Visitors see the dealer landing page. Prices and the shop open only for approved dealers and staff.' },
       { q: 'Is it on the Odoo Apps Store?', a: 'Not yet. Ask us and we will install it on your Odoo 19 or Odoo 20 database.' },
+      { q: 'Do dealers see different prices?', a: 'Yes. Each dealer sits on a price list tier and sees only its own prices once logged in.' },
+      { q: 'Does it enforce pack quantities?', a: 'Yes. A part sold in packs is rounded up to the pack on the order, and a minimum order value can be set.' },
+      { q: 'Can a dealer search by vehicle?', a: 'Yes. The trade shop filters by make and model, and fitment is held on each product.' },
+      { q: 'What if the dealer only has another brand\'s part number?', a: 'Cross-reference numbers are searchable alongside the OEM number, so a competitor\'s number finds your part.' },
+      { q: 'Does it need Odoo eCommerce?', a: 'Yes. It is built on Odoo eCommerce and the website, on Odoo 19 or Odoo 20.' },
     ],
   },
   {
@@ -826,6 +852,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Hotel Management PMS holds room types and rooms, takes reservations with an availability check, runs check-in and check-out, and bills the stay on a folio. The housekeeping board shows the status of every room and raises the cleaning tasks, and the occupancy dashboard shows the house at a glance.',
       'The Hotel and Resort website theme gives the public site with room types, amenities and a booking call to action.',
+      'Front desk work is the real test: whether the clerk can see what is free tonight, put a guest into it, and hand over a bill at check-out without opening three different screens. Rooms, reservations, the folio and housekeeping sit together for that reason.',
     ],
     modules: [
       { key: 'wt-hotel-management', role: 'Rooms, reservations with availability, check-in and out, folio billing, housekeeping and occupancy.' },
@@ -835,6 +862,8 @@ export const SUITES: Suite[] = [
       { title: 'No overbooking', body: 'Reservations are checked against the rooms free for the dates.' },
       { title: 'One folio per stay', body: 'Room nights and extras go on the folio and become the guest invoice at check-out.' },
       { title: 'Housekeeping board', body: 'Room status by available, occupied, reserved and out of order, with cleaning tasks raised for the team.' },
+      { title: 'Occupancy at a glance', body: 'The occupancy dashboard shows the house, and the room board shows every room as available, occupied, reserved or out of order.' },
+      { title: 'Public site included', body: 'The Hotel and Resort theme publishes room types, amenities and a booking call to action on your own website.' },
     ],
     demos: [{ label: 'Hotel demo', url: 'https://hotel.way4tech.com/', note: 'Rooms, reservations and front desk.' }],
     guides: [
@@ -846,9 +875,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-hotel-management/room-board.webp', 'Hotel room board in Odoo grouped by available, occupied, out of order and reserved', 'The room board.', 1440, 900),
     ],
+    related: [
+      { label: 'Hotel management guide', href: '/odoo-guides/odoo-hotel-management/' },
+      { label: 'Reservations and front desk', href: '/odoo-guides/odoo-hotel-reservations-front-desk/' },
+      { label: 'Travel agency software', href: '/suites/travel-agency/' },
+    ],
     faqs: [
       { q: 'What does it need?', a: 'Only Invoicing and Discuss. It runs on Odoo 19 and Odoo 20 Community.' },
       { q: 'Who works in it?', a: 'Reception, housekeeping and managers each have their own role, and record rules keep the data of each company apart.' },
+      { q: 'Does it stop double bookings?', a: 'Yes. A reservation is checked against the rooms actually free for those dates before it can be taken.' },
+      { q: 'Can housekeeping be run from it?', a: 'Yes. The housekeeping board carries the status of every room and raises the cleaning tasks for the team.' },
+      { q: 'What goes on the guest folio?', a: 'Room nights and extras are posted to the folio for the stay, and the folio becomes the guest invoice at check-out.' },
+      { q: 'Can guests book from the website?', a: 'The theme publishes room types and a booking call to action, so enquiries reach you and the reservation is then taken in Odoo.' },
+      { q: 'Does it suit guest houses and resorts as well as hotels?', a: 'Yes. Room types and rooms are defined by you, so a small guest house and a resort use the same structure.' },
     ],
     solution: 'hotel-hospitality',
   },
@@ -903,6 +942,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Travel Agency Management keeps a booking file per trip with the PNR, passengers, passport and visa checks, and flight, hotel, transfer and cruise segments. Markup and commission are worked out per segment, tours run as fixed departures, and deposits and cancellations are handled on the file.',
       'The Travel and Tour website theme gives the public site with destinations, tour packages and a booking call to action.',
+      'The booking file is the unit of work. An enquiry becomes a quote, the quote becomes a confirmed file, and the file carries the passengers, the segments, the supplier costs and the margin through to the invoice. Nobody rebuilds the trip in a spreadsheet afterwards to find out what it earned.',
     ],
     modules: [
       { key: 'wt-travel-agency', role: 'Booking files with PNR, passport and visa checks, segments, markup, commission and fixed departures.' },
@@ -912,6 +952,8 @@ export const SUITES: Suite[] = [
       { title: 'One file per trip', body: 'Passengers, segments, payments and documents on one booking file.' },
       { title: 'Papers checked', body: 'A file will not confirm while a traveller\'s passport expires within six months of departure, and visa checklists come from the country rule.' },
       { title: 'Margin per consultant', body: 'Markup and commission per segment, and margin by consultant.' },
+      { title: 'Fixed departures', body: 'Tour packages are sold as dated departures with seats, so one itinerary is sold many times without being re-entered.' },
+      { title: 'Deposits and cancellations', body: 'Part payments, refunds and cancellation are handled on the booking file rather than as loose invoices.' },
     ],
     demos: [{ label: 'Travel agency demo', url: 'https://travel-demo.way4tech.com/', note: 'Bookings, itineraries and travel invoicing.' }],
     guides: [
@@ -925,9 +967,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-travel-agency-management/booking-board.webp', 'Travel booking files in Odoo grouped by enquiry, quoted, confirmed and ticketed', 'Booking files by status.', 1440, 900),
     ],
+    related: [
+      { label: 'Travel agency management guide', href: '/odoo-guides/odoo-travel-agency-management/' },
+      { label: 'Visa application tracking', href: '/odoo-guides/odoo-visa-application-tracking/' },
+      { label: 'Hotel management PMS', href: '/suites/hotel/' },
+    ],
     faqs: [
       { q: 'What does it need?', a: 'The Invoicing app, on Odoo 19 or Odoo 20, Community or Enterprise.' },
       { q: 'Can the passport rule be changed?', a: 'Yes. Six months is the default and it is a setting, because some destinations want three months and some want none.' },
+      { q: 'Does one file hold flights, hotels and transfers together?', a: 'Yes. Flight, hotel, transfer and cruise segments all sit on the same booking file, each with its own cost and markup.' },
+      { q: 'How is commission worked out?', a: 'Markup and commission are set per segment, and margin is reported by consultant.' },
+      { q: 'Can it track visa applications?', a: 'Yes. Visa checklists come from the country rule for the destination, and applications are tracked against the traveller.' },
+      { q: 'Is it for agencies or for tour operators?', a: 'Both. Agencies sell booking files, operators sell fixed departures, and the same module covers the two.' },
+      { q: 'How are deposits and margin scheme VAT handled?', a: 'Deposits and refunds are posted against the booking file. The deposits and cancellations guide walks through how the margin scheme is applied.' },
     ],
     solution: 'travel-agency',
   },

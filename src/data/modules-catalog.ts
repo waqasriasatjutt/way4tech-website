@@ -794,58 +794,65 @@ export const MODULE_CATALOG: Record<string, StoreModule> = {
  "w4-resto-website": {
   "technical": "w4_resto_website",
   "name": "Restaurant Website Ordering",
-  "summary": "A food-app ordering experience on your own Odoo website: a live menu with photos, an item customiser, a cart and a checkout for pickup or delivery with delivery areas, tips, time slots and card payment. Every order lands in the same Online Orders inbox as your aggregators, flows into the branch POS and the kitchen, and the customer tracks the rider on a live map.",
+  "summary": "A complete commission-free ordering site on your own Odoo website: menu, item customiser, pickup, delivery and dine-in by table QR, card payment through any Odoo provider, loyalty points and gift cards, live order tracking, texts and phone notifications. Every order lands in the same Online Orders inbox as your aggregators and flows into the POS and kitchen. In English and French.",
   "intro": [],
   "sections": [
    {
     "heading": "The menu",
     "bullets": [
-     "A landing page with a rotating offer carousel and the most popular dishes",
+     "A landing page with a rotating offer carousel (A/B tested) and the real best sellers",
      "A branch picker and a store locator with a map, opening hours and \"find my nearest\"",
-     "A menu by category with photos, prices, dietary badges and allergens, a sticky category bar, search and dietary filter chips",
-     "An item customiser the way a food app does it: sizes, flavours, sauces and extras, each with its price added live, with required and optional choices and a minimum and maximum per group; combo meals",
-     "Items that are 86'd at the branch show as sold out and cannot be ordered",
-     "A Popular row from the real best sellers of the last 30 days",
-     "An announcement bar, a welcome popup with a promo code and a short splash video per branch"
+     "A menu by category with photos, prices, dietary badges, allergens and calories, search across names, descriptions and tags, and dietary filter chips",
+     "An item customiser the way a food app does it: sizes, flavours, sauces and extras with live prices, required and optional choices, choices that open more choices up to three levels, \"first N included free\" and pre-ticked choices",
+     "Half-and-half items, combo meals and a \"make it a meal\" offer",
+     "Items that are 86'd show as sold out; age-restricted items ask for an age check",
+     "\"Often ordered together\" suggestions from your own sales, favourites, a welcome popup and a splash video"
     ]
    },
    {
     "heading": "Basket and checkout",
     "bullets": [
-     "Pickup or delivery asked up front, curbside pickup with the car details and an \"I am here\" button",
-     "Delivery areas with a fee, a minimum order and an ETA per area; \"Use my location\" finds the area from the phone GPS and fills in the address",
-     "Free delivery over an amount, with a progress bar in the basket",
-     "\"Complete your order\" suggestions, promo codes and a first order discount",
-     "Tip presets or a custom tip, tax shown the way the till computes it, service, bag and small order fees",
-     "ASAP or a time slot, from the branch opening hours, lead time, cut-off, holidays and a cap on orders per slot",
-     "Cash on delivery or at the counter, or a card through any Odoo payment provider you enable",
-     "Remembered details and a one tap reorder of past orders, an email receipt"
+     "Pickup, curbside, delivery, or dine-in by scanning the QR code on the table",
+     "Delivery areas with a fee, minimum and ETA; \"Use my location\" and address suggestions; another branch offered when the address is out of range",
+     "Tips, tax as the till computes it, service, bag and small order fees, an allergy note printed in capitals for the kitchen",
+     "ASAP or a time slot with lead time, cut-off, holidays, orders per slot, kitchen load per slot and a busy mode",
+     "Promo codes with days, hours and order-ahead rules, referral codes, loyalty points after a one-time phone code, eWallet and gift cards, which can also be bought online",
+     "Card payment through Odoo's payment page with any provider you enable (Stripe brings Apple Pay and Google Pay); the kitchen sees a card order only once it is paid; saved cards for verified customers"
+    ]
+   },
+   {
+    "heading": "After the order",
+    "bullets": [
+     "A live status page that updates instantly, with the rider or a DoorDash or Uber courier on a map",
+     "Texts and phone notifications, a message box to the restaurant, a rating, the pickup shelf and the rider's delivery photo",
+     "Customers cancel or move an order while it is allowed; card payments are refunded through the gateway",
+     "My orders: history, one tap reorder, favourites, weekly repeat orders, referral code, and the customer's data to download or erase"
     ]
    },
    {
     "heading": "Straight into the back office",
     "bullets": [
-     "A native Website channel sits beside your aggregator channels in Online Orders",
-     "On acceptance the order becomes a draft in the branch POS session, priced and taxed by Odoo, and a kitchen ticket is raised where the KDS is installed",
-     "The chosen options travel with every line, so the kitchen reads exactly what the customer built; the driver note stays apart from the kitchen note",
-     "Orders for later are held out of the kitchen and sent automatically when it is time to cook them; a Scheduled Orders list shows what is coming",
-     "Orders not accepted in time are cancelled automatically so no customer waits on a forgotten order",
-     "A phone blocklist, a per phone hourly cap, a maximum order value and a daily reconciliation of website orders",
-     "Branch settings changes are tracked in the chatter"
+     "A native Website channel beside your aggregator channels in Online Orders; accepted orders become POS orders, on the right table for dine-in, with a kitchen ticket",
+     "Orders for later are held and sent to the kitchen in time; orders not accepted in time are cancelled and refunded, and a manager gets a text",
+     "Manager approval for refunds, cancellations and goodwill discounts; bag labels, kitchen tickets and table QR sheets",
+     "Reports for order timings, tips per rider, promo usage, ratings, referral codes and data requests",
+     "Installable on the phone as an app, English and French, WCAG 2.2 AA, search engine data, GA4 and Meta Pixel events"
     ]
    }
   ],
   "category": "Sales/Point of Sale",
   "suite": "Restaurant",
-  "version": "19.0.1.20.0",
+  "version": "19.0.1.28.1",
   "versions": [
+   "19.0",
    "20.0"
   ],
-  "latestVersion": "20.0.1.1.0",
+  "latestVersion": "20.0.1.2.0",
   "price": 199.0,
   "currency": "USD",
   "storeUrl": "https://apps.odoo.com/apps/modules/20.0/w4_resto_website/",
   "storeUrls": {
+   "19.0": "https://apps.odoo.com/apps/modules/19.0/w4_resto_website/",
    "20.0": "https://apps.odoo.com/apps/modules/20.0/w4_resto_website/"
   },
   "published": true

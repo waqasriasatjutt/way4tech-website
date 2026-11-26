@@ -22,6 +22,8 @@ export interface Suite {
   modules: SuiteModule[];
   /** Offer that is not on the store yet: shown instead of a price. */
   offer?: { name: string; note: string };
+  /** A short "what is new" block under the modules: the newest release first. */
+  whatsNew?: { title: string; intro: string; items: { version: string; title: string; body: string }[]; href?: string };
   highlights: { title: string; body: string }[];
   demos: { label: string; url: string; note: string }[];
   guides: { label: string; href: string }[];
@@ -524,27 +526,42 @@ export const SUITES: Suite[] = [
     name: 'Distribution and Van Sales',
     catalogueSuite: 'Distribution and Van Sales',
     seoTitle: 'Van Sales and Distribution Software for Odoo',
-    description: 'Distribution and van sales for Odoo 19 and 20: an order taker app, a delivery app with proof of delivery, routes and beat plans, van stock, cash collection and an Enterprise add-on with GPS and an offline app.',
+    description: 'Van sales and distribution for Odoo 19 and 20: order taker and delivery apps, van stock, cash collection, and Van Sales Enterprise for Odoo 20 with one price for everything, multi-company, Arabic and industry features.',
     h1: 'Distribution and van sales software on Odoo',
-    lede: 'For distributors and FMCG companies that sell on routes: salesmen take orders at the shop, drivers deliver and collect cash, and managers see it all by route.',
+    lede: 'For distributors and FMCG companies that sell on routes: salesmen take orders at the shop, drivers deliver and collect cash, and managers see it all by route. Van Sales Enterprise for Odoo 20 puts all of it in one module at one price.',
+    badge: 'New: Enterprise 20.0.9 for Odoo 20',
     intro: [
       'Van Sales and Field Sales Management gives you two mobile apps and a back office. The Order Taker app runs the day: routes and stops, check-in at the shop, the catalogue with prices and stock, and an order or a reason for no order. The Delivery app handles full or partial delivery with back orders, a customer signature, cash or bank collection and returns from the field.',
-      'Van Sales adds vans with their own stock location, loading and unloading, and selling straight from the van with delivery, invoice and cash in one step. The Enterprise add-on brings live GPS tracking and route replay, an installable offline app, suggested orders, credit risk bands, route optimisation, promotions and free goods, incentives and a manager cockpit on the phone.',
+      'Van Sales adds vans with their own stock location, loading and unloading, and selling straight from the van with delivery, invoice and cash in one step. Van Sales Enterprise includes both of them and adds one phone app for every role that keeps working without signal, live GPS tracking and route replay, suggested orders, credit risk bands, route order, promotions and free goods, incentives, principals and claims, and a manager cockpit on the phone.',
+      'On Odoo 20, Enterprise is one price with everything included. It runs on Odoo 20 Community, so you do not need Odoo Enterprise. Every setting is per company, the phone app speaks Arabic right to left, and returnable crates, fresh goods with expiry dates, shop equipment and tax receipts with a QR code are built in, each off until you switch it on.',
       'Route selling fails on small things: a salesman who cannot see what the shop already owes, a driver who delivers half a load with nowhere to put the rest, cash that reaches the office a day behind the paperwork. Each of those has somewhere to go here.',
     ],
     modules: [
-      { key: 'wt-sale-distributor', role: 'Order Taker and Delivery apps, routes and beat plans, proof of delivery, cash collection and reports.' },
+      { key: 'wt-sale-distributor-enterprise', role: 'Everything in one module: the base app and Van Sales are included. Offline phone app, GPS tracking, suggested orders, credit control, promotions, principals and claims, multi-company, Arabic and the industry features. The Odoo 20 build is 20.0.9.' },
+      { key: 'wt-sale-distributor', role: 'The base app on its own: Order Taker and Delivery apps, routes and beat plans, proof of delivery, cash collection and reports.' },
       { key: 'wt-sale-distributor-van', role: 'Vans with their own stock, loading and unloading, selling from the van, returns and thermal receipts. Needs the base module and Odoo Fleet.' },
-      { key: 'wt-sale-distributor-enterprise', role: 'GPS tracking and route replay, offline app, suggested orders, credit control, promotions, incentives and a manager cockpit. Needs the base module and Van Sales.' },
+      { key: 'wt-sale-distributor-purchase', role: 'Free bridge between Enterprise and Odoo Purchase: a reorder plan per depot from what you sell, then draft purchase orders per vendor.' },
     ],
+    whatsNew: {
+      title: 'What is new in Van Sales Enterprise for Odoo 20',
+      intro: 'Four releases since 20.0.5, all part of the same module and the same price.',
+      href: '/products/wt-sale-distributor-enterprise/',
+      items: [
+        { version: '20.0.9', title: 'Easy to set up', body: 'A setup assistant (country, logo, products and shops from Excel, routes, staff, vans, receipt printer), a health check with one-click fixes, sign-in on the phone by scanning a QR code, and settings a distribution manager can change without being an administrator. Help on every screen, a "?" on the phone, tips, read aloud, a big confirm button, undo and sounds.' },
+        { version: '20.0.8', title: 'Industry features built in', body: 'Returnable crates and bottles with deposits, fresh goods with expiry dates and oldest first, shop equipment such as fridges with technician checks, and tax receipts with a QR code (for example Saudi ZATCA). Each one is off until you switch it on.' },
+        { version: '20.0.7', title: 'A simpler phone and better visits', body: 'At most six tiles with the next shop on top, a visit plan and a call list for missed shops, push messages, a trust score on each visit, shop surveys, a self-order link for shops, standing orders, product variants, credit risk per company, better offline work and the free purchase bridge.' },
+        { version: '20.0.6', title: 'Many companies and languages', body: 'Every setting per company, regions, a company switch on the phone, eight phone themes with dark mode, and Arabic with a right to left layout.' },
+      ],
+    },
     highlights: [
+      { title: 'One price, all included', body: 'Van Sales Enterprise for Odoo 20 includes the base app and Van Sales. It runs on Odoo 20 Community: no Odoo Enterprise needed.' },
       { title: 'Two apps for the field', body: 'An order taker app for the salesman and a delivery app for the driver, both working from the same routes.' },
       { title: 'Cash on the route', body: 'Collections against today\'s invoices and older dues, and a day summary of the cash to deposit.' },
       { title: 'Van stock', body: 'Each van is a stock location, loaded in the morning and settled at the end of the day.' },
       { title: 'Manager view', body: 'Sales by route and territory, visits, strike rate and pending deliveries on one dashboard.' },
       { title: 'A reason for no order', body: 'A stop that buys nothing is still recorded, with the reason, so strike rate means something.' },
     ],
-    demos: [{ label: 'Distribution and van sales demo', url: 'https://distributor-demo.way4tech.com/', note: 'Salesman routes, orders at the shop, van stock, collections and team tracking.' }],
+    demos: [{ label: 'Distribution and van sales demo', url: 'https://distributor-demo.way4tech.com/', note: 'Van Sales Enterprise on Odoo 20: the phone app, routes, van stock, collections, team tracking and the industry features.' }],
     guides: [
       { label: 'Odoo FMCG distribution management', href: '/odoo-guides/odoo-distribution-management/' },
       { label: 'Van sales and route sales setup', href: '/odoo-guides/odoo-van-sales/' },
@@ -554,20 +571,32 @@ export const SUITES: Suite[] = [
     ],
     pdf: { label: 'Distribution guide (PDF, 65 pages)', href: '/downloads/guides/odoo-distribution-management.pdf' },
     shots: [
+      shot('/suites/distribution/industry-settings.webp', 'Van Sales Enterprise settings in Odoo 20 with the four industry features: returnable containers, expiry dates, shop equipment and tax receipts', 'Industry features, each off until you switch it on.', 1440, 900),
+      shot('/suites/distribution/visit-plan.webp', 'Visit plan on a route in Odoo with each shop due weekly, every two or four weeks or monthly', 'The visit plan of a route.', 1440, 900),
+      shot('/suites/distribution/phone-themes.webp', 'The field app home screen in four phone themes, one of them dark', 'Phone themes, light and dark.', 1600, 846),
+      shot('/suites/distribution/phone-next-shop.webp', 'Field app showing the next stop with a Start visit button and the list of shops to visit', 'The next shop on top.', 390, 844, true),
+      shot('/suites/distribution/phone-arabic-home.webp', 'Field app home screen in Arabic with a right to left layout', 'Arabic, right to left.', 390, 844, true),
+      shot('/suites/distribution/phone-returnables.webp', 'Empties screen on the phone with crates given out and taken back today', 'Returnable crates and empties.', 390, 844, true),
+      shot('/suites/distribution/phone-tax-receipt-qr.webp', 'Simplified tax invoice receipt with seller VAT number and a QR code', 'A tax receipt with a QR code.', 390, 844, true),
+      shot('/suites/distribution/phone-shop-app.webp', 'Shop self-order page with the usual order and the next delivery date', 'The shop orders by itself from a link.', 390, 844, true),
+      shot('/suites/distribution/phone-equipment-check.webp', 'Fridge check on the phone with yes or no questions and the temperature', 'A check of a fridge at the shop.', 390, 844, true),
       shot('/odoo-guides/odoo-distribution-management/m01-dashboard.webp', 'Distribution dashboard in Odoo with sales today, visits, deliveries pending and collections', 'The distribution dashboard.', 1600, 1000),
     ],
     related: [
+      { label: 'Van Sales Enterprise in detail', href: '/products/wt-sale-distributor-enterprise/' },
       { label: 'Distribution management guide', href: '/odoo-guides/odoo-distribution-management/' },
       { label: 'Van sales and route sales', href: '/odoo-guides/odoo-van-sales/' },
       { label: 'Retail online ordering', href: '/suites/retail/' },
     ],
     faqs: [
-      { q: 'Which module do I start with?', a: 'Van Sales and Field Sales Management is the base. Add Van Sales if your salesmen sell from stock on the van, and the Enterprise add-on for GPS tracking, the offline app and credit control.' },
-      { q: 'What does the base module need?', a: 'Sales, Inventory and Accounting. Van Sales also needs Odoo Fleet.' },
-      { q: 'Do the field apps work offline?', a: 'The installable offline app comes with the Enterprise add-on.' },
-      { q: 'How is cash collection handled?', a: 'Collections are taken against the invoices of the day and older dues, with a day summary of the cash to deposit.' },
-      { q: 'Can we see where the team is?', a: 'Live GPS tracking and route replay come with the Enterprise add-on, along with route optimisation and a manager cockpit on the phone.' },
-      { q: 'What stops a salesman selling to a customer over their limit?', a: 'Credit risk bands in the Enterprise add-on, applied at the moment the order is taken.' },
+      { q: 'Which module do I start with?', a: 'On Odoo 20 most distributors take Van Sales Enterprise: one module, one price, with the base app and Van Sales included. If you only need order taking and delivery, the base app works on its own, and Van Sales adds stock on the van.' },
+      { q: 'Do I need Odoo Enterprise?', a: 'No. Van Sales Enterprise runs on Odoo 20 Community. It needs Sales, Inventory, Accounting and Fleet, which are all in Community.' },
+      { q: 'Do the field apps work offline?', a: 'Yes, with Enterprise. Sales, orders, deliveries, collections, returns and new shops are kept on the phone and sent when the signal is back.' },
+      { q: 'Does it work for more than one company or country?', a: 'Yes. Every setting is per company, staff can switch company on the phone, money follows each company\'s currency, and the phone app works in Arabic with a right to left layout as well as English.' },
+      { q: 'We sell drinks in crates, or milk and bread. Is that covered?', a: 'Yes, on Odoo 20. Returnable crates and bottles with deposits, and fresh goods with expiry dates and oldest first, are built in. Switch on the ones you need in Settings.' },
+      { q: 'Can it print tax receipts with a QR code?', a: 'Yes. Tax receipts for your country are built in, for example the Saudi ZATCA QR on the receipt, with receipt numbers per van.' },
+      { q: 'How long does setup take?', a: 'The setup assistant asks for your country and logo, imports products and shops from Excel, makes routes from your areas and adds staff and vans. Staff sign in on the phone by scanning a code.' },
+      { q: 'How is cash collection handled?', a: 'Collections are taken against the invoices of the day and older dues, with a day summary of the cash to deposit. Enterprise adds a cash count by notes and coins with a manager recount.' },
       { q: 'Is proof of delivery included?', a: 'Yes. Full or partial delivery with back orders, a customer signature, and returns taken from the field.' },
     ],
     solution: 'distribution-fmcg',

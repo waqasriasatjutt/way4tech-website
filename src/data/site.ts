@@ -95,7 +95,7 @@ export const LIVE_DEMOS: LiveDemo[] = [
   { url: 'https://travel-demo.way4tech.com/', title: 'Travel agency and tours', what: 'Booking files with PNR, passports and visas, supplier cost and sell price, fixed departures.', products: ['wt-travel-agency'], kind: 'backend' },
   { url: 'https://restro.way4tech.com/', title: 'Restaurant suite and online ordering', what: 'Multi-branch restaurant POS with kitchen display, delivery and call centre, and a customer ordering website at /order (pickup, delivery, table QR, card payment, live tracking) whose orders land in the same inbox.', products: ['w4-resto-suite', 'w4-resto-website'], kind: 'backend' },
   { url: 'https://restaurant.way4tech.com/', title: 'Restaurant and cloud kitchen', what: 'Menu engineering with recipe cost, table and delivery orders, kitchen display and wastage.', products: ['wt-restaurant-management'], kind: 'backend' },
-  { url: 'https://distributor-demo.way4tech.com/', title: 'Distributor and van sales', what: 'Order taker and delivery apps for field distribution on Odoo 19.', products: ['wt-sale-distributor'], kind: 'backend' },
+  { url: 'https://distributor-demo.way4tech.com/', title: 'Distributor and van sales', what: 'Van Sales Enterprise for field distribution on Odoo 20: order taker, delivery and van sales on one phone app.', products: ['wt-sale-distributor'], kind: 'backend' },
   { url: 'https://rental-demo.way4tech.com/', title: 'Online rental store', what: 'A fictional hire company: date range booking, availability checks, period pricing and deposits on Odoo Website.', products: ['wt-rental-website', 'wt-rental-management'], kind: 'website' },
 ];
 

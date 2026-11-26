@@ -4,6 +4,8 @@ import RelatedGuides from '~/components/guides/RelatedGuides.astro';
 import { SITE, PRODUCTS } from '~/data/site';
 import { MODULE_CATALOG } from '~/data/modules-catalog';
 import { MODULE_MEDIA } from '~/data/module-media';
+import { PRODUCT_EXTRAS } from '~/data/product-extras';
+import Shots from '~/components/suite/Shots.astro';
 
 /*
  * One page per Way4Tech module. Two sources feed this route:
@@ -192,6 +194,10 @@ type Spec = { label: string; value: string };
 type Section = { heading: string; bullets: string[] };
 
 const media = product.technical ? MODULE_MEDIA[product.technical] : undefined;
+const extra = PRODUCT_EXTRAS[product.slug];
+const pageSections: Section[] = extra?.sectionsReplace
+  ? product.sections.map((sec: Section) => extra.sectionsReplace?.[sec.heading] ? { heading: sec.heading, bullets: extra.sectionsReplace[sec.heading] } : sec)
+  : product.sections;
 const heroImg = media?.banner || media?.shots?.[0]?.src || '';
 // Intrinsic size so the browser reserves the box before the image arrives.
 // Falls back to the first screenshot's dimensions when the hero came from
@@ -424,6 +430,48 @@ const pageTitle = buildProductTitle(product.name);
             </p>
           )}
 
+          {extra?.note && (
+            <div class="mt-10 rounded-2xl border border-brand-200 bg-brand-50 p-6">
+              <h2 class="text-lg font-semibold text-ink-900">{extra.note.title}</h2>
+              <p class="mt-2 text-ink-700">{extra.note.body}</p>
+              <a href={extra.note.href} class="btn-primary mt-5">{extra.note.label}</a>
+            </div>
+          )}
+
+          {extra?.whatsNew && (
+            <div class="mt-10 rounded-2xl border border-brand-200 bg-brand-50 p-6">
+              <h2 class="h3">{extra.whatsNew.title}</h2>
+              <p class="mt-2 text-ink-700">{extra.whatsNew.intro}</p>
+              <ol class="mt-6 space-y-6">
+                {extra.whatsNew.items.map(item => (
+                  <li>
+                    <div class="flex flex-wrap items-center gap-3">
+                      <span class="inline-flex h-7 items-center rounded-full bg-white px-3 text-xs font-bold text-brand-700 ring-1 ring-brand-200">{item.version}</span>
+                      <h3 class="font-semibold text-ink-900">{item.title}</h3>
+                    </div>
+                    <ul class="mt-3 list-disc space-y-1 pl-5 text-sm text-ink-700">
+                      {item.body.map(line => <li>{line}</li>)}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {extra?.demo && (
+            <p class="mt-6 text-ink-700">
+              <a href={extra.demo.url} target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:text-brand-700">Try the live demo &#8599;</a>
+              <span> {extra.demo.note} Ask us for a demo login, or see <a href="/demos/" class="text-brand-600 hover:text-brand-700">the demo logins</a>.</span>
+            </p>
+          )}
+
+          {extra?.shots && extra.shots.length > 0 && (
+            <div class="mt-12">
+              <h2 class="h3">New on Odoo 20</h2>
+              <div class="mt-6"><Shots shots={extra.shots} /></div>
+            </div>
+          )}
+
           {heroImg && (
             <figure class="mt-10">
               <img src={heroImg} alt={`${product.name} in Odoo`} loading="lazy" decoding="async"
@@ -448,7 +496,7 @@ const pageTitle = buildProductTitle(product.name);
             </div>
           )}
 
-          {product.sections.length > 0 && product.sections.map((section: Section) => (
+          {pageSections.length > 0 && pageSections.map((section: Section) => (
             <div class="mt-12">
               <h2 class="h3">{section.heading}</h2>
               <ul class="mt-6 space-y-3">

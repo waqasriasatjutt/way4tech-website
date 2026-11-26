@@ -60,6 +60,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Construction Management adds construction projects, phases, a bill of quantities, material requisitions, labour and job costing to Odoo. Construction Management Enterprise adds tenders and estimating, budget control on every bill item, measurement, valuations and payment certificates with retention, variations, subcontractor bills, QHSE, cost value reconciliation and role dashboards.',
       'Both are on the Odoo Apps Store for Odoo 19 and Odoo 20, and install on your own server or Odoo.sh. If you would rather not run Odoo yourself, Construction Cloud is the same depth of system, hosted, branded and supported by us, with a site app, contract notices and an estimating library on top.',
+      'The commercial risk on a build is rarely the work itself. It is a variation done without an instruction, a notice served after the time bar, or a valuation that misses measured work. Those are the records Enterprise is built around.',
     ],
     modules: [
       { key: 'wt-construction-management', role: 'Projects, phases, BoQ, material requisitions, labour, equipment and job costing.' },
@@ -69,6 +70,7 @@ export const SUITES: Suite[] = [
       { title: 'BoQ to budget', body: 'The bill of quantities carries quantity, unit and rate per item, and Enterprise tracks budget, committed, actual and remaining on every line.' },
       { title: 'Valuations and retention', body: 'Measured work, variations and materials on site build the valuation; retention is held to its limit and released in two moieties.' },
       { title: 'Tenders and estimating', body: 'A tender pipeline with bid bonds and go or no-go scoring, and an award that opens the project in one step.' },
+      { title: 'Cost value reconciliation', body: 'Enterprise sets certified value against cost to date, so a job that is drifting shows up long before the final account.' },
       { title: 'Construction Cloud', body: 'Hosted, with a site app that works offline, a notices register with time bar alerts, estimating with takeoff, and role dashboards.' },
     ],
     demos: [
@@ -89,11 +91,16 @@ export const SUITES: Suite[] = [
     related: [
       { label: 'Construction Cloud product page', href: '/software/construction-cloud/' },
       { label: 'Odoo for construction (how the build works)', href: '/solutions/construction/' },
+      { label: 'Construction management guide', href: '/odoo-guides/odoo-construction-management/' },
     ],
     faqs: [
       { q: 'Which one should I choose?', a: 'If you run Odoo already and have a small site team, start with the base module. If you value, certify and carry retention with a commercial team, take Enterprise. If you do not want to run Odoo at all, ask about Construction Cloud.' },
       { q: 'Do the modules need Odoo Enterprise?', a: 'No. Both modules run on Odoo Community and on Enterprise, for Odoo 19 and Odoo 20.' },
       { q: 'Can you move our open jobs across?', a: 'Yes. Open contracts are taken over at one cut-over date with contract value, approved variations, certified to date, retention held and cost to date.' },
+      { q: 'What does the bill of quantities actually track?', a: 'Quantity, unit and rate per item. Enterprise then carries budget, committed, actual and remaining on every line.' },
+      { q: 'How does retention work?', a: 'It is held to its limit as valuations are certified, then released in two moieties.' },
+      { q: 'Can we run tenders in it?', a: 'Yes, in Enterprise: a tender pipeline with bid bonds and go or no-go scoring, and an award that opens the project in one step.' },
+      { q: 'Is there anything for site teams without signal?', a: 'Construction Cloud includes a site app that works offline, with a notices register and time bar alerts.' },
     ],
     solution: 'construction',
   },
@@ -110,6 +117,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Start with Real Estate Management for properties, owners, tenants, leases, rent invoices, viewings, offers and agents. Add Real Estate Management Enterprise for service charges and utilities, late fees, inspections and deposit deductions, vendor work orders, planned maintenance, owner payouts and rent roll, vacancy and aging reports.',
       'For the public side, the Property Portal puts a search-led property website on your Odoo site: search with map and filters, projects, agents, favourites and saved searches, post-your-property and calculators. Developer Sales handles towers, floors and units through booking, allotment, sale agreement and possession with payment plans. The Marketplace adds listing packages, featured ads, verified listings and agent reviews.',
+      'Most property systems are built either for letting or for selling off-plan, and a business that does both ends up with two of everything. These five sit on one database, so a lead on the portal, a unit in a tower and a rent invoice are all the same records.',
     ],
     modules: [
       { key: 'wt-real-estate', role: 'Properties, owners, tenants, leases, rent invoices, viewings, offers, agents and listing feeds.' },
@@ -123,6 +131,7 @@ export const SUITES: Suite[] = [
       { title: 'Gulf ready', body: 'Post-dated cheque books with bounce handling, permit numbers on listings, owner statements and lease renewals with escalation.' },
       { title: 'One database', body: 'The website, the agents, the developer sales team and accounts work on the same records, so a booking on the portal is a booking in the back office.' },
       { title: 'Portals for everyone', body: 'Tenants, owners, buyers and dealers each get their own portal pages for invoices, units, statements and documents.' },
+      { title: 'Listing feeds', body: 'The core module produces feeds in the formats the main portals read, so a listing is not typed twice.' },
     ],
     demos: [
       { label: 'Property portal and developer sales', url: 'https://property-demo.way4tech.com/', note: 'Sample agency Crescent Estates, Pakistan listings.' },
@@ -138,11 +147,19 @@ export const SUITES: Suite[] = [
       shot('/suites/real-estate/portal-home.webp', 'Property portal home page with natural language search, filters and listing counts', 'The property portal home: type a search in plain words or use the filters.'),
       shot('/suites/real-estate/portal-search.webp', 'Property search results with premium, featured and verified listing badges and a filter panel', 'Search results with grid, list and map views, saved searches and listing badges.'),
     ],
-    related: [{ label: 'Odoo for real estate', href: '/solutions/real-estate/' }],
+    related: [
+      { label: 'Odoo for real estate', href: '/solutions/real-estate/' },
+      { label: 'Real estate management guide', href: '/odoo-guides/odoo-real-estate-management/' },
+      { label: 'Lease renewal and rent escalation', href: '/odoo-guides/odoo-lease-renewal-rent-escalation/' },
+    ],
     faqs: [
       { q: 'Do I need all five modules?', a: 'No. A letting agency needs the core and Enterprise. A developer selling off-plan needs the core, the portal and Developer Sales. A listings business needs the core, the portal and the Marketplace.' },
       { q: 'Does it run on Odoo Community?', a: 'Yes, all five run on Odoo 19 and Odoo 20, Community or Enterprise.' },
       { q: 'Can it publish to property portals?', a: 'The core module produces listing feeds in the formats the main Gulf portals read. Each portal still needs your own account with them.' },
+      { q: 'Can it handle off-plan sales?', a: 'Yes. Developer Sales runs towers, floors and units through booking, allotment, sale agreement and possession, with payment plans, transfers, and dealer and buyer portals.' },
+      { q: 'Does it work in marla and kanal?', a: 'Yes, with prices in lakh and crore, instalment calculators, and a location tree of cities, areas and societies.' },
+      { q: 'What about post-dated cheques?', a: 'Cheque books with bounce handling are in Enterprise, along with permit numbers on listings, owner statements, and lease renewals with escalation.' },
+      { q: 'Who gets a portal of their own?', a: 'Tenants, owners, buyers and dealers, each with their own pages for invoices, units, statements and documents.' },
     ],
     solution: 'real-estate',
   },
@@ -159,6 +176,7 @@ export const SUITES: Suite[] = [
     intro: [
       'The Restaurant Suite installs every module in one go: waiter tablets and mobile POS, table operations, kitchen display stations, silent printing, menus with modifiers and time-based menus, branch transfers, delivery zones and riders, a call centre console, online orders from your channels, reservations and a waitlist, recipes and stock, loyalty, wallet payments, fiscal compliance and owner reports. Each module is also sold on its own.',
       'Restaurant Website Ordering (Odoo 19 and 20) is the customer side: a menu with photos and dietary badges, an item customiser with nested choices and half and half, pickup, delivery or dine-in by table QR, card payment through Odoo, loyalty points and gift cards, orders scheduled for later, and a live status page where the customer follows the rider on a map. In English and French.',
+      'The hard part of restaurant software is not the till. It is the few seconds between a customer tapping order and a ticket appearing at the right station in the right branch. That path, from the website through the Online Orders inbox into the branch POS and onto a kitchen screen, is what the suite is built around.',
     ],
     modules: [
       { key: 'w4-resto-suite', role: 'Every restaurant module below in one install, with a setup wizard.' },
@@ -196,11 +214,19 @@ export const SUITES: Suite[] = [
       shot('/odoo-guides/odoo-restaurant-delivery-online-orders/delivery-zones.webp', 'Delivery zones in Odoo with fee, minimum order and ETA per zone', 'Delivery zones: fee, minimum order and ETA per area.', 1600, 316),
       shot('/odoo-guides/odoo-restaurant-management/suite-dashboard-menu.webp', 'Restaurant suite dashboard and menu in Odoo', 'The suite dashboard in the back office.', 1600, 1000),
     ],
-    related: [{ label: 'Odoo for restaurants', href: '/solutions/restaurant-fnb/' }],
+    related: [
+      { label: 'Odoo for restaurants', href: '/solutions/restaurant-fnb/' },
+      { label: 'Restaurant management guide', href: '/odoo-guides/odoo-restaurant-management/' },
+      { label: 'Retail online ordering', href: '/suites/retail/' },
+    ],
     faqs: [
       { q: 'Is the ordering website available for Odoo 19?', a: 'Yes. Restaurant Website Ordering is on the store for both Odoo 19 and Odoo 20, like the rest of the suite.' },
       { q: 'Do I pay a fee per order?', a: 'No. You buy the modules once and the orders come through your own website and payment provider.' },
       { q: 'Can it take card payments?', a: 'Yes, through any payment provider enabled in Odoo (Stripe brings Apple Pay and Google Pay), or cash. The kitchen only sees a card order once it is paid.' },
+      { q: 'Can customers order for dine-in from the table?', a: 'Yes, through a table QR code, alongside pickup and delivery. The ordering site ships in English and French.' },
+      { q: 'Does the customer see where the rider is?', a: 'Yes. Once the order is out for delivery, a live status page shows the rider on a map with the distance and time left, fed from the rider phone screen.' },
+      { q: 'Can one Odoo run several branches?', a: 'Yes. Branches are kept apart, with transfers between them, a customer branch picker, and revenue reported by branch.' },
+      { q: 'Does it cover fiscal reporting?', a: 'Reporting for FBR, PRA and SRB in Pakistan and ZATCA in Saudi Arabia is produced from the order. Registering with the authority is still yours to do.' },
     ],
     solution: 'restaurant-fnb',
   },
@@ -217,6 +243,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Retail Stores Base sets up your branches with their warehouse and opening hours. Retail Website Ordering adds the storefront: a store picker, the catalogue by category with photos and prices, live stock per branch, a picker for size, colour and quantity, and a cart with pickup or delivery.',
       'At checkout the customer pays on collection or by card through any payment provider you enable. The order lands on an online orders board for that branch: accept it and it becomes a POS order in the open session, mark it ready or out for delivery, and done takes the payment and moves the stock. Stock in open orders is held, and the customer gets an email and a live status page.',
+      'Most online ordering bolted onto a shop shows one catalogue and one stock figure, then disappoints the customer who drives to the wrong branch. Here the branch is chosen first, and the stock, the prices and the collection point all follow from it.',
     ],
     modules: [
       { key: 'w4-retail-base', role: 'Branches with their warehouse and opening hours.' },
@@ -227,6 +254,7 @@ export const SUITES: Suite[] = [
       { title: 'Multi-branch', body: 'Each branch has its own warehouse and hours, and the customer can switch branch at any time.' },
       { title: 'Straight into the POS', body: 'Each online order becomes a POS order in that branch, so stock and takings stay in one place.' },
       { title: 'Live order status', body: 'The customer follows the order from received to ready or out for delivery, with a confirmation email.' },
+      { title: 'Stock held while they decide', body: 'Stock sitting in open orders and in carts is held, so two customers cannot both buy the last one.' },
     ],
     demos: [{ label: 'Retail storefront', url: 'https://retail-demo.way4tech.com/shop/order', note: 'Two branches, open to anyone, no login needed. Try a pickup order end to end.' }],
     guides: [],
@@ -234,11 +262,19 @@ export const SUITES: Suite[] = [
       shot('/suites/retail/storefront.webp', 'Retail storefront with a store picker, featured products with photos and a pickup or delivery choice', 'The storefront on a desktop.'),
       shot('/suites/retail/storefront-phone.webp', 'Retail storefront on a phone with the branch, pickup choice and featured products', 'The same storefront on a phone.', 390, 844, true),
     ],
-    related: [{ label: 'Odoo for retail stores', href: '/solutions/retail-stores/' }],
+    related: [
+      { label: 'Odoo for retail stores', href: '/solutions/retail-stores/' },
+      { label: 'Restaurant online ordering', href: '/suites/restaurant/' },
+      { label: 'Distribution and van sales', href: '/suites/distribution/' },
+    ],
     faqs: [
       { q: 'Can customers pay online?', a: 'Yes, by card through any payment provider enabled in Odoo, or they pay on collection or on delivery.' },
       { q: 'How do staff see the orders?', a: 'On an online orders board per branch. Accepting an order sends it to the open POS session of that branch.' },
       { q: 'Will it run on Odoo 19?', a: 'It is built for Odoo 20 only.' },
+      { q: 'How many branches can it handle?', a: 'As many as you set up. Each branch carries its own warehouse and opening hours, and the customer can switch branch at any time.' },
+      { q: 'What stock does the customer actually see?', a: 'The live stock of the branch they picked. An item that is sold out at that branch cannot be added to the cart.' },
+      { q: 'Does it replace our point of sale?', a: 'No, it feeds it. An accepted online order becomes a POS order in the open session of that branch, so stock and takings stay in one place.' },
+      { q: 'Can the customer follow the order?', a: 'Yes. A confirmation email and a live status page take them from received through to ready or out for delivery.' },
     ],
     solution: 'retail-stores',
   },
@@ -255,6 +291,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Garage Management covers the workshop: job cards with customer authority, vehicles with VIN and odometer history, inspection sheets that turn advisories into work, flat rate labour against clocked time, parts from stock, roadworthiness tests, service reminders and courtesy cars.',
       'Garage Management Enterprise adds service plans and maintenance contracts, insurance and warranty claims, rate cards, sublet work, commission rules and workshop boards. Both run on Odoo 19 and Odoo 20, Community or Enterprise.',
+      'A workshop loses money in the gap between the hours it sold and the hours it paid for. Flat rate labour against clocked time, per technician and per operation, is what closes that gap. It is also why the inspection sheet matters: an advisory with a price on it becomes work, instead of a note nobody reads.',
     ],
     modules: [
       { key: 'w4t-garage-management', role: 'Job cards, vehicles, inspections, labour, parts, reminders and invoicing.' },
@@ -279,10 +316,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-garage-management/job-card-form.webp', 'Garage job card with customer, vehicle, bay, technician, progress and the estimate email', 'A job card in progress, with the estimate the customer approved.', 1280, 800),
     ],
-    related: [{ label: 'Odoo for automotive workshops', href: '/solutions/automotive-workshop/' }],
+    related: [
+      { label: 'Odoo for automotive workshops', href: '/solutions/automotive-workshop/' },
+      { label: 'Garage management guide', href: '/odoo-guides/odoo-garage-management/' },
+      { label: 'Auto parts wholesale', href: '/suites/auto-parts/' },
+    ],
     faqs: [
       { q: 'Is the Odoo Repairs app enough for a garage?', a: 'For a small shop repairing products it can be. It has no vehicle record with odometer history, no inspection sheet, no bays and no technician time against flat rate hours.' },
       { q: 'What does the complete guide cover?', a: 'All of it, by role: service advisor, workshop manager, technician, parts, accounts, owner and claims desk, then every menu and setting.' },
+      { q: 'Can work start before the customer agrees a price?', a: 'No. The customer approves an amount, and work cannot start on a job card worth more than they signed for.' },
+      { q: 'Where does the vehicle history live?', a: 'On the vehicle, with VIN and odometer readings, past job cards, inspections, and the photos taken on each visit.' },
+      { q: 'How does an inspection turn into work?', a: 'Red and amber items carry the operation and its price, and an accepted item becomes a labour line on the job card in one click.' },
+      { q: 'Can we keep photos on the job?', a: 'Yes. The vehicle on arrival, existing damage, the fault, and before and after shots, all kept on the job card and in the vehicle history.' },
+      { q: 'Does it handle insurance and warranty work?', a: 'In the Enterprise add-on: claims with the insurer share, the excess and the approvals, plus service plans, rate cards, sublet work and commission rules.' },
     ],
     solution: 'automotive-workshop',
   },
@@ -395,6 +441,7 @@ export const SUITES: Suite[] = [
     intro: [
       'WT HRMS Suite installs the HR modules together in one purchase: recruitment, payroll with accounting, bank files and Pakistan rules, leave, attendance, loans and advances, expenses, overtime, shifts, appraisals, training, assets, documents with expiry alerts, letters, onboarding and exit checklists, rewards, travel, work from home, a staff service desk, workforce structure reporting and the employee portal for payslips.',
       'Around the suite sit the modules sold separately: unpaid leave and late deductions on the payslip, a face recognition time clock, ZKTeco and Hikvision attendance devices, an employee referral programme and a salary package configurator for offers. All run on Odoo 19 and Odoo 20, Community or Enterprise.',
+      'Odoo Community has no payroll, which is the single reason most HR projects on Community stall. That is what these modules exist to fix: salary structures with editable rules, a dry run before you commit, posting to a journal, and a transfer file the bank will accept.',
     ],
     modules: [
       { key: 'wt-hrms-suite', role: 'Every module marked "in the suite" below, in one purchase.' },
@@ -436,6 +483,7 @@ export const SUITES: Suite[] = [
       { title: 'Payroll to the bank', body: 'Payslip batches with a dry run, posting to a salary journal, and a transfer file ready for the bank portal.' },
       { title: 'Rules that are enforced', body: 'Leave entitlement, carry forward, probation eligibility and document limits are checked on the request, not left to memory.' },
       { title: 'Devices and self service', body: 'Face recognition, ZKTeco and Hikvision attendance, and a portal where staff see their own payslips and balances.' },
+      { title: 'Documents before they expire', body: 'Passports, visas and contracts carry their expiry date, and the warning comes before it rather than after.' },
     ],
     demos: [{ label: 'HRMS and Payroll demo', url: 'https://hr19.way4tech.com/', note: 'A 55-person sample company with leave, attendance, shifts and payroll.' }],
     guides: [
@@ -452,11 +500,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-hrms/hr-dashboard.webp', 'HRMS dashboard in Odoo with headcount, contracts, leave today, birthdays and new hires', 'The HR dashboard.', 1440, 900),
     ],
-    related: [{ label: 'HRMS add-ons guide (PDF, 36 pages)', href: '/downloads/guides/odoo-hrms-add-ons.pdf' }],
+    related: [
+      { label: 'HRMS add-ons guide (PDF, 36 pages)', href: '/downloads/guides/odoo-hrms-add-ons.pdf' },
+      { label: 'Odoo HRMS overview', href: '/odoo-guides/odoo-hrms/' },
+      { label: 'Run payroll on Odoo Community', href: '/odoo-guides/run-payroll-odoo-community/' },
+    ],
     faqs: [
       { q: 'Do I need Odoo Enterprise for payroll?', a: 'No. The payroll engine, payroll accounting and the bank files run on Odoo Community. Enterprise works too.' },
       { q: 'What is in the suite and what is sold separately?', a: 'Each module above says which. Unpaid leave and late deductions, face attendance, the two device connectors, the referral programme and the salary package configurator are separate purchases.' },
       { q: 'Is it only for Pakistan?', a: 'No. The payroll engine works for any country. Pakistan Payroll adds the local tax slabs and contributions, and the bank file module ships with Pakistani bank formats plus a generic CSV.' },
+      { q: 'Can payslips be posted to the accounts?', a: 'Yes. Payroll Accounting posts each payslip to a salary journal as one balanced entry.' },
+      { q: 'Which banks are supported for salary transfers?', a: 'HBL, MCB, UBL and Meezan have their own formats, and a generic CSV covers any other bank.' },
+      { q: 'Can attendance come from a device?', a: 'Yes. ZKTeco devices push live punches over ADMS, a Windows agent pulls from ZKTeco and Hikvision on the office network, and a webcam can act as a face recognition clock with consent tracking.' },
+      { q: 'Can staff see their own payslips?', a: 'Yes, on the employee portal, together with year to date totals and loan balances.' },
     ],
     modulePages: ['hr', 'payroll', 'attendance', 'leaves', 'recruitment', 'appraisals', 'expenses'],
     integrationPages: ['zkteco'],
@@ -474,6 +530,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Van Sales and Field Sales Management gives you two mobile apps and a back office. The Order Taker app runs the day: routes and stops, check-in at the shop, the catalogue with prices and stock, and an order or a reason for no order. The Delivery app handles full or partial delivery with back orders, a customer signature, cash or bank collection and returns from the field.',
       'Van Sales adds vans with their own stock location, loading and unloading, and selling straight from the van with delivery, invoice and cash in one step. The Enterprise add-on brings live GPS tracking and route replay, an installable offline app, suggested orders, credit risk bands, route optimisation, promotions and free goods, incentives and a manager cockpit on the phone.',
+      'Route selling fails on small things: a salesman who cannot see what the shop already owes, a driver who delivers half a load with nowhere to put the rest, cash that reaches the office a day behind the paperwork. Each of those has somewhere to go here.',
     ],
     modules: [
       { key: 'wt-sale-distributor', role: 'Order Taker and Delivery apps, routes and beat plans, proof of delivery, cash collection and reports.' },
@@ -485,6 +542,7 @@ export const SUITES: Suite[] = [
       { title: 'Cash on the route', body: 'Collections against today\'s invoices and older dues, and a day summary of the cash to deposit.' },
       { title: 'Van stock', body: 'Each van is a stock location, loaded in the morning and settled at the end of the day.' },
       { title: 'Manager view', body: 'Sales by route and territory, visits, strike rate and pending deliveries on one dashboard.' },
+      { title: 'A reason for no order', body: 'A stop that buys nothing is still recorded, with the reason, so strike rate means something.' },
     ],
     demos: [{ label: 'Distribution and van sales demo', url: 'https://distributor-demo.way4tech.com/', note: 'Salesman routes, orders at the shop, van stock, collections and team tracking.' }],
     guides: [
@@ -498,9 +556,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-distribution-management/m01-dashboard.webp', 'Distribution dashboard in Odoo with sales today, visits, deliveries pending and collections', 'The distribution dashboard.', 1600, 1000),
     ],
+    related: [
+      { label: 'Distribution management guide', href: '/odoo-guides/odoo-distribution-management/' },
+      { label: 'Van sales and route sales', href: '/odoo-guides/odoo-van-sales/' },
+      { label: 'Retail online ordering', href: '/suites/retail/' },
+    ],
     faqs: [
       { q: 'Which module do I start with?', a: 'Van Sales and Field Sales Management is the base. Add Van Sales if your salesmen sell from stock on the van, and the Enterprise add-on for GPS tracking, the offline app and credit control.' },
       { q: 'What does the base module need?', a: 'Sales, Inventory and Accounting. Van Sales also needs Odoo Fleet.' },
+      { q: 'Do the field apps work offline?', a: 'The installable offline app comes with the Enterprise add-on.' },
+      { q: 'How is cash collection handled?', a: 'Collections are taken against the invoices of the day and older dues, with a day summary of the cash to deposit.' },
+      { q: 'Can we see where the team is?', a: 'Live GPS tracking and route replay come with the Enterprise add-on, along with route optimisation and a manager cockpit on the phone.' },
+      { q: 'What stops a salesman selling to a customer over their limit?', a: 'Credit risk bands in the Enterprise add-on, applied at the moment the order is taken.' },
+      { q: 'Is proof of delivery included?', a: 'Yes. Full or partial delivery with back orders, a customer signature, and returns taken from the field.' },
     ],
     solution: 'distribution-fmcg',
   },
@@ -516,6 +584,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Hospital Management is the base: patient records, doctor appointments, OPD visits, IPD admissions, the ward and bed board, prescriptions, invoicing and a front desk dashboard. Enterprise adds laboratory and radiology, insurance policies and claims, operation theatre, blood bank, ambulance dispatch and analytics. Ultimate adds an in-house pharmacy with batch and expiry, doctor commission, cashier sessions, the insurance revenue cycle, emergency triage, ICU charting and ICD-10. Premium adds the patient portal, online booking, a waiting room screen, QR check-in, video consultations, SMS and WhatsApp reminders, an executive dashboard and a REST API.',
       'Pharmacy Management runs a pharmacy on its own: prescriptions, dispensing, batch and expiry, a controlled drug register and insurance claims. US Medical Billing and RCM is for billing companies serving US physicians, not for the clinic: encounters to 837P claims, 835 posting, denials and appeals, AR analysis and percentage of collections invoicing.',
+      'The tiers exist because a clinic and a two hundred bed hospital are not the same purchase. The base module is the whole of OPD, admissions and billing, and each tier above it adds a department rather than a rewrite.',
     ],
     modules: [
       { key: 'wt-hospital-management', role: 'Patients, appointments, OPD, IPD admissions, ward and bed board, prescriptions and invoicing.' },
@@ -529,6 +598,7 @@ export const SUITES: Suite[] = [
       { title: 'Start small', body: 'The base module costs USD 10 and covers OPD, admissions and billing. Add a tier when the hospital needs it.' },
       { title: 'Wards and beds', body: 'Admissions against a ward and bed board, so the front desk sees what is free.' },
       { title: 'Pharmacy safety', body: 'Dispensing checked against the patient file, and a controlled drug register kept as you go.' },
+      { title: 'Insurance claims', body: 'Policies, approvals and claims from the Enterprise tier up, with the full revenue cycle in Ultimate.' },
       { title: 'US revenue cycle', body: 'Claims out as 837P, remittances in as 835, and a file that does not reconcile is refused.' },
     ],
     demos: [
@@ -546,11 +616,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-clinic-management/front-desk-dashboard.webp', 'Hospital front desk dashboard in Odoo with appointments today, bed occupancy and in-house patients', 'The front desk dashboard.', 1440, 900),
     ],
-    related: [{ label: 'Pharmacy guide (PDF, 36 pages)', href: '/downloads/guides/odoo-pharmacy-management.pdf' }],
+    related: [
+      { label: 'Pharmacy guide (PDF, 36 pages)', href: '/downloads/guides/odoo-pharmacy-management.pdf' },
+      { label: 'Clinic and hospital guide', href: '/odoo-guides/odoo-clinic-management/' },
+      { label: 'Pharmacy management, step by step', href: '/odoo-guides/odoo-pharmacy-management/' },
+    ],
     faqs: [
       { q: 'Which tier do I need?', a: 'A clinic with OPD and a few beds starts with the base module. Add Enterprise for lab, radiology and insurance, Ultimate for an in-house pharmacy, emergency and ICU, and Premium for the patient portal and online booking.' },
       { q: 'Is every tier on Odoo 20?', a: 'The base, Enterprise and Ultimate tiers are on Odoo 19 and Odoo 20. Premium is on Odoo 19.' },
       { q: 'Is Medical Billing for my clinic?', a: 'No. It is for companies that do billing for US physicians. A clinic runs on Hospital Management.' },
+      { q: 'Is there a laboratory and radiology?', a: 'Yes, from the Enterprise tier, with operation theatre, blood bank, ambulance dispatch and analytics beside them.' },
+      { q: 'Does it run a pharmacy?', a: 'An in-house pharmacy comes with Ultimate. Pharmacy Management runs a standalone pharmacy on its own, with dispensing, batch and expiry, a controlled drug register and insurance claims.' },
+      { q: 'Can patients book and consult online?', a: 'In the Premium tier: a patient portal, online booking, QR check-in, a waiting room screen, video consultations, and SMS and WhatsApp reminders.' },
+      { q: 'Is there an API?', a: 'A REST API comes with the Premium tier.' },
     ],
     solution: ['hospital-management', 'clinic-management', 'pharmacy'],
   },
@@ -567,6 +645,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Facility Management CAFM holds the estate as sites, buildings, floors and spaces, with an asset tree under them. Planned maintenance runs on a calendar interval, a meter reading or whichever comes first, and statutory inspections sit on the asset class. A fault becomes a work order with response and resolution clocks that honour cover hours, and permits to work are enforced on the record.',
       'Facility Management Enterprise adds the commercial side: annual maintenance contracts, what is covered and what is chargeable, invoices on the billing cycle, every hour and part costed to a site and a contract, and the margin on each contract.',
+      'The question an FM contractor cannot answer from a spreadsheet is which contracts actually make money. Costing every hour and every part to a site and a contract is what makes that answerable, and the SLA clocks are what stop the client asking it in the first place.',
     ],
     modules: [
       { key: 'wt-facility-management', role: 'Sites and spaces, asset register, planned maintenance, work orders with SLA clocks, technicians, contractors and permit to work.' },
@@ -576,6 +655,7 @@ export const SUITES: Suite[] = [
       { title: 'Planned work that gets raised', body: 'Jobs are raised days ahead of the due date, on an interval or a meter, so there is time to order the part.' },
       { title: 'Two SLA clocks', body: 'Response and resolution on every job, with cover hours honoured and waiting time for parts banked.' },
       { title: 'No permit, no start', body: 'Hot work, confined space and isolation permits issued only by an authorised person.' },
+      { title: 'The estate as a tree', body: 'Sites, buildings, floors and spaces, with the asset register beneath them and statutory inspections set on the asset class.' },
       { title: 'Contract margin', body: 'Enterprise shows what each contract earns against the hours and parts spent on it.' },
     ],
     demos: [
@@ -594,9 +674,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-cafm-facility-maintenance/work-order-sla.webp', 'Reactive work order in Odoo with site, building, room, asset, priority and SLA clocks', 'A reactive work order with its SLA clocks.', 1280, 800),
     ],
+    related: [
+      { label: 'CAFM guide', href: '/odoo-guides/odoo-cafm-facility-maintenance/' },
+      { label: 'Planned maintenance and statutory checks', href: '/odoo-guides/odoo-ppm-planned-maintenance/' },
+      { label: 'Maintenance contracts and billing', href: '/odoo-guides/odoo-maintenance-contracts-billing/' },
+    ],
     faqs: [
       { q: 'What does the base module need?', a: 'Inventory and Accounting. It runs on Odoo Community and Enterprise, for Odoo 19 and Odoo 20.' },
       { q: 'Do I need Enterprise?', a: 'Only if you hold maintenance contracts and bill clients for them. An in-house team usually runs on the base module.' },
+      { q: 'How is planned maintenance scheduled?', a: 'On a calendar interval, a meter reading, or whichever comes first. The job is raised days ahead of the due date, so there is time to order the part.' },
+      { q: 'What do the two SLA clocks measure?', a: 'Response and resolution, separately, on every job. Cover hours are honoured, and time spent waiting for parts is banked rather than counted against you.' },
+      { q: 'Does it enforce permits to work?', a: 'Yes. Hot work, confined space and isolation permits are issued only by an authorised person, and the permit is enforced on the work order itself.' },
+      { q: 'Can it tell me whether a contract is profitable?', a: 'That is what Enterprise adds: hours and parts costed to the site and the contract, covered work against chargeable work, and the margin on each contract.' },
+      { q: 'Is it only for FM contractors?', a: 'No. An in-house maintenance team usually runs on the base module, and only needs Enterprise if it bills clients for contracts.' },
     ],
     solution: 'facility-management',
     modulePages: ['maintenance'],
@@ -613,6 +703,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Salon Management runs the appointment book: rooms and stations on a live floor board, time slots with no double booking, an advance at booking, recurring visits, an online booking portal, stylist commission and targets, invoicing and thermal receipts.',
       'POS Salon puts bookings into the Odoo Point of Sale, and Spa POS adds the room and station grid, therapists and treatment length on the receipt. Salon Loyalty, Packages and Memberships adds loyalty tiers, prepaid packages, memberships, gift cards, deposits, a waitlist, reviews, consent forms and before and after photos. The Salon and Spa website theme gives the public site to go with it.',
+      'A salon runs on two numbers: how full the book is, and what each chair earns. The floor board answers the first at a glance, and tying every service to the stylist who did it answers the second without anyone keeping a tally.',
     ],
     modules: [
       { key: 'wt-salon-management', role: 'Appointments, floor board, online booking, advances, stylist commission and invoicing.' },
@@ -626,6 +717,7 @@ export const SUITES: Suite[] = [
       { title: 'Commission without a spreadsheet', body: 'Each service is tied to the stylist who did it, so commission and targets come from the sales.' },
       { title: 'Spa rooms', body: 'Rooms with live status, couples suites and cleaning time between treatments in the spa till.' },
       { title: 'Regulars come back', body: 'Packages, memberships, gift cards and loyalty tiers in the Enterprise add-on.' },
+      { title: 'Advances and no-shows', body: 'An advance taken at booking comes off the bill at the till, so a no-show costs the salon less.' },
     ],
     demos: [
       { label: 'Salon and spa demo', url: 'https://salon.way4tech.com/', note: 'Appointments, stylists and salon POS.' },
@@ -643,9 +735,19 @@ export const SUITES: Suite[] = [
       shot('/odoo-guides/odoo-salon-spa-management/booking-portal.webp', 'Public booking page on an Odoo website with salon services, duration and price', 'The online booking page.', 1280, 800),
       shot('/odoo-guides/odoo-salon-spa-management/spa-room-grid.webp', 'Spa room grid in the Odoo Point of Sale with treatment rooms and their status', 'The spa room grid in the POS.', 1280, 800),
     ],
+    related: [
+      { label: 'Salon and spa setup guide', href: '/odoo-guides/odoo-salon-spa-management/' },
+      { label: 'Salon POS and the receipt', href: '/odoo-guides/odoo-salon-pos-till/' },
+      { label: 'Gym and fitness software', href: '/suites/gym/' },
+    ],
     faqs: [
       { q: 'Which modules does a small salon need?', a: 'Salon Management on its own covers bookings, commission and invoicing. Add POS Salon if you take payment at a till.' },
       { q: 'Does it run on Odoo Community?', a: 'Yes. All of them run on Odoo 19 and Odoo 20, Community or Enterprise.' },
+      { q: 'Does it stop double booking?', a: 'Yes. Every slot is checked before it is taken, and the floor board shows each room and station live.' },
+      { q: 'Can clients book online?', a: 'Yes. An online booking portal takes the appointment, and the Salon and Spa theme publishes the services menu, the gallery and a booking call to action.' },
+      { q: 'How is stylist commission worked out?', a: 'Each service is tied to the stylist who performed it, so commission and targets come straight from the sales rather than from a spreadsheet.' },
+      { q: 'What does the spa till add over the salon one?', a: 'The room and station grid with live status, couples suites, cleaning time between treatments, and the therapist and treatment length on the receipt.' },
+      { q: 'Can we sell packages and memberships?', a: 'Yes, in the Enterprise add-on, along with loyalty tiers, gift cards, deposits, a waitlist, reviews, consent forms and before and after photos.' },
     ],
     solution: 'salon-spa',
   },
@@ -662,6 +764,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Transport Management covers trips, drivers, vehicles, fuel and maintenance, freight dispatch and profit per trip. The Enterprise add-on answers what a job should be charged, what it really cost and who gets paid: contract rate cards, a two-sided charge sheet, driver and subcontractor settlements, true cost per kilometre, fuel loss detection, tyres and multi-stop consignments.',
       'Freight Forwarding Management handles air, sea and road job files, master and house bills, containers, chargeable weight, customs clearance and gross profit by lane. The courier connector books Aramex, SMSA, Naqel, Leopards and TCS shipments from the transfer, with live rates, labels, tracking and cash on delivery fees.',
+      'A haulier can usually tell you what a trip was invoiced for. Far fewer can say what it cost once standing costs, fuel and the driver are counted, and that is the number a rate card has to be set against.',
     ],
     modules: [
       { key: 'wt-transport-management', role: 'Trips, drivers, vehicles, fuel, maintenance, dispatch and profit per trip.' },
@@ -674,6 +777,7 @@ export const SUITES: Suite[] = [
       { title: 'True cost per km', body: 'Enterprise adds standing costs to running costs, so the rate card is set against the real figure.' },
       { title: 'One job file', body: 'Freight quotes, bills, containers, customs and charges on one file, with gross profit by lane and salesperson.' },
       { title: 'Courier labels', body: 'Book the shipment and print the label from the delivery, with a tracking link for the customer.' },
+      { title: 'Fuel loss spotted', body: 'Enterprise reads fuel drawn against distance covered, so a tank that does not add up is flagged instead of absorbed.' },
     ],
     demos: [
       { label: 'Transport Management', url: 'https://transport-demo.way4tech.com/', note: 'Fleet, trips, drivers and freight operations.' },
@@ -691,10 +795,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-transport-management/trip-form.webp', 'Completed trip in Odoo with vehicle, driver, customer, origin and destination', 'A completed trip.', 1440, 900),
     ],
-    related: [{ label: 'Freight forwarding guide (PDF, 61 pages)', href: '/downloads/guides/odoo-freight-forwarding.pdf' }],
+    related: [
+      { label: 'Freight forwarding guide (PDF, 61 pages)', href: '/downloads/guides/odoo-freight-forwarding.pdf' },
+      { label: 'Transport management guide', href: '/odoo-guides/odoo-transport-management/' },
+      { label: 'Truck cost per km and driver pay', href: '/odoo-guides/odoo-truck-cost-per-km-fuel/' },
+    ],
     faqs: [
       { q: 'Transport or freight forwarding?', a: 'Run your own trucks: Transport Management. Arrange freight with carriers and clear customs: Freight Forwarding. Some companies need both.' },
       { q: 'What does Transport Management need?', a: 'Fleet, Employees and Accounting. The Enterprise add-on runs on Odoo Community too.' },
+      { q: 'How is profit per trip worked out?', a: 'Fuel, expenses and the invoice all sit on the trip, so the trip itself shows what it made.' },
+      { q: 'Can drivers and subcontractors be settled from it?', a: 'Yes. Enterprise runs driver and subcontractor settlements from the trips and the charge sheet.' },
+      { q: 'Which couriers can it book?', a: 'Aramex, SMSA, Naqel, Leopards and TCS, with live rates, waybills, labels, tracking and cash on delivery fees, all from the transfer.' },
+      { q: 'Does it handle customs?', a: 'Freight Forwarding Management clears customs on the job file, alongside master and house bills, containers and chargeable weight.' },
+      { q: 'Can I see which lanes make money?', a: 'Yes. Freight Forwarding reports gross profit by lane and by salesperson.' },
     ],
     solution: ['logistics-transport', 'freight-forwarding'],
     modulePages: ['fleet'],
@@ -711,6 +824,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Project Pro turns Odoo Project into a work platform: colour boards with custom columns, My Day, daily standups in Discuss, tickets with SLA, timers, approval workflows, an automation engine and notifications people receive. It needs only Project and Discuss, no Enterprise modules.',
       'Around it: a Gantt chart with dependencies and a critical path, a timesheet grid with period locks, a map view with route planning, and a project dashboard. WT Work Tracker is a Windows agent that records the active application, window title and idle time, never keystrokes or screen content, and its free companions put that effort on tasks, timesheets, attendance and Project Pro boards.',
+      'Odoo Project on Community is a task list. What it lacks is the furniture people expect from a work tool: a board they can shape, a page that shows them their own day, an approval that actually blocks, and a Gantt chart. These add all of it without an Enterprise licence.',
     ],
     modules: [
       { key: 'wt-project-pro', role: 'Boards with custom columns, My Day, approvals, automations, tickets with SLA, timers and notifications.' },
@@ -729,6 +843,7 @@ export const SUITES: Suite[] = [
       { title: 'Boards people use', body: 'Colour statuses, custom columns and a My Day page, on Odoo Community.' },
       { title: 'Approvals and automations', body: 'Real approval steps on items, and automations such as nudging the assignee on overdue work.' },
       { title: 'Timesheets and a time report', body: 'A week of hours in one grid, notes with bullet lists, time off kept apart, and a report of hours by person, project and ticket that opens the item in a click.' },
+      { title: 'Gantt and the critical path', body: 'Four dependency types, cascade rescheduling when a date moves, the critical path and resource conflicts, on Community.' },
       { title: 'Tracking without spying', body: 'Work Tracker records which application and window, never keystrokes or what is on the screen.' },
     ],
     demos: [
@@ -751,10 +866,16 @@ export const SUITES: Suite[] = [
     related: [
       { label: 'Work tracker guide (PDF, 45 pages)', href: '/downloads/guides/odoo-employee-work-tracker.pdf' },
       { label: 'Productivity apps guide (PDF, 66 pages)', href: '/downloads/guides/odoo-community-productivity-apps.pdf' },
+      { label: 'Project management with Project Pro', href: '/odoo-guides/odoo-project-management/' },
     ],
     faqs: [
       { q: 'Does Project Pro need Odoo Enterprise?', a: 'No. It needs only Project and Discuss, on Odoo 19 or Odoo 20 Community.' },
       { q: 'Does Work Tracker take screenshots or log keys?', a: 'It never records keystrokes or screen content. It records the foreground application, the window title, idle time and counts of input events.' },
+      { q: 'What does the Gantt view add?', a: 'Four dependency types, cascade rescheduling when a date moves, the critical path, and resource conflicts.' },
+      { q: 'Can timesheets be locked for a period?', a: 'Yes. The grid view locks periods and has a copy wizard for weeks that repeat.' },
+      { q: 'Can tracked time become timesheets?', a: 'Yes. A free companion turns a tracked day into timesheet lines, one per task.' },
+      { q: 'Do the Work Tracker companions cost extra?', a: 'No. The four companions for Project, timesheets, attendance and Project Pro boards are free.' },
+      { q: 'Is there a project dashboard?', a: 'Yes, with ten KPI cards, task status, workload by assignee and overdue tasks.' },
     ],
     solution: 'professional-services',
     modulePages: ['project', 'timesheets'],
@@ -771,6 +892,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Gym Management covers membership plans with recurring billing and freeze, door check-in that refuses with the reason, a class timetable with waitlist, PT packages and trainer pay. Members get a mobile portal with a digital check-in pass, workout and nutrition plans, and automated class reminders. An online join and free trial form brings new members in.',
       'The Gym and Fitness website theme gives the public site: classes, trainers, membership tiers and a join call to action.',
+      'Money leaks out of a gym in two places: members who quietly stop paying, and classes that run half empty. Recurring billing with a freeze keeps the first visible, and a waitlist on a full class stops the second going to waste.',
     ],
     modules: [
       { key: 'wt-gym-management', role: 'Memberships, recurring billing, freeze, door check-in, classes with waitlist, PT packages, trainer pay and a member portal.' },
@@ -781,6 +903,7 @@ export const SUITES: Suite[] = [
       { title: 'A door that checks', body: 'Check-in refuses a member who is expired, frozen or in arrears, and says why.' },
       { title: 'Classes with a waitlist', body: 'A timetable with capacity, a waitlist and reminders before class.' },
       { title: 'PT and trainer pay', body: 'Personal training packages with sessions used, and what each trainer is owed.' },
+      { title: 'Members at risk', body: 'The member list flags the ones whose payment has lapsed or whose attendance has dropped, while there is still time to call them.' },
     ],
     demos: [{ label: 'Gym demo', url: 'https://gym-demo.way4tech.com/', note: 'Memberships, plans, check-in and classes.' }],
     guides: [
@@ -794,9 +917,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-gym-management/members-kanban.webp', 'Fitness club members in Odoo with member number, status and an at risk tag', 'Members, with the ones at risk flagged.', 1440, 900),
     ],
+    related: [
+      { label: 'Gym management guide', href: '/odoo-guides/odoo-gym-management/' },
+      { label: 'Membership billing and holds', href: '/odoo-guides/odoo-gym-membership-billing/' },
+      { label: 'Salon and spa software', href: '/suites/salon-spa/' },
+    ],
     faqs: [
       { q: 'What does it need?', a: 'The Invoicing app. It runs on Odoo 19 and Odoo 20, Community or Enterprise.' },
       { q: 'Can members book classes themselves?', a: 'Yes, from the member portal on their phone, which also holds their check-in pass.' },
+      { q: 'How does a membership freeze work?', a: 'A membership can be put on hold, and the recurring invoices pause for that period instead of billing a member who is not attending.' },
+      { q: 'What happens at the door if a member has not paid?', a: 'Check-in refuses them and says why: expired, frozen or in arrears, so the person on the desk does not have to make the judgement.' },
+      { q: 'Can we sell personal training through it?', a: 'Yes. PT packages hold the sessions bought and the sessions used, and work out what each trainer is owed from them.' },
+      { q: 'Is there anything for the member on their phone?', a: 'Yes. The member portal carries a digital check-in pass, workout and nutrition plans, class booking, and automated reminders before class.' },
+      { q: 'Can new members join online?', a: 'Yes. An online join and free trial form brings them in, and the Gym and Fitness theme publishes classes, trainers and membership tiers on your own site.' },
     ],
     solution: 'gym-fitness',
   },
@@ -812,6 +945,7 @@ export const SUITES: Suite[] = [
     intro: [
       'School Management covers admissions and enrollment, grades and academic sessions, fee structures, attendance, the timetable, assignments, lesson plans, exams and seating, term reports, transport and scholarships. School Academic Reports prints the report card per term or year, the class result sheet with positions, and the transcript across all years.',
       'School Management Enterprise adds library issue and return, hostel rooms and allocation, canteen wallets, medical, sports, alumni, counselling and multi-campus. The School and Education website theme gives the public site.',
+      'A school office is judged on two days: admission day and result day. Fee structures per grade with a fee slip per student carry the first. Report cards, class result sheets with positions and transcripts across all years carry the second.',
     ],
     modules: [
       { key: 'wt-school-management', role: 'Admissions, fees, attendance, timetable, assignments, exams, transport and scholarships.' },
@@ -822,6 +956,8 @@ export const SUITES: Suite[] = [
     highlights: [
       { title: 'Fees per grade', body: 'Fee structures per grade with several components, and fee slips per student with their payment status.' },
       { title: 'Report cards from marks', body: 'Report cards and result sheets are worked out from marks and attendance when you print them.' },
+      { title: 'Attendance against the timetable', body: 'Attendance taken per class against the timetable, with assignments and lesson plans beside it.' },
+      { title: 'Transport and scholarships', body: 'Routes and vehicles for the school run, and scholarships applied to what a student owes.' },
       { title: 'Campus life', body: 'Library, hostel, canteen and multi-campus in the Enterprise add-on.' },
     ],
     demos: [{ label: 'School demo', url: 'https://education.way4tech.com/', note: 'Students, classes, fees and attendance.' }],
@@ -834,9 +970,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-school-management/students-list.webp', 'School Management in Odoo with the students list and menus for applications, enrollments, exams and fees', 'The students list.', 1366, 800),
     ],
+    related: [
+      { label: 'School management guide', href: '/odoo-guides/odoo-school-management/' },
+      { label: 'Admission and fees', href: '/odoo-guides/odoo-student-admission-fees/' },
+      { label: 'Exams and report cards', href: '/odoo-guides/odoo-school-report-cards/' },
+    ],
     faqs: [
       { q: 'What does School Management install?', a: 'Employees, Invoicing, Fleet, Attendances and Time Off. It runs on Odoo 19 and Odoo 20 Community.' },
       { q: 'Are report cards in the base module?', a: 'Printable report cards, result sheets and transcripts come with School Academic Reports.' },
+      { q: 'How are fees set up?', a: 'A fee structure per grade with as many components as you need, and a fee slip per student showing what is paid and what is still outstanding.' },
+      { q: 'Where do the marks on a report card come from?', a: 'From the marks and attendance already recorded. The report card, the class result sheet with positions and the transcript are worked out when you print them.' },
+      { q: 'Can it run more than one campus?', a: 'Multi-campus comes with School Management Enterprise, together with library, hostel, canteen wallets, medical, sports, alumni and counselling.' },
+      { q: 'Does it cover the library and the hostel?', a: 'Library issue and return, hostel rooms and allocation, and canteen wallets are in the Enterprise add-on, which needs School Management and Academic Reports.' },
+      { q: 'Is there a public school website?', a: 'The School and Education theme publishes it, so the prospectus and the admission enquiry sit on the same system the office works in.' },
     ],
     solution: 'school-management',
   },
@@ -904,6 +1050,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Jewelry Management keeps a dated rate per gram for each metal and purity, and prices each piece from its weight with making and wastage charges on top. Old gold is bought back with a purity test, repairs run on job cards, and hallmark and HUID numbers sit in a register.',
       'Stock is counted and reported by weight as well as by piece. It runs on Odoo 19 and Odoo 20, with Inventory and Accounting.',
+      'An argument at a jewellery counter is almost always about the same three numbers: the rate used, the weight, and what was added for making and wastage. A bill that prints all three against a dated rate ends most of them.',
     ],
     modules: [{ key: 'wt-jewelry-management', role: 'Gold rate per gram and purity, making and wastage, old gold buy-back, repair job cards, hallmark and HUID.' }],
     highlights: [
@@ -911,6 +1058,7 @@ export const SUITES: Suite[] = [
       { title: 'Making and wastage', body: 'Making per gram, as a percentage of the metal or a fixed amount, and wastage as a percentage of the weight, shown on the printed bill.' },
       { title: 'Old gold', body: 'Old gold bought back at the purity the test shows.' },
       { title: 'Stock by weight', body: 'Stock counted and reported by weight as well as by piece.' },
+      { title: 'Hallmark register', body: 'Hallmark and HUID numbers kept against the piece, with repairs on job cards and approval memos.' },
     ],
     demos: [{ label: 'Jewellery demo', url: 'https://jewelry-demo.way4tech.com/', note: 'Sample shop Al Nour Jewellers.' }],
     guides: [
@@ -924,9 +1072,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-jewellery-management/printed-bill.webp', 'Printed jewellery bill from Odoo with net weight, rate per gram, making and wastage', 'A printed bill with weight, rate, making and wastage.', 1280, 420),
     ],
+    related: [
+      { label: 'Jewellery management guide', href: '/odoo-guides/odoo-jewellery-management/' },
+      { label: 'Gold rate and making charges', href: '/odoo-guides/gold-rate-making-charges-odoo/' },
+      { label: 'Retail online ordering', href: '/suites/retail/' },
+    ],
     faqs: [
       { q: 'What does it need?', a: 'Inventory and Accounting, on Odoo 19 or Odoo 20, Community or Enterprise.' },
       { q: 'Can it handle more than one purity?', a: 'Yes. Each metal and purity has its own dated rate per gram.' },
+      { q: 'How is a piece priced?', a: 'From its weight at the dated rate per gram for that metal and purity, with making and wastage added on top. The printed bill shows each part separately.' },
+      { q: 'Can old gold be taken in part exchange?', a: 'Yes. Old gold is bought back at the purity the test shows, so the exchange is recorded against a tested figure rather than an estimate.' },
+      { q: 'How are repairs tracked?', a: 'On job cards with approval memos, so a customer piece sitting in the workshop is always accounted for.' },
+      { q: 'Does stock work in grams or in pieces?', a: 'Both. Stock is counted and reported by weight as well as by piece.' },
+      { q: 'Is there a guide?', a: 'A 38 page PDF and five guide pages covering the rate and making charges, counter sales and VAT, old gold, repair job cards, and stock counted by weight.' },
     ],
     solution: 'jewellery-retail',
   },
@@ -994,6 +1152,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Label Designer lets you design product, variant, lot and serial, package, location and price tag labels by drag and drop, with EAN, UPC, Code 128, Code 39, QR and Data Matrix barcodes, and print them as PDF or as ZPL for Zebra printers. Direct Print sends any Odoo report straight to a printer, with rules per report, user and workstation, a print queue with retry and a free agent for Windows, Linux and macOS.',
       'When both are installed, Print Suite joins them for free: designed labels go straight to the Zebra, each template has its printer, and labels print the moment a receipt is validated. Two more free companions print invoices when they are confirmed and delivery slips when they are validated. POS Print Anywhere does the same for POS receipts and kitchen tickets, with no IoT box.',
+      'Printing is the part of an Odoo rollout that gets discovered on go-live day, when the warehouse finds that every label needs a PDF opened, previewed and sent by hand. These modules take that step out, and the free companions make it happen on validation instead.',
     ],
     modules: [
       { key: 'wt-label-designer', role: 'Drag and drop label designer with barcodes, printed as PDF or Zebra ZPL.' },
@@ -1008,6 +1167,7 @@ export const SUITES: Suite[] = [
       { title: 'Zebra and PDF', body: 'The same label prints as ZPL on a Zebra or as PDF on sheets and label rolls.' },
       { title: 'No subscription', body: 'Printing runs through your own agent or straight to a network printer, with no cloud print service.' },
       { title: 'A queue you can see', body: 'Every job with its status; failed jobs are tried again and can be sent again by hand.' },
+      { title: 'Rules, not habits', body: 'Which printer a report goes to is set per report, per user and per workstation, so nobody has to remember.' },
     ],
     demos: [],
     guides: [
@@ -1019,10 +1179,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-label-printing/designer.webp', 'Label designer canvas in Odoo with a price tag, a logo, a barcode and the price', 'Designing a price tag.', 1600, 1000),
     ],
-    related: [{ label: 'Free Windows apps, including the print agent', href: '/windows-apps/' }],
+    related: [
+      { label: 'Free Windows apps, including the print agent', href: '/windows-apps/' },
+      { label: 'Label printing guide', href: '/odoo-guides/odoo-label-printing/' },
+      { label: 'POS printer without an IoT box', href: '/odoo-guides/odoo-pos-printer-without-iot-box/' },
+    ],
     faqs: [
       { q: 'Do I need PrintNode or another print service?', a: 'No. Direct Print prints through a small agent on your own network, or straight from the server to a network printer.' },
       { q: 'What does Label Designer need?', a: 'Inventory, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+      { q: 'Does it work with Zebra printers?', a: 'Yes. The same label prints as ZPL on a Zebra, or as PDF on sheets and label rolls.' },
+      { q: 'Can labels print on their own?', a: 'Yes. With Print Suite installed, designed labels go to their printer the moment a receipt is validated, one per unit.' },
+      { q: 'Can invoices and delivery slips print automatically?', a: 'Yes, through two free companion modules: the invoice or bill when it is confirmed, and the delivery slip or picking list when a transfer is validated.' },
+      { q: 'Do POS receipts need an IoT box?', a: 'No. POS Print Anywhere sends receipts and kitchen tickets to any printer without one.' },
+      { q: 'What happens when a print job fails?', a: 'It stays in the queue with its status, is tried again, and can be sent again by hand.' },
     ],
     modulePages: ['barcode', 'iot'],
   },
@@ -1038,6 +1207,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Rental Management puts rentals on the sales order: hourly, daily, weekly and monthly rate tables where the cheapest rate wins, availability that refuses to oversell, partial pickup and return, late return charges and security deposits. Online Rental Shop adds a date range picker on the website product page, availability checked on the server, period pricing, blackout dates and My Rentals in the customer portal.',
       'Equipment Rental Management is for plant, tool and machinery hire: a fleet held unit by unit with hour and kilometre meters, rate cards, availability across a date range, off-hire, damage and deposits.',
+      'Rental in Odoo is an Enterprise app, which puts a licence between a small hire business and the thing it does all day. These three modules do it on Community, on the sales order the business already works in.',
     ],
     modules: [
       { key: 'wt-rental-management', role: 'Rentals on the sales order: rate tables, availability, pickup and return, late charges and deposits.' },
@@ -1049,6 +1219,7 @@ export const SUITES: Suite[] = [
       { title: 'No overselling', body: 'Availability is checked for the rental window, including other visitors\' carts on the website.' },
       { title: 'Cheapest rate wins', body: 'Rate tables by hour, day, week and month, and the customer pays the lowest that applies.' },
       { title: 'Plant hire', body: 'Units with meters, off-hire readings, damage charges and inspection certificates.' },
+      { title: 'Deposits and late returns', body: 'Security deposits taken and returned, and a late return charged from the rate table rather than argued over.' },
     ],
     demos: [
       { label: 'Rental demo', url: 'https://rental-demo.way4tech.com/', note: 'Rental orders, availability, pickup and return.' },
@@ -1064,10 +1235,19 @@ export const SUITES: Suite[] = [
     shots: [
       shot('/odoo-guides/odoo-rental-management/rental-shop.webp', 'Online rental shop on an Odoo website for a cargo bike hire company', 'The online rental shop.', 1440, 900),
     ],
-    related: [{ label: 'Equipment rental guide (PDF, 59 pages)', href: '/downloads/guides/odoo-equipment-rental-management.pdf' }],
+    related: [
+      { label: 'Equipment rental guide (PDF, 59 pages)', href: '/downloads/guides/odoo-equipment-rental-management.pdf' },
+      { label: 'Rental management guide', href: '/odoo-guides/odoo-rental-management/' },
+      { label: 'Online rental booking', href: '/odoo-guides/odoo-rental-website-booking/' },
+    ],
     faqs: [
       { q: 'Rental Management or Equipment Rental?', a: 'Rental Management suits products rented from stock, such as bikes, party gear or cameras. Equipment Rental suits plant and machinery hired unit by unit with meters and inspections.' },
       { q: 'What do they need?', a: 'Rental Management needs Sales and Inventory, the rental shop needs eCommerce, and Equipment Rental installs Inventory and Invoicing.' },
+      { q: 'Do I need Odoo Enterprise to rent?', a: 'No. These run on Odoo Community, with the rental sitting on the sales order you already use.' },
+      { q: 'Can customers book and pay on the website?', a: 'Yes. Online Rental Shop puts a date range picker on the product page, checks availability on the server, prices the period, and gives the customer My Rentals in the portal.' },
+      { q: 'Which rate does the customer pay?', a: 'The cheapest that applies. Rate tables run by hour, day, week and month, and the lowest one wins.' },
+      { q: 'How is overselling stopped?', a: 'Availability is checked for the rental window, and that includes what is being held in carts on the website.' },
+      { q: 'Can a rental go out and come back in parts?', a: 'Yes. Pickup and return can both be partial, and the order keeps track of what is still out.' },
     ],
     solution: 'equipment-rental',
     modulePages: ['rental'],
@@ -1083,6 +1263,7 @@ export const SUITES: Suite[] = [
     intro: [
       'Shopify Connector syncs both ways: products, variants, prices and stock to any number of stores, orders with taxes, discounts and payments into Odoo, fulfilments, refunds both ways, and payouts with their fees reconciled to invoices and credit notes.',
       'n8n Connector Enterprise makes Odoo a full n8n citizen: signed events out on any model with retries and a replay log, a REST API in for every model with an OpenAPI schema, scoped keys and rate limits, and ready-made recipes for Slack, Shopify, Google Sheets, Stripe, Telegram and Gmail.',
+      'Both connectors are built around the same idea: what breaks an integration is never the first sync, it is the failure three weeks later that nobody notices. Signed deliveries with retries and a replay log, and payouts reconciled to the fee, are there for that week.',
     ],
     modules: [
       { key: 'wt-shopify-connector', role: 'Two-way Shopify sync: products, stock, orders, fulfilments, refunds and payouts.' },
@@ -1093,6 +1274,7 @@ export const SUITES: Suite[] = [
       { title: 'Many stores', body: 'Any number of Shopify stores on one Odoo, with a stock policy per location.' },
       { title: 'Events you can trust', body: 'n8n deliveries are signed, retried, logged and can be replayed.' },
       { title: 'An API for every model', body: 'A REST API with an OpenAPI schema, scoped keys and rate limits.' },
+      { title: 'Refunds both ways', body: 'A refund raised in Shopify or in Odoo reaches the other side, so the store and the books agree.' },
     ],
     demos: [],
     guides: [
@@ -1106,10 +1288,19 @@ export const SUITES: Suite[] = [
       shot('/odoo-guides/odoo-shopify-connector/dashboard.webp', 'Shopify dashboard in Odoo with running jobs, sales today, revenue trend and queue health', 'The Shopify dashboard in Odoo.', 1560, 975),
       shot('/odoo-guides/n8n-odoo-automation/deliveries.webp', 'Webhook deliveries list with sent, retrying and stopped deliveries and a Replay button', 'n8n deliveries with retries and replay.', 1280, 800),
     ],
-    related: [{ label: 'All integrations we build', href: '/integrations/' }],
+    related: [
+      { label: 'All integrations we build', href: '/integrations/' },
+      { label: 'Shopify connector setup guide', href: '/odoo-guides/odoo-shopify-connector/' },
+      { label: 'n8n and Odoo automation', href: '/odoo-guides/n8n-odoo-automation/' },
+    ],
     faqs: [
       { q: 'What does the Shopify connector need?', a: 'Sales, Inventory, Accounting, CRM and Delivery, on Odoo 19 or Odoo 20, Community or Enterprise.' },
       { q: 'What does the n8n connector need?', a: 'Only base, mail and web, on Odoo 19 or Odoo 20, Community or Enterprise.' },
+      { q: 'Does the Shopify sync go both ways?', a: 'Yes. Products, variants, prices and stock go out to the stores, and orders, fulfilments, refunds and payouts come back in.' },
+      { q: 'Can it run more than one Shopify store?', a: 'Yes, any number on one Odoo, with a stock policy per location.' },
+      { q: 'Are Shopify payouts reconciled?', a: 'Yes. Payouts arrive with their transactions and fees, matched to the invoices and credit notes.' },
+      { q: 'What can n8n actually do with Odoo?', a: 'Listen for signed events on any model, and call a REST API for every model with an OpenAPI schema, scoped keys and rate limits. Recipes for Slack, Shopify, Google Sheets, Stripe, Telegram and Gmail come with it.' },
+      { q: 'What happens if an n8n delivery fails?', a: 'It is retried and written to the log, and it can be replayed from there.' },
     ],
     integrationPages: ['shopify'],
   },

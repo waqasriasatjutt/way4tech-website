@@ -251,12 +251,31 @@ if (odooSeries) specs.push({ label: 'Odoo version', value: `Odoo ${odooSeries}` 
 if (priceText) specs.push({ label: 'Price', value: priceText });
 specs.push({ label: 'Odoo Apps Store', value: product.onStore ? 'Listed' : 'Not listed' });
 
-const metaSource = product.summary || product.intro[0] || `${product.name}, an Odoo module built and maintained by ${SITE.name}.`;
+/*
+ * The meta description for a product.
+ *
+ * Two things were wrong here. product.summary is the one-line tagline and is
+ * sometimes only 43 characters ("Trucking, dispatch, and freight management."),
+ * which threw away two thirds of the snippet while product.intro[0] sat
+ * unused with the full sentence in it. And this file clamped to 158 itself,
+ * while Base clamps whatever it is handed to 155, so a long description was
+ * cut twice and could reach the page carrying two ellipses.
+ *
+ * Now: use the tagline alone only when it is long enough to be worth a
+ * snippet, otherwise follow it with the intro sentence, and leave the cutting
+ * to clampDescription so there is one rule for the whole site.
+ */
+const MIN_USEFUL_SUMMARY = 90;
+const metaCandidates = [product.summary, product.intro[0]]
+  .map(s => (typeof s === 'string' ? s.trim() : ''))
+  .filter(Boolean);
+const metaSource =
+  (metaCandidates[0] && metaCandidates[0].length >= MIN_USEFUL_SUMMARY
+    ? metaCandidates[0]
+    : metaCandidates.join(' ').trim()) ||
+  `${product.name}, an Odoo module built and maintained by ${SITE.name}.`;
 const metaSuffix = odooSeries && !/odoo\s*\d/i.test(metaSource) ? ` For Odoo ${odooSeries}.` : '';
-const metaBudget = 158 - metaSuffix.length;
-const metaDescription = (metaSource.length > metaBudget
-  ? `${metaSource.slice(0, metaBudget - 3).replace(/[\s,;:.-]+$/, '')}...`
-  : metaSource) + metaSuffix;
+const metaDescription = metaSource + metaSuffix;
 
 const breadcrumbSchema = {
   '@context': 'https://schema.org',

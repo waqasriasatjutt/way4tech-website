@@ -1,8 +1,95 @@
 ---
 import Base from '~/layouts/Base.astro';
+import { breadcrumb } from '~/utils/schema';
 import { CC, CC_FEATURES } from '~/data/construction-cloud';
+
+/*
+ * The three ways to buy, as a table.
+ *
+ * This page used to be a hero and one product card: 117 words, which answered
+ * "what is Construction Cloud" and not the question people actually arrive
+ * with, which is whether they want hosted software, an industry suite on their
+ * own Odoo, or a single module. All three exist on this site and nothing
+ * compared them, so the choice was left to be guessed from three menu items.
+ */
+const WAYS = [
+  {
+    name: 'Hosted software',
+    here: true,
+    who: 'You want the system run for you and do not want to own a server or an Odoo upgrade.',
+    server: 'Ours',
+    upgrades: 'Done by us, included',
+    support: 'Included, with an agreed response time',
+    changes: 'Configuration included; custom work quoted',
+    link: { href: '/software/construction-cloud/', label: 'Construction Cloud' },
+  },
+  {
+    name: 'Industry suite',
+    here: false,
+    who: 'You already run Odoo, or intend to, and want the industry modules on it.',
+    server: 'Yours, or hosting from us',
+    upgrades: 'Yours to schedule; we port the modules',
+    support: 'Optional support contract',
+    changes: 'Yours to make, or quoted as a build',
+    link: { href: '/suites/', label: 'Browse the 22 suites' },
+  },
+  {
+    name: 'Single module',
+    here: false,
+    who: 'One thing is missing from a working Odoo and you want just that thing.',
+    server: 'Yours',
+    upgrades: 'Yours; module updates come from the store',
+    support: 'Store support on the listing',
+    changes: 'Source is readable and editable',
+    link: { href: '/products/', label: 'Browse the modules' },
+  },
+];
+
+/* Rows built here rather than in the markup: a `w as Record<string, any>` cast
+   inside JSX is read as an opening tag by the template compiler. */
+const ROWS: { label: string; cells: string[] }[] = [
+  { label: 'Who it suits',     cells: WAYS.map(w => w.who) },
+  { label: 'Server',           cells: WAYS.map(w => w.server) },
+  { label: 'Version upgrades', cells: WAYS.map(w => w.upgrades) },
+  { label: 'Support',          cells: WAYS.map(w => w.support) },
+  { label: 'Changing it',      cells: WAYS.map(w => w.changes) },
+];
+
+const FAQS = [
+  {
+    q: 'What is the difference between hosted software and an Odoo suite?',
+    a: 'Hosted software is a running system on our servers with the upgrades, backups and support included, and it is billed monthly. A suite is a set of modules installed on an Odoo you control, bought once, where the server and the upgrade schedule stay yours. The features overlap heavily; what differs is who operates it.',
+  },
+  {
+    q: 'Is Construction Cloud built on Odoo?',
+    a: 'Yes. It is Odoo with our construction modules on top, configured for contracting, and it is hosted and supported by us. You are not locked out of the platform underneath: the data is in a standard Odoo database and can be exported or handed to another host.',
+  },
+  {
+    q: 'Can I move from hosted software to my own server later?',
+    a: 'Yes. The database is a standard Odoo database and the modules are our own, so a migration to your own server or to another host is a supported request rather than a rebuild. Ask before you sign if this matters, so the module licensing is written into the agreement.',
+  },
+  {
+    q: 'Do you host anything other than construction?',
+    a: 'Construction Cloud is the only industry we run as hosted software today. Everything else is sold as a suite or a module for an Odoo you control, with hosting available as a separate service. If you want a different industry run the same way, ask: the suites are the starting point for it.',
+  },
+  {
+    q: 'What happens to my data if I stop paying?',
+    a: 'You get a full database dump and the filestore on request, in the standard Odoo format, for as long as the account exists and for 30 days after it closes. Nothing is held back as leverage.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map(f => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
 ---
 <Base
+  structuredData={[breadcrumb([{ name: 'Software', path: '/software/' }]), faqSchema]}
   title="Hosted Business Software | Way4Tech Software"
   description="Hosted software from Way4Tech: complete systems we set up, run and support for you, starting with Construction Cloud for contractors."
 >
@@ -31,6 +118,90 @@ import { CC, CC_FEATURES } from '~/data/construction-cloud';
         <img src="/software/construction-cloud/executive-dashboard.webp" width="1400" height="875" loading="lazy" decoding="async"
              alt="Construction Cloud executive dashboard" class="h-auto w-full rounded-2xl border border-ink-200 shadow-sm" />
       </a>
+    </div>
+  </section>
+
+  <!-- THREE WAYS TO BUY -->
+  <section class="section bg-ink-50 border-y border-ink-100">
+    <div class="container-site">
+      <h2 class="h2">Hosted software, a suite, or a single module</h2>
+      <p class="lede mt-4 max-w-3xl text-ink-700">
+        The same features reach you three different ways on this site. What changes is who runs the server, who schedules the upgrade, and who is on the hook when something breaks at month end. This is the whole comparison.
+      </p>
+
+      <div class="mt-10 overflow-x-auto">
+        <table class="w-full min-w-[46rem] border-collapse text-left text-sm">
+          <caption class="sr-only">How hosted software, an industry suite and a single module differ on hosting, upgrades, support and customisation.</caption>
+          <thead>
+            <tr class="border-b border-ink-200">
+              <th scope="col" class="py-3 pr-4 font-semibold text-ink-900">&nbsp;</th>
+              {WAYS.map(w => (
+                <th scope="col" class="py-3 pr-4 font-semibold text-ink-900">
+                  {w.name}{w.here && <span class="ml-2 badge">You are here</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ROWS.map(row => (
+              <tr class="border-b border-ink-100 align-top">
+                <th scope="row" class="py-3 pr-4 font-semibold text-ink-900">{row.label}</th>
+                {row.cells.map(cell => <td class="py-3 pr-4 text-ink-700">{cell}</td>)}
+              </tr>
+            ))}
+            <tr class="align-top">
+              <th scope="row" class="py-3 pr-4 font-semibold text-ink-900">Where to look</th>
+              {WAYS.map(w => (
+                <td class="py-3 pr-4">
+                  <a href={w.link.href} class="font-semibold text-brand-700 hover:text-brand-800">{w.link.label} &rarr;</a>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="mt-8 text-sm text-ink-600">
+        Still not obvious which one fits? The quickest way to settle it is one call about how you run IT today, not about features. <a href="/contact/" class="font-semibold text-brand-700 hover:text-brand-800">Book a scoping call</a>, or read <a href="/services/odoo-implementation/" class="font-semibold text-brand-700 hover:text-brand-800">how we run an implementation</a> first.
+      </p>
+    </div>
+  </section>
+
+  <!-- WHAT RUNNING IT FOR YOU MEANS -->
+  <section class="section">
+    <div class="container-site">
+      <h2 class="h2">What "we run it for you" actually covers</h2>
+      <p class="lede mt-4 max-w-3xl text-ink-700">Hosted is a word that hides a lot of work. These are the parts we hold, and they are the parts that usually go wrong when nobody owns them.</p>
+      <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { t: 'The server and the database', d: 'Provisioning, the Postgres instance, disk headroom and the operating system patches. You never get a shell prompt unless you ask for one.' },
+          { t: 'Nightly backups, and restores', d: 'Taken off the box, kept to a stated retention, and test-restored. A backup nobody has restored is a hope, not a backup.' },
+          { t: 'Odoo version upgrades', d: 'Including porting our construction modules to the new version. This is the single largest cost of owning Odoo yourself and it is inside the monthly fee here.' },
+          { t: 'Monitoring and uptime', d: 'The site, the workers and the cron jobs, not just whether the host answers a ping. A queue that stopped and a page that loads look identical from outside.' },
+          { t: 'Support with a response time', d: 'An agreed time to first response, written down, with a named route in rather than a shared inbox.' },
+          { t: 'Your branding on it', d: 'Your logo, colours, document layouts and email sender, so what your client receives is from you and not from us.' },
+        ].map(x => (
+          <div class="card">
+            <h3 class="text-lg font-semibold">{x.t}</h3>
+            <p class="mt-2 text-sm text-ink-600">{x.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site max-w-3xl">
+      <h2 class="h2">Questions people ask before signing</h2>
+      <dl class="mt-8 divide-y divide-ink-200">
+        {FAQS.map(f => (
+          <div class="py-5">
+            <dt class="font-semibold text-ink-900">{f.q}</dt>
+            <dd class="mt-2 text-ink-700">{f.a}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   </section>
 </Base>

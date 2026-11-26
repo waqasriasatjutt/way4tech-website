@@ -16,7 +16,33 @@ const { c, prev, next } = Astro.props;
 const part = CCG_PARTS[c.part];
 const body = chapterHtml(c.slug);
 const pageUrl = `${SITE.url}${chapterUrl(c)}`;
-const seoTitle = `${c.title} | Construction Cloud guide`;
+
+/*
+ * The <title> for a chapter.
+ *
+ * This used to be `${c.title} | Construction Cloud guide`, and Base appends
+ * " | Way4Tech" on top, so the suffix alone was 38 characters. 25 chapters
+ * shipped a title past the ~60 a results page shows, the longest at 120, and
+ * what got cut was always the end of the chapter's own name.
+ *
+ * Chapter titles carry a parenthetical list of what the chapter covers, which
+ * belongs in the H1 and the description but not in a title that gets cut
+ * mid-list. So: drop the parenthetical, keep the section suffix only while it
+ * fits, and let four chapters whose names are long on their own say it shorter.
+ * The H1 below still prints c.title in full.
+ */
+const TITLE_BUDGET = 60 - ' | Way4Tech'.length;
+
+const SHORT_TITLE: Record<string, string> = {
+  'clients-consultants-subcontractors-and-suppliers': 'Client and subcontractor portal',
+  'flow-variations-instructions-delays-eot-notices-and-claims': 'Flow: variations, EOT and claims',
+  'flow-rams-to-briefing-observation-to-action-monthly-hse': 'Flow: RAMS, observations and HSE stats',
+  'worked-example-one-job-from-tender-to-final-certificate': 'Worked example: tender to final certificate',
+};
+
+const baseTitle = SHORT_TITLE[c.slug] || c.title.replace(/\s*\([^)]*\)/g, '').trim();
+const withSuffix = `${baseTitle} | Construction Cloud`;
+const seoTitle = withSuffix.length <= TITLE_BUDGET ? withSuffix : baseTitle;
 
 const schema = [
   {

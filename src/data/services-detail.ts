@@ -349,7 +349,7 @@ export const SERVICE_DETAIL: Record<string, ServiceDetail> = {
   },
 
   "odoo-support": {
-    metaTitle: "Odoo Support and Maintenance with SLA Response Tiers",
+    metaTitle: "Odoo Support and Maintenance with SLA Tiers",
     metaDescription: "What an Odoo support contract covers: triage and response tiers, monitoring, verified backups, patching, performance tuning and a monthly report you can read.",
     lede: "Support is worth paying for when it prevents the outage, not just when it answers the phone afterwards.",
     intro: [

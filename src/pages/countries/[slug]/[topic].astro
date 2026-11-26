@@ -102,7 +102,19 @@ const countryIndex = Math.max(0, COUNTRIES.findIndex((c: CountryRec) => c.slug =
    Undefined for the eight markets with no branded regime, so their titles come
    out byte-identical to before. */
 const seoToken = detail?.einvoicing?.seoToken?.trim() || '';
-const tokenSuffix = seoToken ? ` (${seoToken})` : '';
+
+/*
+ * The scheme name in brackets after the title, e.g. "(FBR Digital Invoicing)".
+ *
+ * Base appends " | Way4Tech", so a title has about 49 characters before a
+ * results page starts cutting it. Most schemes are short enough ("(ZATCA)",
+ * "(Fatoora)"); Pakistan's is not, and the title shipped at 63 characters with
+ * the scheme name itself being the part that got cut off. The bracket is now
+ * dropped when it does not fit, which costs nothing: the H1 below prints the
+ * scheme name in full, and so does the meta description via tokenPrefix.
+ */
+const TITLE_BUDGET = 60 - ' | Way4Tech'.length;
+const fullTokenSuffix = seoToken ? ` (${seoToken})` : '';
 const tokenPrefix = seoToken ? `${seoToken}: ` : '';
 
 /* Copy per topic. Delivery process only: no rate, scheme, mandate or threshold
@@ -124,7 +136,10 @@ interface TopicCopy {
 const TOPIC_COPY: Record<TopicKey, TopicCopy> = {
   'e-invoicing': {
     h1: seoToken ? `Odoo e-invoicing in ${plainName}: ${seoToken}` : `Odoo e-invoicing in ${plainName}`,
-    title: `Odoo E-Invoicing in ${plainName}${tokenSuffix}`,
+    title: (() => {
+      const stem = `Odoo E-Invoicing in ${plainName}`;
+      return stem.length + fullTokenSuffix.length <= TITLE_BUDGET ? `${stem}${fullTokenSuffix}` : stem;
+    })(),
     lede: `The ${plainName} e-invoicing picture in full: the scheme, the authority behind it, who it binds, and every requirement we map before a build is quoted.`,
     meta: `${tokenPrefix}Odoo e-invoicing in ${plainName}. The scheme, who has to comply, and every requirement, with what each one changes in an Odoo build.`,
     serviceName: `Odoo e-invoicing setup in ${country.title}`,

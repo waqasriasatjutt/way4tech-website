@@ -1,11 +1,82 @@
 ---
 import Base from '~/layouts/Base.astro';
+import { breadcrumb } from '~/utils/schema';
 import { SERVICES } from '~/data/site';
 
 const categories = [...new Set(SERVICES.map(s => s.category))];
+
+/* Counted, not written down, so the heading and the title cannot drift from
+   the catalogue the page actually renders. */
+const serviceCount = SERVICES.length;
+
+/*
+ * How the work is bought.
+ *
+ * This hub was 187 words: a hero and 15 cards. Somebody choosing a supplier
+ * needs to know how the engagement is shaped and what it costs them to find
+ * out, and none of that was on the page that ranks for "odoo services".
+ */
+const ENGAGEMENTS = [
+  {
+    name: 'Fixed price',
+    when: 'The scope can be written down before it starts: an implementation, a migration, a defined module.',
+    youGet: 'A written specification, a price against it, and a date. Changes are quoted as changes rather than absorbed quietly or argued about later.',
+    watch: 'It needs a scoping phase first. Anyone quoting a fixed price before reading your data is pricing a guess.',
+  },
+  {
+    name: 'Time and materials',
+    when: 'The work is real but the shape is not settled: a backlog, an integration against an API nobody has used yet, discovery.',
+    youGet: 'Hours against a rate, reported with what they were spent on. You can stop at the end of any week.',
+    watch: 'It needs you to prioritise. It is the right model when the scope moves and the wrong one when nobody is steering.',
+  },
+  {
+    name: 'Retained support',
+    when: 'The system is live and you need somebody on the hook when it breaks or when the tax rules change.',
+    youGet: 'An agreed response time, a named route in, and a monthly fee rather than a quote each time something small breaks.',
+    watch: 'Support is not development. Larger changes are quoted separately, which is in your interest: it keeps the retainer honest.',
+  },
+];
+
+const FAQS = [
+  {
+    q: 'Do you work with Odoo Community or Odoo Enterprise?',
+    a: 'Both. A good deal of what people buy Enterprise for can be done in Community with the right modules, and a good deal cannot. We will tell you which case you are in before you buy licences, because getting that wrong is expensive in both directions.',
+  },
+  {
+    q: 'Can you take over an Odoo somebody else built?',
+    a: 'Yes, and it is a large part of the work. It starts with a health audit rather than with changes: custom modules read, the upgrade path checked, and the parts that will break on the next version named. You get that assessment whether or not you continue with us.',
+  },
+  {
+    q: 'How long does an Odoo implementation take?',
+    a: 'A focused implementation on standard modules runs roughly 6 to 12 weeks from scoping to go-live. Heavy customisation, multi-company, or a statutory e-invoicing integration push it further. The variable that moves it most is not our speed, it is how quickly your data and your decisions arrive.',
+  },
+  {
+    q: 'Do you work in my country?',
+    a: 'We deliver remotely to 18 markets and publish a guide for each one covering its e-invoicing scheme, tax and payroll rules, local payment gateways and couriers. If your market has a statutory scheme, read its country page before scoping: it changes the build more than anything else on this list.',
+  },
+  {
+    q: 'Who actually does the work?',
+    a: 'Senior engineers who write the modules we publish on the Odoo apps store. The source of over 200 of them is public, so you can read how we build before you hire us rather than taking a claim about seniority on trust.',
+  },
+  {
+    q: 'What do you need from me to quote?',
+    a: 'What you run today, what is wrong with it, and roughly how many people touch it. For a migration, a database dump helps most. We quote after reading, not from a form.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map(f => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
 ---
 <Base
-  title="Odoo Services - All 15 services"
+  structuredData={[breadcrumb([{ name: 'Services', path: '/services/' }]), faqSchema]}
+  title={`Odoo Services - All ${serviceCount} services`}
   description="Full Odoo service catalog: implementation, customization, support, migration, integration, SaaS hosting, ZATCA e-invoicing, payroll, POS, e-commerce, localization across 18 countries."
 >
   <section class="bg-ink-900 text-white">
@@ -13,7 +84,7 @@ const categories = [...new Set(SERVICES.map(s => s.category))];
       <div class="max-w-3xl">
         <div class="eyebrow text-brand-300">Services</div>
         <h1 class="h1 mt-4">Every Odoo service you need.</h1>
-        <p class="lede mt-6 text-ink-300">15 productized Odoo services covering implementation, customization, SaaS hosting, compliance, localization, and more - delivered by senior engineers.</p>
+        <p class="lede mt-6 text-ink-300">{serviceCount} productized Odoo services covering implementation, customization, SaaS hosting, compliance, localization, and more - delivered by senior engineers.</p>
       </div>
     </div>
   </section>
@@ -35,6 +106,66 @@ const categories = [...new Set(SERVICES.map(s => s.category))];
           </div>
         </div>
       ))}
+    </div>
+  </section>
+
+  <!-- HOW THE WORK IS BOUGHT -->
+  <section class="section bg-ink-50 border-y border-ink-100">
+    <div class="container-site">
+      <h2 class="h2">Three ways to buy any of them</h2>
+      <p class="lede mt-4 max-w-3xl text-ink-700">
+        Every service above is delivered under one of these. Which one fits is usually decided by how settled the scope is, not by how big the budget is.
+      </p>
+      <div class="mt-10 grid gap-5 lg:grid-cols-3">
+        {ENGAGEMENTS.map(e => (
+          <div class="card flex flex-col">
+            <h3 class="text-lg font-semibold">{e.name}</h3>
+            <p class="mt-3 text-sm text-ink-700"><span class="font-semibold text-ink-900">When it fits.</span> {e.when}</p>
+            <p class="mt-3 text-sm text-ink-700"><span class="font-semibold text-ink-900">What you get.</span> {e.youGet}</p>
+            <p class="mt-3 text-sm text-ink-600"><span class="font-semibold text-ink-900">Worth knowing.</span> {e.watch}</p>
+          </div>
+        ))}
+      </div>
+      <p class="mt-8 text-sm text-ink-600">
+        Prices and what moves them are on the <a href="/pricing/" class="font-semibold text-brand-700 hover:text-brand-800">pricing page</a>. If your market runs a statutory e-invoicing scheme, read your <a href="/countries/" class="font-semibold text-brand-700 hover:text-brand-800">country guide</a> before scoping: it changes the build more than any other single factor.
+      </p>
+    </div>
+  </section>
+
+  <!-- WHERE TO GO NEXT -->
+  <section class="section">
+    <div class="container-site">
+      <h2 class="h2">Not sure which service you need?</h2>
+      <p class="lede mt-4 max-w-3xl text-ink-700">Most people arrive knowing the problem, not the service name. These are the four usual starting points.</p>
+      <div class="mt-10 grid gap-5 sm:grid-cols-2">
+        {[
+          { t: 'You have no ERP yet', d: 'Start with implementation. The first decision is Community or Enterprise, and it is cheaper to make it before the licences than after.', href: '/services/odoo-implementation/', label: 'Odoo implementation' },
+          { t: 'You have Odoo and it does not fit', d: 'Start with an audit. Knowing which custom module will break on the next upgrade is worth more than another custom module.', href: '/services/odoo-audit/', label: 'Odoo health audit' },
+          { t: 'You are stuck on an old version', d: 'Start with migration. The work is rarely the data; it is porting the custom code somebody wrote against the old API.', href: '/services/odoo-migration/', label: 'Odoo migration and upgrade' },
+          { t: 'You need your industry covered', d: 'Start from the industry rather than the service. 22 suites, each with what is standard and what is a build.', href: '/suites/', label: 'Browse the industry suites' },
+        ].map(x => (
+          <div class="card">
+            <h3 class="text-lg font-semibold">{x.t}</h3>
+            <p class="mt-2 text-sm text-ink-600">{x.d}</p>
+            <a href={x.href} class="mt-4 inline-block text-sm font-semibold text-brand-700 hover:text-brand-800">{x.label} &rarr;</a>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section bg-ink-50 border-t border-ink-100">
+    <div class="container-site max-w-3xl">
+      <h2 class="h2">Questions we get before a project starts</h2>
+      <dl class="mt-8 divide-y divide-ink-200">
+        {FAQS.map(f => (
+          <div class="py-5">
+            <dt class="font-semibold text-ink-900">{f.q}</dt>
+            <dd class="mt-2 text-ink-700">{f.a}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   </section>
 </Base>

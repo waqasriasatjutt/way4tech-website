@@ -185,7 +185,9 @@ function isNoindexed(pathname) {
 
 // Pages that must never appear in the sitemap, with and without the
 // trailing slash and the .html form.
-const SITEMAP_EXCLUDED = new Set(['/404', '/404/', '/404.html', '/demos/']);
+// /rss.xml is a feed, not a page: it is advertised with <link rel="alternate">
+// in the head and submitted to Search Console as a feed, not as a URL to index.
+const SITEMAP_EXCLUDED = new Set(['/404', '/404/', '/404.html', '/demos/', '/rss.xml']);
 
 // A /solutions/<slug>/ page that has an /industries/<slug>/ twin declares that
 // twin canonical (see src/pages/solutions/[slug].astro). Submitting a URL that

@@ -1,11 +1,89 @@
 ---
 import Base from '~/layouts/Base.astro';
+import { breadcrumb } from '~/utils/schema';
 import { SITE } from '~/data/site';
 import { getCollection } from 'astro:content';
 import { COURSE_BASE, COURSE_DESCRIPTION, COURSE_TITLE } from '~/data/owl-course';
 
 const lessons = (await getCollection('course')).filter(l => !l.data.draft);
 const url = new URL('/learn/', SITE.url).toString();
+
+/* The course's own parts, read from the lessons rather than listed here, so
+   this page cannot claim a syllabus the course does not have. */
+const parts = [...new Map(lessons.map(l => [l.data.part, l.data.partTitle])).entries()]
+  .sort((a, b) => a[0] - b[0])
+  .map(([part, partTitle]) => ({
+    part,
+    partTitle,
+    count: lessons.filter(l => l.data.part === part).length,
+  }));
+
+/* Odoo versions the lessons were written against, so a reader can tell at a
+   glance whether the code still applies to them. */
+const versions = [...new Set(lessons.flatMap(l => l.data.versions))].sort().reverse();
+
+/*
+ * The other free material on this site.
+ *
+ * This page was 80 words: a heading, one course card and a "more coming" box.
+ * It was the thinnest indexable page on the site and it sent nobody anywhere,
+ * even though three other bodies of free writing sit one level away.
+ */
+const ELSEWHERE = [
+  {
+    t: 'Odoo guides',
+    d: 'One page per question somebody actually types, written from the modules and the regulations: payroll, e-invoicing, industry workflows and upgrades.',
+    href: '/odoo-guides/',
+    label: 'Read the guides',
+  },
+  {
+    t: 'The blog',
+    d: 'Engineering write-ups from real builds, including the failure modes: what breaks in a multi-tenant Odoo, what an upgrade actually costs, how implementations go wrong early.',
+    href: '/blog/',
+    label: 'Read the blog',
+  },
+  {
+    t: 'Country guides',
+    d: 'Eighteen markets, each with the e-invoicing scheme, the tax and payroll rules, the local gateways and couriers, and what Odoo covers out of the box in that market.',
+    href: '/countries/',
+    label: 'Browse the countries',
+  },
+  {
+    t: 'Published modules',
+    d: 'Over 200 modules on the Odoo apps store. The source is readable, so a listing is itself a worked example of how the thing is built.',
+    href: '/products/',
+    label: 'Browse the modules',
+  },
+];
+
+const FAQS = [
+  {
+    q: 'Is the OWL course really free?',
+    a: 'Yes. Every lesson is on this site, there is no sign up, no email gate and no paid tier holding the useful half. It is written to bring us work from people who can tell whether we know the framework, which only works if the whole thing is readable.',
+  },
+  {
+    q: 'What do I need to know before starting?',
+    a: 'Python and enough JavaScript to read a class and an arrow function. You do not need prior OWL or React. You do need a running Odoo you can install a module into, because every lesson is written to be typed out rather than read.',
+  },
+  {
+    q: 'Which Odoo versions does the code target?',
+    a: `The lessons are written against Odoo ${versions.join(' and ')}. OWL's API is stable across those, and where a version differs the lesson says so at the point it matters rather than in a note at the end.`,
+  },
+  {
+    q: 'Is this the same as the official Odoo documentation?',
+    a: 'No, and it is not meant to replace it. The documentation describes the API. These lessons work through the problems you hit when you use it in a real module: where state belongs, why a widget stops updating, and what to do when a hook fires in the wrong order.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map(f => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
 
 const schema = {
   '@context': 'https://schema.org',
@@ -21,7 +99,7 @@ const schema = {
   title="Learn Odoo Development | Free Courses"
   description="Free, practical Odoo development courses written against running systems by a team that ships and maintains modules."
   canonical={url}
-  structuredData={schema}
+  structuredData={[schema, breadcrumb([{ name: 'Learn', path: '/learn/' }]), faqSchema].flat()}
 >
   <div class="mx-auto max-w-4xl px-4 py-10 sm:py-14">
 
@@ -52,6 +130,56 @@ const schema = {
       </div>
 
     </div>
+
+    <!-- WHAT THE COURSE COVERS -->
+    <section class="mt-16">
+      <h2 class="text-2xl font-semibold tracking-tight">What the OWL course covers</h2>
+      <p class="mt-3 text-slate-600 dark:text-slate-300">
+        {lessons.length} lessons in {parts.length} parts, written against Odoo {versions.join(' and ')}. Each one is its own page because each answers a question somebody types, and each ends with code that runs rather than a summary.
+      </p>
+      <ol class="mt-6 space-y-3">
+        {parts.map(p => (
+          <li class="flex gap-4 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+            <span class="shrink-0 font-mono text-sm text-slate-400">{String(p.part).padStart(2, '0')}</span>
+            <span>
+              <span class="font-semibold">{p.partTitle}</span>
+              <span class="ml-2 text-sm text-slate-500">{p.count} {p.count === 1 ? 'lesson' : 'lessons'}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p class="mt-6">
+        <a href={`${COURSE_BASE}/`} class="font-semibold text-brand-700 underline hover:no-underline dark:text-amber-500">Start the first lesson &rarr;</a>
+      </p>
+    </section>
+
+    <!-- OTHER FREE MATERIAL -->
+    <section class="mt-16">
+      <h2 class="text-2xl font-semibold tracking-tight">Other free material on this site</h2>
+      <p class="mt-3 text-slate-600 dark:text-slate-300">The course is one of four. None of them is gated.</p>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        {ELSEWHERE.map(e => (
+          <div class="rounded-lg border border-slate-200 p-5 dark:border-slate-700">
+            <h3 class="font-semibold">{e.t}</h3>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{e.d}</p>
+            <a href={e.href} class="mt-3 inline-block text-sm font-semibold text-brand-700 underline hover:no-underline dark:text-amber-500">{e.label} &rarr;</a>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="mt-16">
+      <h2 class="text-2xl font-semibold tracking-tight">Before you start</h2>
+      <dl class="mt-6 divide-y divide-slate-200 dark:divide-slate-700">
+        {FAQS.map(f => (
+          <div class="py-4">
+            <dt class="font-semibold">{f.q}</dt>
+            <dd class="mt-2 text-slate-600 dark:text-slate-300">{f.a}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
 
   </div>
 </Base>

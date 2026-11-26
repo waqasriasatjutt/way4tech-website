@@ -36,7 +36,7 @@ export interface Props {
 const {
   title,
   description = SITE.description,
-  image = '/og.png',
+  image,
   canonical,
   structuredData,
   noindex = false,
@@ -63,7 +63,30 @@ const effNoindex = ov?.noindex === true ? true : noindex;
 
 const pageTitle = effTitle ? `${effTitle} | ${SITE.name}` : `${SITE.name} - ${SITE.tagline}`;
 const canonicalURL = effCanonical || new URL(Astro.url.pathname, SITE.url).toString();
-const imageURL = new URL(image, SITE.url).toString();
+
+/*
+ * The share card.
+ *
+ * 857 pages fell back to the one /og.png, so every link posted to LinkedIn,
+ * WhatsApp or Slack looked the same whether it pointed at a country guide, a
+ * module or the pricing page. Sections with a card of their own now use it;
+ * a page passing `image` still wins, and anything with no section card keeps
+ * the site card rather than linking an image that does not exist.
+ *
+ * Listed explicitly rather than probed on disk: this runs for all 1,076 pages
+ * and a filesystem check per page to answer a question that has 16 possible
+ * answers is work for nothing.
+ */
+const OG_SECTIONS = new Set([
+  'about', 'author', 'blog', 'careers', 'case-studies', 'compare', 'contact',
+  'countries', 'industries', 'integrations', 'learn', 'modules',
+  'odoo-community', 'odoo-guides', 'pricing', 'products', 'resources',
+  'services', 'software', 'solutions', 'suites', 'windows-apps',
+]);
+const section = Astro.url.pathname.split('/').filter(Boolean)[0] || '';
+const effImage = image || (OG_SECTIONS.has(section) ? `/og/${section}.jpg` : '/og.png');
+const imageType = effImage.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+const imageURL = new URL(effImage, SITE.url).toString();
 const imageAlt = effTitle ? `${effTitle} - ${SITE.name}` : `${SITE.name} - Odoo implementation and custom modules`;
 const robots = effNoindex ? 'noindex, follow' : 'index, follow';
 const alternates = Array.isArray(hreflang) ? hreflang : [];
@@ -151,6 +174,8 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href={canonicalURL} />
     <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    {/* Discoverable from every page, which is how readers and aggregators find a feed. */}
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.name} blog`} href="/rss.xml" />
 
     <title>{pageTitle}</title>
     <meta name="description" content={effDescription} />
@@ -185,6 +210,7 @@ const sdArray = [orgSchema, ...(isHome ? [webSiteSchema] : []), ...(Array.isArra
     <meta property="og:description" content={ov?.ogDescription || effDescription} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={imageURL} />
+    <meta property="og:image:type" content={imageType} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={imageAlt} />

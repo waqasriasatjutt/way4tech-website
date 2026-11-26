@@ -52,29 +52,75 @@ const authorNode = isSiteAuthor
   ? { '@type': 'Person', '@id': `${AUTHOR_URL}#person`, name: authorName, url: AUTHOR_URL }
   : { '@type': 'Person', name: authorName };
 
+/* Words of running prose, counted from the rendered post rather than written
+   down, so it cannot drift when a post is edited in Odoo. Script and style
+   blocks are dropped first or their contents count as prose. */
+const wordCount = (post.contentHtml || '')
+  .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .split(/\s+/)
+  .filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+
+/* Declared here because both the BlogPosting node and the breadcrumb below
+   need the post's own path. */
+const slugParam = typeof Astro.params.slug === 'string' ? Astro.params.slug.trim() : '';
+const postPath = slugParam ? `/blog/${slugParam}/` : '/blog/';
+const postURL = new URL(postPath, SITE.url).toString();
+
+/*
+ * BlogPosting rather than Article: both are valid, but the post is on a blog
+ * and the subtype says so. The fields added alongside it are the ones that
+ * were missing and that Google's Article documentation actually reads -
+ * headline, image, datePublished and dateModified were already here; url,
+ * mainEntityOfPage, inLanguage, isPartOf, articleSection, keywords and
+ * wordCount were not, so nothing stated which blog a post belonged to, what
+ * language it was in, or what it was about beyond the headline.
+ *
+ * image uses the site card because posts carry no image of their own in Odoo.
+ * It is a real 1200x630 file, so it satisfies the image requirement honestly
+ * rather than by pointing at something that does not exist.
+ */
 const schema = {
   '@context': 'https://schema.org',
-  '@type': 'Article',
+  '@type': 'BlogPosting',
   headline: title,
   description,
+  url: postURL,
+  mainEntityOfPage: { '@type': 'WebPage', '@id': postURL },
+  image: {
+    '@type': 'ImageObject',
+    url: new URL('/og.png', SITE.url).toString(),
+    width: 1200,
+    height: 630,
+  },
+  inLanguage: 'en',
+  isPartOf: {
+    '@type': 'Blog',
+    '@id': new URL('/blog/', SITE.url).toString(),
+    name: `${SITE.name} blog`,
+  },
+  ...(tags.length ? { articleSection: tags[0], keywords: tags.join(', ') } : {}),
+  ...(wordCount ? { wordCount } : {}),
   author: authorNode,
   datePublished: date.toISOString(),
   dateModified: post.writeDate.toISOString(),
-  publisher: { '@type': 'Organization', name: SITE.name, logo: { "@type": "ImageObject", url: `${SITE.url}/logo-w4t.png` } },
+  publisher: {
+    '@type': 'Organization',
+    '@id': new URL('/#organization', SITE.url).toString(),
+    name: SITE.name,
+    logo: { '@type': 'ImageObject', url: `${SITE.url}/logo-w4t.png` },
+  },
 };
 
 /* Mirrors the breadcrumb printed in the hero. The template carried none before,
    so this adds a node rather than duplicating one. */
-const slugParam = typeof Astro.params.slug === 'string' ? Astro.params.slug.trim() : '';
-const postPath = slugParam ? `/blog/${slugParam}/` : '/blog/';
-
 const breadcrumbSchema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE.url}/` },
     { '@type': 'ListItem', position: 2, name: 'Blog', item: new URL('/blog/', SITE.url).toString() },
-    { '@type': 'ListItem', position: 3, name: title, item: new URL(postPath, SITE.url).toString() },
+    { '@type': 'ListItem', position: 3, name: title, item: postURL },
   ],
 };
 ---

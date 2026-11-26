@@ -8,7 +8,7 @@
 export interface ExtraShot { src: string; alt: string; caption: string; w: number; h: number; phone?: boolean }
 export interface ProductExtra {
   /** "What is new" block, newest release first. */
-  whatsNew?: { title: string; intro: string; items: { version: string; title: string; body: string[] }[] };
+  whatsNew?: { title: string; intro: string; items: { version: string; title: string; body: string[]; shots?: ExtraShot[] }[] };
   /** A short pointer to another module, for example the edition that includes this one. */
   note?: { title: string; body: string; href: string; label: string };
   /** Live demo for this module. No logins here: those are on /demos/. */
@@ -43,6 +43,13 @@ export const PRODUCT_EXTRAS: Record<string, ProductExtra> = {
           'Health check with one-click fixes, and sign-in on the phone by scanning a QR code.',
           'Settings a distribution manager can change without being an administrator.',
           'Help in plain words on every screen and every setting, a "?" on the phone, tips, read aloud, a big confirm button, undo and sounds.',
+        ], shots: [
+          s('/suites/distribution/setup-assistant.webp', 'Setup assistant in Odoo with steps for country, logo, products and shops from Excel, routes, staff, vans and the receipt printer', 'The setup assistant.', 1440, 900),
+          s('/suites/distribution/health-check.webp', 'Health check listing what stops the team from working, with a button to fix each item', 'The health check with one-click fixes.', 1440, 600),
+          s('/suites/distribution/phone-welcome.webp', 'Welcome screen on the phone greeting a van driver by name and job', 'A welcome for each new user.', 390, 782, true),
+          s('/suites/distribution/phone-help.webp', 'Phone help sheet explaining the van day in three short steps, with Listen and Show me buttons', 'Help on every phone screen.', 390, 782, true),
+          s('/suites/distribution/phone-tip.webp', 'A tip on the phone pointing at the next shop card', 'Tips that point at the screen.', 390, 782, true),
+          s('/suites/distribution/phone-confirm-sale.webp', 'Big confirm screen on the phone showing the shop and the amount before the sale is saved', 'A big confirm before each sale.', 390, 782, true),
         ] },
         { version: '20.0.8', title: 'Industry features built in, each off until you switch it on', body: [
           'Returnable crates and bottles with deposits, and empties counted on the phone.',

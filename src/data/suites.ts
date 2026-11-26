@@ -23,7 +23,7 @@ export interface Suite {
   /** Offer that is not on the store yet: shown instead of a price. */
   offer?: { name: string; note: string };
   /** A short "what is new" block under the modules: the newest release first. */
-  whatsNew?: { title: string; intro: string; items: { version: string; title: string; body: string }[]; href?: string };
+  whatsNew?: { title: string; intro: string; items: { version: string; title: string; body: string; shots?: SuiteShot[] }[]; href?: string };
   highlights: { title: string; body: string }[];
   demos: { label: string; url: string; note: string }[];
   guides: { label: string; href: string }[];
@@ -547,7 +547,14 @@ export const SUITES: Suite[] = [
       intro: 'Four releases since 20.0.5, all part of the same module and the same price.',
       href: '/products/wt-sale-distributor-enterprise/',
       items: [
-        { version: '20.0.9', title: 'Easy to set up', body: 'A setup assistant (country, logo, products and shops from Excel, routes, staff, vans, receipt printer), a health check with one-click fixes, sign-in on the phone by scanning a QR code, and settings a distribution manager can change without being an administrator. Help on every screen, a "?" on the phone, tips, read aloud, a big confirm button, undo and sounds.' },
+        { version: '20.0.9', title: 'Easy to set up', body: 'A setup assistant (country, logo, products and shops from Excel, routes, staff, vans, receipt printer), a health check with one-click fixes, sign-in on the phone by scanning a QR code, and settings a distribution manager can change without being an administrator. Help on every screen, a "?" on the phone, tips, read aloud, a big confirm button, undo and sounds.', shots: [
+          shot('/suites/distribution/setup-assistant.webp', 'Setup assistant in Odoo with steps for country, logo, products and shops from Excel, routes, staff, vans and the receipt printer', 'The setup assistant.', 1440, 900),
+          shot('/suites/distribution/health-check.webp', 'Health check listing what stops the team from working, with a button to fix each item', 'The health check with one-click fixes.', 1440, 600),
+          shot('/suites/distribution/phone-welcome.webp', 'Welcome screen on the phone greeting a van driver by name and job', 'A welcome for each new user.', 390, 782, true),
+          shot('/suites/distribution/phone-help.webp', 'Phone help sheet explaining the van day in three short steps, with Listen and Show me buttons', 'Help on every phone screen.', 390, 782, true),
+          shot('/suites/distribution/phone-tip.webp', 'A tip on the phone pointing at the next shop card', 'Tips that point at the screen.', 390, 782, true),
+          shot('/suites/distribution/phone-confirm-sale.webp', 'Big confirm screen on the phone showing the shop and the amount before the sale is saved', 'A big confirm before each sale.', 390, 782, true),
+        ] },
         { version: '20.0.8', title: 'Industry features built in', body: 'Returnable crates and bottles with deposits, fresh goods with expiry dates and oldest first, shop equipment such as fridges with technician checks, and tax receipts with a QR code (for example Saudi ZATCA). Each one is off until you switch it on.' },
         { version: '20.0.7', title: 'A simpler phone and better visits', body: 'At most six tiles with the next shop on top, a visit plan and a call list for missed shops, push messages, a trust score on each visit, shop surveys, a self-order link for shops, standing orders, product variants, credit risk per company, better offline work and the free purchase bridge.' },
         { version: '20.0.6', title: 'Many companies and languages', body: 'Every setting per company, regions, a company switch on the phone, eight phone themes with dark mode, and Arabic with a right to left layout.' },
